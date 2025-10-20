@@ -1677,58 +1677,6 @@ button.remove-coupon-code {
     }
 }
 
-.courses-page {
-    .courses-filter-widget {
-        .sidebar-widget-rooms,
-        .sidebar-widget,
-        .widget-content,
-        .booking,
-        .contact-bg {
-            width: 100%;
-        }
-
-        .contact-bg {
-            border-radius: 20px;
-        }
-
-        .course-filter-form {
-            margin-top: 0;
-
-            .contact-field {
-                label {
-                    font-size: 0.875rem;
-                    font-weight: 500;
-                }
-
-                .form-control {
-                    font-size: 0.9375rem;
-                }
-            }
-
-            .ss-btn {
-                font-size: 0.9375rem;
-                font-weight: 600;
-            }
-        }
-    }
-
-    .courses-area {
-        padding-top: 0;
-
-        .courses-grid {
-            --bs-gutter-y: 2rem;
-
-            > .col {
-                display: flex;
-
-                > * {
-                    width: 100%;
-                }
-            }
-        }
-    }
-}
-
 @media screen and (min-width: 1500px) {
     .booking-area.homepage {
         .contact-form {
