@@ -13,20 +13,6 @@
 @endphp
 
 <form action="{{ route('public.courses') }}" method="GET" class="contact-form course-filter-form">
-    <div class="row g-3 g-lg-4 align-items-end course-filter-row">
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="contact-field p-relative c-name mb-0">
-                <label><i class="fal fa-layer-group"></i> Kategorie </label>
-                <select name="category_id" class="form-control">
-                    <option value=""> Alle Kategorien </option>
-                    @foreach ($categories as $cat)
-                        <option value="{{ $cat->id }}" @selected($selectedCategory == $cat->id)>
-                            {{ $cat->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
 
         <div class="col-12 col-md-6 col-xl-3">
             <div class="contact-field p-relative c-name mb-0">

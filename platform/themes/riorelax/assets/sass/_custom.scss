@@ -1694,41 +1694,19 @@ button.remove-coupon-code {
         .course-filter-form {
             margin-top: 0;
 
-            .course-filter-row {
-                row-gap: 1rem;
-
-                @media (min-width: 1200px) {
-                    row-gap: 1.5rem;
-                }
-
-                .contact-field {
-                    height: 100%;
-                }
-
-                .slider-btn {
-                    height: 100%;
-                    display: flex;
-                    align-items: stretch;
-
-                    .btn {
-                        width: 100%;
-                    }
-                }
-            }
-
             .contact-field {
                 label {
-                    font-size: 0.8125rem;
+                    font-size: 0.875rem;
                     font-weight: 500;
                 }
 
                 .form-control {
-                    font-size: 0.875rem;
+                    font-size: 0.9375rem;
                 }
             }
 
             .ss-btn {
-                font-size: 0.875rem;
+                font-size: 0.9375rem;
                 font-weight: 600;
             }
         }
