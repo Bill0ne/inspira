@@ -4,9 +4,9 @@
     </h3>
 
     @if ($courses->isNotEmpty())
-        <div class="row">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4 courses-grid">
             @foreach ($courses as $course)
-                <div class="col-md-6 mb-4">
+                <div class="col">
                     {!! Theme::partial('courses.item', compact('course')) !!}
                 </div>
             @endforeach
