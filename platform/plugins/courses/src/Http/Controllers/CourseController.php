@@ -11,7 +11,7 @@ use Botble\Courses\Forms\CourseForm;
 use Botble\Courses\Models\CourseSession;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
-
+use Illuminate\Validation\ValidationException;
 
 class CourseController extends BaseController
 {
@@ -164,7 +164,6 @@ class CourseController extends BaseController
             }
         }
 
-// 2) Parse manual sessions from the RepeaterField reliably (with ID)
         $manualSessionsRaw = request()->input('manual_sessions', []);
         if (is_string($manualSessionsRaw)) {
             $manualSessionsRaw = json_decode($manualSessionsRaw, true) ?: [];
@@ -173,7 +172,6 @@ class CourseController extends BaseController
         $manualSessionsFromForm = [];
 
         foreach ($manualSessionsRaw as $row) {
-            // expecting $row = [ ['key'=>'id','value'=>'...'], ['key'=>'start','value'=>'...'], ['key'=>'end','value'=>'...'] ]
             if (!is_array($row)) {
                 continue;
             }
@@ -223,16 +221,13 @@ class CourseController extends BaseController
         }
         $dates = $cleanDates;
 
-// 4) Sync manual sessions (update / delete with booking protection)
         $existingManuals = $course->sessions()->where('is_manual', true)->with('bookings')->get();
         $submittedIds = collect($manualSessionsFromForm)->pluck('id')->filter()->toArray();
 
-// 🔹 Update or create manual sessions
         foreach ($manualSessionsFromForm as $data) {
             if (!empty($data['id'])) {
                 $session = $existingManuals->firstWhere('id', (int)$data['id']);
                 if ($session) {
-                    // update if changed
                     $session->update([
                         'start_date' => $data['start_date'],
                         'end_date'   => $data['end_date'],
@@ -241,7 +236,6 @@ class CourseController extends BaseController
                 }
             }
 
-            // new manual session
             $course->sessions()->create([
                 'start_date' => $data['start_date'],
                 'end_date'   => $data['end_date'],
@@ -251,7 +245,6 @@ class CourseController extends BaseController
             ]);
         }
 
-// 🔹 Detect and delete removed sessions
         $removedSessions = $existingManuals->filter(fn($s) => !in_array($s->id, $submittedIds));
 
         foreach ($removedSessions as $session) {
@@ -290,16 +283,13 @@ class CourseController extends BaseController
 
     public function list(int $courseId): JsonResponse
     {
-        // Get all sessions for this course
         $sessions = CourseSession::query()
             ->where('course_id', $courseId)
             ->select('id', 'start_date', 'end_date', 'available_seats')
             ->orderBy('start_date')
             ->get()
-            // Keep only sessions with available or unlimited seats
             ->filter(fn ($session) => $session->hasAvailableSeats());
 
-        // Group sessions by same calendar date (Y-m-d)
         $grouped = $sessions->groupBy(fn ($session) =>
         Carbon::parse($session->start_date)->format('Y-m-d')
         );
@@ -311,7 +301,6 @@ class CourseController extends BaseController
                 $start = Carbon::parse($session->start_date);
                 $end = Carbon::parse($session->end_date);
 
-                // Format: 29/10/2024 11:00 AM - 01:00 PM
                 $text = $start->format('d/m/Y h:i A') . ' - ' . $end->format('h:i A');
 
                 $formatted->push([

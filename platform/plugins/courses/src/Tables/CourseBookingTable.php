@@ -42,7 +42,6 @@ class CourseBookingTable extends TableAbstract
             ->eloquent($this->query())
             ->formatColumn('amount', PriceFormatter::class)
 
-            // ✅ Customer name column
             ->editColumn('customer_id', function (CourseBooking $item) {
                 if ($item->customer && $item->customer->id) {
                     return BaseHelper::clean(trim($item->customer->first_name . ' ' . $item->customer->last_name));
@@ -55,7 +54,6 @@ class CourseBookingTable extends TableAbstract
                 return '&mdash;';
             })
 
-            // ✅ Customer email column
             ->editColumn('customer_email', function (CourseBooking $item) {
                 if ($item->customer && $item->customer->email) {
                     return e($item->customer->email);
@@ -68,7 +66,6 @@ class CourseBookingTable extends TableAbstract
                 return '&mdash;';
             })
 
-            // ✅ Customer phone column
             ->editColumn('customer_phone', function (CourseBooking $item) {
                 if ($item->customer && $item->customer->phone) {
                     return e($item->customer->phone);
@@ -81,7 +78,6 @@ class CourseBookingTable extends TableAbstract
                 return '&mdash;';
             })
 
-            // ✅ Course name column
             ->editColumn('course_id', function (CourseBooking $item) {
                 return $item->course && $item->course->id
                     ? Html::link(
@@ -92,38 +88,30 @@ class CourseBookingTable extends TableAbstract
                     : '&mdash;';
             })
 
-            // ✅ Global search filter (LIKE + relations)
             ->filter(function ($query) {
                 if ($keyword = $this->request->input('search.value')) {
                     $keyword = '%' . $keyword . '%';
 
                     return $query
-                        // Search by customer name
                         ->whereHas('customer', function ($q) use ($keyword) {
                             $q->where('first_name', 'LIKE', $keyword)
                                 ->orWhere('last_name', 'LIKE', $keyword)
                                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$keyword]);
                         })
-                        // Search by address name
                         ->orWhereHas('address', function ($q) use ($keyword) {
                             $q->where('first_name', 'LIKE', $keyword)
                                 ->orWhere('last_name', 'LIKE', $keyword)
                                 ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$keyword]);
                         })
-                        // Search by email (customer + address)
                         ->orWhereHas('customer', fn($q) => $q->where('email', 'LIKE', $keyword))
                         ->orWhereHas('address', fn($q) => $q->where('email', 'LIKE', $keyword))
-                        // Search by phone (customer + address)
                         ->orWhereHas('customer', fn($q) => $q->where('phone', 'LIKE', $keyword))
                         ->orWhereHas('address', fn($q) => $q->where('phone', 'LIKE', $keyword))
-                        // Search by course name
                         ->orWhereHas('course', fn($q) => $q->where('name', 'LIKE', $keyword))
-                        // Search by payment info
                         ->orWhereHas('payment', function ($q) use ($keyword) {
                             $q->where('payment_channel', 'LIKE', $keyword)
                                 ->orWhere('status', 'LIKE', $keyword);
                         })
-                        // Direct table fields
                         ->orWhere('amount', 'LIKE', $keyword)
                         ->orWhere('id', 'LIKE', $keyword);
                 }
@@ -131,7 +119,6 @@ class CourseBookingTable extends TableAbstract
                 return $query;
             });
 
-        // ✅ Payment columns setup
         if (!is_plugin_active('payment')) {
             $data = $data->removeColumn('payment_status')->removeColumn('payment_id');
         } else {
@@ -166,7 +153,6 @@ class CourseBookingTable extends TableAbstract
                 'course_id',
                 'customer_id',
             ])
-            // Wichtig: Kunde + Kurs mitladen, damit E-Mail/Telefon aus der Relation gelesen werden können
             ->with(['customer', 'course']);
 
         if (is_plugin_active('payment')) {
@@ -178,7 +164,6 @@ class CourseBookingTable extends TableAbstract
 
     public function columns(): array
     {
-        // Bestehende Spalten
         $columns = [
             IdColumn::make(),
 
@@ -188,15 +173,13 @@ class CourseBookingTable extends TableAbstract
                 ->orderable(false)
                 ->searchable(false),
 
-            // NEU: E-Mail
             Column::make('customer_email')
                 ->title(__('E-Mail'))
                 ->alignLeft()
                 ->width('220px')
-                ->orderable(false)    // bewusst ohne Sortierung/Global-Suche (Relation)
+                ->orderable(false)
                 ->searchable(false),
 
-            // NEU: Telefon
             Column::make('customer_phone')
                 ->title(__('Telefon'))
                 ->alignLeft()
@@ -310,7 +293,6 @@ class CourseBookingTable extends TableAbstract
         }
 
         switch ($key) {
-            // ✅ Customer name filter (checks both first + last name)
             case 'customer_name':
                 return $query
                     ->whereHas('customer', function ($q) use ($value) {
@@ -324,36 +306,29 @@ class CourseBookingTable extends TableAbstract
                             ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $value . '%']);
                     });
 
-            // ✅ Customer email filter
             case 'customer_email':
                 return $query->whereHas('customer', fn ($q) => $q->where('email', 'LIKE', '%' . $value . '%'))
                     ->orWhereHas('address', fn ($q) => $q->where('email', 'LIKE', '%' . $value . '%'));
 
-            // ✅ Customer phone filter
             case 'customer_phone':
                 return $query->whereHas('customer', fn ($q) => $q->where('phone', 'LIKE', '%' . $value . '%'))
                     ->orWhereHas('address', fn ($q) => $q->where('phone', 'LIKE', '%' . $value . '%'));
 
-            // ✅ Course filter
             case 'course_id':
                 return $query->where('course_id', $value);
 
-            // ✅ Amount filter
             case 'amount':
                 return $query->where('amount', 'LIKE', '%' . $value . '%');
 
-            // ✅ Payment status filter
             case 'payment_status':
                 return $query->whereHas('payment', fn ($q) => $q->where('status', $value));
 
-            // ✅ Created date filter (ignore time)
             case 'created_at':
                 $start = \Carbon\Carbon::parse($value)->startOfDay();
                 $end = \Carbon\Carbon::parse($value)->endOfDay();
                 return $query->whereBetween('created_at', [$start, $end]);
         }
 
-        // Default (status, etc.)
         return parent::applyFilterCondition($query, $key, $operator, $value);
     }
 

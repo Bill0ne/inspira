@@ -4,7 +4,6 @@ $(function () {
         const field = $checkbox.attr('name');
 
         if (field === 'unlimited_seats') {
-            // Hide seats when unlimited seats = ON
             if ($checkbox.is(':checked')) {
                 target.hide().find('input').val('');
             } else {
@@ -13,7 +12,6 @@ $(function () {
         }
 
         if (field === 'is_recurring') {
-            // Show recurring fields when recurring = ON
             if ($checkbox.is(':checked')) {
                 target.show();
             } else {
@@ -24,11 +22,7 @@ $(function () {
 
     $('[data-toggle="toggle-field"]').each(function () {
         const $checkbox = $(this);
-
-        // Initial load
         toggleField($checkbox);
-
-        // On change
         $checkbox.on('change', function () {
             toggleField($checkbox);
         });
@@ -58,6 +52,7 @@ $(function () {
 
     const $courseSelect = $('#admin_course_id');
     const $sessionSelect = $('#admin_session_id');
+    const selectedSessionId = $sessionSelect.data('selected');
 
     $courseSelect.on('change', function () {
         const courseId = $(this).val();
@@ -79,7 +74,8 @@ $(function () {
                 if (response.data && response.data.length) {
                     let options = '<option value="">Select Session</option>';
                     response.data.forEach(function (session) {
-                        options += `<option value="${session.id}">${session.text}</option>`;
+                        const selectedAttr = session.id == selectedSessionId ? 'selected' : '';
+                        options += `<option value="${session.id}" ${selectedAttr}>${session.text}</option>`;
                     });
                     $sessionSelect.html(options);
                 } else {
@@ -91,4 +87,9 @@ $(function () {
             }
         });
     });
+
+    const initialCourseId = $courseSelect.val();
+    if (initialCourseId) {
+        $courseSelect.trigger('change');
+    }
 });

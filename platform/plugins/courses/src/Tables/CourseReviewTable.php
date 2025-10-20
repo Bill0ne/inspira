@@ -62,18 +62,15 @@ class CourseReviewTable extends TableAbstract
 
                     return $query
                         ->where(function ($sub) use ($keywordLike) {
-                            // ✅ Search by author name
                             $sub->whereHas('author', function ($subQuery) use ($keywordLike) {
                                 $subQuery
                                     ->where('first_name', 'LIKE', $keywordLike)
                                     ->orWhere('last_name', 'LIKE', $keywordLike)
                                     ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', $keywordLike);
                             })
-                                // ✅ Search by course name
                                 ->orWhereHas('course', function ($subQuery) use ($keywordLike) {
                                     $subQuery->where('name', 'LIKE', $keywordLike);
                                 })
-                                // ✅ Search by review content
                                 ->orWhere('content', 'LIKE', $keywordLike);
                         });
                 }

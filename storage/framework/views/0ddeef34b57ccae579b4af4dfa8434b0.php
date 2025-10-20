@@ -1,0 +1,2 @@
+<small <?php echo e($attributes->merge(['class' => 'form-hint'])); ?>><?php echo e($slot); ?></small>
+<?php /**PATH D:\xampp\htdocs\inspira\platform/core/base/resources/views/components/form/helper-text.blade.php ENDPATH**/ ?>

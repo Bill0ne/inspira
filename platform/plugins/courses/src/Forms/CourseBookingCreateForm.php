@@ -56,24 +56,24 @@ class CourseBookingCreateForm extends FormAbstract
                 'course_id',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Select Course'))
+                    ->label(__('Kurse'))
                     ->required()
+                    ->searchable()
                     ->choices(Course::query()->wherePublished()->pluck('name', 'id')->all())
-                    ->helperText(__('Choose the course to book'))
-                    ->emptyValue('kurse')
-                    ->attributes(['id' => 'admin_course_id']) // ✅ important
+                    ->attributes(['id' => 'admin_course_id'])
+                    ->emptyValue(__('Wählen kurse'))
                     ->colspan(2)
             )
             ->add(
                 'course_session_id',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Select Session'))
+                    ->label(__('Sitzung'))
                     ->required()
                     ->choices([])
-                    ->emptyValue('Sitzung')
-                    ->helperText(__('Choose the session to book'))
-                    ->attributes(['id' => 'admin_session_id']) // ✅ important
+                    ->searchable()
+                    ->emptyValue(__('Wählen sitzung'))
+                    ->attributes(['id' => 'admin_session_id'])
                     ->colspan(2)
             )
             ->add(

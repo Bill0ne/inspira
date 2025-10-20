@@ -1,0 +1,42 @@
+<?php if (isset($component)) { $__componentOriginal922f7d3260a518f4cf606eecf9669dcb = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal922f7d3260a518f4cf606eecf9669dcb = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => '8def1252668913628243c4d363bee1ef::button','data' => ['size' => 'md','dataBbToggle' => 'analytics-trigger-upload-json','dataUrl' => ''.e(route('analytics.settings.json')).'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('core::button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['size' => 'md','data-bb-toggle' => 'analytics-trigger-upload-json','data-url' => ''.e(route('analytics.settings.json')).'']); ?>
+    <?php if (isset($component)) { $__componentOriginal73995948b3bd877b76251b40caf28170 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal73995948b3bd877b76251b40caf28170 = $attributes; } ?>
+<?php $component = Botble\Icon\View\Components\Icon::resolve(['name' => 'ti ti-upload'] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('core::icon'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Botble\Icon\View\Components\Icon::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal73995948b3bd877b76251b40caf28170)): ?>
+<?php $attributes = $__attributesOriginal73995948b3bd877b76251b40caf28170; ?>
+<?php unset($__attributesOriginal73995948b3bd877b76251b40caf28170); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal73995948b3bd877b76251b40caf28170)): ?>
+<?php $component = $__componentOriginal73995948b3bd877b76251b40caf28170; ?>
+<?php unset($__componentOriginal73995948b3bd877b76251b40caf28170); ?>
+<?php endif; ?> <?php echo e(__('Upload Service Account JSON File')); ?>
+
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal922f7d3260a518f4cf606eecf9669dcb)): ?>
+<?php $attributes = $__attributesOriginal922f7d3260a518f4cf606eecf9669dcb; ?>
+<?php unset($__attributesOriginal922f7d3260a518f4cf606eecf9669dcb); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal922f7d3260a518f4cf606eecf9669dcb)): ?>
+<?php $component = $__componentOriginal922f7d3260a518f4cf606eecf9669dcb; ?>
+<?php unset($__componentOriginal922f7d3260a518f4cf606eecf9669dcb); ?>
+<?php endif; ?>
+<?php /**PATH D:\xampp\htdocs\inspira\platform/plugins/analytics/resources/views/upload-button.blade.php ENDPATH**/ ?>

@@ -14,9 +14,8 @@ use Botble\Table\Columns\IdColumn;
 use Botble\Table\Columns\DateColumn;
 use Botble\Table\Columns\FormattedColumn;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Relation as EloquentRelation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
@@ -40,6 +39,7 @@ class CourseSessionTable extends TableAbstract
                 FormattedColumn::make('view_participants')
                     ->title(trans('Teilnehmerdetails'))
                     ->escape(false)
+                    ->orderable(false)
                     ->getValueUsing(function (FormattedColumn $column) {
                         $session = $column->getItem();
 
@@ -47,32 +47,27 @@ class CourseSessionTable extends TableAbstract
                             . $session->id . '">Sicht</button>';
                     }),
 
-                // Seats + Progressbar
                 FormattedColumn::make('seats')
                     ->title(trans('plugins/courses::courses.course-session.seats'))
-                    ->escape(false) // HTML für den Balken erlauben
+                    ->orderable(false)
+                    ->escape(false)
                     ->getValueUsing(function (FormattedColumn $column) {
                         $session = $column->getItem();
 
-                        // Unlimited (keine Kapazität gepflegt)
                         if (is_null($session->available_seats)) {
-                            return 'Unlimited';
+                            return 'Unbegrenzt';
                         }
 
-                        // Buchungen zählen (1 Buchung = 1 belegter Platz)
                         $booked = (int) $session->bookings()->count();
                         $capacity = (int) $session->available_seats;
                         $remaining = max(0, $capacity - $booked);
 
-                        // Prozent berechnen
                         $percent = $capacity > 0
                             ? (int) round(min(100, ($booked / (float) $capacity) * 100))
                             : 0;
 
-                        // Label (z. B. "3 used / 7 remaining" ODER "3 / 10")
-                        $label = "{$booked} used / {$remaining} remaining";
+                        $label = "{$booked} gebraucht / {$remaining} übrig";
 
-                        // Kompakter Progress-Balken (#578E88 wie Inspira)
                         $bar = sprintf(
                             '<div style="margin-top:6px;background:#e9ecef;height:6px;border-radius:4px;overflow:hidden;">
                                 <div style="width:%1$d%%;height:6px;border-radius:4px;background:#578E88;"></div>
@@ -93,7 +88,7 @@ class CourseSessionTable extends TableAbstract
 
                 FormattedColumn::make('available_seats')
                     ->title(trans('plugins/courses::courses.course-session.available_seats'))
-                    ->getValueUsing(fn (FormattedColumn $column) => $column->getItem()->available_seats ?? 'Unlimited'),
+                    ->getValueUsing(fn (FormattedColumn $column) => $column->getItem()->available_seats ?? 'Unbegrenzt'),
 
                 CreatedAtColumn::make(),
             ])
@@ -127,13 +122,11 @@ class CourseSessionTable extends TableAbstract
                     return false;
                 }
 
-                // ✅ Handle date filters only when relevant
                 if (in_array($key, ['start_date', 'end_date'])) {
                     try {
                         $startOfDay = \Carbon\Carbon::parse($value)->startOfDay();
                         $endOfDay = \Carbon\Carbon::parse($value)->endOfDay();
                     } catch (\Exception $e) {
-                        // If the value is invalid date, ignore filter
                         return false;
                     }
 
@@ -146,7 +139,6 @@ class CourseSessionTable extends TableAbstract
                     }
                 }
 
-                // ✅ Course filter (numeric or string safe)
                 if ($key === 'course_id') {
                     return $query->where('course_id', $value);
                 }
