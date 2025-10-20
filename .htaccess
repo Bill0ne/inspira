@@ -13,7 +13,7 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} (.+)/$
 RewriteRule ^ %1 [L,R=301]
 
-# --- Redirect all other requests into /public ---
+# --- Redirect all other requests into /public _02 test ---
 RewriteCond %{REQUEST_URI} !^public
 RewriteCond %{REQUEST_URI} !^/deploy\.php$
 RewriteRule ^(.*)$ public/$1 [L]
