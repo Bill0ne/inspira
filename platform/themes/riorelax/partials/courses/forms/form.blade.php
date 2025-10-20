@@ -12,7 +12,7 @@
     $startDate = request()->get('start_date');
 @endphp
 
-<form action="{{ route('public.courses') }}" method="GET" class="contact-form mt-30 course-filter-form">
+<form action="{{ route('public.courses') }}" method="GET" class="contact-form course-filter-form">
 
     <div class="contact-field p-relative c-name mb-20">
         <label><i class="fal fa-layer-group"></i> Kategorie </label>
