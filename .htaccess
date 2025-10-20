@@ -1,14 +1,20 @@
-RewriteEngine on
+# ==========================
+# Inspira .htaccess (fixed)
+# ==========================
 
-# Skip deploy.php from being redirected
-RewriteCond %{REQUEST_URI} ^/deploy\.php$
-RewriteRule ^ - [L]
+RewriteEngine On
 
-# Redirect Trailing Slashes If Not A Folder...
+# --- EXCLUDE deploy.php (NO redirect, NO rewrite) ---
+RewriteCond %{THE_REQUEST} \s/deploy\.php[\s?] [NC]
+RewriteRule ^deploy\.php$ - [L]
+
+# --- Remove trailing slashes ---
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} (.+)/$
 RewriteRule ^ %1 [L,R=301]
 
-# If not accessing the public folder, redirect into it Test_nochmal12:30
+# --- Redirect all other requests into /public ---
 RewriteCond %{REQUEST_URI} !^public
+RewriteCond %{REQUEST_URI} !^/deploy\.php$
 RewriteRule ^(.*)$ public/$1 [L]
+
