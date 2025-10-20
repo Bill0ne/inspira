@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'name' => 'الفواتير',
+    'amount' => 'المبلغ',
+    'customer' => 'العميل',
+    'tax' => 'الضريبة',
+    'code' => 'الرمز',
+    'show' => 'الفاتورة :code',
+    'print' => 'طباعة الفاتورة',
+    'download' => 'تنزيل الفاتورة',
+    'heading' => 'الفاتورة',
+    'purchase_at' => 'تاريخ الشراء',
+    'sub_total' => 'المجموع الفرعي',
+    'tax_amount' => 'مبلغ الضريبة',
+    'discount_amount' => 'مبلغ الخصم',
+    'total_amount' => 'المبلغ الإجمالي',
+    'status' => 'الحالة',
+    'account' => 'الحساب',
+    'payment_info' => 'معلومات الدفع',
+    'payment_method' => 'طريقة الدفع',
+    'payment_status' => 'حالة الدفع',
+    'item' => [
+        'name' => 'الاسم',
+        'qty' => 'الكمية',
+        'description' => 'الوصف',
+    ],
+    'statuses' => [
+        'pending' => 'قيد الانتظار',
+        'processing' => 'قيد المعالجة',
+        'completed' => 'مكتمل',
+        'canceled' => 'ملغي',
+    ],
+    'template' => [
+        'name' => 'قالب الفاتورة',
+        'setting_content' => 'المحتوى',
+        'preview' => 'معاينة',
+        'preview_heading' => 'معاينة قالب الفاتورة',
+    ],
+];

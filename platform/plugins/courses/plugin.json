@@ -1,0 +1,11 @@
+{
+    "id": "botble/courses",
+    "name": "Courses",
+    "namespace": "Botble\\Courses\\",
+    "provider": "Botble\\Courses\\Providers\\CourseServiceProvider",
+    "author": "Zohaib Akhtar",
+    "url": "",
+    "version": "1.0.0",
+    "description": "Management Of Courses",
+    "minimum_core_version": "7.5.6"
+}

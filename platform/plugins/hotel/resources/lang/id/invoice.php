@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'name' => 'Faktur',
+    'amount' => 'Jumlah',
+    'customer' => 'Pelanggan',
+    'tax' => 'Pajak',
+    'code' => 'Kode',
+    'show' => 'Faktur :code',
+    'print' => 'Cetak Faktur',
+    'download' => 'Unduh Faktur',
+    'heading' => 'Faktur',
+    'purchase_at' => 'Tanggal pembelian',
+    'sub_total' => 'Subtotal',
+    'tax_amount' => 'Jumlah pajak',
+    'discount_amount' => 'Jumlah diskon',
+    'total_amount' => 'Jumlah total',
+    'status' => 'Status',
+    'account' => 'Akun',
+    'payment_info' => 'Informasi Pembayaran',
+    'payment_method' => 'Metode pembayaran',
+    'payment_status' => 'Status pembayaran',
+    'item' => [
+        'name' => 'Nama',
+        'qty' => 'Jumlah',
+        'description' => 'Deskripsi',
+    ],
+    'statuses' => [
+        'pending' => 'Tertunda',
+        'processing' => 'Diproses',
+        'completed' => 'Selesai',
+        'canceled' => 'Dibatalkan',
+    ],
+    'template' => [
+        'name' => 'Template Faktur',
+        'setting_content' => 'Konten',
+        'preview' => 'Pratinjau',
+        'preview_heading' => 'Pratinjau template faktur',
+    ],
+];

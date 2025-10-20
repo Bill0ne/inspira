@@ -1,0 +1,51 @@
+<?php $attributes ??= new \Illuminate\View\ComponentAttributeBag;
+
+$__newAttributes = [];
+$__propNames = \Illuminate\View\ComponentAttributeBag::extractPropNames(([
+    'tag' => 'a',
+    'action' => false,
+    'active' => false,
+]));
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (in_array($__key, $__propNames)) {
+        $$__key = $$__key ?? $__value;
+    } else {
+        $__newAttributes[$__key] = $__value;
+    }
+}
+
+$attributes = new \Illuminate\View\ComponentAttributeBag($__newAttributes);
+
+unset($__propNames);
+unset($__newAttributes);
+
+foreach (array_filter(([
+    'tag' => 'a',
+    'action' => false,
+    'active' => false,
+]), 'is_string', ARRAY_FILTER_USE_KEY) as $__key => $__value) {
+    $$__key = $$__key ?? $__value;
+}
+
+$__defined_vars = get_defined_vars();
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (array_key_exists($__key, $__defined_vars)) unset($$__key);
+}
+
+unset($__defined_vars, $__key, $__value); ?>
+
+<?php
+    $classes = Arr::toCssClasses([
+        'list-group-item',
+        'list-group-item-action' => $action,
+        'active' => $active,
+    ])
+?>
+
+<<?php echo e($tag); ?> <?php echo e($attributes->class($classes)); ?>>
+    <?php echo e($slot); ?>
+
+</<?php echo e($tag); ?>>
+<?php /**PATH /home/u296731902/domains/inspira-zentrum.de/public_html/platform/core/base/resources/views/components/list-group/item.blade.php ENDPATH**/ ?>

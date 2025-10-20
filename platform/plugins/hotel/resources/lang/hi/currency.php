@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'currencies' => 'मुद्राएँ',
+    'setting_description' => 'वेबसाइट पर उपयोग की जाने वाली मुद्राओं की सूची',
+    'name' => 'नाम',
+    'symbol' => 'प्रतीक',
+    'number_of_decimals' => 'दशमलव स्थानों की संख्या',
+    'exchange_rate' => 'विनिमय दर',
+    'is_prefix_symbol' => 'प्रतीक की स्थिति',
+    'is_default' => 'क्या डिफ़ॉल्ट है?',
+    'remove' => 'हटाएं',
+    'new_currency' => 'नई मुद्रा जोड़ें',
+    'save_settings' => 'सेटिंग्स सहेजें',
+    'before_number' => 'संख्या से पहले',
+    'after_number' => 'संख्या के बाद',
+    'require_at_least_one_currency' => 'सिस्टम को कम से कम एक मुद्रा की आवश्यकता है!',
+    'thousands_separator' => 'हजार विभाजक',
+    'decimal_separator' => 'दशमलव विभाजक',
+    'separator_period' => 'अवधि (.)',
+    'separator_comma' => 'अल्पविराम (,)',
+    'separator_space' => 'स्पेस ( )',
+    'enable_auto_detect_visitor_currency' => 'आगंतुक मुद्रा का स्वचालित पता लगाना सक्षम करें?',
+    'auto_detect_visitor_currency_description' => 'सिस्टम आगंतुक के स्थान के आधार पर उनकी मुद्रा का स्वचालित रूप से पता लगाएगा',
+    'add_space_between_price_and_currency' => 'मूल्य और मुद्रा के बीच एक स्पेस जोड़ें?',
+    'instruction' => 'कृपया यहां मुद्रा कोड की सूची देखें: https://en.wikipedia.org/wiki/ISO_4217',
+    'invalid_currency_name' => 'अमान्य मुद्रा नाम। कृपया यहां मुद्रा कोड की सूची देखें: https://en.wikipedia.org/wiki/ISO_4217',
+];
