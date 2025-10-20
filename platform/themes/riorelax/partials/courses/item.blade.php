@@ -3,10 +3,15 @@
 
     $margin = $margin ?? false;
 
-    // Nächste Session bestimmen
-    $nextSession = $course->isRecurring()
-        ? $course->sessions()->where('start_date', '>=', now())->orderBy('start_date')->first()
-        : $course->sessions()->orderBy('start_date')->first();
+    $now = now();
+
+    // Bevorstehende Sessions bestimmen
+    $upcomingSessionsQuery = $course->sessions()->where('start_date', '>=', $now)->orderBy('start_date');
+    $upcomingSessionsCount = (clone $upcomingSessionsQuery)->count();
+    $nextSession = $upcomingSessionsCount ? (clone $upcomingSessionsQuery)->first() : null;
+
+    // Letzte vergangene Session
+    $lastSession = $course->sessions()->where('start_date', '<', $now)->orderByDesc('start_date')->first();
 
     // Datumsfunktion
     $formatSessionRange = static function (?object $session, string $dayFmt = 'd.m.Y', string $timeFmt = 'H:i'): ?string {
@@ -25,6 +30,33 @@
     };
 
     $dateDisplay = $formatSessionRange($nextSession);
+
+    // Datum-Label bestimmen
+    $dateChipLabel = null;
+    $dateChipClass = 'mtxt';
+    $dateChipTitle = null;
+
+    if ($upcomingSessionsCount > 1) {
+        $dateChipLabel = __('Mehrere Termine');
+        $dateChipTitle = $dateChipLabel;
+    } elseif ($nextSession) {
+        $dateChipLabel = $dateDisplay;
+        $dateChipTitle = $dateDisplay;
+    } elseif ($lastSession) {
+        $recentThreshold = $now->copy()->subDays(10);
+        $lastSessionDate = Carbon::parse($lastSession->start_date);
+
+        if ($lastSessionDate->greaterThanOrEqualTo($recentThreshold)) {
+            $dateChipLabel = __('Leider verpasst');
+            $dateChipClass .= ' missed';
+            $dateChipTitle = $dateChipLabel;
+        }
+    }
+
+    if (is_null($dateChipLabel) && $upcomingSessionsCount === 0 && !$lastSession) {
+        $dateChipLabel = __('Kein Termin verfügbar');
+        $dateChipTitle = $dateChipLabel;
+    }
 
     // ==== Seats/Progress-Logik ====
     $capacity = $nextSession?->available_seats;           // null = unlimited
@@ -60,6 +92,7 @@
   align-items:center !important;gap:7px;font-size:13px;font-weight:500;line-height:16px !important;text-decoration:none !important;
   border:0 !important;box-shadow:none !important;background-image:none !important;position:relative;
 }
+.single-services.course-card .services-content .meta-top .mtxt.missed{ color:#E74C3C !important; }
 .single-services.course-card .services-content .meta-top .mtxt::before,
 .single-services.course-card .services-content .meta-top .mtxt::after{content:none !important;display:none !important;}
 
@@ -133,14 +166,18 @@
 
 
       {{-- Datum --}}
-      <div class="mtxt" title="{{ $dateDisplay ?: __('Kein Termin verfügbar') }}">
-        <i class="fal fa-calendar-alt" aria-hidden="true"></i>
-        {{ $dateDisplay ?: __('Kein Termin verfügbar') }}
-      </div>
+      @if ($dateChipLabel)
+        <div class="{{ $dateChipClass }}" title="{{ $dateChipTitle }}">
+          <i class="fal fa-calendar-alt" aria-hidden="true"></i>
+          {{ $dateChipLabel }}
+        </div>
+      @endif
 
       {{-- Preis --}}
       @if ($course->price)
-        <div class="sep">•</div>
+        @if ($dateChipLabel)
+          <div class="sep">•</div>
+        @endif
         <div class="mtxt">{{ format_price($course->price) }}</div>
       @endif
     </div>
