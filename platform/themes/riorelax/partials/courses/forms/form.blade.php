@@ -14,33 +14,38 @@
 
 <form action="{{ route('public.courses') }}" method="GET" class="contact-form mt-30 course-filter-form">
 
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="contact-field p-relative c-name mb-0">
-                <label><i class="fal fa-chalkboard-teacher"></i> Trainer </label>
-                <select name="instructor_id" class="form-control">
-                    <option value=""> Alle Trainer </option>
-                    @foreach ($instructors as $inst)
-                        <option value="{{ $inst->id }}" @selected($selectedInstructor == $inst->id)>
-                            {{ $inst->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
+    <div class="contact-field p-relative c-name mb-20">
+        <label><i class="fal fa-layer-group"></i> Kategorie </label>
+        <select name="category_id" class="form-control">
+            <option value=""> Alle Kategorien </option>
+            @foreach ($categories as $cat)
+                <option value="{{ $cat->id }}" @selected($selectedCategory == $cat->id)>
+                    {{ $cat->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="contact-field p-relative c-name mb-0">
-                <label><i class="fal fa-calendar-alt"></i> Startdatum ab </label>
-                <input type="date" name="start_date" class="form-control" value="{{ $startDate }}">
-            </div>
-        </div>
+    <div class="contact-field p-relative c-name mb-20">
+        <label><i class="fal fa-chalkboard-teacher"></i> Trainer </label>
+        <select name="instructor_id" class="form-control">
+            <option value=""> Alle Trainer </option>
+            @foreach ($instructors as $inst)
+                <option value="{{ $inst->id }}" @selected($selectedInstructor == $inst->id)>
+                    {{ $inst->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-        <div class="col-12 col-md-6 col-xl-3 d-grid">
-            <div class="slider-btn mt-0">
-                <button type="submit" class="btn ss-btn" data-animation="fadeInRight" data-delay=".8s">
-                    Kurse filtern
-                </button>
-            </div>
-        </div>
+    <div class="contact-field p-relative c-name mb-20">
+        <label><i class="fal fa-calendar-alt"></i> Startdatum ab </label>
+        <input type="date" name="start_date" class="form-control" value="{{ $startDate }}">
+    </div>
+
+    <div class="slider-btn mt-15">
+        <button type="submit" class="btn ss-btn w-100" data-animation="fadeInRight" data-delay=".8s">
+            Kurse filtern
+        </button>
     </div>
 </form>
