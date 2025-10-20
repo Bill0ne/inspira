@@ -55,3 +55,12 @@ storage/framework/laravel-excel/
 .phpactor.json
 
 storage/framework/maintenance.php
+
+/vendor/
+/node_modules/
+/storage/framework/views/
+/storage/framework/cache/
+/storage/logs/
+.env
+
+
