@@ -1693,35 +1693,21 @@ button.remove-coupon-code {
 
         .course-filter-form {
             margin-top: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-
-            @media (min-width: 1200px) {
-                gap: 1.25rem;
-            }
 
             .contact-field {
-                margin-bottom: 0;
-
                 label {
-                    font-size: 0.8125rem;
+                    font-size: 0.875rem;
                     font-weight: 500;
                 }
 
                 .form-control {
-                    font-size: 0.875rem;
+                    font-size: 0.9375rem;
                 }
             }
 
-            .slider-btn {
-                display: flex;
-
-                .btn {
-                    width: 100%;
-                    font-size: 0.875rem;
-                    font-weight: 600;
-                }
+            .ss-btn {
+                font-size: 0.9375rem;
+                font-weight: 600;
             }
         }
     }
@@ -1731,8 +1717,6 @@ button.remove-coupon-code {
 
         .courses-grid {
             --bs-gutter-y: 2rem;
-            margin: 0 auto;
-            max-width: 1140px;
 
             > .col {
                 display: flex;
