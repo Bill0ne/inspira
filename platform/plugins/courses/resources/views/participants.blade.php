@@ -13,10 +13,28 @@
     @forelse ($bookings as $index => $booking)
         <tr>
             <td>{{ $index + 1 }}</td>
-            <td>{{ $booking->customer->name ?? 'N/A' }}</td>
-            <td>{{ $booking->customer->email ?? 'N/A' }}</td>
-            <td>{{ $booking->customer->phone ?? 'N/A' }}</td>
-            <td>{!!$booking->payment?->status->toHtml() !!}</td>
+            @if ($booking->customer && $booking->customer->id)
+                <td>{{ $booking->customer->first_name }} {{ $booking->customer->last_name }}</td>
+            @elseif ($booking->address)
+                <td>{{ $booking->address->first_name }} {{ $booking->address->last_name }}</td>
+            @else
+                <td>N/A</td>
+            @endif
+            @if ($booking->customer && $booking->customer->email)
+                <td>{{ $booking->customer->email }}</td>
+            @elseif ($booking->address && $booking->address->email)
+                <td>{{ $booking->address->email }}</td>
+            @else
+                <td>N/A</td>
+            @endif
+            @if ($booking->customer && $booking->customer->phone)
+                <td>{{ $booking->customer->phone }}</td>
+            @elseif ($booking->address && $booking->address->phone)
+                <td>{{ $booking->address->phone }}</td>
+            @else
+                <td>N/A</td>
+            @endif
+            <td>{!! $booking->payment?->status->toHtml() ?? 'N/A' !!}</td>
             <td>
                 <a href="{{ route('course-booking.edit', $booking->id) }}" class="btn btn-sm btn-primary">
                     Sicht

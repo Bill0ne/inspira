@@ -122,21 +122,17 @@ class CourseTable extends TableAbstract
                     return false;
                 }
 
-                // Normalize to date range ignoring time
                 $startOfDay = \Carbon\Carbon::parse($value)->startOfDay();
                 $endOfDay = \Carbon\Carbon::parse($value)->endOfDay();
 
                 if ($key === 'start_date') {
-                    // Filter all courses where start_date falls within that day
                     return $query->whereBetween('start_date', [$startOfDay, $endOfDay]);
                 }
 
                 if ($key === 'end_date') {
-                    // Filter all courses where end_date falls within that day
                     return $query->whereBetween('end_date', [$startOfDay, $endOfDay]);
                 }
 
-                // If both filters are applied, Laravel will combine them automatically
                 return false;
             });
     }

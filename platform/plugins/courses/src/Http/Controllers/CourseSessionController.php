@@ -23,7 +23,7 @@ class CourseSessionController extends BaseController
 
     public function getSessionBookings($sessionId)
     {
-        $session = \Botble\Courses\Models\CourseSession::with(['bookings.customer', 'bookings.payment'])->findOrFail($sessionId);
+        $session = \Botble\Courses\Models\CourseSession::query()->with(['bookings.customer', 'bookings.address', 'bookings.payment'])->findOrFail($sessionId);
 
         return view('plugins/courses::participants', [
             'session' => $session,
