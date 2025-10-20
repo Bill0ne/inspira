@@ -4,6 +4,8 @@ namespace Botble\Courses\Services;
 
 use Botble\Courses\DataTransferObjects\CourseSearchParams;
 use Botble\Courses\Models\Course;
+use Botble\Courses\Models\CourseSession;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -38,6 +40,13 @@ class GetCourseService
             $query->where('is_featured', $params->isFeatured);
         }
 
+        $query->addSelect([
+            'next_session_start_date' => CourseSession::query()
+                ->selectRaw('MIN(start_date)')
+                ->whereColumn('course_sessions.course_id', 'courses.id')
+                ->where('start_date', '>=', now()),
+        ]);
+
         if ($params->sortBy) {
             switch ($params->sortBy) {
                 case 'price':
@@ -45,11 +54,14 @@ class GetCourseService
                 case 'created_at':
                     $query->orderBy($params->sortBy, $params->sortDirection);
                     break;
+                case 'upcoming_session':
+                    $this->orderByUpcomingSession($query, $params->sortDirection);
+                    break;
                 default:
-                    $query->orderBy('created_at', 'desc');
+                    $this->orderByUpcomingSession($query);
             }
         } else {
-            $query->orderBy('created_at', 'desc');
+            $this->orderByUpcomingSession($query);
         }
 
         if (! empty($params->with)) {
@@ -80,5 +92,13 @@ class GetCourseService
         }
 
         return $query->limit($limit)->get();
+    }
+
+    protected function orderByUpcomingSession(Builder $query, string $direction = 'asc'): void
+    {
+        $query
+            ->orderByRaw('CASE WHEN next_session_start_date IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('next_session_start_date', $direction)
+            ->orderBy('created_at', 'desc');
     }
 }
