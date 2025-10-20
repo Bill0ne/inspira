@@ -12,9 +12,8 @@
     $startDate = request()->get('start_date');
 @endphp
 
-<form action="{{ route('public.courses') }}" method="GET" class="contact-form mt-30 course-filter-form">
-
-    <div class="contact-field p-relative c-name mb-20">
+<form action="{{ route('public.courses') }}" method="GET" class="contact-form course-filter-form">
+    <div class="contact-field p-relative c-name">
         <label><i class="fal fa-layer-group"></i> Kategorie </label>
         <select name="category_id" class="form-control">
             <option value=""> Alle Kategorien </option>
@@ -26,7 +25,7 @@
         </select>
     </div>
 
-    <div class="contact-field p-relative c-name mb-20">
+    <div class="contact-field p-relative c-name">
         <label><i class="fal fa-chalkboard-teacher"></i> Trainer </label>
         <select name="instructor_id" class="form-control">
             <option value=""> Alle Trainer </option>
@@ -38,13 +37,13 @@
         </select>
     </div>
 
-    <div class="contact-field p-relative c-name mb-20">
+    <div class="contact-field p-relative c-name">
         <label><i class="fal fa-calendar-alt"></i> Startdatum ab </label>
         <input type="date" name="start_date" class="form-control" value="{{ $startDate }}">
     </div>
 
-    <div class="slider-btn mt-15">
-        <button type="submit" class="btn ss-btn w-100" data-animation="fadeInRight" data-delay=".8s">
+    <div class="slider-btn">
+        <button type="submit" class="btn ss-btn" data-animation="fadeInRight" data-delay=".8s">
             Kurse filtern
         </button>
     </div>
