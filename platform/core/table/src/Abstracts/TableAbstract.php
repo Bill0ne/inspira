@@ -73,7 +73,7 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
 
     protected int $pageLength = 10;
 
-    protected ?string $view = null;
+    protected $view = 'core/table::table';
 
     protected array $options = [];
 
