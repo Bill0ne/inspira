@@ -111,14 +111,22 @@ class CourseBookingTable extends TableAbstract
         } else {
             $data = $data
                 ->editColumn('payment_status', function (CourseBooking $item) {
-                    return $item->payment && $item->payment->status
-                        ? BaseHelper::clean($item->payment->status->toHtml())
-                        : '&mdash;';
+                    $status = $item->payment ? $item->payment->status : null;
+
+                    if ($status && $status->getValue()) {
+                        return BaseHelper::clean($status->toHtml());
+                    }
+
+                    return '&mdash;';
                 })
                 ->editColumn('payment_id', function (CourseBooking $item) {
-                    return $item->payment && $item->payment->payment_channel
-                        ? BaseHelper::clean($item->payment->payment_channel->label())
-                        : '&mdash;';
+                    $paymentMethod = $item->payment ? $item->payment->payment_channel : null;
+
+                    if ($paymentMethod && $paymentMethod->getValue()) {
+                        return BaseHelper::clean($paymentMethod->label());
+                    }
+
+                    return '&mdash;';
                 });
         }
 
