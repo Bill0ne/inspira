@@ -1,15 +1,22 @@
+# === Inspira LIVE Environment (.htaccess) ===
 RewriteEngine On
 
-# Allow direct access to deploy scripts
-RewriteCond %{REQUEST_URI} ^/deploy-stage\.php$ [OR]
-RewriteCond %{REQUEST_URI} ^/deploy\.php$
+# --- Allow direct access to deploy script and logs ---
+RewriteCond %{REQUEST_URI} ^/deploy\.php$ [OR]
+RewriteCond %{REQUEST_URI} ^/logs/
 RewriteRule ^ - [L]
 
-# Redirect Trailing Slashes If Not A Folder...
+# --- Redirect Trailing Slashes If Not A Folder ---
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} (.+)/$
 RewriteRule ^ %1 [L,R=301]
 
-# Redirect all other requests to /public
+# --- All other requests go to /public ---
 RewriteCond %{REQUEST_URI} !^/public
 RewriteRule ^(.*)$ public/$1 [L]
+
+# --- Deny sensitive files ---
+<FilesMatch "(\.env|composer\.json|composer\.lock|\.gitignore|\.git)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
