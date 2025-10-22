@@ -1,0 +1,56 @@
+<?php
+
+return [
+    'manage' => 'Manage Courses',
+    'course' => [
+        'name'   => 'Courses',
+        'create' => 'New course',
+        'price'  => 'Price',
+        'duration' => 'Duration',
+        'start_date' => 'Start Date',
+        'end_date' => 'End Date',
+        'booking' => 'Course Booking',
+        'booking_information' => 'Course Booking Information',
+        'review' => 'Reviews',
+        'unlimited_seats' => 'Unlimited Seats ?',
+        'number_of_seats' => 'Number of Seats',
+        'is_recurring' => 'Recurring Course?',
+        'recurring_type' => 'Recurring Type',
+        'recurring_interval' => 'Recurring Interval',
+        'recurring_until' => 'Recurring Until',
+    ],
+    'instructor' => [
+        'name'   => 'Instructors',
+        'create' => 'New instructor',
+        'bio'    => 'Bio',
+        'phone'  => 'Phone',
+        'instructor' => 'Instructor',
+    ],
+    'course-category' => [
+        'name'   => 'Categories',
+        'create' => 'New category',
+        'category' => 'Category',
+    ],
+    'course-session' => [
+        'name'   => 'Course Sessions',
+        'seats' => 'Seats Detail',
+        'start_date' => 'Start Date',
+        'end_date' => 'End Date',
+        'available_seats' => 'Available Seats',
+    ],
+
+    'settings' => [
+        'email' => [
+            'title' => 'Course Booking',
+            'description' => 'Course booking email configuration',
+            'templates' => [
+                'notice_title' => 'Send notice to administrator',
+                'notice_description' => 'Email template to send notice to administrator when system get new course booking',
+                'booking_success_title' => 'Send course email to guest',
+                'booking_success_description' => 'Email template to send email to guest to confirm course booking',
+                'booking_status_changed_title' => 'Send email to customer when course booking status changed',
+                'booking_status_changed_description' => 'Email template to send email to customer when course booking status changed',
+            ],
+        ],
+    ],
+];

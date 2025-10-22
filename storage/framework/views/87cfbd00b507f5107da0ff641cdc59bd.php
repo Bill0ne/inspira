@@ -1,0 +1,1 @@
+<i class="info-circle me-1 me-1"></i><?php /**PATH /home/u296731902/domains/inspira-zentrum.de/public_html/storage/framework/views/b1bace26eeb0d1c5849e9d63ccb19636.blade.php ENDPATH**/ ?>

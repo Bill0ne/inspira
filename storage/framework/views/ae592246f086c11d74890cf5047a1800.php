@@ -1,0 +1,1 @@
+<i class="fa fa-layer-group"></i><?php /**PATH /home/u296731902/domains/inspira-zentrum.de/public_html/storage/framework/views/471ce137bbbb4e457160fb8e938ad378.blade.php ENDPATH**/ ?>

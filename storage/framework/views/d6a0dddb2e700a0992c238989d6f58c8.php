@@ -1,0 +1,1 @@
+<i class="fa fa-list"></i><?php /**PATH /home/u296731902/domains/inspira-zentrum.de/public_html/storage/framework/views/f916d324dc9ddfbce0c7de1a2903a54b.blade.php ENDPATH**/ ?>

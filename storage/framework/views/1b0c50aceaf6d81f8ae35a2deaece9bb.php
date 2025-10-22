@@ -1,0 +1,1 @@
+<i class="fa fa-sliders-h"></i><?php /**PATH /home/u296731902/domains/inspira-zentrum.de/public_html/storage/framework/views/f22a8bdc1b873a60554a7cb4cb6b5ed3.blade.php ENDPATH**/ ?>

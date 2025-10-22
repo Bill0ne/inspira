@@ -1,0 +1,2 @@
+==> Hourly Pricing Installer (sed/awk only) startet…
+Migration existiert bereits: platform/plugins/hotel/database/migrations/2025_09_24_000001_add_start_end_at_to_ht_booking_rooms.php

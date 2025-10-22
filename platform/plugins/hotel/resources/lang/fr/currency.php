@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'currencies' => 'Devises',
+    'setting_description' => 'Liste des devises utilisées sur le site',
+    'name' => 'Nom',
+    'symbol' => 'Symbole',
+    'number_of_decimals' => 'Nombre de décimales',
+    'exchange_rate' => 'Taux de change',
+    'is_prefix_symbol' => 'Position du symbole',
+    'is_default' => 'Est par défaut?',
+    'remove' => 'Supprimer',
+    'new_currency' => 'Ajouter une nouvelle devise',
+    'save_settings' => 'Enregistrer les paramètres',
+    'before_number' => 'Avant le nombre',
+    'after_number' => 'Après le nombre',
+    'require_at_least_one_currency' => 'Le système nécessite au moins une devise!',
+    'thousands_separator' => 'Séparateur de milliers',
+    'decimal_separator' => 'Séparateur décimal',
+    'separator_period' => 'Point (.)',
+    'separator_comma' => 'Virgule (,)',
+    'separator_space' => 'Espace ( )',
+    'enable_auto_detect_visitor_currency' => 'Activer la détection automatique de la devise du visiteur?',
+    'auto_detect_visitor_currency_description' => 'Le système détectera automatiquement la devise du visiteur en fonction de sa localisation',
+    'add_space_between_price_and_currency' => 'Ajouter un espace entre le prix et la devise?',
+    'instruction' => 'Veuillez consulter la liste des codes de devise ici: https://en.wikipedia.org/wiki/ISO_4217',
+    'invalid_currency_name' => 'Nom de devise invalide. Veuillez consulter la liste des codes de devise ici: https://en.wikipedia.org/wiki/ISO_4217',
+];

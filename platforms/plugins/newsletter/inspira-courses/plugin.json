@@ -1,0 +1,8 @@
+{
+  "name": "Inspira Courses",
+  "namespace": "Botble\\InspiraCourses\\",
+  "provider": "Botble\\InspiraCourses\\Providers\\InspiraCoursesServiceProvider",
+  "author": "Inspira",
+  "version": "1.0.0",
+  "description": "Inspira Courses \u2013 Offline course tickets with admin CRUD and Botble Payment integration."
+}

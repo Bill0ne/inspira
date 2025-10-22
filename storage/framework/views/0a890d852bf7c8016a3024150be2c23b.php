@@ -1,0 +1,1 @@
+<i class="fa fa-user-tag"></i><?php /**PATH /home/u296731902/domains/inspira-zentrum.de/public_html/storage/framework/views/ca4ca5addaceb4bada1648fd2af0ffc8.blade.php ENDPATH**/ ?>

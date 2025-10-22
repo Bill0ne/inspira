@@ -1,0 +1,4 @@
+==> Hourly Pricing Installer startet…
+Backup: platform/plugins/hotel/src/Models/BookingRoom.php
+Backup: platform/plugins/hotel/src/Enums/ServicePriceTypeEnum.php
+Backup: platform/plugins/hotel/src/Models/Room.php

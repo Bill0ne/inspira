@@ -1,0 +1,4 @@
+<svg class="icon icon-sm mb-0 me-1 svg-icon-ti-ti-circle-filled" style="color: #80bc00" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M7 3.34a10 10 0 1 1 -4.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 4.995 -8.336z" stroke-width="0" fill="currentColor" />
+</svg><?php /**PATH /home/u296731902/domains/inspira-zentrum.de/public_html/storage/framework/views/6ce6fdb882c2e84f5f288062ef856ff5.blade.php ENDPATH**/ ?>
