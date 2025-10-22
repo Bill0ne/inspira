@@ -1,2 +1,0 @@
-<?php echo $__env->make(Theme::getThemeNamespace() . '::views.templates.posts', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-<?php /**PATH /home/u296731902/domains/inspira-zentrum.de/public_html/platform/themes/riorelax/views/loop.blade.php ENDPATH**/ ?>
