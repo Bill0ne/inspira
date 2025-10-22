@@ -1,21 +1,11 @@
-# === Inspira LIVE Environment (.htaccess) ===
-RewriteEngine On
-
-# --- Allow direct access to deploy script ---
-RewriteCond %{REQUEST_URI} ^/deploy\.php$
-RewriteRule ^ - [L]
-
-# --- Redirect Trailing Slashes If Not A Folder ---
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_URI} (.+)/$
-RewriteRule ^ %1 [L,R=301]
-
-# --- All other requests go to /public ---
-RewriteCond %{REQUEST_URI} !^/public
-RewriteRule ^(.*)$ public/$1 [L]
-
 # --- Protect sensitive files ---
-<FilesMatch "(\.env|composer\.json|composer\.lock|\.gitignore|\.git|deploy\.php)">
+<FilesMatch "(\.env|composer\.json|composer\.lock|\.gitignore|\.git)">
     Order allow,deny
     Deny from all
 </FilesMatch>
+
+# --- Allow deploy.php for GitHub Webhooks ---
+<Files "deploy.php">
+    Order allow,deny
+    Allow from all
+</Files>
