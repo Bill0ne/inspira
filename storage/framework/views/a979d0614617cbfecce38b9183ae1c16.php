@@ -118,8 +118,10 @@
 <div class="course-detail-area pt-60 pb-60">
   <div class="container">
     <div class="row">
+      
       <div class="col-lg-8 col-md-12">
 
+        
         <?php if($course->thumbnail): ?>
           <div class="img-wrap">
             <img src="<?php echo e(RvMedia::getImageUrl($course->thumbnail, 'large')); ?>"
@@ -127,9 +129,16 @@
           </div>
         <?php endif; ?>
 
+        
         <div class="course-card-detail shadow-sm mb-5 position-relative">
+
+          
           <h2 class="mb-3"><?php echo e($course->name); ?></h2>
+
+          
           <div class="course-detail-chips">
+
+            
             <?php if($showSeatChip && !is_null($capacityNext)): ?>
               <div class="chip <?php echo e($seatChipClass); ?>" title="<?php echo e($percentNext); ?>%">
                 <i class="fal fa-user" aria-hidden="true"></i>
@@ -137,6 +146,8 @@
 
               </div>
             <?php endif; ?>
+
+            
             <?php if($dateDisplayForNext): ?>
               <div class="chip" title="<?php echo e($dateDisplayForNext); ?>">
                 <i class="fal fa-calendar-alt" aria-hidden="true"></i>
@@ -158,48 +169,20 @@
 
               </div>
             <?php endif; ?>
-                <?php if($course->price): ?>
-                    <?php
-                        $basePrice = $course->price;
-                        $dynamicPrice = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-                            ->calculatePrice(
-                                $basePrice,
-                                \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                                $course->id,
-                                auth('customer')->user() ?? null
-                            );
 
-                        $priceDifference = $basePrice - $dynamicPrice;
-                    ?>
+            <?php if($course->price): ?>
+              <div class="chip" title="<?php echo e(format_price($course->price)); ?>">
+                <?php echo e(format_price($course->price)); ?>
 
-                    <div class="chip price-chip d-flex align-items-center">
-                        <?php if($dynamicPrice < $basePrice): ?>
-                            <span class="old-price text-decoration-line-through text-muted me-2">
-                <?php echo e(format_price($basePrice)); ?>
-
-            </span>
-                            <span class="new-price text-success fw-bold">
-                <?php echo e(format_price($dynamicPrice)); ?>
-
-            </span>
-                        <?php else: ?>
-                            <span class="price fw-bold"><?php echo e(format_price($dynamicPrice)); ?></span>
-                        <?php endif; ?>
-                    </div>
-
-                    <?php if($dynamicPrice < $basePrice): ?>
-                        <div class="chip discount-info text-success small mt-1">
-                            <i class="fas fa-tag me-1"></i>
-                            <?php echo e(__('You save :amount', ['amount' => format_price(abs($priceDifference))])); ?>
-
-                        </div>
-                    <?php endif; ?>
-                <?php endif; ?>
-
+              </div>
+            <?php endif; ?>
           </div>
+
+          
           <?php if($course->sessions->count() > 0): ?>
             <?php if($course->isRecurring()): ?>
               <?php
+                  // Button disabled, wenn ALLE Sessions ausgebucht sind
                   $disableRecurringCta = $allSoldOut;
               ?>
               <div class="course-detail-form">
@@ -223,6 +206,8 @@
                       </option>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                   </select>
+
+                  
                   <button type="submit"
                           class="btn btn-primary btn-lg course-detail-cta <?php echo e($disableRecurringCta ? 'soldout' : ''); ?>"
                           aria-disabled="<?php echo e($disableRecurringCta ? 'true' : 'false'); ?>">
@@ -237,9 +222,13 @@
                 $singleLabel = $first ? $formatRange24h($first->start_date, $first->end_date) : null;
                 $disableSingleCta = $isSingleSoldOut;
               ?>
+
+              
               <?php if($singleLabel): ?>
                 <div class="mb-2"><strong><?php echo e(__('Termin')); ?>:</strong> <?php echo e($singleLabel); ?></div>
               <?php endif; ?>
+
+              
               <form action="<?php echo e(route('public.course.booking')); ?>" method="POST" class="mb-3">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="course_id" value="<?php echo e($course->id); ?>">
@@ -256,6 +245,8 @@
               </form>
             <?php endif; ?>
           <?php endif; ?>
+
+          
           <div class="course-description">
             <?php echo BaseHelper::clean($course->description); ?>
 
@@ -266,6 +257,8 @@
           <?php echo $__env->make(Theme::getThemeNamespace('views.courses.partials.reviews'), ['model' => $course], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         <?php endif; ?>
       </div>
+
+      
       <div class="col-lg-4 col-md-12">
         <?php if($course->instructor): ?>
           <div class="instructor-box shadow-sm p-4 mb-5" style="border-radius:10px; background:#fff;">

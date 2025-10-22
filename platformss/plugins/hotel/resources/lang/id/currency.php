@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'currencies' => 'Mata Uang',
+    'setting_description' => 'Daftar mata uang yang digunakan di situs web',
+    'name' => 'Nama',
+    'symbol' => 'Simbol',
+    'number_of_decimals' => 'Jumlah desimal',
+    'exchange_rate' => 'Nilai tukar',
+    'is_prefix_symbol' => 'Posisi simbol',
+    'is_default' => 'Apakah default?',
+    'remove' => 'Hapus',
+    'new_currency' => 'Tambahkan mata uang baru',
+    'save_settings' => 'Simpan pengaturan',
+    'before_number' => 'Sebelum angka',
+    'after_number' => 'Setelah angka',
+    'require_at_least_one_currency' => 'Sistem membutuhkan setidaknya satu mata uang!',
+    'thousands_separator' => 'Pemisah ribuan',
+    'decimal_separator' => 'Pemisah desimal',
+    'separator_period' => 'Titik (.)',
+    'separator_comma' => 'Koma (,)',
+    'separator_space' => 'Spasi ( )',
+    'enable_auto_detect_visitor_currency' => 'Aktifkan deteksi otomatis mata uang pengunjung?',
+    'auto_detect_visitor_currency_description' => 'Sistem akan secara otomatis mendeteksi mata uang pengunjung berdasarkan lokasi mereka',
+    'add_space_between_price_and_currency' => 'Tambahkan spasi antara harga dan mata uang?',
+    'instruction' => 'Silakan periksa daftar kode mata uang di sini: https://en.wikipedia.org/wiki/ISO_4217',
+    'invalid_currency_name' => 'Nama mata uang tidak valid. Silakan periksa daftar kode mata uang di sini: https://en.wikipedia.org/wiki/ISO_4217',
+];

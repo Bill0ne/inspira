@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'currencies' => 'মুদ্রা',
+    'setting_description' => 'ওয়েবসাইটে ব্যবহৃত মুদ্রার তালিকা',
+    'name' => 'নাম',
+    'symbol' => 'প্রতীক',
+    'number_of_decimals' => 'দশমিক সংখ্যা',
+    'exchange_rate' => 'বিনিময় হার',
+    'is_prefix_symbol' => 'প্রতীকের অবস্থান',
+    'is_default' => 'ডিফল্ট কি?',
+    'remove' => 'অপসারণ',
+    'new_currency' => 'নতুন মুদ্রা যোগ করুন',
+    'save_settings' => 'সেটিংস সংরক্ষণ করুন',
+    'before_number' => 'সংখ্যার আগে',
+    'after_number' => 'সংখ্যার পরে',
+    'require_at_least_one_currency' => 'সিস্টেমের অন্তত একটি মুদ্রা প্রয়োজন!',
+    'thousands_separator' => 'হাজার বিভাজক',
+    'decimal_separator' => 'দশমিক বিভাজক',
+    'separator_period' => 'পিরিয়ড (.)',
+    'separator_comma' => 'কমা (,)',
+    'separator_space' => 'স্পেস ( )',
+    'enable_auto_detect_visitor_currency' => 'দর্শকের মুদ্রা স্বয়ংক্রিয়ভাবে সনাক্ত করা সক্ষম করবেন?',
+    'auto_detect_visitor_currency_description' => 'সিস্টেম দর্শকের অবস্থানের উপর ভিত্তি করে তাদের মুদ্রা স্বয়ংক্রিয়ভাবে সনাক্ত করবে',
+    'add_space_between_price_and_currency' => 'মূল্য এবং মুদ্রার মধ্যে একটি স্পেস যোগ করবেন?',
+    'instruction' => 'অনুগ্রহ করে এখানে মুদ্রা কোডের তালিকা দেখুন: https://en.wikipedia.org/wiki/ISO_4217',
+    'invalid_currency_name' => 'অবৈধ মুদ্রার নাম। অনুগ্রহ করে এখানে মুদ্রা কোডের তালিকা দেখুন: https://en.wikipedia.org/wiki/ISO_4217',
+];

@@ -43,29 +43,66 @@ class PublicController extends Controller
     }
 
     public function getCourses(Request $request, BaseHttpResponse $response)
-    {
-        SeoHelper::setTitle(__('Courses'));
+{
+    SeoHelper::setTitle(__('Courses'));
+    Theme::breadcrumb()->add(__('Courses'), route('public.courses'));
 
-        Theme::breadcrumb()->add(__('Courses'), route('public.courses'));
+    // sort param: name_asc | price_asc | price_desc | date_asc | date_desc
+    $sort = $request->query('sort');
 
-        if ($request->ajax() && $request->wantsJson()) {
+    $q = \Botble\Courses\Models\Course::query()
+        ->with([
+            'category',
+            // wir holen die Sessions (nur zukünftig) gleich sortiert
+            'sessions' => function ($s) {
+                $s->where('start_date', '>=', now())->orderBy('start_date', 'asc');
+            },
+        ])
+        ->wherePublished();
 
-            $params = CourseSearchParams::fromRequest($request->input());
-            $courses = $this->getCourseService->getCourses($params);
-
-            $data = '';
-            foreach ($courses as $course) {
-                $data .= view(
-                    Theme::getThemeNamespace('views.courses.includes.course-item'),
-                    compact('course')
-                )->render();
-            }
-
-            return $response->setData($data);
-        }
-
-        return Theme::scope('courses.courses')->render();
+    switch ($sort) {
+        case 'name_asc':
+            $q->orderBy('name', 'asc');
+            break;
+        case 'price_asc':
+            $q->orderBy('price', 'asc');
+            break;
+        case 'price_desc':
+            $q->orderBy('price', 'desc');
+            break;
+        case 'date_asc':
+            $q->leftJoin('course_sessions', 'courses.id', '=', 'course_sessions.course_id')
+              ->select('courses.*')
+              ->orderBy('course_sessions.start_date', 'asc');
+            break;
+        case 'date_desc':
+            $q->leftJoin('course_sessions', 'courses.id', '=', 'course_sessions.course_id')
+              ->select('courses.*')
+              ->orderBy('course_sessions.start_date', 'desc');
+            break;
+        default:
+            // Standard: neueste Kurse
+            $q->latest('courses.created_at');
+            break;
     }
+
+    $courses = $q->paginate(12)->withQueryString();
+
+    // AJAX unterstützt (dein Endlos-Scroll o.ä.)
+    if ($request->ajax() && $request->wantsJson()) {
+        $html = '';
+        foreach ($courses as $course) {
+            $html .= view(Theme::getThemeNamespace('views.courses.includes.course-item'), compact('course'))->render();
+        }
+        return $response->setData($html);
+    }
+
+    return Theme::scope('courses.courses', [
+        'courses' => $courses,
+        'sort'    => $sort,
+    ])->render();
+}
+
 
     public function getCourse(string $key)
     {
@@ -318,13 +355,6 @@ class PublicController extends Controller
             }
 
             $booking->save();
-
-            if ($couponCode) {
-                $coupon = \Botble\Hotel\Models\Coupon::where('code', $couponCode)->first();
-                if ($coupon) {
-                    $coupon->increment('total_used', 1);
-                }
-            }
 
             $bookingAddress = new \Botble\Courses\Models\CourseBookingAddress();
             $bookingAddress->fill($request->only([

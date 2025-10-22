@@ -1,4 +1,4 @@
-<div class="repeater-item-group row">
+<div class="repeater-item-group">
     <?php echo $group; ?>
 
 </div>

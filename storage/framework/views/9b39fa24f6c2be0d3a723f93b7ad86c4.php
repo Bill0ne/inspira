@@ -30,7 +30,7 @@ foreach ($attributes->all() as $__key => $__value) {
     if (array_key_exists($__key, $__defined_vars)) unset($$__key);
 }
 
-unset($__defined_vars, $__key, $__value); ?>
+unset($__defined_vars); ?>
 
 <span <?php echo e($attributes->merge(['class' => 'badge badge-sm bg-primary text-primary-fg badge-pill menu-item-count ' . $class])); ?> data-url="<?php echo e(route('menu-items-count')); ?>" style="display: none"></span>
 <?php /**PATH /home/u296731902/domains/inspira-zentrum.de/public_html/platform/core/base/resources/views/components/navbar/badge-count.blade.php ENDPATH**/ ?>

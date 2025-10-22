@@ -26,6 +26,11 @@
 
     $dateDisplay = $formatSessionRange($nextSession);
 
+    // Anzahl kommender Sessions (für "X Termine verfügbar")
+    $upcomingCount = $course->sessions()
+        ->where('start_date', '>=', now())
+        ->count();
+
     // ==== Seats/Progress-Logik ====
     $capacity = $nextSession?->available_seats;           // null = unlimited
     $booked   = $nextSession ? (int) $nextSession->bookings()->count() : 0;
@@ -112,9 +117,9 @@
 
     
     <h4><a href="<?php echo e($course->url); ?>"><?php echo e($course->name); ?></a></h4>
-	 
-	  <div class="meta-top">
-	 
+
+    <div class="meta-top">
+      
       <?php if($showSeatChip): ?>
         <div class="mtxt <?php echo e($seatChipClass); ?>" title="<?php echo e($percent); ?>%">
           <i class="fal fa-user" aria-hidden="true"></i>
@@ -122,7 +127,8 @@
 
         </div>
       <?php endif; ?>
-     </div>
+    </div>
+
     <?php if($description = $course->description): ?>
       <p class="room-item-custom-truncate" title="<?php echo e($description); ?>">
         <?php echo BaseHelper::clean(Str::limit($description, 120)); ?>
@@ -133,11 +139,13 @@
     
     <div class="meta-top">
 
-
       
-      <div class="mtxt" title="<?php echo e($dateDisplay ?: __('Kein Termin verfügbar')); ?>">
+      <div class="mtxt"
+           title="<?php echo e($upcomingCount >= 2 ? ($upcomingCount . ' ' . __('Termine verfügbar')) : ($dateDisplay ?: __('Kein Termin verfügbar'))); ?>">
         <i class="fal fa-calendar-alt" aria-hidden="true"></i>
-        <?php echo e($dateDisplay ?: __('Kein Termin verfügbar')); ?>
+        <?php echo e($upcomingCount >= 2
+            ? ($upcomingCount . ' ' . __('Termine verfügbar'))
+            : ($dateDisplay ?: __('Kein Termin verfügbar'))); ?>
 
       </div>
 
@@ -160,14 +168,6 @@
 
         </a>
       </li></ul>
-    </div>
-
-    
-    <div class="card-actions">
-      <a class="more-link" href="<?php echo e($course->url); ?>" aria-label="Mehr Infos zu <?php echo e($course->name); ?>">
-        <?php echo e(__('Mehr Infos')); ?>
-
-      </a>
     </div>
 
   </div>

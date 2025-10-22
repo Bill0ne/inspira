@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'name' => 'Factures',
+    'amount' => 'Montant',
+    'customer' => 'Client',
+    'tax' => 'Taxe',
+    'code' => 'Code',
+    'show' => 'Facture :code',
+    'print' => 'Imprimer la facture',
+    'download' => 'Télécharger la facture',
+    'heading' => 'Facture',
+    'purchase_at' => 'Acheté le',
+    'sub_total' => 'Sous-total',
+    'tax_amount' => 'Montant de la taxe',
+    'discount_amount' => 'Montant de la remise',
+    'total_amount' => 'Montant total',
+    'status' => 'Statut',
+    'account' => 'Compte',
+    'payment_info' => 'Informations de paiement',
+    'payment_method' => 'Méthode de paiement',
+    'payment_status' => 'Statut du paiement',
+    'item' => [
+        'name' => 'Nom',
+        'qty' => 'Quantité',
+        'description' => 'Description',
+    ],
+    'statuses' => [
+        'pending' => 'En attente',
+        'processing' => 'En cours de traitement',
+        'completed' => 'Terminé',
+        'canceled' => 'Annulé',
+    ],
+    'template' => [
+        'name' => 'Modèle de facture',
+        'setting_content' => 'Contenu',
+        'preview' => 'Aperçu',
+        'preview_heading' => 'Aperçu du modèle de facture',
+    ],
+];

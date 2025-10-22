@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'name' => 'চালান',
+    'amount' => 'পরিমাণ',
+    'customer' => 'গ্রাহক',
+    'tax' => 'কর',
+    'code' => 'কোড',
+    'show' => 'চালান :code',
+    'print' => 'চালান প্রিন্ট করুন',
+    'download' => 'চালান ডাউনলোড করুন',
+    'heading' => 'চালান',
+    'purchase_at' => 'ক্রয়ের তারিখ',
+    'sub_total' => 'সাব টোটাল',
+    'tax_amount' => 'করের পরিমাণ',
+    'discount_amount' => 'ছাড়ের পরিমাণ',
+    'total_amount' => 'মোট পরিমাণ',
+    'status' => 'স্ট্যাটাস',
+    'account' => 'অ্যাকাউন্ট',
+    'payment_info' => 'পেমেন্ট তথ্য',
+    'payment_method' => 'পেমেন্ট পদ্ধতি',
+    'payment_status' => 'পেমেন্ট স্ট্যাটাস',
+    'item' => [
+        'name' => 'নাম',
+        'qty' => 'পরিমাণ',
+        'description' => 'বিবরণ',
+    ],
+    'statuses' => [
+        'pending' => 'অপেক্ষারত',
+        'processing' => 'প্রক্রিয়াধীন',
+        'completed' => 'সম্পন্ন',
+        'canceled' => 'বাতিল',
+    ],
+    'template' => [
+        'name' => 'চালান টেমপ্লেট',
+        'setting_content' => 'কন্টেন্ট',
+        'preview' => 'প্রিভিউ',
+        'preview_heading' => 'চালান টেমপ্লেট প্রিভিউ',
+    ],
+];

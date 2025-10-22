@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'name' => 'Faturalar',
+    'amount' => 'Tutar',
+    'customer' => 'Müşteri',
+    'tax' => 'Vergi',
+    'code' => 'Kod',
+    'show' => 'Fatura :code',
+    'print' => 'Faturayı Yazdır',
+    'download' => 'Faturayı İndir',
+    'heading' => 'Fatura',
+    'purchase_at' => 'Satın alma tarihi',
+    'sub_total' => 'Ara toplam',
+    'tax_amount' => 'Vergi tutarı',
+    'discount_amount' => 'İndirim tutarı',
+    'total_amount' => 'Toplam tutar',
+    'status' => 'Durum',
+    'account' => 'Hesap',
+    'payment_info' => 'Ödeme Bilgileri',
+    'payment_method' => 'Ödeme yöntemi',
+    'payment_status' => 'Ödeme durumu',
+    'item' => [
+        'name' => 'İsim',
+        'qty' => 'Miktar',
+        'description' => 'Açıklama',
+    ],
+    'statuses' => [
+        'pending' => 'Beklemede',
+        'processing' => 'İşleniyor',
+        'completed' => 'Tamamlandı',
+        'canceled' => 'İptal edildi',
+    ],
+    'template' => [
+        'name' => 'Fatura Şablonu',
+        'setting_content' => 'İçerik',
+        'preview' => 'Önizleme',
+        'preview_heading' => 'Fatura şablonu önizleme',
+    ],
+];

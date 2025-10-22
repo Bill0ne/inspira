@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'name' => 'কুপন',
+    'intro' => [
+        'button_text' => 'কুপন তৈরি করুন',
+        'title' => 'কুপন কোড পরিচালনা করুন',
+        'description' => 'আপনার গ্রাহকদের জন্য কুপন কোড তৈরি এবং পরিচালনা করুন।',
+    ],
+    'types' => [
+        'percentage' => 'শতাংশ',
+        'fixed' => 'নির্দিষ্ট',
+    ],
+    'type' => 'ধরন',
+    'created_message' => 'কুপন সফলভাবে তৈরি করা হয়েছে।',
+    'expires_date' => 'মেয়াদ শেষের তারিখ',
+    'expires_time' => 'মেয়াদ শেষের সময়',
+    'never_expired' => 'কখনো মেয়াদ শেষ হবে না',
+    'save_button' => 'সংরক্ষণ করুন',
+    'coupon_code' => 'কুপন কোড',
+    'coupon_code_placeholder' => 'কুপন কোড লিখুন',
+    'generate_code_button' => 'কোড তৈরি করুন',
+    'value' => 'মূল্য',
+    'value_placeholder' => 'কুপন মূল্য লিখুন',
+    'value_off' => ':value ছাড়',
+    'total_used' => 'ব্যবহৃত',
+    'expired' => 'মেয়াদ শেষ',
+    'active' => 'সক্রিয়',
+    'unlimited' => 'অসীমিত কুপন',
+    'quantity' => 'পরিমাণ',
+    'quantity_placeholder' => 'কুপনের সংখ্যা লিখুন',
+    'discount_amount' => 'ছাড়ের পরিমাণ',
+    'total' => 'মোট',
+    'toggle_coupon_form_text' => 'আপনার কি কুপন কোড আছে?',
+    'apply_coupon_code' => 'প্রয়োগ করুন',
+    'form' => [
+        'create' => 'নতুন কুপন তৈরি করুন',
+        'edit' => '":name" সম্পাদনা করুন',
+    ],
+];
