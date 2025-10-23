@@ -21,3 +21,4 @@ Homestead.*
 *.log
 *.gz
 /phpunit.result.cache
+deploy-stage.yml
