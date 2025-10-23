@@ -1,0 +1,23 @@
+# === SYSTEM / FRAMEWORK EXCLUDES ===
+.git*
+.github
+.env*
+vendor/
+storage/
+bootstrap/cache/
+public/storage/
+public/uploads/
+logs/
+node_modules/
+tests/
+docker/
+docs/
+resources/docs/
+public/themes/
+public/docs/
+.idea/
+.vscode/
+Homestead.*
+*.log
+*.gz
+/phpunit.result.cache
