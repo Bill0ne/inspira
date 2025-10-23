@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main-desk
-      - test-deploy
     paths-ignore:
       - README.md
       - .github/**
