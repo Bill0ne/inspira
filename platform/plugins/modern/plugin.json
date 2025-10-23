@@ -1,0 +1,11 @@
+{
+    "id": "botble/modern",
+    "name": "Modern",
+    "namespace": "Botble\\Modern\\",
+    "provider": "Botble\\Modern\\Providers\\ModernServiceProvider",
+    "author": "Inspira",
+    "url": "https://inspira.local",
+    "version": "1.0.0",
+    "description": "Provides modern dashboard greeting widgets",
+    "minimum_core_version": "7.3.0"
+}
