@@ -16,11 +16,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Repository auschecken
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ SSH vorbereiten (nur für Authentifizierung mit Rsync)
       - name: 🔐 Setup SSH Access
         run: |
           mkdir -p ~/.ssh
@@ -28,7 +26,6 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           echo "194.164.74.168 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
 
-      # 3️⃣ Rsync Deployment (Safe Mode)
       - name: 📦 Sync code to Inspira Live
         uses: burnett01/rsync-deployments@5.2
         with:
@@ -40,6 +37,5 @@ jobs:
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Notify success
       - name: 📨 Notify success
         run: echo "✅ Inspira Live deployed successfully at $(date)"
