@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - stage-desk
+    paths-ignore:
+      - README.md
+      - .github/**
+      - docs/**
+      - "*.md"
 
 jobs:
   deploy:
@@ -12,22 +17,23 @@ jobs:
 
     steps:
       # 1️⃣ Repository auschecken
-      - name: Checkout repository
+      - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
       # 2️⃣ SSH vorbereiten
-      - name: Setup SSH Access
+      - name: 🔐 Setup SSH Access
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p 65002 -H 194.164.74.168 >> ~/.ssh/known_hosts
 
-      # 3️⃣ Deployment über Rsync
-      - name: Rsync files to Inspira Stage
+
+
+      # 3️⃣ Rsync Deployment (Safe Mode)
+      - name: 📦 Sync code to Inspira Stage
         uses: burnett01/rsync-deployments@5.2
         with:
-          switches: -avzr --delete --exclude ".git*" --exclude ".github"
+          switches: -avzr --delete --exclude-from='deploy-exclude.txt'
           path: ./
           remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env/
           remote_host: 194.164.74.168
@@ -35,6 +41,25 @@ jobs:
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Bestätigung
-      - name: Confirm Deployment
-        run: echo "✅ Deployment to Inspira Stage completed successfully!"
+      # 4️⃣ Composer & Laravel Tasks
+      - name: ⚙️ Run Laravel setup on server
+        run: |
+          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@194.164.74.168 <<'EOF'
+          cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env
+
+          echo "📦 Running composer install..."
+          composer install --no-dev --optimize-autoloader --quiet
+
+          echo "🧹 Clearing and caching Laravel..."
+          php artisan migrate --force
+          php artisan optimize:clear
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:clear
+
+          echo "✅ Inspira Stage deployment completed successfully!"
+          EOF
+
+      # 5️⃣ Optional: Notify
+      - name: 📨 Notify success
+        run: echo "✅ Inspira Stage deployed at $(date)"
