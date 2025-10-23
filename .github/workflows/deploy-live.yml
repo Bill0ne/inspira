@@ -20,7 +20,7 @@ jobs:
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ SSH vorbereiten
+      # 2️⃣ SSH vorbereiten (nur für Authentifizierung mit Rsync)
       - name: 🔐 Setup SSH Access
         run: |
           mkdir -p ~/.ssh
@@ -42,26 +42,6 @@ jobs:
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Composer & Laravel Tasks
-      - name: ⚙️ Run Laravel setup on server
-        run: |
-          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@194.164.74.168 <<'EOF'
-          cd /home/u296731902/domains/inspira-zentrum.de/public_html
-
-          echo "📦 Running composer install..."
-          composer install --no-dev --optimize-autoloader --quiet
-
-          echo "🧹 Clearing and caching Laravel..."
-          php artisan migrate --force
-          php artisan optimize:clear
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:clear
-
-          echo "✅ Inspira Live deployment completed successfully!"
-          EOF
-
-      # 5️⃣ Optional: Notify
+      # 4️⃣ Notify (optional)
       - name: 📨 Notify success
         run: echo "✅ Inspira Live deployed at $(date)"
-
