@@ -39,7 +39,7 @@ jobs:
         with:
           switches: -avzr --exclude-from='deploy-exclude.txt'
           path: ./
-          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/live-env/
+          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html
           remote_host: 194.164.74.168
           remote_port: 65002
           remote_user: u296731902
