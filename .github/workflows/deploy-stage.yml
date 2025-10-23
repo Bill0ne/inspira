@@ -27,7 +27,8 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-
+          # Fingerprint manuell speichern (höchste Sicherheit)
+          echo "194.164.74.168 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
 
       # 3️⃣ Rsync Deployment (Safe Mode)
       - name: 📦 Sync code to Inspira Stage
