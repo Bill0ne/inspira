@@ -1,62 +1,67 @@
 name: 🚀 Deploy to Inspira Live
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     branches:
       - main-desk
+    paths-ignore:
+      - README.md
+      - .github/**
+      - docs/**
+      - "*.md"
 
 jobs:
   deploy:
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'stage-desk'
     name: Deploy to Live Server
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Repository auschecken
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ SSH vorbereiten
       - name: 🔐 Setup SSH Access
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+
+          # Fingerprint manuell speichern (höchste Sicherheit)
           echo "194.164.74.168 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
 
-      - name: 🛑 Enable maintenance mode & backup
-        run: |
-          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@194.164.74.168 <<'EOF'
-          cd /home/u296731902/domains/inspira-zentrum.de/public_html/live-env
-          php artisan down || true
-          BACKUP_DIR="storage/app/backup/live_$(date +'%Y-%m-%d_%H-%M-%S')"
-          mkdir -p "$BACKUP_DIR"
-          rsync -a --exclude="storage/app/backup" . "$BACKUP_DIR" >/dev/null 2>&1 || true
-          EOF
-
+      # 3️⃣ Rsync Deployment (Safe Mode)
       - name: 📦 Sync code to Inspira Live
         uses: burnett01/rsync-deployments@5.2
         with:
-          switches: -avzr --exclude-from='deploy-exclude.txt'
+          switches: -avzr --delete --exclude-from='deploy-exclude.txt'
           path: ./
-          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html
+          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/
           remote_host: 194.164.74.168
           remote_port: 65002
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: ⚙️ Composer install & optimize
+      # 4️⃣ Composer & Laravel Tasks
+      - name: ⚙️ Run Laravel setup on server
         run: |
           ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@194.164.74.168 <<'EOF'
-          cd /home/u296731902/domains/inspira-zentrum.de/public_html/live-env
+          cd /home/u296731902/domains/inspira-zentrum.de/public_html
+
+          echo "📦 Running composer install..."
           composer install --no-dev --optimize-autoloader --quiet
+
+          echo "🧹 Clearing and caching Laravel..."
           php artisan migrate --force
           php artisan optimize:clear
           php artisan config:cache
           php artisan route:cache
           php artisan view:clear
-          php artisan up
+
+          echo "✅ Inspira Live deployment completed successfully!"
           EOF
 
-      - name: ✅ Confirm deployment
-        run: echo "✅ Inspira Live deployment successful after stage merge!"
+      # 5️⃣ Optional: Notify
+      - name: 📨 Notify success
+        run: echo "✅ Inspira Live deployed at $(date)"
+
