@@ -1,0 +1,93 @@
+name: 🚀 Deploy to Inspira Live
+
+on:
+  push:
+    branches:
+      - main-desk
+    paths-ignore:
+      - README.md
+      - .github/**
+      - docs/**
+      - "*.md"
+
+jobs:
+  deploy:
+    name: Deploy to Live Server
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Repository auschecken
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ SSH vorbereiten
+      - name: 🔐 Setup SSH Access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "194.164.74.168 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
+
+      # 3️⃣ Preflight: Maintenance ON + Backup erstellen
+      - name: 🛑 Enable maintenance mode & backup
+        run: |
+          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@194.164.74.168 <<'EOF'
+          cd /home/u296731902/domains/inspira-zentrum.de/public_html/live-env
+
+          echo "⚙️ Enabling maintenance mode..."
+          php artisan down || true
+
+          echo "📦 Creating backup..."
+          BACKUP_DIR="storage/app/backup/live_$(date +'%Y-%m-%d_%H-%M-%S')"
+          mkdir -p "$BACKUP_DIR"
+          rsync -a --exclude="storage/app/backup" . "$BACKUP_DIR" >/dev/null 2>&1 || true
+          echo "✅ Backup stored at $BACKUP_DIR"
+          EOF
+
+      # 4️⃣ Rsync Deployment (NO DELETE!)
+      - name: 📦 Sync code to Inspira Live
+        uses: burnett01/rsync-deployments@5.2
+        with:
+          switches: -avzr --exclude-from='deploy-exclude.txt'
+          path: ./
+          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/live-env/
+          remote_host: 194.164.74.168
+          remote_port: 65002
+          remote_user: u296731902
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # 5️⃣ Laravel Build & Optimierung
+      - name: ⚙️ Composer install & optimize
+        run: |
+          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@194.164.74.168 <<'EOF'
+          cd /home/u296731902/domains/inspira-zentrum.de/public_html/live-env
+
+          echo "📦 Installing composer dependencies..."
+          composer install --no-dev --optimize-autoloader --quiet
+
+          echo "🧩 Running migrations..."
+          php artisan migrate --force
+
+          echo "🧹 Clearing caches..."
+          php artisan optimize:clear
+
+          echo "⚙️ Building caches..."
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:clear
+
+          echo "✅ Laravel build done!"
+          EOF
+
+      # 6️⃣ Maintenance OFF
+      - name: 🟢 Disable maintenance mode
+        run: |
+          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@194.164.74.168 <<'EOF'
+          cd /home/u296731902/domains/inspira-zentrum.de/public_html/live-env
+          php artisan up
+          echo "✅ Inspira Live is back online!"
+          EOF
+
+      # 7️⃣ Optional: Notification
+      - name: 📨 Notify deployment success
+        run: echo "✅ Inspira Live deployed successfully at $(date)"
