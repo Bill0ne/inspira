@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # --- 1️⃣ Repository auschecken
+      # 1️⃣ Repository auschecken
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- 2️⃣ SSH vorbereiten
+      # 2️⃣ SSH vorbereiten
       - name: Setup SSH Access
         run: |
           mkdir -p ~/.ssh
@@ -23,7 +23,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p 65002 -H 194.164.74.168 >> ~/.ssh/known_hosts
 
-      # --- 3️⃣ Rsync Deployment (mit Hostinger-Port)
+      # 3️⃣ Deployment über Rsync
       - name: Rsync files to Inspira Stage
         uses: burnett01/rsync-deployments@5.2
         with:
@@ -31,10 +31,10 @@ jobs:
           path: ./
           remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env/
           remote_host: 194.164.74.168
+          remote_port: 65002
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          rsync_options: -e "ssh -p 65002 -o StrictHostKeyChecking=no"
 
-      # --- 4️⃣ Abschlussmeldung
+      # 4️⃣ Bestätigung
       - name: Confirm Deployment
         run: echo "✅ Deployment to Inspira Stage completed successfully!"
