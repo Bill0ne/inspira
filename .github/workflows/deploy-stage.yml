@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Inspira Stage via SSH
-        uses: burnett01/rsync-deployments@6.0
+        uses: burnett01/rsync-deployments@5.2
         with:
           switches: -avzr --delete
           path: ./
