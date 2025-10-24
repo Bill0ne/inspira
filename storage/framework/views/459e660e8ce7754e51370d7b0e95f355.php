@@ -1,0 +1,1 @@
+<i class="__icon__ dropdown-item-icon dropdown-item-icon"></i><?php /**PATH D:\xampp\htdocs\inspira\storage\framework\views/d9e73a5aaf92d8fae5965b9d2522ad66.blade.php ENDPATH**/ ?>

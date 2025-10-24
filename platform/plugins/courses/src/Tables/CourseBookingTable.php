@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
 
 class CourseBookingTable extends TableAbstract
 {
@@ -42,7 +43,6 @@ class CourseBookingTable extends TableAbstract
             ->eloquent($this->query())
             ->formatColumn('amount', PriceFormatter::class)
 
-            // Kunde (Name)
             ->editColumn('customer_id', function (CourseBooking $item) {
                 if ($item->customer && $item->customer->id) {
                     return BaseHelper::clean(trim($item->customer->first_name . ' ' . $item->customer->last_name));
@@ -56,31 +56,29 @@ class CourseBookingTable extends TableAbstract
             })
 
             ->editColumn('customer_email', function (CourseBooking $item) {
-    if ($item->customer && $item->customer->email) {
-        return e($item->customer->email);
-    }
+                if ($item->customer && $item->customer->email) {
+                    return e($item->customer->email);
+                }
 
-    if ($item->address && $item->address->email) {
-        return e($item->address->email);
-    }
+                if ($item->address && $item->address->email) {
+                    return e($item->address->email);
+                }
 
-    return '&mdash;';
-})
+                return '&mdash;';
+            })
 
-->editColumn('customer_phone', function (CourseBooking $item) {
-    if ($item->customer && $item->customer->phone) {
-        return e($item->customer->phone);
-    }
+            ->editColumn('customer_phone', function (CourseBooking $item) {
+                if ($item->customer && $item->customer->phone) {
+                    return e($item->customer->phone);
+                }
 
-    if ($item->address && $item->address->phone) {
-        return e($item->address->phone);
-    }
+                if ($item->address && $item->address->phone) {
+                    return e($item->address->phone);
+                }
 
-    return '&mdash;';
-})
+                return '&mdash;';
+            })
 
-
-            // Kurs
             ->editColumn('course_id', function (CourseBooking $item) {
                 return $item->course && $item->course->id
                     ? Html::link(
@@ -91,47 +89,60 @@ class CourseBookingTable extends TableAbstract
                     : '&mdash;';
             })
 
-            // Suche erweitern (optional auf Name; E-Mail/Telefon bleiben wie gewünscht ohne globale Suche)
             ->filter(function ($query) {
-                $keyword = $this->request->input('search.value');
-                if ($keyword) {
-                    return $query->whereHas('customer', function ($subQuery) use ($keyword) {
-                        return $subQuery
-                            ->where('first_name', 'LIKE', '%' . $keyword . '%')
-                            ->orWhere('last_name', 'LIKE', '%' . $keyword . '%')
-                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $keyword . '%']);
-                    });
+                if ($keyword = $this->request->input('search.value')) {
+                    $keyword = '%' . $keyword . '%';
+
+                    $query->where('status', '!=', \Botble\Hotel\Enums\BookingStatusEnum::AWAITING_PAYMENT)
+                        ->where(function ($q) use ($keyword) {
+                            $q->whereHas('customer', function ($q2) use ($keyword) {
+                                $q2->where('first_name', 'LIKE', $keyword)
+                                    ->orWhere('last_name', 'LIKE', $keyword)
+                                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$keyword]);
+                            })
+                                ->orWhereHas('address', function ($q2) use ($keyword) {
+                                    $q2->where('first_name', 'LIKE', $keyword)
+                                        ->orWhere('last_name', 'LIKE', $keyword)
+                                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$keyword]);
+                                })
+                                ->orWhereHas('customer', fn($q2) => $q2->where('email', 'LIKE', $keyword))
+                                ->orWhereHas('address', fn($q2) => $q2->where('email', 'LIKE', $keyword))
+                                ->orWhereHas('customer', fn($q2) => $q2->where('phone', 'LIKE', $keyword))
+                                ->orWhereHas('address', fn($q2) => $q2->where('phone', 'LIKE', $keyword))
+                                ->orWhereHas('course', fn($q2) => $q2->where('name', 'LIKE', $keyword))
+                                ->orWhereHas('payment', function ($q2) use ($keyword) {
+                                    $q2->where('payment_channel', 'LIKE', $keyword)
+                                        ->orWhere('status', 'LIKE', $keyword);
+                                })
+                                ->orWhere('amount', 'LIKE', $keyword)
+                                ->orWhere('id', 'LIKE', $keyword);
+                        });
+                } else {
+                    $query->where('status', '!=', \Botble\Hotel\Enums\BookingStatusEnum::AWAITING_PAYMENT);
                 }
 
                 return $query;
             });
 
-        if (! is_plugin_active('payment')) {
+        if (!is_plugin_active('payment')) {
             $data = $data->removeColumn('payment_status')->removeColumn('payment_id');
         } else {
             $data = $data
                 ->editColumn('payment_status', function (CourseBooking $item) {
-                    $status = $item->payment ? $item->payment->status : null;
-
-                    if ($status && $status->getValue()) {
-                        return BaseHelper::clean($status->toHtml());
-                    }
-
-                    return '&mdash;';
+                    return $item->payment && $item->payment->status
+                        ? BaseHelper::clean($item->payment->status->toHtml())
+                        : '&mdash;';
                 })
                 ->editColumn('payment_id', function (CourseBooking $item) {
-                    $paymentMethod = $item->payment ? $item->payment->payment_channel : null;
-
-                    if ($paymentMethod && $paymentMethod->getValue()) {
-                        return BaseHelper::clean($paymentMethod->label());
-                    }
-
-                    return '&mdash;';
+                    return $item->payment && $item->payment->payment_channel
+                        ? BaseHelper::clean($item->payment->payment_channel->label())
+                        : '&mdash;';
                 });
         }
 
         return $this->toJson($data);
     }
+
 
     public function query(): Relation|Builder|QueryBuilder
     {
@@ -147,8 +158,8 @@ class CourseBookingTable extends TableAbstract
                 'course_id',
                 'customer_id',
             ])
-            // Wichtig: Kunde + Kurs mitladen, damit E-Mail/Telefon aus der Relation gelesen werden können
-            ->with(['customer', 'course']);
+            ->with(['customer', 'course'])
+            ->where('status', '!=', \Botble\Hotel\Enums\BookingStatusEnum::AWAITING_PAYMENT);;
 
         if (is_plugin_active('payment')) {
             $query->with('payment');
@@ -159,7 +170,6 @@ class CourseBookingTable extends TableAbstract
 
     public function columns(): array
     {
-        // Bestehende Spalten
         $columns = [
             IdColumn::make(),
 
@@ -169,15 +179,13 @@ class CourseBookingTable extends TableAbstract
                 ->orderable(false)
                 ->searchable(false),
 
-            // NEU: E-Mail
             Column::make('customer_email')
                 ->title(__('E-Mail'))
                 ->alignLeft()
                 ->width('220px')
-                ->orderable(false)    // bewusst ohne Sortierung/Global-Suche (Relation)
+                ->orderable(false)
                 ->searchable(false),
 
-            // NEU: Telefon
             Column::make('customer_phone')
                 ->title(__('Telefon'))
                 ->alignLeft()
@@ -229,11 +237,39 @@ class CourseBookingTable extends TableAbstract
 
     public function getBulkChanges(): array
     {
+        $methods = \Botble\Hotel\Enums\BookingStatusEnum::labels();
+        Arr::forget($methods, \Botble\Hotel\Enums\BookingStatusEnum::AWAITING_PAYMENT);
         $options = [
+            'customer_name' => [
+                'title' => __('Customer Name'),
+                'type' => 'text',
+                'validate' => 'nullable|string|max:255',
+            ],
+            'customer_email' => [
+                'title' => __('E-Mail'),
+                'type' => 'text',
+                'validate' => 'nullable|email|max:255',
+            ],
+            'customer_phone' => [
+                'title' => __('Telefon'),
+                'type' => 'text',
+                'validate' => 'nullable|string|max:255',
+            ],
+            'course_id' => [
+                'title' => trans('plugins/courses::courses.course.name'),
+                'type' => 'select',
+                'choices' => \Botble\Courses\Models\Course::query()->pluck('name', 'id')->all(),
+                'validate' => 'nullable|integer|exists:courses,id',
+            ],
+            'amount' => [
+                'title' => trans('plugins/hotel::booking.amount'),
+                'type' => 'text',
+                'validate' => 'nullable|numeric|min:0',
+            ],
             'status' => [
                 'title' => trans('core/base::tables.status'),
                 'type' => 'select',
-                'choices' => \Botble\Hotel\Enums\BookingStatusEnum::labels(),
+                'choices' => $methods,
                 'validate' => 'required|in:' . implode(',', \Botble\Hotel\Enums\BookingStatusEnum::values()),
             ],
             'created_at' => [
@@ -244,10 +280,10 @@ class CourseBookingTable extends TableAbstract
 
         if (is_plugin_active('payment')) {
             $options['payment_status'] = [
-                'title' => trans('plugins/courses::booking.payment_status_label'),
+                'title' => trans('plugins/hotel::booking.payment_status_label'),
                 'type' => 'select',
-                'choices' => PaymentStatusEnum::labels(),
-                'validate' => 'required|in:' . implode(',', PaymentStatusEnum::values()),
+                'choices' => \Botble\Payment\Enums\PaymentStatusEnum::labels(),
+                'validate' => 'required|in:' . implode(',', \Botble\Payment\Enums\PaymentStatusEnum::values()),
             ];
         }
 
@@ -260,14 +296,50 @@ class CourseBookingTable extends TableAbstract
         string $operator,
         ?string $value
     ): Relation|Builder|QueryBuilder {
-        if ($key === 'payment_status') {
-            return $query->whereHas('payment', function ($query) use ($value) {
-                return $query->where('status', $value);
-            });
+        if (! $value) {
+            return $query;
+        }
+
+        switch ($key) {
+            case 'customer_name':
+                return $query
+                    ->whereHas('customer', function ($q) use ($value) {
+                        $q->where('first_name', 'LIKE', '%' . $value . '%')
+                            ->orWhere('last_name', 'LIKE', '%' . $value . '%')
+                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $value . '%']);
+                    })
+                    ->orWhereHas('address', function ($q) use ($value) {
+                        $q->where('first_name', 'LIKE', '%' . $value . '%')
+                            ->orWhere('last_name', 'LIKE', '%' . $value . '%')
+                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $value . '%']);
+                    });
+
+            case 'customer_email':
+                return $query->whereHas('customer', fn ($q) => $q->where('email', 'LIKE', '%' . $value . '%'))
+                    ->orWhereHas('address', fn ($q) => $q->where('email', 'LIKE', '%' . $value . '%'));
+
+            case 'customer_phone':
+                return $query->whereHas('customer', fn ($q) => $q->where('phone', 'LIKE', '%' . $value . '%'))
+                    ->orWhereHas('address', fn ($q) => $q->where('phone', 'LIKE', '%' . $value . '%'));
+
+            case 'course_id':
+                return $query->where('course_id', $value);
+
+            case 'amount':
+                return $query->where('amount', 'LIKE', '%' . $value . '%');
+
+            case 'payment_status':
+                return $query->whereHas('payment', fn ($q) => $q->where('status', $value));
+
+            case 'created_at':
+                $start = \Carbon\Carbon::parse($value)->startOfDay();
+                $end = \Carbon\Carbon::parse($value)->endOfDay();
+                return $query->whereBetween('created_at', [$start, $end]);
         }
 
         return parent::applyFilterCondition($query, $key, $operator, $value);
     }
+
 
     public function saveBulkChangeItem(Model|CourseBooking $item, string $inputKey, ?string $inputValue): Model|bool
     {

@@ -18,7 +18,7 @@ class CourseRequest extends Request
             'duration'        => ['required', 'string', 'max:120'],
             'start_date'      => ['required'],
             'end_date'        => ['required', 'after_or_equal:start_date'],
-            'thumbnail'       => ['required', 'string'],
+            'thumbnail'       => ['nullable', 'string'],
             'category_id'     => ['required'],
             'instructor_id'   => ['required'],
             'unlimited_seats' => [new OnOffRule()],
@@ -32,7 +32,7 @@ class CourseRequest extends Request
             'is_recurring'       => [new OnOffRule()],
             'recurring_type'     => ['nullable', 'required_if:is_recurring,1', Rule::in(['daily', 'weekly', 'monthly'])],
             'recurring_interval' => ['nullable', 'required_if:is_recurring,1', 'integer', 'min:1'],
-            'recurring_until'    => ['nullable', 'after:start_date'],
+            'recurring_until'    => ['nullable'],
             'status' => Rule::in(BaseStatusEnum::values()),
         ];
     }

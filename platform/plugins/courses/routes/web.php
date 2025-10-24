@@ -20,6 +20,11 @@ AdminHelper::registerRoutes(function () {
         Route::resource('', CourseController::class)->parameters(['' => 'course']);
 
         Route::group(['namespace' => 'Botble\Courses\Http\Controllers'], function (): void {
+            Route::get('{course}/sessions', [
+                'as' => 'course.sessions',
+                'uses' => 'CourseController@list',
+                'permission' => false,
+            ])->wherePrimaryKey('course');
         Route::get('duplicate/{course}', [
             'as' => 'duplicate',
             'uses' => 'CourseController@getDuplicate',
@@ -38,6 +43,8 @@ AdminHelper::registerRoutes(function () {
 
     Route::group(['prefix' => 'course-sessions', 'as' => 'course-session.'], function () {
         Route::resource('', CourseSessionController::class)->parameters(['' => 'course_session'])->only('index');
+
+            Route::get('{id}/bookings', [CourseSessionController::class, 'getSessionBookings']);
     });
 
     Route::group(['prefix' => 'course-categories', 'as' => 'course-category.'], function () {

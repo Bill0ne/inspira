@@ -11,6 +11,8 @@ use Illuminate\Support\HtmlString;
  * @method static BookingStatusEnum PROCESSING()
  * @method static BookingStatusEnum COMPLETED()
  * @method static BookingStatusEnum CANCELLED()
+ * @method static BookingStatusEnum FAILED()
+ * @method static BookingStatusEnum AWAITING_PAYMENT()
  */
 class BookingStatusEnum extends Enum
 {
@@ -22,6 +24,10 @@ class BookingStatusEnum extends Enum
 
     public const CANCELLED = 'cancelled';
 
+    public const FAILED = 'failed';
+
+    public const AWAITING_PAYMENT = 'awaiting_payment';
+
     public static $langPath = 'plugins/hotel::booking.statuses';
 
     public function toHtml(): HtmlString|string|null
@@ -31,6 +37,8 @@ class BookingStatusEnum extends Enum
             self::PROCESSING => 'info',
             self::COMPLETED => 'success',
             self::CANCELLED => 'danger',
+            self::FAILED => 'warning',
+            self::AWAITING_PAYMENT => 'primary',
             default => 'primary',
         };
 

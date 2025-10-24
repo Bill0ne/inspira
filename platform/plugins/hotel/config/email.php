@@ -22,6 +22,12 @@ return [
             'subject' => 'Your Booking Has Been Updated!',
             'can_off' => true,
         ],
+        'booking-course-or-session-changed' => [
+            'title' => 'Booking Course/Session Changed',
+            'description' => 'Booking Course/Session Changed Description',
+            'subject' => 'Your Course Booking Has Been Updated!',
+            'can_off' => true,
+        ],
     ],
     'variables' => [
         'booking_type' => 'Booking Type',
@@ -33,5 +39,7 @@ return [
         'booking_link' => 'plugins/hotel::hotel.booking_link',
         'booking_date' => 'plugins/hotel::hotel.booking_date',
         'booking_status' => 'plugins/hotel::hotel.booking_status',
+        'course_name' => 'Course Name',
+        'session_name' => 'Session Name',
     ],
 ];

@@ -7,8 +7,8 @@ use Botble\Base\Facades\Assets;
 use Botble\Base\Forms\FieldOptions\ContentFieldOption;
 use Botble\Base\Forms\FieldOptions\DatePickerFieldOption;
 use Botble\Base\Forms\FieldOptions\MediaImageFieldOption;
-use Botble\Base\Forms\Fields\CheckboxField;
-use Botble\Base\Forms\FieldOptions\CheckboxFieldOption;
+use Botble\Base\Forms\Fields\RepeaterField;
+use Botble\Base\Forms\FieldOptions\RepeaterFieldOption;
 use Botble\Base\Forms\FieldOptions\NumberFieldOption;
 use Botble\Base\Forms\FieldOptions\NameFieldOption;
 use Botble\Base\Forms\FieldOptions\OnOffFieldOption;
@@ -45,9 +45,43 @@ class CourseForm extends FormAbstract
 
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
 
+        $manualSessionsData = [];
+
+if ($course && $course->getKey()) {
+    $manualSessions = $course->sessions()
+        ->where('is_manual', true)
+        ->orderBy('start_date')
+        ->get(['id', 'start_date', 'end_date']);
+
+    foreach ($manualSessions as $session) {
+        $manualSessionsData[] = [
+            [
+                'key' => 'id',
+                'value' => $session->id,
+            ],
+            [
+                'key' => 'start',
+                'value' => $session->start_date
+                    ? \Carbon\Carbon::parse($session->start_date)->format('Y-m-d\TH:i')
+                    : null,
+            ],
+            [
+                'key' => 'end',
+                'value' => $session->end_date
+                    ? \Carbon\Carbon::parse($session->end_date)->format('Y-m-d\TH:i')
+                    : null,
+            ],
+        ];
+    }
+}
+
+
         $this
             ->model(Course::class)
             ->setValidatorClass(CourseRequest::class)
+            ->add('row', 'html', [
+                'html' => '<div class="row">'
+            ])
             ->add('category_id', SelectField::class,
                 SelectFieldOption::make()
                     ->label(trans('plugins/courses::courses.course-category.category'))
@@ -58,6 +92,7 @@ class CourseForm extends FormAbstract
                             ->all()
                     )
                     ->searchable()
+                    ->wrapperAttributes(['class' => 'form-group col-md-6'])
                     ->required()
             )
             ->add('instructor_id', SelectField::class,
@@ -70,6 +105,7 @@ class CourseForm extends FormAbstract
                             ->all()
                     )
                     ->searchable()
+                    ->wrapperAttributes(['class' => 'form-group col-md-6'])
                     ->required()
             )
             ->add('name', TextField::class, NameFieldOption::make()->required())
@@ -78,11 +114,6 @@ class CourseForm extends FormAbstract
                     ->label(trans('core/base::forms.description'))
                     ->rows(4)
                     ->placeholder('Enter course description')
-            )
-            ->add('price', NumberField::class,
-                NumberFieldOption::make()
-                    ->label(trans('plugins/courses::courses.course.price'))
-                    ->required()
             )
             ->add(
                 'unlimited_seats',
@@ -106,19 +137,74 @@ class CourseForm extends FormAbstract
                         'class' => 'form-control',
                     ])
             )
+            ->add('price', NumberField::class,
+                NumberFieldOption::make()
+                    ->label(trans('plugins/courses::courses.course.price'))
+                    ->wrapperAttributes(['class' => 'form-group col-md-6'])
+                    ->required()
+            )
             ->add('duration', TextField::class,
                 NameFieldOption::make()
                     ->label(trans('plugins/courses::courses.course.duration'))
+                    ->wrapperAttributes(['class' => 'form-group col-md-6'])
                     ->placeholder('e.g. 10 weeks, 40 hours')
             )
+            ->add('manual_info_alert', 'html', [
+                'html' => '<div class="col-lg-12 mt-1 mb-3"><h4 class="m-0">Manuelle Sitzungen</h4></div>',
+            ])
             ->add('start_date', DatetimeField::class,
                 DatePickerFieldOption::make()
                     ->label(trans('plugins/courses::courses.course.start_date'))
+                    ->wrapperAttributes(['class' => 'form-group col-md-6'])
                     ->required()
             )
             ->add('end_date', DatetimeField::class,
                 DatePickerFieldOption::make()
                     ->label(trans('plugins/courses::courses.course.end_date'))
+                    ->wrapperAttributes(['class' => 'form-group col-md-6'])
+            )
+            ->add('manual_sessions', RepeaterField::class,
+                RepeaterFieldOption::make()
+                    ->label(false)
+                    ->fields([
+                        [
+                            'type' => 'hidden',
+                            'label' => false,
+                            'attributes' => [
+                                'name' => 'id',
+                                'value' => null,
+                            ],
+                        ],
+                        [
+                            'type' => 'datetimeLocal',
+                            'label' => trans('plugins/courses::courses.course.start_date'),
+                            'attributes' => [
+                                'name' => 'start',
+                                'value' => null,
+                                'options' => [
+                                    'class' => 'form-control',
+                                ],
+                            ],
+                            'wrapperAttributes' => [
+                                'class' => 'col-md-6',
+                            ],
+                        ],
+                        [
+                            'type' => 'datetimeLocal',
+                            'label' => trans('plugins/courses::courses.course.end_date'),
+                            'attributes' => [
+                                'name' => 'end',
+                                'value' => null,
+                                'options' => [
+                                    'class' => 'form-control',
+                                ],
+                            ],
+                            'wrapperAttributes' => [
+                                'class' => 'col-md-6',
+                            ],
+                        ],
+                    ])
+                    ->value($manualSessionsData)
             )
             ->add('recurring_info_alert', 'html', [
                 'html' => '<div class="col-lg-12 mt-1"><div role="alert" class="alert alert-primary bg-primary text-white"><h4 class="m-0">Recurring Information</h4></div></div>',
@@ -135,26 +221,29 @@ class CourseForm extends FormAbstract
                 SelectFieldOption::make()
                     ->label(trans('plugins/courses::courses.course.recurring_type'))
                     ->choices([
-                        'daily' => __('Daily'),
-                        'weekly' => __('Weekly'),
-                        'monthly' => __('Monthly'),
+                        'daily' => __('Täglich'),
+                        'weekly' => __('Wöchentlich'),
+                        'monthly' => __('Monatlich'),
                     ])
-                    ->helperText(__('How often should this course repeat?'))
-                    ->wrapperAttributes(['class' => 'form-group recurring-wrapper'])
+                    ->helperText(__('Wie oft sollte dieser Kurs wiederholt werden?'))
+                    ->wrapperAttributes(['class' => 'form-group recurring-wrapper col-md-4'])
             )
             ->add('recurring_interval', NumberField::class,
                 NumberFieldOption::make()
                     ->label(trans('plugins/courses::courses.course.recurring_interval'))
                     ->defaultValue(1)
-                    ->helperText(__('Every X days/weeks/months'))
-                    ->wrapperAttributes(['class' => 'form-group recurring-wrapper'])
+                    ->helperText(__('Alle X Tage/Wochen/Monate'))
+                    ->wrapperAttributes(['class' => 'form-group recurring-wrapper col-md-4'])
             )
             ->add('recurring_until', DatetimeField::class,
                 DatePickerFieldOption::make()
                     ->label(trans('plugins/courses::courses.course.recurring_until'))
-                    ->helperText(__('Until what date should it repeat?'))
-                    ->wrapperAttributes(['class' => 'form-group recurring-wrapper'])
+                    ->helperText(__('Bis zu welchem ​​Datum soll es wiederholt werden?'))
+                    ->wrapperAttributes(['class' => 'form-group recurring-wrapper col-md-4'])
             )
+            ->add('rowClose', 'html', [
+                'html' => '</div>'
+            ])
             ->add('thumbnail', MediaImageField::class, MediaImageFieldOption::make()->label(trans('core/acl::users.avatar')))
             ->add(
                 'is_featured',

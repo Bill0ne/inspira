@@ -41,7 +41,7 @@ return [
             'date_time' => env('CMS_JS_DATE_TIME_FORMAT', 'yyyy-mm-dd H:i:s'),
         ],
     ],
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'de'),
     'demo' => [
         'account' => [
             'username' => env('CMS_DEMO_ACCOUNT_USERNAME', 'admin'),
