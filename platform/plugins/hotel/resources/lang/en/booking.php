@@ -8,6 +8,8 @@ return [
         'processing' => 'Processing',
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
+        'failed' => 'Failed',
+        'awaiting_payment' => 'Awaiting Payment',
     ],
     'amount' => 'Amount',
     'customer' => 'Customer',

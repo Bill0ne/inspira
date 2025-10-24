@@ -5,6 +5,7 @@ namespace Botble\Courses\Models;
 use Botble\Base\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Botble\Hotel\Enums\BookingStatusEnum;
 
 class CourseSession extends BaseModel
 {
@@ -14,6 +15,7 @@ class CourseSession extends BaseModel
         'course_id',
         'start_date',
         'end_date',
+        'is_manual',
         'available_seats',
     ];
 
@@ -34,13 +36,36 @@ class CourseSession extends BaseModel
 
     public function hasAvailableSeats(): bool
     {
-        if ($this->available_seats === null) {
-            return true;
-        }
+        $bookedCount = $this->bookings()
+            ->whereIn('status', [
+                BookingStatusEnum::PENDING,
+                BookingStatusEnum::PROCESSING,
+                BookingStatusEnum::COMPLETED,
+            ])
+            ->count();
 
-        $bookedSeats = $this->bookings()->count();
+        return $bookedCount < $this->available_seats;
+    }
 
-        return $bookedSeats < $this->available_seats;
+    public function getBookedCount(): int
+    {
+        return $this->bookings()
+            ->whereIn('status', [
+                BookingStatusEnum::PENDING,
+                BookingStatusEnum::PROCESSING,
+                BookingStatusEnum::COMPLETED,
+            ])
+            ->count();
+    }
+
+    public function activeBookings(): HasMany
+    {
+        return $this->hasMany(CourseBooking::class, 'course_session_id')
+            ->whereIn('status', [
+                BookingStatusEnum::PENDING,
+               BookingStatusEnum::PROCESSING,
+                BookingStatusEnum::COMPLETED,
+            ]);
     }
 }
 

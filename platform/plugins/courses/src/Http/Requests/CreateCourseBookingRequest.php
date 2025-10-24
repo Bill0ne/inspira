@@ -13,6 +13,7 @@ class CreateCourseBookingRequest extends Request
     {
         return [
             'course_id' => ['required', 'exists:courses,id'],
+            'course_session_id' => ['required'],
             'status' => ['required', 'string'],
             'customer_id' => ['nullable', 'exists:ht_customers,id'],
             'payment_method' => ['required', 'string', 'in:' . implode(',', PaymentMethodEnum::values())],

@@ -9,20 +9,24 @@
     $field['attributes']['options']['id'] = $id = 'repeater_field_' . md5($field['attributes']['name']) . uniqid('_');
     $field['attributes']['id'] = $id;
     $field['attributes']['label_attr']['for'] = $id;
+
+    $wrapperClass = Arr::get($field, 'wrapperAttributes.class', '');
 @endphp
 
-<x-core::form-group>
-    <x-core::form.label :attributes="new Illuminate\View\ComponentAttributeBag(Arr::get($field, 'label_attr', []))">
-        {{ $field['label'] }}
-    </x-core::form.label>
+<div class="{{ $wrapperClass ?: 'col-12' }} repeater-field-item">
+    <x-core::form-group>
+        <x-core::form.label :attributes="new Illuminate\View\ComponentAttributeBag(Arr::get($field, 'label_attr', []))">
+            {{ $field['label'] }}
+        </x-core::form.label>
 
-    {{ $hiddenField }}
+        {{ $hiddenField }}
 
-    {!! call_user_func_array([Form::class, $field['type']], array_values($field['attributes'])) !!}
+        {!! call_user_func_array([Form::class, $field['type']], array_values($field['attributes'])) !!}
 
-    @if(! empty($field['helper']))
-        <x-core::form.helper-text>
-            {!! BaseHelper::clean($field['helper']) !!}
-        </x-core::form.helper-text>
-    @endif
-</x-core::form-group>
+        @if(! empty($field['helper']))
+            <x-core::form.helper-text>
+                {!! BaseHelper::clean($field['helper']) !!}
+            </x-core::form.helper-text>
+        @endif
+    </x-core::form-group>
+</div>

@@ -528,6 +528,13 @@ class PublicController extends Controller
 
         $booking->save();
 
+        if ($couponCode) {
+            $coupon = \Botble\Hotel\Models\Coupon::where('code', $couponCode)->first();
+            if ($coupon) {
+                $coupon->increment('total_used', 1);
+            }
+        }
+
         if ($serviceIds) {
             $booking->services()->attach($serviceIds);
         }
