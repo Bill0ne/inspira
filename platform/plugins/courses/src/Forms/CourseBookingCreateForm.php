@@ -21,6 +21,7 @@ class CourseBookingCreateForm extends FormAbstract
         Assets::addScripts(['booking-create']);
         Assets::addScriptsDirectly('vendor/core/plugins/hotel/js/booking-room-search.js');
         Assets::addScriptsDirectly('vendor/core/plugins/hotel/js/customer-autocomplete.js');
+        Assets::addScriptsDirectly('vendor/core/plugins/courses/js/script.js');
 
         $this
             ->model(CourseBooking::class)
@@ -55,10 +56,24 @@ class CourseBookingCreateForm extends FormAbstract
                 'course_id',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Select Course'))
+                    ->label(__('Kurse'))
                     ->required()
+                    ->searchable()
                     ->choices(Course::query()->wherePublished()->pluck('name', 'id')->all())
-                    ->helperText(__('Choose the course to book'))
+                    ->attributes(['id' => 'admin_course_id'])
+                    ->emptyValue(__('Wählen kurse'))
+                    ->colspan(2)
+            )
+            ->add(
+                'course_session_id',
+                SelectField::class,
+                SelectFieldOption::make()
+                    ->label(__('Sitzung'))
+                    ->required()
+                    ->choices([])
+                    ->searchable()
+                    ->emptyValue(__('Wählen sitzung'))
+                    ->attributes(['id' => 'admin_session_id'])
                     ->colspan(2)
             )
             ->add(

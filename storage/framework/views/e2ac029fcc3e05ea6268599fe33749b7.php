@@ -1,0 +1,4 @@
+<svg class="icon icon-sm mb-0 me-1 svg-icon-ti-ti-circle-filled" style="color: #E91E63" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M7 3.34a10 10 0 1 1 -4.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 4.995 -8.336z" stroke-width="0" fill="currentColor" />
+</svg><?php /**PATH D:\xampp\htdocs\inspira\storage\framework\views/9d26a508a441dc993be56c8aa54424b2.blade.php ENDPATH**/ ?>

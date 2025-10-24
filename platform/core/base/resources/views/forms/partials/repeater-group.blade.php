@@ -1,3 +1,3 @@
-<div class="repeater-item-group">
+<div class="repeater-item-group row">
     {!! $group !!}
 </div>

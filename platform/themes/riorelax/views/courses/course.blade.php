@@ -2,7 +2,18 @@
     use Carbon\Carbon;
     Theme::set('pageTitle', $course->name);
 
-    // 24h-Format mit "kein doppeltes Datum am selben Tag"
+    $now = now();
+
+    // --- Upcoming sessions ---
+    $upcomingSessionsQuery = $course->sessions()
+        ->where('start_date', '>=', $now)
+        ->orderBy('start_date');
+
+    $upcomingSessions = $upcomingSessionsQuery->get();
+    $upcomingSessionsCount = $upcomingSessions->count();
+    $nextSession = $upcomingSessionsCount ? $upcomingSessions->first() : null;
+
+    // --- Helper for formatting range ---
     $formatRange24h = static function (?string $start, ?string $end, string $dayFmt = 'd.m.Y', string $timeFmt = 'H:i'): ?string {
         if (!$start) return null;
         $s = Carbon::parse($start);
@@ -16,53 +27,54 @@
         return $s->format("$dayFmt $timeFmt");
     };
 
-    // ---- Seats/Progress-Logik (Detailseite) ----
-    // Nächste "relevante" Session bestimmen: bei recurring erste zukünftige, sonst erste
-    $nextSession = $course->isRecurring()
-        ? $course->sessions()->where('start_date', '>=', now())->orderBy('start_date')->first()
-        : $course->sessions()->orderBy('start_date')->first();
-
     $dateDisplayForNext = $nextSession ? $formatRange24h($nextSession->start_date, $nextSession->end_date) : null;
 
-    // Kapazität + Buchungen der nächsten Session
-    $capacityNext = $nextSession?->available_seats;                   // null = unlimited
-    $bookedNext   = $nextSession ? (int) $nextSession->bookings()->count() : 0;
+    // === Seats/Progress Logic (same as card) ===
+    $totalCapacity = 0;
+    $totalBooked = 0;
+    $hasUnlimited = false;
 
-    // Prozent nur, wenn Kapazität gesetzt ist
-    $percentNext  = (!is_null($capacityNext) && (int)$capacityNext > 0)
-        ? (int) round(min(100, ($bookedNext / (float)$capacityNext) * 100))
+    foreach ($upcomingSessions as $session) {
+        if (is_null($session->available_seats)) {
+            $hasUnlimited = true;
+            break;
+        }
+
+        $bookedCount = $session->getBookedCount();
+        $totalCapacity += $session->available_seats;
+        $totalBooked += $bookedCount;
+    }
+
+    $hasAvailableSessions = $upcomingSessions->contains(fn($s) => $s->hasAvailableSeats());
+    $allSoldOut = !$hasUnlimited && !$hasAvailableSessions;
+
+    $percent = $totalCapacity > 0
+        ? (int) round(min(100, ($totalBooked / (float)$totalCapacity) * 100))
         : null;
 
-    // Chip-Regeln (wie auf der Karte)
+    // --- Seat Chip ---
     $showSeatChip  = false;
-    $seatChipClass = ''; // seat-gray | seat-orange | seat-red
-    if (!is_null($percentNext)) {
-        if ($percentNext >= 30) {
+    $seatChipClass = '';
+
+    if (!is_null($percent)) {
+        if ($percent >= 30) {
             $showSeatChip  = true;
             $seatChipClass = 'seat-gray';
-            if ($percentNext >= 60) $seatChipClass = 'seat-orange';
-            if ($percentNext >= 80) $seatChipClass = 'seat-red';
+            if ($percent >= 60)  $seatChipClass = 'seat-orange';
+            if ($percent >= 80)  $seatChipClass = 'seat-red';
         }
     }
 
-    // Button-Status: Single-Session voll? Recurring: alle voll?
+    // --- Button Disable Logic ---
     $isSingleSoldOut = false;
-    $allSoldOut = false;
-
-    if ($course->isRecurring()) {
-        // Wenn ALLE Sessions voll -> Button disable + "Ausgebucht"
-        $allSoldOut = $course->sessions->count() > 0
-            ? $course->sessions->every(fn($s) => method_exists($s, 'hasAvailableSeats') ? !$s->hasAvailableSeats() : ($s->available_seats !== null && (int)$s->bookings()->count() >= (int)$s->available_seats))
-            : false;
-    } else {
-        // Single: nur die erste/alleinige Session bewerten
+    if (!$course->isRecurring()) {
         $first = $course->sessions->first();
         if ($first) {
-            $cap = $first->available_seats;
-            $isSingleSoldOut = (!is_null($cap) && (int)$cap > 0 && (int)$first->bookings()->count() >= (int)$cap);
+            $isSingleSoldOut = !$first->hasAvailableSeats();
         }
     }
 @endphp
+
 
 <style>
 /* ===== Nur das Nötigste – Typo bleibt wie im Original ===== */
@@ -118,10 +130,8 @@
 <div class="course-detail-area pt-60 pb-60">
   <div class="container">
     <div class="row">
-      {{-- Left: Course Details --}}
       <div class="col-lg-8 col-md-12">
 
-        {{-- Thumbnail --}}
         @if($course->thumbnail)
           <div class="img-wrap">
             <img src="{{ RvMedia::getImageUrl($course->thumbnail, 'large') }}"
@@ -129,24 +139,15 @@
           </div>
         @endif
 
-        {{-- Detail-Card --}}
         <div class="course-card-detail shadow-sm mb-5 position-relative">
-
-          {{-- 1) Titel --}}
           <h2 class="mb-3">{{ $course->name }}</h2>
-
-          {{-- 2) Chips: Seat-Chip (falls >=30%), Datum (nächste Session, falls vorhanden), Dauer, Kategorie, Preis --}}
           <div class="course-detail-chips">
-
-            {{-- Seat-Chip vor dem Datum --}}
-            @if($showSeatChip && !is_null($capacityNext))
-              <div class="chip {{ $seatChipClass }}" title="{{ $percentNext }}%">
+            @if($showSeatChip && !is_null($totalCapacity))
+              <div class="chip {{ $seatChipClass }}" title="{{ $percent }}%">
                 <i class="fal fa-user" aria-hidden="true"></i>
-                {{ $bookedNext }} / {{ $capacityNext }}
+                  {{ $totalBooked }} / {{ $totalCapacity }}
               </div>
             @endif
-
-            {{-- Datum (nächste relevante Session) --}}
             @if($dateDisplayForNext)
               <div class="chip" title="{{ $dateDisplayForNext }}">
                 <i class="fal fa-calendar-alt" aria-hidden="true"></i>
@@ -165,19 +166,45 @@
                 {{ $course->category->name }}
               </div>
             @endif
+                @if($course->price)
+                    @php
+                        $basePrice = $course->price;
+                        $dynamicPrice = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
+                            ->calculatePrice(
+                                $basePrice,
+                                \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
+                                $course->id,
+                                auth('customer')->user() ?? null
+                            );
 
-            @if($course->price)
-              <div class="chip" title="{{ format_price($course->price) }}">
-                {{ format_price($course->price) }}
-              </div>
-            @endif
+                        $priceDifference = $basePrice - $dynamicPrice;
+                    @endphp
+
+                    <div class="chip price-chip d-flex align-items-center">
+                        @if($dynamicPrice < $basePrice)
+                            <span class="old-price text-decoration-line-through text-muted me-2">
+                {{ format_price($basePrice) }}
+            </span>
+                            <span class="new-price text-success fw-bold">
+                {{ format_price($dynamicPrice) }}
+            </span>
+                        @else
+                            <span class="price fw-bold">{{ format_price($dynamicPrice) }}</span>
+                        @endif
+                    </div>
+
+                    @if($dynamicPrice < $basePrice)
+                        <div class="chip discount-info text-success small mt-1">
+                            <i class="fas fa-tag me-1"></i>
+                            {{ __('You save :amount', ['amount' => format_price(abs($priceDifference))]) }}
+                        </div>
+                    @endif
+                @endif
+
           </div>
-
-          {{-- 3) Select Datum (24h) / CTA --}}
           @if($course->sessions->count() > 0)
             @if($course->isRecurring())
               @php
-                  // Button disabled, wenn ALLE Sessions ausgebucht sind
                   $disableRecurringCta = $allSoldOut;
               @endphp
               <div class="course-detail-form">
@@ -192,7 +219,7 @@
                       @php
                         $label = $formatRange24h($session->start_date, $session->end_date);
                         $cap   = $session->available_seats;
-                        $book  = (int) $session->bookings()->count();
+                        $book  = (int) $session->getBookedCount();
                         $full  = (!is_null($cap) && (int)$cap > 0 && $book >= (int)$cap);
                       @endphp
                       <option value="{{ $session->id }}" {{ $full ? 'disabled' : '' }}>
@@ -200,8 +227,6 @@
                       </option>
                     @endforeach
                   </select>
-
-                  {{-- CTA: 100% breit; bei "alle ausgebucht" -> grau + Text ändern --}}
                   <button type="submit"
                           class="btn btn-primary btn-lg course-detail-cta {{ $disableRecurringCta ? 'soldout' : '' }}"
                           aria-disabled="{{ $disableRecurringCta ? 'true' : 'false' }}">
@@ -215,13 +240,9 @@
                 $singleLabel = $first ? $formatRange24h($first->start_date, $first->end_date) : null;
                 $disableSingleCta = $isSingleSoldOut;
               @endphp
-
-              {{-- Fixes Datum (24h) --}}
               @if($singleLabel)
                 <div class="mb-2"><strong>{{ __('Termin') }}:</strong> {{ $singleLabel }}</div>
               @endif
-
-              {{-- CTA: 100% breit; bei 100% voll -> grau + Text "Ausgebucht" --}}
               <form action="{{ route('public.course.booking') }}" method="POST" class="mb-3">
                 @csrf
                 <input type="hidden" name="course_id" value="{{ $course->id }}">
@@ -237,8 +258,6 @@
               </form>
             @endif
           @endif
-
-          {{-- 5) Beschreibung (unverändert in Typo) --}}
           <div class="course-description">
             {!! BaseHelper::clean($course->description) !!}
           </div>
@@ -248,8 +267,6 @@
           @include(Theme::getThemeNamespace('views.courses.partials.reviews'), ['model' => $course])
         @endif
       </div>
-
-      {{-- Right: Instructor Info (unverändert) --}}
       <div class="col-lg-4 col-md-12">
         @if($course->instructor)
           <div class="instructor-box shadow-sm p-4 mb-5" style="border-radius:10px; background:#fff;">

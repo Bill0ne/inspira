@@ -56,13 +56,22 @@ class CourseReviewTable extends TableAbstract
             })
             ->filter(function ($query) {
                 $keyword = $this->request->input('search.value');
+
                 if ($keyword) {
+                    $keywordLike = '%' . $keyword . '%';
+
                     return $query
-                        ->orWhereHas('author', function ($subQuery) use ($keyword) {
-                            return $subQuery
-                                ->where('first_name', 'LIKE', '%' . $keyword . '%')
-                                ->orWhere('last_name', 'LIKE', '%' . $keyword . '%')
-                                ->orWhere(DB::raw('CONCAT(first_name, " ", last_name)'), 'LIKE', '%' . $keyword . '%');
+                        ->where(function ($sub) use ($keywordLike) {
+                            $sub->whereHas('author', function ($subQuery) use ($keywordLike) {
+                                $subQuery
+                                    ->where('first_name', 'LIKE', $keywordLike)
+                                    ->orWhere('last_name', 'LIKE', $keywordLike)
+                                    ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', $keywordLike);
+                            })
+                                ->orWhereHas('course', function ($subQuery) use ($keywordLike) {
+                                    $subQuery->where('name', 'LIKE', $keywordLike);
+                                })
+                                ->orWhere('content', 'LIKE', $keywordLike);
                         });
                 }
 

@@ -8,6 +8,10 @@ use Botble\Courses\Models\Course;
 use Botble\Base\Http\Controllers\BaseController;
 use Botble\Courses\Tables\CourseTable;
 use Botble\Courses\Forms\CourseForm;
+use Botble\Courses\Models\CourseSession;
+use Illuminate\Http\JsonResponse;
+use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class CourseController extends BaseController
 {
@@ -61,9 +65,12 @@ class CourseController extends BaseController
     {
         $newRecurringUntil = $request->input('recurring_until');
         $oldRecurringUntil = $course->recurring_until;
+        $newStartDate = $request->input('start_date');
+        $oldStartDate = $course->start_date;
 
         if ($oldRecurringUntil && $newRecurringUntil && $newRecurringUntil < $oldRecurringUntil) {
             $sessionsWithBookings = $course->sessions()
+                ->where('is_manual', false)
                 ->where('start_date', '>', $newRecurringUntil)
                 ->whereHas('bookings')
                 ->count();
@@ -75,6 +82,43 @@ class CourseController extends BaseController
                     ->setPreviousUrl(route('course.edit', $course->getKey()))
                     ->setMessage('Cannot reduce recurring date. There are ' . $sessionsWithBookings . ' sessions with existing bookings. Please cancel them first.')
                     ->toResponse($request);
+            }
+
+            $sessionsToDelete = $course->sessions()
+                ->where('is_manual', false)
+                ->where('start_date', '>', $newRecurringUntil)
+                ->doesntHave('bookings')
+                ->get();
+
+            foreach ($sessionsToDelete as $session) {
+                $session->delete();
+            }
+        }
+
+        if ($oldStartDate && $newStartDate && $newStartDate > $oldStartDate) {
+            $sessionsWithBookings = $course->sessions()
+                ->where('is_manual', false)
+                ->where('start_date', '<', $newStartDate)
+                ->whereHas('bookings')
+                ->count();
+
+            if ($sessionsWithBookings > 0) {
+                return $this
+                    ->httpResponse()
+                    ->setError()
+                    ->setPreviousUrl(route('course.edit', $course->getKey()))
+                    ->setMessage('Cannot move start date forward. There are ' . $sessionsWithBookings . ' sessions before ' . $newStartDate . ' with existing bookings.')
+                    ->toResponse($request);
+            }
+
+            $sessionsToDelete = $course->sessions()
+                ->where('is_manual', false)
+                ->where('start_date', '<', $newStartDate)
+                ->doesntHave('bookings')
+                ->get();
+
+            foreach ($sessionsToDelete as $session) {
+                $session->delete();
             }
         }
 
@@ -129,40 +173,160 @@ class CourseController extends BaseController
 
     protected function generateSessions(Course $course): void
     {
-        $dates = $course->isRecurring() ? $course->generateRecurringDates() : [$course->start_date];
+        $dates = [];
 
-        $existingSessions = $course->sessions()->with('bookings')->get();
+        $durationSeconds = 3600;
+        if ($course->start_date && $course->end_date) {
+            $durationSeconds = abs($course->end_date->diffInSeconds($course->start_date));
+            if ($durationSeconds <= 0) $durationSeconds = 3600;
+        }
 
-        $existingDates = $existingSessions->pluck('start_date')->map(fn($d) => $d->toDateString())->toArray();
+        if ($course->isRecurring()) {
+            $recurringDates = $course->generateRecurringDates();
 
-        foreach ($existingSessions as $session) {
-            if ($session->bookings->count() > 0) {
-                if (!in_array($session->start_date->toDateString(), array_map(fn($d) => $d->toDateString(), $dates))) {
-                    $session->bookings()->update(['in_recurrence' => false]);
-                    $session->update(['in_recurrence' => false]);
+            foreach ($recurringDates as $startCarbon) {
+                if (!($startCarbon instanceof \Carbon\Carbon)) continue;
+
+                $endCarbon = $startCarbon->copy()->addSeconds($durationSeconds);
+
+                if ($course->recurring_until && $endCarbon->gt($course->recurring_until)) {
+                    continue;
                 }
-                continue;
+
+                $dates[] = [
+                    'start_date' => $startCarbon->toDateTimeString(),
+                    'end_date'   => $endCarbon->toDateTimeString(),
+                    'is_manual'  => false,
+                ];
+            }
+        }
+        else {
+            if ($course->start_date) {
+                $dates[] = [
+                    'start_date' => $course->start_date->toDateTimeString(),
+                    'end_date'   => $course->end_date ? $course->end_date->toDateTimeString() : null,
+                    'is_manual'  => false,
+                ];
+            }
+        }
+
+        $manualSessionsRaw = request()->input('manual_sessions', []);
+        if (is_string($manualSessionsRaw)) {
+            $manualSessionsRaw = json_decode($manualSessionsRaw, true) ?: [];
+        }
+
+        $manualSessionsFromForm = [];
+        foreach ($manualSessionsRaw as $row) {
+            if (!is_array($row)) continue;
+            $sessionData = [];
+            foreach ($row as $field) {
+                if (!is_array($field)) continue;
+                $key = $field['key'] ?? null;
+                $value = $field['value'] ?? null;
+                if ($key) $sessionData[$key] = $value;
             }
 
-            if (!in_array($session->start_date->toDateString(), array_map(fn($d) => $d->toDateString(), $dates))) {
-                $session->delete();
-            } else {
-                $session->update([
+            if (!empty($sessionData['start']) && !empty($sessionData['end'])) {
+                try {
+                    $manualSessionsFromForm[] = [
+                        'id'         => $sessionData['id'] ?? null,
+                        'start_date' => \Carbon\Carbon::parse($sessionData['start'])->toDateTimeString(),
+                        'end_date'   => \Carbon\Carbon::parse($sessionData['end'])->toDateTimeString(),
+                        'is_manual'  => true,
+                    ];
+                } catch (\Exception $e) {
+                    continue;
+                }
+            }
+        }
+
+        $unique = [];
+        $dates = array_filter($dates, function ($d) use (&$unique) {
+            if (!isset($d['start_date']) || isset($unique[$d['start_date']])) return false;
+            $unique[$d['start_date']] = true;
+            return true;
+        });
+
+        $existingManuals = $course->sessions()->where('is_manual', true)->with('bookings')->get();
+        $submittedIds = collect($manualSessionsFromForm)->pluck('id')->filter()->toArray();
+
+        foreach ($manualSessionsFromForm as $data) {
+            if (!empty($data['id'])) {
+                $session = $existingManuals->firstWhere('id', (int)$data['id']);
+                if ($session) {
+                    $session->update([
+                        'start_date' => $data['start_date'],
+                        'end_date'   => $data['end_date'],
+                    ]);
+                    continue;
+                }
+            }
+
+            $course->sessions()->create([
+                'start_date' => $data['start_date'],
+                'end_date'   => $data['end_date'],
+                'is_manual'  => true,
+                'in_recurrence' => false,
+                'available_seats' => $course->unlimited_seats ? null : $course->number_of_seats,
+            ]);
+        }
+
+        $removedSessions = $existingManuals->filter(fn($s) => !in_array($s->id, $submittedIds));
+        foreach ($removedSessions as $session) {
+            if ($session->bookings()->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'manual_sessions' => __("Cannot remove session starting at :date; it has bookings.", [
+                        'date' => $session->start_date->format('Y-m-d H:i'),
+                    ]),
+                ]);
+            }
+            $session->delete();
+        }
+
+        foreach ($dates as $d) {
+            $course->sessions()->updateOrCreate(
+                [
+                    'start_date' => $d['start_date'],
+                    'end_date'   => $d['end_date'],
+                ],
+                [
                     'available_seats' => $course->unlimited_seats ? null : $course->number_of_seats,
+                    'in_recurrence' => !$d['is_manual'],
+                    'is_manual' => $d['is_manual'],
+                ]
+            );
+        }
+    }
+
+    public function list(int $courseId): JsonResponse
+    {
+        $sessions = CourseSession::query()
+            ->where('course_id', $courseId)
+            ->select('id', 'start_date', 'end_date', 'available_seats')
+            ->orderBy('start_date')
+            ->get();
+
+        $grouped = $sessions->groupBy(fn ($session) =>
+        Carbon::parse($session->start_date)->format('Y-m-d')
+        );
+
+        $formatted = collect();
+
+        foreach ($grouped as $date => $items) {
+            foreach ($items as $session) {
+                $start = Carbon::parse($session->start_date);
+                $end = Carbon::parse($session->end_date);
+
+                $text = $start->format('d/m/Y h:i A') . ' - ' . $end->format('h:i A');
+
+                $formatted->push([
+                    'id' => $session->id,
+                    'text' => $text,
                 ]);
             }
         }
 
-        foreach ($dates as $date) {
-            if (!in_array($date->toDateString(), $existingDates)) {
-                $course->sessions()->create([
-                    'start_date' => $date,
-                    'end_date' => $course->end_date ? $date->copy()->setTimeFrom($course->end_date) : null,
-                    'available_seats' => $course->unlimited_seats ? null : $course->number_of_seats,
-                    'in_recurrence' => true,
-                ]);
-            }
-        }
+        return response()->json(['data' => $formatted->values()]);
     }
 
 }

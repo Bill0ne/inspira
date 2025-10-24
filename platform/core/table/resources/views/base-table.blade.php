@@ -170,6 +170,23 @@
     </x-core::card>
 </div>
 
+<div class="modal fade" id="participantsModal" tabindex="-1" aria-labelledby="participantsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="participantsModalLabel">Sitzungsteilnehmer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="participantsModalContent" class="text-center py-4">
+                    <i class="fa fa-spinner fa-spin"></i> Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {!! apply_filters(BASE_FILTER_TABLE_AFTER_RENDER, null, $table) !!}
 
 @push('footer')

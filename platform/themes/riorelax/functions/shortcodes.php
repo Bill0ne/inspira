@@ -44,7 +44,6 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Request;
 use Botble\Courses\Models\Course;
-use Botble\Base\Enums\BaseStatusEnum;
 
 app()->booted(function (): void {
     ThemeSupport::registerGoogleMapsShortcode();
@@ -450,36 +449,20 @@ app()->booted(function (): void {
             );
         });
 
-Shortcode::register(
-    'all-courses',
-    __('All Courses'),
-    __('Display all available courses'),
-    function (): ?string {
-        $request = request();
+        Shortcode::register(
+            'all-courses',
+            __('All Courses'),
+            __('Display all available courses'),
+            function (): ?string {
+                $request = request();
 
-        $perPage = (int) $request->integer('per_page', 12);
+                $params = \Botble\Courses\DataTransferObjects\CourseSearchParams::fromRequest($request->all());
 
-        // Falls dein Feld anders heißt (z. B. start_at / begin_at), HIER anpassen:
-        $startDateColumn = 'start_date';
+                $courses = app(\Botble\Courses\Services\GetCourseService::class)->getCourses($params);
 
-        $query = Course::query()
-            ->where('status', BaseStatusEnum::PUBLISHED)
-            ->orderBy($startDateColumn, 'ASC')
-            ->orderBy('created_at', 'ASC');
-
-        // (Optional) einfache Filter weiterreichen – passe an deine Struktur an:
-        if ($kw = trim((string) $request->get('q'))) {
-            $query->where(function ($q) use ($kw) {
-                $q->where('name', 'LIKE', "%{$kw}%")
-                  ->orWhere('description', 'LIKE', "%{$kw}%");
-            });
-        }
-
-        $courses = $query->paginate($perPage);
-
-        return Theme::partial('shortcodes.all-courses.index', compact('courses'));
-    }
-);
+                return Theme::partial('shortcodes.all-courses.index', compact('courses'));
+            }
+        );
 
         Shortcode::register(
             'service-list',

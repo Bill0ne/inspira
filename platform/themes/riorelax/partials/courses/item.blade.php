@@ -2,13 +2,24 @@
     use Carbon\Carbon;
 
     $margin = $margin ?? false;
+    $now = now();
 
-    // Nächste Session bestimmen
-    $nextSession = $course->isRecurring()
-        ? $course->sessions()->where('start_date', '>=', now())->orderBy('start_date')->first()
-        : $course->sessions()->orderBy('start_date')->first();
+    // --- Upcoming sessions ---
+    $upcomingSessionsQuery = $course->sessions()
+        ->where('start_date', '>=', $now)
+        ->orderBy('start_date');
 
-    // Datumsfunktion
+    $upcomingSessions = $upcomingSessionsQuery->get();
+    $upcomingSessionsCount = $upcomingSessions->count();
+    $nextSession = $upcomingSessionsCount ? $upcomingSessions->first() : null;
+
+    // --- Last session ---
+    $lastSession = $course->sessions()
+        ->where('start_date', '<', $now)
+        ->orderByDesc('start_date')
+        ->first();
+
+    // --- Helper to format session date range ---
     $formatSessionRange = static function (?object $session, string $dayFmt = 'd.m.Y', string $timeFmt = 'H:i'): ?string {
         if (!$session) return null;
 
@@ -26,19 +37,65 @@
 
     $dateDisplay = $formatSessionRange($nextSession);
 
-    // Anzahl kommender Sessions (für "X Termine verfügbar")
-    $upcomingCount = $course->sessions()
-        ->where('start_date', '>=', now())
-        ->count();
+    // --- Determine date chip label ---
+    $dateChipLabel = null;
+    $dateChipClass = 'mtxt';
+    $dateChipTitle = null;
 
-    // ==== Seats/Progress-Logik ====
-    $capacity = $nextSession?->available_seats;           // null = unlimited
-    $booked   = $nextSession ? (int) $nextSession->bookings()->count() : 0;
-    $percent  = (!is_null($capacity) && (int)$capacity > 0) ? (int) round(min(100, ($booked / (float)$capacity) * 100)) : null;
+    if ($upcomingSessionsCount > 1) {
+        $dateChipLabel = __('Mehrere Termine');
+        $dateChipTitle = $dateChipLabel;
+    } elseif ($nextSession) {
+        $dateChipLabel = $dateDisplay;
+        $dateChipTitle = $dateDisplay;
+    } elseif ($lastSession) {
+        $recentThreshold = $now->copy()->subDays(10);
+        $lastSessionDate = Carbon::parse($lastSession->start_date);
 
-    // Chip-Regeln: erst ab 30% sichtbar. Farben: >=30 grau, >=60 orange, >=80 rot
+        if ($lastSessionDate->greaterThanOrEqualTo($recentThreshold)) {
+            $dateChipLabel = __('Leider verpasst');
+            $dateChipClass .= ' missed';
+            $dateChipTitle = $dateChipLabel;
+        }
+    }
+
+    if (is_null($dateChipLabel) && $upcomingSessionsCount === 0 && !$lastSession) {
+        $dateChipLabel = __('Kein Termin verfügbar');
+        $dateChipTitle = $dateChipLabel;
+    }
+
+    // === Seats/Progress Logic ===
+    // Fully rely on hasAvailableSeats()
+
+    $totalCapacity = 0;
+    $totalBooked = 0;
+    $hasUnlimited = false;
+
+    // Collect overall capacity info (optional)
+    foreach ($upcomingSessions as $session) {
+        if (is_null($session->available_seats)) {
+            $hasUnlimited = true;
+            break;
+        }
+
+        // Optional: if you still want to calculate total usage %
+        $bookedCount = $session->getBookedCount();
+        $totalCapacity += $session->available_seats;
+        $totalBooked += $bookedCount;
+    }
+
+    // If any session has available seats => not sold out
+    $hasAvailableSessions = $upcomingSessions->contains(fn($s) => $s->hasAvailableSeats());
+    $isSoldOut = !$hasUnlimited && !$hasAvailableSessions;
+
+    // Optional % indicator
+    $percent = $totalCapacity > 0
+        ? (int) round(min(100, ($totalBooked / (float)$totalCapacity) * 100))
+        : null;
+
+    // --- Seat chip ---
     $showSeatChip  = false;
-    $seatChipClass = ''; // seat-gray | seat-orange | seat-red
+    $seatChipClass = '';
 
     if (!is_null($percent)) {
         if ($percent >= 30) {
@@ -48,9 +105,6 @@
             if ($percent >= 80)  $seatChipClass = 'seat-red';
         }
     }
-
-    // Ausgebucht?
-    $isSoldOut = (!is_null($capacity) && $capacity > 0 && $booked >= $capacity);
 @endphp
 
 <style>
@@ -65,6 +119,7 @@
   align-items:center !important;gap:7px;font-size:13px;font-weight:500;line-height:16px !important;text-decoration:none !important;
   border:0 !important;box-shadow:none !important;background-image:none !important;position:relative;
 }
+.single-services.course-card .services-content .meta-top .mtxt.missed{ color:#E74C3C !important; }
 .single-services.course-card .services-content .meta-top .mtxt::before,
 .single-services.course-card .services-content .meta-top .mtxt::after{content:none !important;display:none !important;}
 
@@ -117,38 +172,39 @@
 
     {{-- Titel & Beschreibung --}}
     <h4><a href="{{ $course->url }}">{{ $course->name }}</a></h4>
-
-    <div class="meta-top">
-      {{-- Seat-Chip vor dem Datum --}}
+	 
+	  <div class="meta-top">
+	 {{-- Seat-Chip vor dem Datum --}}
       @if ($showSeatChip)
         <div class="mtxt {{ $seatChipClass }}" title="{{ $percent }}%">
           <i class="fal fa-user" aria-hidden="true"></i>
-          {{ $booked }} / {{ $capacity }}
+            {{ $totalBooked }} / {{ $totalCapacity }}
         </div>
       @endif
-    </div>
-
+     </div>
     @if ($description = $course->description)
       <p class="room-item-custom-truncate" title="{{ $description }}">
         {!! BaseHelper::clean(Str::limit($description, 120)) !!}
       </p>
     @endif
 
-    {{-- META TOP: Termin/Preis --}}
+    {{-- META TOP: Seat-Chip (falls ≥30%) + Datum + Preis --}}
     <div class="meta-top">
 
-      {{-- Datum / "X Termine verfügbar" --}}
-      <div class="mtxt"
-           title="{{ $upcomingCount >= 2 ? ($upcomingCount . ' ' . __('Termine verfügbar')) : ($dateDisplay ?: __('Kein Termin verfügbar')) }}">
-        <i class="fal fa-calendar-alt" aria-hidden="true"></i>
-        {{ $upcomingCount >= 2
-            ? ($upcomingCount . ' ' . __('Termine verfügbar'))
-            : ($dateDisplay ?: __('Kein Termin verfügbar')) }}
-      </div>
+
+      {{-- Datum --}}
+      @if ($dateChipLabel)
+        <div class="{{ $dateChipClass }}" title="{{ $dateChipTitle }}">
+          <i class="fal fa-calendar-alt" aria-hidden="true"></i>
+          {{ $dateChipLabel }}
+        </div>
+      @endif
 
       {{-- Preis --}}
       @if ($course->price)
-        <div class="sep">•</div>
+        @if ($dateChipLabel)
+          <div class="sep">•</div>
+        @endif
         <div class="mtxt">{{ format_price($course->price) }}</div>
       @endif
     </div>
@@ -164,6 +220,13 @@
           {{ $isSoldOut ? __('Ausgebucht') : __('Jetzt Buchen') }}
         </a>
       </li></ul>
+    </div>
+
+    {{-- nach Beschreibung / vor Kategorie oder CTA --}}
+    <div class="card-actions">
+      <a class="more-link" href="{{ $course->url }}" aria-label="Mehr Infos zu {{ $course->name }}">
+        {{ __('Mehr Infos') }}
+      </a>
     </div>
 
   </div>
