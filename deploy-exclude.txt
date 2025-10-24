@@ -2,6 +2,8 @@
 .git*
 .github
 .env*
+.htaccess
+stage-env/
 vendor/
 bootstrap/cache/
 public/storage/
