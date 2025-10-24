@@ -28,7 +28,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
 
           # Fingerprint manuell speichern (höchste Sicherheit)
-          echo "194.164.74.168 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
+          echo "145.223.35.233 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
 
       # 3️⃣ Rsync Deployment (Safe Mode)
       - name: 📦 Sync code to Inspira Stage
@@ -45,7 +45,7 @@ jobs:
       # 4️⃣ Composer & Laravel Tasks
       - name: ⚙️ Run Laravel setup on server
         run: |
-          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@194.164.74.168 <<'EOF'
+          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@145.223.35.233 <<'EOF'
           cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env
 
           echo "📦 Running composer install..."
