@@ -3,7 +3,6 @@
 .github
 .env*
 vendor/
-storage/
 bootstrap/cache/
 public/storage/
 public/uploads/
