@@ -4,7 +4,7 @@ on:
   # 🔹 Automatisch bei Push auf irgendeinen Branch (wir filtern später per if)
   push:
     branches:
-      - "*"
+      - "UI-ButNot"
     paths-ignore:
       - README.md
       - .github/**
