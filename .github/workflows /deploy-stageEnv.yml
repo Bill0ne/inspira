@@ -9,7 +9,7 @@ on:
       - .github/**
       - docs/**
       - "*.md"
-  workflow_dispatch:  # ➕ ermöglicht manuelles Starten über Actions-Button
+  workflow_dispatch:  # ← richtig eingerückt (auf gleicher Ebene wie push)
 
 jobs:
   deploy:
@@ -36,29 +36,24 @@ jobs:
         uses: burnett01/rsync-deployments@5.2
         with:
           switches: -avzr --delete --exclude-from='deploy-exclude.txt'
-          path: ./  # lokaler Pfad (Repo)
+          path: ./
           remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env/
           remote_host: 145.223.35.233
           remote_port: 65002
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Composer & Laravel Commands
+      # 4️⃣ Composer & Laravel Tasks
       - name: ⚙️ Run Laravel setup on server
         run: |
           ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@145.223.35.233 <<'EOF'
           cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env
-
-          echo "📦 Running composer install..."
           composer install --no-dev --optimize-autoloader --quiet
-
-          echo "🧹 Clearing and caching Laravel..."
           php artisan migrate --force
           php artisan optimize:clear
           php artisan config:cache
           php artisan route:cache
           php artisan view:clear
-
           echo "✅ Inspira Stage deployment completed successfully!"
           EOF
 
