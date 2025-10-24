@@ -37,7 +37,7 @@ jobs:
           switches: -avzr --delete --exclude-from='deploy-exclude.txt'
           path: ./
           remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env/
-          remote_host: 194.164.74.168
+          remote_host: 145.223.35.233
           remote_port: 65002
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
