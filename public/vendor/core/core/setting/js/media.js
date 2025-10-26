@@ -1,1 +1,63 @@
-$(function(){$(".generate-thumbnails-trigger-button").on("click",function(t){t.preventDefault();var e=$(t.currentTarget),n=e.closest("form");$httpClient.make().withButtonLoading(e).postForm(n.prop("action"),new FormData(n[0])).then(function(t){var e=t.data,n=$("#generate-thumbnails-modal");n.modal("show"),n.data("total-files",e.data.files_count)})}),$("#generate-thumbnails-button").on("click",function(t){t.preventDefault();var e=$(t.currentTarget),n=e.closest(".modal"),a=e.closest("form"),o=n.data("total-files"),i=null;Botble.showButtonLoading(e),function t(){var l=arguments.length>0&&void 0!==arguments[0]?arguments[0]:0,c=arguments.length>1&&void 0!==arguments[1]?arguments[1]:n.data("chunk-limit");if(l>o)return Botble.hideButtonLoading(e),n.modal("hide"),void Botble.showSuccess(i);$httpClient.make().post(a.prop("action"),{total:o,offset:l,limit:c}).then(function(e){var n=e.data;i=n.message,n.data.next&&t(n.data.next,c)}).finally(function(){l>o&&(Botble.hideButtonLoading(e),n.modal("hide"))})}()}),$(document).on("change",".check-all",function(t){var e=$(t.currentTarget),n=e.attr("data-set"),a=e.prop("checked");$(n).each(function(t,e){$(e).prop("checked",a)})})});
+/******/ (() => { // webpackBootstrap
+/*!*****************************************************!*\
+  !*** ./platform/core/setting/resources/js/media.js ***!
+  \*****************************************************/
+$(function () {
+  $('.generate-thumbnails-trigger-button').on('click', function (event) {
+    event.preventDefault();
+    var currentTarget = $(event.currentTarget);
+    var $form = currentTarget.closest('form');
+    $httpClient.make().withButtonLoading(currentTarget).postForm($form.prop('action'), new FormData($form[0])).then(function (_ref) {
+      var data = _ref.data;
+      var $modal = $('#generate-thumbnails-modal');
+      $modal.modal('show');
+      $modal.data('total-files', data.data.files_count);
+    });
+  });
+  $('#generate-thumbnails-button').on('click', function (event) {
+    event.preventDefault();
+    var currentTarget = $(event.currentTarget);
+    var $modal = currentTarget.closest('.modal');
+    var $form = currentTarget.closest('form');
+    var totalFiles = $modal.data('total-files');
+    var message = null;
+    Botble.showButtonLoading(currentTarget);
+    function sendRequest() {
+      var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+      var limit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : $modal.data('chunk-limit');
+      if (offset > totalFiles) {
+        Botble.hideButtonLoading(currentTarget);
+        $modal.modal('hide');
+        Botble.showSuccess(message);
+        return;
+      }
+      $httpClient.make().post($form.prop('action'), {
+        total: totalFiles,
+        offset: offset,
+        limit: limit
+      }).then(function (_ref2) {
+        var data = _ref2.data;
+        message = data.message;
+        if (data.data.next) {
+          sendRequest(data.data.next, limit);
+        }
+      })["finally"](function () {
+        if (offset > totalFiles) {
+          Botble.hideButtonLoading(currentTarget);
+          $modal.modal('hide');
+        }
+      });
+    }
+    sendRequest();
+  });
+  $(document).on('change', '.check-all', function (event) {
+    var currentTarget = $(event.currentTarget);
+    var set = currentTarget.attr('data-set');
+    var checked = currentTarget.prop('checked');
+    $(set).each(function (index, el) {
+      $(el).prop('checked', checked);
+    });
+  });
+});
+/******/ })()
+;

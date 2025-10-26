@@ -1,119 +1,50 @@
 @php
     Theme::asset()->container('footer')->add('popper', 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js', ['jquery']);
-    Theme::asset()->container('footer')->add('bootstrap-js', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.min.js', ['jquery', 'popper']);
-    Theme::asset()->container('footer')->add('moment-js', 'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js');
-    Theme::asset()->container('footer')->add('datetimepicker-js', 'https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js', ['bootstrap-js', 'moment-js']);
-    Theme::asset()->container('footer')->add('datetimepicker-css', 'https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/css/tempusdominus-bootstrap-4.min.css');
+    Theme::asset()->container('footer')->add('bootstrap-js', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js', ['jquery', 'popper']);
+  Theme::asset()->container('footer')->usePath()->add('moment-js', 'vendors/moment.min.js');
+  Theme::asset()->container('footer')->usePath()->add('date-picker', 'vendors/date-picker.min.js');
+    Theme::asset()->container('footer')->usePath()->add('datetime-js', 'js/datetime.js');
 @endphp
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    if (!$.fn.datetimepicker) return;
-
-    // 24h-Defaults (falls andere Skripte initialisieren)
-    try {
-        $.extend(true, $.fn.datetimepicker.Constructor.Default, {
-            format: 'DD.MM.YYYY HH:mm',
-            sideBySide: true,
-            stepping: 15,
-            useCurrent: true,
-            allowInputToggle: true,
-            widgetParent: 'body',
-            locale: "{{ App::getLocale() }}",
-            icons: {
-                time: 'fal fa-clock',
-                date: 'fal fa-calendar',
-                up: 'fas fa-chevron-up',
-                down: 'fas fa-chevron-down',
-                previous: 'fas fa-chevron-left',
-                next: 'fas fa-chevron-right',
-                today: 'fas fa-calendar-check',
-                clear: 'fas fa-trash',
-                close: 'fas fa-times'
-            }
-        });
-    } catch(e) {}
-
-    // Alle Picker auf der Seite initialisieren (Start/End per ID)
-    const $start = $('#StartDateTimePicker');
-    const $end   = $('#EndDateTimePicker');
-
-    // evtl. Altinstanzen zerstören (Reload / Ajax)
-    try { if ($start.data('DateTimePicker')) $start.datetimepicker('destroy'); } catch(e){}
-    try { if ($end.data('DateTimePicker'))   $end.datetimepicker('destroy');   } catch(e){}
-
-    $start.datetimepicker({
-        minDate: moment().startOf('minute')
-    });
-
-    $end.datetimepicker({
-        useCurrent: false,
-        minDate: moment().add(15, 'minutes').startOf('minute')
-    });
-
-    // UX: Klick auf Icon/Textfeld öffnet sicher
-    function bindOpen($wrap){
-        $wrap.on('click focusin', 'input.datetimepicker-input, input.date-picker', () => $wrap.datetimepicker('show'));
-        $wrap.find('[data-toggle="datetimepicker"], .input-group-text')
-             .on('click', () => $wrap.datetimepicker('show'));
-    }
-    bindOpen($start); bindOpen($end);
-
-    // Logik: Ende ≥ Start +15 Min; Start ≤ Ende
-    $start.on('change.datetimepicker', function (e) {
-        if (!e.date) return;
-        const minEnd = e.date.clone().add(15, 'minutes');
-        $end.datetimepicker('minDate', minEnd);
-
-        const endDate = $end.datetimepicker('date');
-        if (!endDate || endDate.isBefore(minEnd)) {
-            $end.datetimepicker('date', e.date.clone().add(1, 'hours'));
-        }
-    });
-
-    $end.on('change.datetimepicker', function (e) {
-        if (!e.date) return;
-        $start.datetimepicker('maxDate', e.date.clone());
-    });
-
-    // Resync falls ein Fremdscript später AM/PM setzt
-    setTimeout(function () {
-        try { $start.datetimepicker('date', $start.datetimepicker('date')); } catch(e){}
-        try { $end.datetimepicker('date',   $end.datetimepicker('date'));   } catch(e){}
-    }, 200);
-});
-</script>
-
 <style>
-/* UI – neutral & modern */
-.input-group.date { position: relative; }
-.input-group.date .form-control {
-    padding-right: 35px;
-    height: 44px;
-    border-radius: 8px;
-    border: 1px solid #d1d5db;
-    box-shadow: none;
-    transition: border-color .15s ease, box-shadow .15s ease;
-}
-.input-group.date .form-control:focus {
-    border-color: #578E88;
-    box-shadow: 0 0 0 3px rgba(87,142,136,.15);
-}
-.input-group.date .input-group-text {
-    border: none;
-    background: transparent;
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 2;
-    cursor: pointer;
-    color: #666;
-}
-/* Picker sichtbar über Sidebar */
-.tempus-dominus-widget { z-index: 10550 !important; border-radius: 10px; overflow: hidden; }
-.tempus-dominus-widget .date-container-days .day.active,
-.tempus-dominus-widget .time-container .time .active { background-color: #578E88 !important; }
+    .booking-slots-wrapper .slot-item {
+        position: relative;
+        margin-bottom: 10px;
+        transition: background 0.2s ease;
+    }
+
+    .booking-slots-wrapper .slot-item.new-slot {
+        border: 1px solid #e5e7eb;
+        padding: 10px;
+        background: #f9fafb;
+        border-radius: 8px;
+    }
+
+    .booking-slots-wrapper .slot-item .remove-slot-btn {
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        width: 22px;
+        height: 22px;
+        border: 1px solid #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        cursor: pointer;
+        background: #fff;
+        border-radius: 3px;
+        color: #000;
+        font-size: 14px;
+        line-height: 1;
+        transition: 0.2s ease;
+    }
+
+    .booking-slots-wrapper .slot-item .remove-slot-btn:hover {
+        background: #000;
+        color: #fff;
+    }
+
 </style>
 
 @if (is_plugin_active('hotel'))
@@ -141,7 +72,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             </div>
                         </div>
                     @endif
-
+                        <div id="booking-slots" class="booking-slots-wrapper">
+                            <div class="slot-item0 slot-item">
+                                <div class="row">
                     {{-- Check In (ID FIXED: StartDateTimePicker) --}}
                     <div class="col-lg-2 col-md-6 mb-30">
                         <div class="contact-field p-relative c-name">
@@ -151,13 +84,13 @@ document.addEventListener("DOMContentLoaded", function () {
                                     id="availability-form-start-date"
                                     autocomplete="off"
                                     type="text"
-                                    class="departure-date datetimepicker-input date-picker"
+                                    class="theme-date-input-start"
                                     data-target="#StartDateTimePicker"
                                     data-date-format="{{ HotelHelper::getBookingFormDateFormat() }}"
                                     placeholder="DD.MM.YYYY HH:mm"
                                     data-locale="{{ App::getLocale() }}"
                                     value="{{ BaseHelper::stringify($availableForBooking ? old('start_date', $startDate) : $startDate) }}"
-                                    name="start_date"
+                                    name="slots[0][start_date]"
                                 >
                                 <span class="input-group-text" data-target="#StartDateTimePicker" data-toggle="datetimepicker">
                                     <i class="fal fa-calendar-alt"></i>
@@ -175,13 +108,13 @@ document.addEventListener("DOMContentLoaded", function () {
                                     type="text"
                                     id="availability-form-end-date"
                                     autocomplete="off"
-                                    class="arrival-date datetimepicker-input date-picker"
+                                    class="theme-date-input-start"
                                     data-target="#EndDateTimePicker"
                                     data-date-format="{{ HotelHelper::getBookingFormDateFormat() }}"
                                     placeholder="DD.MM.YYYY HH:mm"
                                     data-locale="{{ App::getLocale() }}"
                                     value="{{ BaseHelper::clean($availableForBooking ? old('end_date', $endDate) : $endDate) }}"
-                                    name="end_date"
+                                    name="slots[0][end_date]"
                                 >
                                 <span class="input-group-text" data-target="#EndDateTimePicker" data-toggle="datetimepicker">
                                     <i class="fal fa-calendar-alt"></i>
@@ -189,7 +122,14 @@ document.addEventListener("DOMContentLoaded", function () {
                             </div>
                         </div>
                     </div>
-
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <button type="button" id="add-slot" class="btn btn-add-slot">
+                                + {{ __('Add New') }}
+                            </button>
+                        </div>
                     {{-- Guests / Rooms (dein Block) --}}
                     <div class="col-lg-5 col-md-6 mb-30">
                         <div class="contact-field p-relative c-name form-guests-and-rooms-wrapper">
@@ -250,55 +190,54 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                     @endif
 
-                    {{-- Check In --}}
-                    <div class="col-lg-12">
-                        <div class="contact-field p-relative c-name mb-20">
-                            <label for="room-detail-booking-form-start-date"><i class="fal fa-badge-check"></i>{{ __('Check In Date') }}</label>
-                            <div class="input-group date" id="StartDateTimePicker" data-target-input="nearest">
-                                <input
-                                    type="text"
-                                    id="room-detail-booking-form-start-date"
-                                    class="departure-date datetimepicker-input date-picker"
-                                    autocomplete="off"
-                                    data-target="#StartDateTimePicker"
-                                    data-date-format="{{ HotelHelper::getBookingFormDateFormat() }}"
-                                    placeholder="DD.MM.YYYY HH:mm"
-                                    data-locale="{{ App::getLocale() }}"
-                                    value="{{ BaseHelper::stringify($startDate ?: old('start_date', $startDate)) }}"
-                                    name="start_date"
-                                >
-                                <span class="input-group-text" data-target="#StartDateTimePicker" data-toggle="datetimepicker">
-                                    <i class="fal fa-calendar-alt"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                        <div id="booking-slots" class="booking-slots-wrapper">
+                            <div class="slot-item0 slot-item">
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="contact-field mb-15">
+                                            <label><i class="fal fa-badge-check"></i> {{ __('Check In Time') }}</label>
+                                            <div class="input-group date" data-target-input="nearest">
+                                                <input
+                                                        type="text"
+                                                        name="slots[0][start_date]"
+                                                        class="theme-date-input-start check-in"
+                                                        id="checkin-0"
+                                                        autocomplete="off"
+                                                        placeholder="DD / MM / YYYY  HH : MM"
+                                                        value="{{ BaseHelper::stringify($availableForBooking ? old('start_date', $startDate) : $startDate) }}"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
 
-                    {{-- Check Out --}}
-                    <div class="col-lg-12">
-                        <div class="contact-field p-relative c-subject mb-20">
-                            <label for="room-detail-booking-form-end-date"><i class="fal fa-times-octagon"></i>{{ __('Check Out Date') }}</label>
-                            <div class="input-group date" id="EndDateTimePicker" data-target-input="nearest">
-                                <input
-                                    type="text"
-                                    id="room-detail-booking-form-end-date"
-                                    class="arrival-date datetimepicker-input date-picker"
-                                    autocomplete="off"
-                                    data-date-format="{{ HotelHelper::getBookingFormDateFormat() }}"
-                                    placeholder="DD.MM.YYYY HH:mm"
-                                    data-locale="{{ App::getLocale() }}"
-                                    value="{{ BaseHelper::stringify($endDate ?: old('end_date', $endDate)) }}"
-                                    name="end_date"
-                                    data-target="#EndDateTimePicker"
-                                >
-                                <span class="input-group-text" data-target="#EndDateTimePicker" data-toggle="datetimepicker">
-                                    <i class="fal fa-calendar-alt"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                                    <div class="col-lg-12">
+                                        <div class="contact-field mb-15">
+                                            <label><i class="fal fa-times-octagon"></i> {{ __('Check Out Time') }}</label>
+                                            <div class="input-group date" data-target-input="nearest">
+                                                <input
+                                                        type="text"
+                                                        name="slots[0][end_date]"
+                                                        class="theme-date-input-end check-out"
+                                                        id="checkout-0"
+                                                        autocomplete="off"
+                                                        placeholder="DD / MM / YYYY  HH : MM"
+                                                        value="{{ BaseHelper::clean($availableForBooking ? old('end_date', $endDate) : $endDate) }}"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
 
-                    {{-- Adults --}}
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="mb-3">
+                            <button type="button" id="add-slot" class="btn btn-add-slot">
+                                + {{ __('Add New') }}
+                            </button>
+                        </div>
+
+                        {{-- Adults --}}
                     <div class="col-lg-12">
                         <div class="contact-field p-relative c-subject input-group input-group-two left-icon mb-20">
                             <label for="adults"><i class="fal fa-users"></i>{{ __('Adults') }}</label>

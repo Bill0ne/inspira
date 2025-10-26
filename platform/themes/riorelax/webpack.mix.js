@@ -10,7 +10,9 @@ mix
     .js(source + '/assets/js/review.js', dist + '/js')
     .js(`${source}/assets/js/script.js`, `${dist}/js`)
     .js(`${source}/assets/js/main.js`, `${dist}/js`)
+    .js(`${source}/assets/js/checkout.js`, `${dist}/js`)
     .js(`${source}/assets/js/course-checkout.js`, `${dist}/js`)
+    .js(`${source}/assets/js/datetime.js`, `${dist}/js`)
 
 if (mix.inProduction()) {
     mix
@@ -19,5 +21,6 @@ if (mix.inProduction()) {
         .copy(`${dist}/js/main.js`, `${source}/public/js`)
         .copy(`${dist}/js/checkout.js`, `${source}/public/js`)
         .copy(`${dist}/js/course-checkout.js`, `${source}/public/js`)
+        .copy(`${dist}/js/datetime.js`, `${source}/public/js`)
         .copy(`${dist}/js/review.js`, `${source}/public/js`)
 }
