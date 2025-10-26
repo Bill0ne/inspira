@@ -4,7 +4,7 @@ on:
   # 🔹 Trigger bei Commits oder Pushes auf design-env
   push:
     branches:
-      - design-env
+      - design-desk
     paths-ignore:
       - README.md
       - .github/**
