@@ -57,6 +57,10 @@ jobs:
           php artisan view:cache
           php artisan optimize
 
+          echo "🧩 Rebuilding plugin & theme cache..."
+          rm -f bootstrap/cache/plugins.php
+          php artisan cms:theme:assets:publish
+
           echo "✅ Inspira LIVE deployment completed successfully!"
           EOF
 
