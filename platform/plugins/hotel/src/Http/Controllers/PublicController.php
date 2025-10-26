@@ -599,8 +599,9 @@ class PublicController extends Controller
 
 
         $request->merge([
-            'order_id' => $booking->getKey(),
+            'order_id' => [$booking->getKey()],
         ]);
+
 
         $data = [
             'error' => false,
