@@ -1,6 +1,8 @@
 @php
     Theme::asset()->container('footer')->usePath()->add('lightgallery-css', 'plugins/lightgallery/css/lightgallery.min.css');
     Theme::asset()->container('footer')->usePath()->add('lightgallery-js', 'plugins/lightgallery/js/lightgallery.min.js');
+        Theme::asset()->container('footer')->usePath()->add('checkout-js', 'js/course-checkout.js');
+
 
     Theme::set('pageTitle', $room->name);
     $nights = $startDate->diffInHours($endDate);
@@ -11,7 +13,7 @@
             <div class="col-sm-12 col-md-12 col-lg-4 order-2">
                 <aside class="sidebar services-sidebar">
                     @if (HotelHelper::isBookingEnabled())
-                        <div class="sidebar-widget categories">
+                        <div class="sidebar-widget categories" style="padding: 30px !important;">
                             <div class="widget-content">
                                 <h2 class="widget-title"> {{ __('Booking form') }} </h2>
                                 <div class="booking">
@@ -122,3 +124,4 @@
         </div>
     </div>
 </div>
+
