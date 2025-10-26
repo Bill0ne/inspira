@@ -1,17 +1,7 @@
-name: 🚀 Deploy to Inspira Live
+name: 🚀 Deploy to Inspira Live (manual only)
 
 on:
-  # 🔹 Automatisch bei jedem Commit oder Push auf main-desk
-  push:
-    branches:
-      - main-desk
-    paths-ignore:
-      - README.md
-      - .github/**
-      - docs/**
-      - "*.md"
-
-  # 🔹 Optional: manuell starten über GitHub Actions → "Run workflow"
+  # 🔹 Nur manuell starten über GitHub Actions → "Run workflow"
   workflow_dispatch:
 
 jobs:
@@ -67,9 +57,13 @@ jobs:
           php artisan view:cache
           php artisan optimize
 
+          echo "🧩 Rebuilding plugin & theme cache..."
+          rm -f bootstrap/cache/plugins.php
+          php artisan cms:theme:assets:publish
+
           echo "✅ Inspira LIVE deployment completed successfully!"
           EOF
 
       # 5️⃣ Erfolgsmeldung im Log
       - name: 📨 Notify success
-        run: echo "✅ Inspira LIVE deployed from commit ${{ github.sha }} at $(date)"
+        run: echo "✅ Inspira LIVE deployed manually at $(date)"
