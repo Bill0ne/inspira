@@ -4,6 +4,7 @@
 .env*
 .htaccess
 stage-env/
+design-env/
 vendor/
 bootstrap/cache/
 logs/
