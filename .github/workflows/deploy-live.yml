@@ -1,0 +1,65 @@
+name: 🚀 Deploy to Inspira Live (manual only)
+
+on:
+  # 🔹 Nur manuell starten über GitHub Actions → "Run workflow"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Live Server
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Repository auschecken
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ SSH-Zugriff vorbereiten
+      - name: 🔐 Setup SSH Access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "145.223.35.233 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
+
+      # 3️⃣ Dateien sicher auf den Live-Server synchronisieren
+      - name: 📦 Sync code to Inspira Live
+        uses: burnett01/rsync-deployments@5.2
+        with:
+          switches: -avzr --delete --exclude-from='deploy-exclude.txt'
+          path: ./
+          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/
+          remote_host: 145.223.35.233
+          remote_port: 65002
+          remote_user: u296731902
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # 4️⃣ Laravel + Yarn + Cache Optimierung
+      - name: ⚙️ Run Laravel & Yarn setup on Live server
+        run: |
+          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@145.223.35.233 <<'EOF'
+          cd /home/u296731902/domains/inspira-zentrum.de/public_html
+
+          echo "📦 Installing composer dependencies..."
+          composer install --no-dev --optimize-autoloader --quiet
+
+          echo "🧱 Installing Node modules & building frontend..."
+          if [ -f package.json ]; then
+            yarn install --frozen-lockfile --silent || npm install --silent
+            yarn build || npm run build
+          fi
+
+          echo "🧹 Clearing & optimizing Laravel caches..."
+          php artisan optimize:clear
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:clear
+          php artisan view:cache
+          php artisan optimize
+
+          echo "✅ Inspira LIVE deployment completed successfully!"
+          EOF
+
+      # 5️⃣ Erfolgsmeldung im Log
+      - name: 📨 Notify success
+        run: echo "✅ Inspira LIVE deployed manually at $(date)"
