@@ -39,6 +39,23 @@ return [
         'available_seats' => 'Available Seats',
     ],
 
+    'table' => [
+        'overview' => 'Course',
+        'views' => 'Views',
+        'views_hint' => 'Last 30 days',
+        'occupancy' => 'Occupancy',
+        'engagement' => 'Engagement',
+        'schedule' => 'Schedule',
+        'score' => 'Score',
+        'score_hint' => 'Overall course score',
+        'session_id' => 'Session #:id',
+        'booked_vs_remaining' => ':booked booked · :remaining free',
+        'booked_unlimited' => ':booked booked · unlimited',
+        'engagement_ratio' => ':attended of :booked attended',
+        'conversion_rate' => 'Conversion :percent%',
+        'view_participants' => 'View participants',
+    ],
+
     'settings' => [
         'email' => [
             'title' => 'Course Booking',

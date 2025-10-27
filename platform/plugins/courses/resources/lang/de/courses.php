@@ -39,6 +39,23 @@ return [
         'available_seats' => 'Verfügbare Plätze',
     ],
 
+    'table' => [
+        'overview' => 'Kurse',
+        'views' => 'Ansichten',
+        'views_hint' => 'Letzte 30 Tage',
+        'occupancy' => 'Belegung',
+        'engagement' => 'Engagement',
+        'schedule' => 'Zeitplan',
+        'score' => 'Score',
+        'score_hint' => 'Aktueller Kurs-Score',
+        'session_id' => 'Sitzung #:id',
+        'booked_vs_remaining' => ':booked belegt · :remaining frei',
+        'booked_unlimited' => ':booked belegt · unbegrenzt',
+        'engagement_ratio' => ':attended von :booked teilgenommen',
+        'conversion_rate' => 'Conversion :percent%',
+        'view_participants' => 'Teilnehmer anzeigen',
+    ],
+
     'settings' => [
         'email' => [
             'title' => 'Kursbuchung',
