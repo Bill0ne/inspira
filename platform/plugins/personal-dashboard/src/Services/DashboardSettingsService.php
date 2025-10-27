@@ -10,6 +10,7 @@ use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class DashboardSettingsService
@@ -39,6 +40,16 @@ class DashboardSettingsService
             if (is_array($cached)) {
                 return $cached;
             }
+        }
+
+        if (! $this->hasSettingsTable()) {
+            $defaults = $this->defaults;
+
+            [$normalizedWidgets] = $this->normalizeWidgets($defaults['widgets'] ?? []);
+
+            $defaults['widgets'] = $normalizedWidgets;
+
+            return $defaults;
         }
 
         $setting = PersonalDashboardSetting::query()->firstOrCreate([
@@ -97,6 +108,10 @@ class DashboardSettingsService
 
     public function syncCustomWidget(PersonalDashboardCustomWidget $widget): void
     {
+        if (! $this->hasSettingsTable()) {
+            return;
+        }
+
         $settings = $this->getSettings();
 
         $settings['widgets'][$widget->key] = array_merge($settings['widgets'][$widget->key] ?? [], [
@@ -110,6 +125,10 @@ class DashboardSettingsService
 
     public function removeCustomWidget(PersonalDashboardCustomWidget $widget): void
     {
+        if (! $this->hasSettingsTable()) {
+            return;
+        }
+
         $settings = $this->getSettings();
 
         if (Arr::has($settings, "widgets.{$widget->key}")) {
@@ -255,7 +274,9 @@ class DashboardSettingsService
             }
         }
 
-        $customWidgets = PersonalDashboardCustomWidget::query()->get();
+        $customWidgets = $this->hasCustomWidgetsTable()
+            ? PersonalDashboardCustomWidget::query()->get()
+            : collect();
 
         foreach ($customWidgets as $widget) {
             $existing = Arr::get($normalized, $widget->key, []);
@@ -279,6 +300,10 @@ class DashboardSettingsService
 
     protected function saveSettings(array $settings): void
     {
+        if (! $this->hasSettingsTable()) {
+            return;
+        }
+
         if (isset($settings['widgets']) && is_array($settings['widgets'])) {
             $settings['widgets'] = $this->sortWidgets($settings['widgets']);
         }
@@ -305,5 +330,15 @@ class DashboardSettingsService
         $key = Str::after($key, 'widget_');
 
         return Str::of($key)->replace('_', ' ')->headline();
+    }
+
+    protected function hasSettingsTable(): bool
+    {
+        return Schema::hasTable((new PersonalDashboardSetting())->getTable());
+    }
+
+    protected function hasCustomWidgetsTable(): bool
+    {
+        return Schema::hasTable((new PersonalDashboardCustomWidget())->getTable());
     }
 }

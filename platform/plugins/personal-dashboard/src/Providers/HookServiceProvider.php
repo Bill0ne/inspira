@@ -11,6 +11,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
 class HookServiceProvider extends ServiceProvider
 {
@@ -46,6 +47,10 @@ class HookServiceProvider extends ServiceProvider
 
     public function registerCustomWidgets(array $widgets, Collection $widgetSettings): array
     {
+        if (! Schema::hasTable((new PersonalDashboardCustomWidget())->getTable())) {
+            return $widgets;
+        }
+
         $settingsService = App::make(DashboardSettingsService::class);
 
         $customWidgets = PersonalDashboardCustomWidget::query()
