@@ -162,12 +162,12 @@ $stats = [
 }
 .quote-box {
   flex: 1;
-  text-align: left;
+  text-align: right;
 }
 .quote-box .quote-label {
   font-size: 12px;
   color: #777;
-  margin-bottom: 2px;
+  margin: 2px;
 }
 .quote-box .quote-text {
   font-size: 14px;
@@ -176,12 +176,12 @@ $stats = [
 }
 
 .welcome-box {
-  text-align: right;
+  text-align: left;
 }
 .welcome-box h4 {
   font-weight: 600;
   font-size: 20px;
-  margin-bottom: 8px;
+  margin: 8px;
   color: #111;
 }
 
@@ -283,13 +283,13 @@ $stats = [
 <div class="greeting-wrapper">
   <!-- OBERER TEIL -->
   <div class="greeting-top">
-    <div class="quote-box">
-      <div class="quote-label">🌿 Deine <strong>INSPIRation des Tages</strong>:</div>
-      <div class="quote-text">{{ $quote }}</div>
-    </div>
     <div class="welcome-box">
       <h4>Willkommen zurück bei Inspira {{ $user->first_name ?? $user->name }}.</h4>
     </div>
+    <div class="quote-box">
+      <div class="quote-label">🌿 Deine <strong>INSPIRation des Tages</strong>:</div>
+      <div class="quote-text">{{ $quote }}</div>
+    </div> 
   </div>
 
   <!-- UNTERER TEIL -->
