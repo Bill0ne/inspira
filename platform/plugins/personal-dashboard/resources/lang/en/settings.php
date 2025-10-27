@@ -51,4 +51,8 @@ return [
         ],
         'invalid_settings_json' => 'The widget settings must be valid JSON.',
     ],
+    'alerts' => [
+        'migrations_pending' => 'The personal dashboard database tables are missing. Run <code>:command</code> in your terminal, then reload this page.',
+        'custom_widgets_pending' => 'Custom widget management will become available once the personal dashboard migrations have been executed.',
+    ],
 ];

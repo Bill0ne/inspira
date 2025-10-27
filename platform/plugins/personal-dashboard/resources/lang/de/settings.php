@@ -51,4 +51,8 @@ return [
         ],
         'invalid_settings_json' => 'Die Widget-Einstellungen müssen gültiges JSON sein.',
     ],
+    'alerts' => [
+        'migrations_pending' => 'Die Datenbanktabellen für das persönliche Dashboard fehlen. Führe <code>:command</code> im Terminal aus und lade diese Seite anschließend neu.',
+        'custom_widgets_pending' => 'Die Verwaltung eigener Widgets steht zur Verfügung, sobald die persönlichen Dashboard-Migrationen ausgeführt wurden.',
+    ],
 ];

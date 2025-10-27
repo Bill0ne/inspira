@@ -72,17 +72,25 @@ class DashboardSettingsService
         return $settings;
     }
 
-    public function updateGeneral(array $data): void
+    public function updateGeneral(array $data): bool
     {
+        if (! $this->hasSettingsTable()) {
+            return false;
+        }
+
         $settings = $this->getSettings();
 
         $settings['allow_user_overrides'] = (bool) Arr::get($data, 'allow_user_overrides', false);
 
-        $this->saveSettings($settings);
+        return $this->saveSettings($settings);
     }
 
-    public function updateWidgets(array $widgets): void
+    public function updateWidgets(array $widgets): bool
     {
+        if (! $this->hasSettingsTable()) {
+            return false;
+        }
+
         $settings = $this->getSettings();
 
         $current = $settings['widgets'] ?? [];
@@ -114,7 +122,7 @@ class DashboardSettingsService
             $settings['widgets'] = $rebuilt + Arr::except($current, array_keys($rebuilt));
         }
 
-        $this->saveSettings($settings);
+        return $this->saveSettings($settings);
     }
 
     public function syncCustomWidget(PersonalDashboardCustomWidget $widget): void
@@ -313,10 +321,20 @@ class DashboardSettingsService
         return [$normalized, $changed];
     }
 
-    protected function saveSettings(array $settings): void
+    public function tablesReady(): bool
+    {
+        return $this->hasSettingsTable();
+    }
+
+    public function customWidgetsReady(): bool
+    {
+        return $this->hasCustomWidgetsTable();
+    }
+
+    protected function saveSettings(array $settings): bool
     {
         if (! $this->hasSettingsTable()) {
-            return;
+            return false;
         }
 
         if (isset($settings['widgets']) && is_array($settings['widgets'])) {
@@ -331,6 +349,8 @@ class DashboardSettingsService
 
         $this->cache->forget(self::SETTINGS_CACHE_KEY);
         $this->getSettings(true);
+
+        return true;
     }
 
     protected function sortWidgets(array $widgets): array
