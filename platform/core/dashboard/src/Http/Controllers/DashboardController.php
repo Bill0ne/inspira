@@ -15,11 +15,10 @@ class DashboardController extends BaseController
 {
     public function getDashboard(Request $request)
     {
-        $this->pageTitle(trans('core/dashboard::dashboard.title'));
+        $this->pageTitle('', false);
 
         Assets::addScripts(['sortable', 'equal-height', 'counterup'])
-            ->addScriptsDirectly('vendor/core/core/dashboard/js/dashboard.js')
-            ->addScriptsDirectly('vendor/core/core/dashboard/js/check-for-updates.js');
+            ->addScriptsDirectly('vendor/core/core/dashboard/js/dashboard.js');
 
         Assets::usingVueJS();
 
