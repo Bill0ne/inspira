@@ -46,7 +46,19 @@ resources/docs
 
 /lang/*
 !/lang/en
+!/lang/de.json
+design-env/
+stage-env/
+# === BUILD / NODE ===
+/node_modules
+/bower_components
+/public/vendor/core
+/public/themes
+/public/docs
+/resources/docs
+/vendor
 
+# === MISC ===
 /log
 
 storage/framework/laravel-excel/
