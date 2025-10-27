@@ -144,7 +144,7 @@ $bookings = DB::table('course_bookings')
           $chairs = '';
           for ($i=1;$i<=10;$i++){
             $color = $i <= $filled ? '#578E88' : '#CCC';
-            $chairs .= "<img src='".asset('images/icons/chair.svg')."' class='chair-icon' style='filter:".($i <= $filled ? "invert(45%) sepia(24%) saturate(372%) hue-rotate(125deg) brightness(95%) contrast(90%);" : "grayscale(1) opacity(0.3);")." margin-right:1px'>";
+            $chairs .= "<img src='".asset('storage/general/chair.svg')."' class='chair-icon' style='filter:".($i <= $filled ? "invert(45%) sepia(24%) saturate(372%) hue-rotate(125deg) brightness(95%) contrast(90%);" : "grayscale(1) opacity(0.3);")." margin-right:1px'>";
           }
           $img = $c->thumbnail ? RvMedia::getImageUrl($c->thumbnail,'thumb',false,RvMedia::getDefaultImage()) : RvMedia::getDefaultImage();
           $dateStr = $c->start_date ? Carbon::parse($c->start_date)->format('d.m.y') : '';
