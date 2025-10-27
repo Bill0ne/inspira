@@ -14,8 +14,24 @@ class CheckoutRequest extends Request
 
         return [
             'room_id' => ['required', 'exists:ht_rooms,id'],
-            'start_date' => ['required', 'string', 'date_format:' . $dateFormat, 'after_or_equal:today'],
-            'end_date' => ['required', 'string', 'date_format:' . $dateFormat, 'after_or_equal:start_date'],
+            'slots.*.start_date' => [
+                'required',
+                'string',
+                'date_format:' . $dateFormat,
+                'after_or_equal:today',
+            ],
+            'slots.*.end_date' => [
+                'required',
+                'string',
+                'date_format:' . $dateFormat,
+                'after_or_equal:slots.*.start_date',
+            ],
+            'adults' => [
+                'required',
+                'integer',
+                'min:' . HotelHelper::getMinimumNumberOfGuests(),
+                'max:' . HotelHelper::getMaximumNumberOfGuests(),
+            ],
             'first_name' => ['required', 'string', 'max:120'],
             'last_name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:120'],
