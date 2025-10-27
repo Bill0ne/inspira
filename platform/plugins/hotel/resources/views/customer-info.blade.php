@@ -4,8 +4,8 @@
     </div>
     <div class="card-body">
         <div><strong>{{ trans('plugins/hotel::booking.name') }}:</strong> {{ $customer->first_name }} {{ $customer->last_name }}</div>
-        <div><strong>Email:</strong> {{ $customer->email }}</div>
-        <div><strong>{{ trans('plugins/hotel::booking.phone') }}:</strong> {{ $customer->phone ?? 'N/A' }}</div>
-        <div><strong>{{ trans('plugins/hotel::booking.address') }}:</strong> {{ $customer->address ?? 'N/A' }}</div>
+        <div><strong>{{ __('Email') }}:</strong> {{ $customer->email }}</div>
+        <div><strong>{{ trans('plugins/hotel::booking.phone') }}:</strong> {{ $customer->phone ?? __('N/A') }}</div>
+        <div><strong>{{ trans('plugins/hotel::booking.address') }}:</strong> {{ $customer->address ?? __('N/A') }}</div>
     </div>
 </div>

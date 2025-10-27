@@ -45,6 +45,7 @@ bun.lockb
 /storage/framework/laravel-excel/
 /lang/*
 !/lang/en
+!/lang/de.json
 design-env/
 stage-env/
 # === BUILD / NODE ===
