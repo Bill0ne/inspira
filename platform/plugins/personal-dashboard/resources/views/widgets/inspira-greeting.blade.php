@@ -152,6 +152,7 @@ $stats = [
   display: flex;
   flex-direction: column;
   gap: 25px;
+  padding: 30px;
 }
 
 /* === OBERER BEREICH (QUOTE + WELCOME) === */
