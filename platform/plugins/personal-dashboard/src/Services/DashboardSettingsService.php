@@ -85,23 +85,33 @@ class DashboardSettingsService
     {
         $settings = $this->getSettings();
 
-        foreach ($settings['widgets'] as $key => &$config) {
-            $item = Arr::get($widgets, $key);
-
+        foreach ($widgets as $key => $item) {
             if (! is_array($item)) {
                 continue;
             }
 
-            $config['enabled'] = (bool) Arr::get($item, 'enabled', false);
-            $config['order'] = (int) Arr::get($item, 'order', $config['order'] ?? 0);
-            $label = Arr::get($item, 'label');
+            $actualKey = $item['original_key'] ?? $key;
 
-            if ($label) {
-                $config['label'] = $label;
+            $config = $settings['widgets'][$actualKey] ?? [
+                'label' => $this->makeLabel($actualKey),
+                'enabled' => true,
+                'order' => count($settings['widgets']) + 1,
+            ];
+
+            $config['enabled'] = array_key_exists('enabled', $item)
+                ? (bool) $item['enabled']
+                : false;
+
+            if (array_key_exists('order', $item) && $item['order'] !== '' && $item['order'] !== null) {
+                $config['order'] = (int) $item['order'];
             }
-        }
 
-        unset($config);
+            if (array_key_exists('label', $item) && $item['label'] !== null && $item['label'] !== '') {
+                $config['label'] = $item['label'];
+            }
+
+            $settings['widgets'][$actualKey] = $config;
+        }
 
         $this->saveSettings($settings);
     }

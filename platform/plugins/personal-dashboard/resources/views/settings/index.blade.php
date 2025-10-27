@@ -137,6 +137,7 @@
                                     @foreach($settings['widgets'] as $key => $config)
                                         <tr>
                                             <td>
+                                                <input type="hidden" name="widgets[{{ $key }}][original_key]" value="{{ $key }}">
                                                 <input
                                                     type="text"
                                                     name="widgets[{{ $key }}][label]"
