@@ -86,7 +86,7 @@ class DashboardSettingsService
         $settings = $this->getSettings();
 
         $current = $settings['widgets'] ?? [];
-        $updated = [];
+        $rebuilt = [];
 
         foreach ($widgets as $item) {
             if (! is_array($item)) {
@@ -99,29 +99,19 @@ class DashboardSettingsService
                 continue;
             }
 
-            $config = $current[$actualKey] ?? [
-                'label' => $this->makeLabel($actualKey),
-                'enabled' => true,
-                'order' => count($current) + count($updated) + 1,
-            ];
+            $existing = $current[$actualKey] ?? [];
 
-            $config['enabled'] = array_key_exists('enabled', $item)
-                ? (bool) $item['enabled']
-                : false;
-
-            if (array_key_exists('order', $item) && $item['order'] !== '' && $item['order'] !== null) {
-                $config['order'] = (int) $item['order'];
-            }
-
-            if (array_key_exists('label', $item) && $item['label'] !== null && $item['label'] !== '') {
-                $config['label'] = $item['label'];
-            }
-
-            $updated[$actualKey] = $config;
+            $rebuilt[$actualKey] = array_merge($existing, [
+                'label' => $this->resolveLabel($actualKey, $item, $existing),
+                'enabled' => array_key_exists('enabled', $item)
+                    ? (bool) $item['enabled']
+                    : false,
+                'order' => $this->resolveOrder($item, $existing, count($rebuilt) + 1),
+            ]);
         }
 
-        if ($updated !== []) {
-            $settings['widgets'] = array_replace($current, $updated);
+        if ($rebuilt !== []) {
+            $settings['widgets'] = $rebuilt + Arr::except($current, array_keys($rebuilt));
         }
 
         $this->saveSettings($settings);
@@ -348,6 +338,34 @@ class DashboardSettingsService
         uasort($widgets, fn ($a, $b) => ($a['order'] ?? 999) <=> ($b['order'] ?? 999));
 
         return $widgets;
+    }
+
+    protected function resolveLabel(string $key, array $submitted, array $existing): string
+    {
+        $label = $submitted['label'] ?? null;
+
+        if (is_string($label) && $label !== '') {
+            return $label;
+        }
+
+        if (isset($existing['label']) && $existing['label'] !== '') {
+            return (string) $existing['label'];
+        }
+
+        return $this->makeLabel($key);
+    }
+
+    protected function resolveOrder(array $submitted, array $existing, int $fallback): int
+    {
+        if (array_key_exists('order', $submitted) && $submitted['order'] !== '' && $submitted['order'] !== null) {
+            return (int) $submitted['order'];
+        }
+
+        if (isset($existing['order'])) {
+            return (int) $existing['order'];
+        }
+
+        return $fallback;
     }
 
     protected function makeLabel(string $key): string
