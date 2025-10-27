@@ -1,5 +1,5 @@
 @php
-    Theme::asset()->container('header')->usePath()->add('theme-css', 'css/theme.css');
+    Theme::asset()->container('header')->usePath()->add('date-css', 'css/date.css');
         Theme::asset()->container('footer')->add('popper', 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js', ['jquery']);
         Theme::asset()->container('footer')->add('bootstrap-js', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js', ['jquery', 'popper']);
       Theme::asset()->container('footer')->usePath()->add('moment-js', 'vendors/moment.min.js');

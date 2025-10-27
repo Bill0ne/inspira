@@ -7,6 +7,7 @@ const dist = `public/themes/${directory}`
 
 mix
     .sass(`${source}/assets/sass/theme.scss`, `${dist}/css`)
+    .sass(`${source}/assets/sass/date.scss`, `${dist}/css`)
     .js(source + '/assets/js/review.js', dist + '/js')
     .js(`${source}/assets/js/script.js`, `${dist}/js`)
     .js(`${source}/assets/js/main.js`, `${dist}/js`)
@@ -16,6 +17,7 @@ mix
 
 if (mix.inProduction()) {
     mix
+        .copy(`${dist}/css/date.css`, `${source}/public/css`)
         .copy(`${dist}/css/theme.css`, `${source}/public/css`)
         .copy(`${dist}/js/script.js`, `${source}/public/js`)
         .copy(`${dist}/js/main.js`, `${source}/public/js`)
