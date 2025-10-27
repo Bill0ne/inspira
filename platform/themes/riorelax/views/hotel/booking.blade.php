@@ -66,7 +66,7 @@
                     <input type="hidden" name="number_of_guests" value="{{ $adults }}">
 
                     @if (! $customer->id)
-                        <p>{{ __('Already have an account?') }} <a href="{{ route('customer.login') }}">{{ __(' Login') }}</a></p>
+                        <p>{{ __('Already have an account?') }} <a href="{{ route('customer.login') }}"> {{ __('Login') }}</a></p>
                     @endif
 
                     <div class="mb-20">

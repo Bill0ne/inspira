@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'name' => 'Rechnungen',
+    'amount' => 'Betrag',
+    'customer' => 'Kunde',
+    'tax' => 'Steuer',
+    'code' => 'Code',
+    'show' => 'Rechnung :code',
+    'print' => 'Rechnung drucken',
+    'download' => 'Rechnung herunterladen',
+    'heading' => 'Rechnung',
+    'purchase_at' => 'Kaufdatum',
+    'sub_total' => 'Zwischensumme',
+    'tax_amount' => 'Steuerbetrag',
+    'discount_amount' => 'Rabattbetrag',
+    'total_amount' => 'Gesamtbetrag',
+    'status' => 'Status',
+    'account' => 'Konto',
+    'payment_info' => 'Zahlungsinformationen',
+    'payment_method' => 'Zahlungsmethode',
+    'payment_status' => 'Zahlungsstatus',
+    'item' => [
+        'name' => 'Name',
+        'qty' => 'Menge',
+        'description' => 'Beschreibung',
+    ],
+    'statuses' => [
+        'pending' => 'Ausstehend',
+        'processing' => 'In Bearbeitung',
+        'completed' => 'Abgeschlossen',
+        'canceled' => 'Storniert',
+    ],
+    'template' => [
+        'name' => 'Rechnungsvorlage',
+        'setting_content' => 'Inhalt',
+        'preview' => 'Vorschau',
+        'preview_heading' => 'Vorschau der Rechnungsvorlage',
+    ],
+];

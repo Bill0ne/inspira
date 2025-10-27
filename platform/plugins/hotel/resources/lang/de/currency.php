@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'currencies' => 'Währungen',
+    'setting_description' => 'Liste der auf der Website verwendeten Währungen',
+    'name' => 'Name',
+    'symbol' => 'Symbol',
+    'number_of_decimals' => 'Anzahl der Dezimalstellen',
+    'exchange_rate' => 'Wechselkurs',
+    'is_prefix_symbol' => 'Position des Symbols',
+    'is_default' => 'Standard?',
+    'remove' => 'Entfernen',
+    'new_currency' => 'Neue Währung hinzufügen',
+    'save_settings' => 'Einstellungen speichern',
+    'before_number' => 'Vor der Zahl',
+    'after_number' => 'Nach der Zahl',
+    'require_at_least_one_currency' => 'Das System benötigt mindestens eine Währung!',
+    'thousands_separator' => 'Tausendertrennzeichen',
+    'decimal_separator' => 'Dezimaltrennzeichen',
+    'separator_period' => 'Punkt (.)',
+    'separator_comma' => 'Komma (,)',
+    'separator_space' => 'Leerzeichen ( )',
+    'enable_auto_detect_visitor_currency' => 'Automatische Besuchswährung aktivieren?',
+    'auto_detect_visitor_currency_description' => 'Das System erkennt die Währung des Besuchers automatisch anhand seines Standorts',
+    'add_space_between_price_and_currency' => 'Leerzeichen zwischen Preis und Währung hinzufügen?',
+    'instruction' => 'Liste der Währungscodes: https://de.wikipedia.org/wiki/ISO_4217',
+    'invalid_currency_name' => 'Ungültiger Währungsname. Siehe Währungscodes: https://de.wikipedia.org/wiki/ISO_4217',
+];

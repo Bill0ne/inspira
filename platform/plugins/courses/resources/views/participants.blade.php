@@ -2,11 +2,11 @@
     <thead>
     <tr>
         <th>#</th>
-        <th>Name</th>
-        <th>E-mail</th>
-        <th>Telefon</th>
+        <th>{{ __('Name') }}</th>
+        <th>{{ __('E-mail') }}</th>
+        <th>{{ __('Phone') }}</th>
         <th>Zahlungsstatus</th>
-        <th>Aktion</th>
+        <th>{{ __('Action') }}</th>
     </tr>
     </thead>
     <tbody>
@@ -18,32 +18,32 @@
             @elseif ($booking->address)
                 <td>{{ $booking->address->first_name }} {{ $booking->address->last_name }}</td>
             @else
-                <td>N/A</td>
+                <td>{{ __('N/A') }}</td>
             @endif
             @if ($booking->customer && $booking->customer->email)
                 <td>{{ $booking->customer->email }}</td>
             @elseif ($booking->address && $booking->address->email)
                 <td>{{ $booking->address->email }}</td>
             @else
-                <td>N/A</td>
+                <td>{{ __('N/A') }}</td>
             @endif
             @if ($booking->customer && $booking->customer->phone)
                 <td>{{ $booking->customer->phone }}</td>
             @elseif ($booking->address && $booking->address->phone)
                 <td>{{ $booking->address->phone }}</td>
             @else
-                <td>N/A</td>
+                <td>{{ __('N/A') }}</td>
             @endif
-            <td>{!! $booking->payment?->status->toHtml() ?? 'N/A' !!}</td>
+            <td>{!! $booking->payment?->status->toHtml() ?? __('N/A') !!}</td>
             <td>
                 <a href="{{ route('course-booking.edit', $booking->id) }}" class="btn btn-sm btn-primary">
-                    Sicht
+                    {{ __('View') }}
                 </a>
             </td>
         </tr>
     @empty
         <tr>
-            <td colspan="6" class="text-center">No participants found.</td>
+            <td colspan="6" class="text-center">{{ __('No participants found.') }}</td>
         </tr>
     @endforelse
     </tbody>
