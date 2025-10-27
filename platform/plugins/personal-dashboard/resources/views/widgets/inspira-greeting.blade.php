@@ -12,12 +12,50 @@ $prevMonthEnd = Carbon::now()->subMonth()->endOfMonth();
 $monthName = Carbon::now()->translatedFormat('M');
 
 $quotes = [
-    "Heute musst du nicht alles schaffen. Nur das, was dich wirklich weiterbringt.",
-    "Räume entstehen im Außen – Balance im Inneren.",
-    "Atme tief. Das Leben läuft nicht davon.",
-    "Erfolg beginnt dort, wo Ruhe Platz findet.",
-    "Der schönste Plan ist wertlos, wenn du dich selbst vergisst.",
-    "Liebe wächst, wenn du dir Zeit nimmst, sie zu fühlen.",
+    "Heute ist der beste Tag, um neu zu beginnen – nicht perfekt, aber echt.",
+    "Je ruhiger du wirst, desto klarer siehst du.",
+    "Lass los, was dich müde macht. Mach Platz für das, was dich nährt.",
+    "Jeder kleine Schritt ist ein Fortschritt.",
+    "Manchmal ist „Nichts tun“ der wichtigste Termin im Kalender.",
+    "Räume verändern Menschen – und Menschen gestalten Räume.",
+    "Balance ist kein Zustand. Es ist eine tägliche Entscheidung.",
+    "Wo Liebe wohnt, entsteht Energie.",
+    "Ein voller Kalender ist kein Zeichen von Erfüllung.",
+    "Wer in sich ankommt, kommt überall hin.",
+    "Dein Körper hört, was dein Kopf sagt – sprich freundlich mit dir.",
+    "Zwischen Reiz und Reaktion liegt Raum. Nutze ihn.",
+    "Glück entsteht, wenn du aufhörst, es zu suchen.",
+    "Heute darf leicht sein.",
+    "Stille ist kein Mangel an Geräuschen – sondern ein Überfluss an Klarheit.",
+    "Sorge gut für dich. Du bist der wichtigste Mensch in deinem Leben.",
+    "Das Leben spricht – aber nur, wenn du zuhörst.",
+    "Energie folgt der Aufmerksamkeit. Wähle weise, wohin du schaust.",
+    "Entspannung ist kein Luxus – sie ist Voraussetzung für Wachstum.",
+    "Du musst nicht perfekt sein, um Frieden zu finden.",
+    "Schönheit liegt nicht im Raum, sondern in der Art, wie du ihn fühlst.",
+    "Heute ist genug. Du bist genug.",
+    "Was du suchst, sucht dich auch.",
+    "Lass dich nicht hetzen – Qualität wächst nicht in Eile.",
+    "Stärke zeigt sich nicht im Tempo, sondern im Vertrauen.",
+    "Zeit ist nicht das Problem – Priorität ist die Lösung.",
+    "Du kannst nicht immer alles kontrollieren, aber immer deinen Atem.",
+    "Zwischen Chaos und Klarheit liegt ein tiefer Atemzug.",
+    "Es ist mutig, Pause zu machen.",
+    "Wer sich selbst versteht, versteht die Welt.",
+    "Gib deinem Tag Richtung – nicht Druck.",
+    "Energie kommt nicht vom Tun, sondern vom Sinn.",
+    "Heute darf einfach sein, was ist.",
+    "Entfalte dich, statt dich zu beweisen.",
+    "Dein Wert hängt nicht an deiner To-do-Liste.",
+    "Vertraue dem Tempo, das dein Herz vorgibt.",
+    "Du musst nicht immer stärker werden – manchmal reicht es, weicher zu werden.",
+    "Dankbarkeit verwandelt jeden Raum in Zuhause.",
+    "Jeder Tag ist ein neuer Versuch, bei dir anzukommen.",
+    "Weniger Lärm. Mehr Leben.",
+    "Wer langsamer wird, hört wieder das Wesentliche.",
+    "Achte auf deine Energie – sie ist deine Sprache an die Welt.",
+    "Heute ist kein Tag zum Rennen, sondern zum Sein.",
+    "Alles beginnt mit einem Atemzug.",
 ];
 $quote = $quotes[date('z') % count($quotes)];
 
@@ -110,33 +148,56 @@ $stats = [
 @endphp
 
 <style>
-.greeting-box {
+.greeting-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* === OBERER BEREICH (QUOTE + WELCOME) === */
+.greeting-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  background: #fff;
-  border-radius: 10px;
-  padding: 25px 30px;
-  box-shadow: 0 0 6px rgba(0,0,0,0.05);
 }
-.greeting-left { flex: 1; text-align: right; }
-.greeting-left h4 { font-weight: 600; font-size: 20px; margin-bottom: 8px; }
-.greeting-left .quote-label { font-size: 12px; color: #777; }
-.greeting-left .quote-text { font-size: 14px; color: #578E88; margin-top: 3px; }
+.quote-box {
+  flex: 1;
+  text-align: left;
+}
+.quote-box .quote-label {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 2px;
+}
+.quote-box .quote-text {
+  font-size: 14px;
+  color: #578E88;
+  line-height: 1.4;
+}
 
-/* === Karten === */
-.greeting-right {
+.welcome-box {
+  text-align: right;
+}
+.welcome-box h4 {
+  font-weight: 600;
+  font-size: 20px;
+  margin-bottom: 8px;
+  color: #111;
+}
+
+/* === UNTERER BEREICH (STAT-KARTEN) === */
+.stats-row {
   display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
+  justify-content: space-between;
   gap: 18px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 .stat-card {
   background: #F3F3F3;
   border-radius: 10px;
-  padding: 12px 16px;
-  width: 230px;
+  padding: 14px 16px;
+  width: 23%;
+  min-width: 240px;
   display: flex;
   flex-direction: column;
   transition: all .2s ease;
@@ -148,38 +209,91 @@ $stats = [
   font-weight: 600;
   color: #333;
   margin-bottom: 6px;
-  text-align: left;
 }
+
 .stat-content {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
 }
-.stat-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+.stat-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
 .stat-icon {
   background: #578E88;
   color: #fff;
-  width: 44px; height: 44px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 20px;
 }
-.stat-info { display: flex; flex-direction: column; gap: 4px; }
-.stat-row { display: flex; align-items: center; justify-content: flex-start; gap: 6px; }
-.stat-row p { margin: 0; color: #666; font-size: 12px; width: 90px; }
-.stat-row strong { font-size: 13px; font-weight: 600; color: #111; min-width: 40px; text-align: right; }
-
-.chip { font-size: 10px; border-radius: 8px; padding: 1px 6px; }
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+}
+.stat-row p {
+  margin: 0;
+  color: #666;
+  font-size: 12px;
+  width: 90px;
+}
+.stat-row strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111;
+  min-width: 40px;
+  text-align: right;
+}
+.chip {
+  font-size: 10px;
+  border-radius: 8px;
+  padding: 1px 6px;
+}
 .chip.up { background: #D9F2E3; color: #137B40; }
 .chip.down { background: #FFDAD6; color: #A63C2D; }
 .chip.neutral { background: #E0E0E0; color: #555; }
 
-.chart-line { width: 100%; height: 26px; margin-top: 4px; }
-.chart-line svg { width: 100%; height: 100%; stroke: #578E88; stroke-width: 2; fill: rgba(87,142,136,0.15); }
+.chart-line {
+  width: 100%;
+  height: 26px;
+  margin-top: 6px;
+}
+.chart-line svg {
+  width: 100%;
+  height: 100%;
+  stroke: #578E88;
+  stroke-width: 2;
+  fill: rgba(87,142,136,0.15);
+}
 </style>
 
-<div class="greeting-box">
-  <div class="greeting-right">
+<div class="greeting-wrapper">
+  <!-- OBERER TEIL -->
+  <div class="greeting-top">
+    <div class="quote-box">
+      <div class="quote-label">🌿 Deine <strong>INSPIRation des Tages</strong>:</div>
+      <div class="quote-text">{{ $quote }}</div>
+    </div>
+    <div class="welcome-box">
+      <h4>Willkommen zurück bei Inspira {{ $user->first_name ?? $user->name }}.</h4>
+    </div>
+  </div>
+
+  <!-- UNTERER TEIL -->
+  <div class="stats-row">
     @foreach($stats as $s)
       <div class="stat-card">
         <div class="stat-title">{{ $s['label'] }}</div>
@@ -219,11 +333,5 @@ $stats = [
         </div>
       </div>
     @endforeach
-  </div>
-
-  <div class="greeting-left">
-    <h4>Willkommen zurück bei Inspira {{ $user->first_name ?? $user->name }}.</h4>
-    <div class="quote-label">🌿 Deine <strong>INSPIRation des Tages</strong>:</div>
-    <div class="quote-text">{{ $quote }}</div>
   </div>
 </div>
