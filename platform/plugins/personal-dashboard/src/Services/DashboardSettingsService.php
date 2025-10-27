@@ -10,6 +10,7 @@ use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class DashboardSettingsService
@@ -41,6 +42,16 @@ class DashboardSettingsService
             }
         }
 
+        if (! $this->hasSettingsTable()) {
+            $defaults = $this->defaults;
+
+            [$normalizedWidgets] = $this->normalizeWidgets($defaults['widgets'] ?? []);
+
+            $defaults['widgets'] = $normalizedWidgets;
+
+            return $defaults;
+        }
+
         $setting = PersonalDashboardSetting::query()->firstOrCreate([
             'key' => 'global',
         ]);
@@ -61,42 +72,65 @@ class DashboardSettingsService
         return $settings;
     }
 
-    public function updateGeneral(array $data): void
+    public function updateGeneral(array $data): bool
     {
+        if (! $this->hasSettingsTable()) {
+            return false;
+        }
+
         $settings = $this->getSettings();
 
         $settings['allow_user_overrides'] = (bool) Arr::get($data, 'allow_user_overrides', false);
 
-        $this->saveSettings($settings);
+        return $this->saveSettings($settings);
     }
 
-    public function updateWidgets(array $widgets): void
+    public function updateWidgets(array $widgets): bool
     {
+        if (! $this->hasSettingsTable()) {
+            return false;
+        }
+
         $settings = $this->getSettings();
 
-        foreach ($settings['widgets'] as $key => &$config) {
-            $item = Arr::get($widgets, $key);
+        $current = $settings['widgets'] ?? [];
+        $rebuilt = [];
 
+        foreach ($widgets as $item) {
             if (! is_array($item)) {
                 continue;
             }
 
-            $config['enabled'] = (bool) Arr::get($item, 'enabled', false);
-            $config['order'] = (int) Arr::get($item, 'order', $config['order'] ?? 0);
-            $label = Arr::get($item, 'label');
+            $actualKey = $item['key'] ?? null;
 
-            if ($label) {
-                $config['label'] = $label;
+            if (! $actualKey) {
+                continue;
             }
+
+            $existing = $current[$actualKey] ?? [];
+
+            $rebuilt[$actualKey] = array_merge($existing, [
+                'label' => $this->resolveLabel($actualKey, $item, $existing),
+                'enabled' => array_key_exists('enabled', $item)
+                    ? (bool) $item['enabled']
+                    : false,
+                'order' => $this->resolveOrder($item, $existing, count($rebuilt) + 1),
+            ]);
         }
 
-        unset($config);
+        if ($rebuilt !== []) {
+            $settings['widgets'] = $rebuilt + Arr::except($current, array_keys($rebuilt));
+        }
 
-        $this->saveSettings($settings);
+        return $this->saveSettings($settings);
     }
 
     public function syncCustomWidget(PersonalDashboardCustomWidget $widget): void
     {
+        if (! $this->hasSettingsTable()) {
+            return;
+        }
+
         $settings = $this->getSettings();
 
         $settings['widgets'][$widget->key] = array_merge($settings['widgets'][$widget->key] ?? [], [
@@ -110,10 +144,14 @@ class DashboardSettingsService
 
     public function removeCustomWidget(PersonalDashboardCustomWidget $widget): void
     {
+        if (! $this->hasSettingsTable()) {
+            return;
+        }
+
         $settings = $this->getSettings();
 
-        if (Arr::has($settings, "widgets.{$widget->key}")) {
-            Arr::forget($settings, "widgets.{$widget->key}");
+        if (array_key_exists($widget->key, $settings['widgets'] ?? [])) {
+            unset($settings['widgets'][$widget->key]);
             $this->saveSettings($settings);
         }
     }
@@ -122,10 +160,14 @@ class DashboardSettingsService
     {
         $settings = $this->getSettings();
 
-        return Arr::get($settings, "widgets.{$key}", [
-            'enabled' => true,
-            'order' => 999,
-        ]);
+        if (! array_key_exists($key, $settings['widgets'] ?? [])) {
+            return [
+                'enabled' => true,
+                'order' => 999,
+            ];
+        }
+
+        return $settings['widgets'][$key];
     }
 
     public function applyForUserWidgets(array $widgets, Collection $widgetCollection): array
@@ -148,7 +190,7 @@ class DashboardSettingsService
                 return true;
             }
 
-            $config = Arr::get($widgetsConfig, $model->name, ['enabled' => true]);
+            $config = $widgetsConfig[$model->name] ?? ['enabled' => true];
 
             return Arr::get($config, 'enabled', true);
         }));
@@ -164,15 +206,15 @@ class DashboardSettingsService
                 continue;
             }
 
-            $orders[$model->name] = Arr::get($widgetsConfig, "{$model->name}.order", 999);
+            $orders[$model->name] = Arr::get($widgetsConfig[$model->name] ?? [], 'order', 999);
         }
 
         usort($widgetItems, function (array $first, array $second) use ($orders, $widgetCollectionById) {
             $firstModel = $widgetCollectionById->get($first['id']);
             $secondModel = $widgetCollectionById->get($second['id']);
 
-            $firstOrder = $firstModel ? Arr::get($orders, $firstModel->name, 999) : 999;
-            $secondOrder = $secondModel ? Arr::get($orders, $secondModel->name, 999) : 999;
+            $firstOrder = $firstModel ? ($orders[$firstModel->name] ?? 999) : 999;
+            $secondOrder = $secondModel ? ($orders[$secondModel->name] ?? 999) : 999;
 
             return $firstOrder <=> $secondOrder;
         });
@@ -245,7 +287,7 @@ class DashboardSettingsService
         $changed = false;
 
         foreach ($available as $widgetKey) {
-            if (! Arr::has($normalized, $widgetKey)) {
+            if (! array_key_exists($widgetKey, $normalized)) {
                 $normalized[$widgetKey] = [
                     'label' => $this->makeLabel($widgetKey),
                     'enabled' => true,
@@ -255,10 +297,12 @@ class DashboardSettingsService
             }
         }
 
-        $customWidgets = PersonalDashboardCustomWidget::query()->get();
+        $customWidgets = $this->hasCustomWidgetsTable()
+            ? PersonalDashboardCustomWidget::query()->get()
+            : collect();
 
         foreach ($customWidgets as $widget) {
-            $existing = Arr::get($normalized, $widget->key, []);
+            $existing = $normalized[$widget->key] ?? [];
             $updated = array_merge([
                 'label' => $widget->getTitle(),
                 'enabled' => $widget->is_active,
@@ -277,8 +321,22 @@ class DashboardSettingsService
         return [$normalized, $changed];
     }
 
-    protected function saveSettings(array $settings): void
+    public function tablesReady(): bool
     {
+        return $this->hasSettingsTable();
+    }
+
+    public function customWidgetsReady(): bool
+    {
+        return $this->hasCustomWidgetsTable();
+    }
+
+    protected function saveSettings(array $settings): bool
+    {
+        if (! $this->hasSettingsTable()) {
+            return false;
+        }
+
         if (isset($settings['widgets']) && is_array($settings['widgets'])) {
             $settings['widgets'] = $this->sortWidgets($settings['widgets']);
         }
@@ -291,6 +349,8 @@ class DashboardSettingsService
 
         $this->cache->forget(self::SETTINGS_CACHE_KEY);
         $this->getSettings(true);
+
+        return true;
     }
 
     protected function sortWidgets(array $widgets): array
@@ -300,10 +360,48 @@ class DashboardSettingsService
         return $widgets;
     }
 
+    protected function resolveLabel(string $key, array $submitted, array $existing): string
+    {
+        $label = $submitted['label'] ?? null;
+
+        if (is_string($label) && $label !== '') {
+            return $label;
+        }
+
+        if (isset($existing['label']) && $existing['label'] !== '') {
+            return (string) $existing['label'];
+        }
+
+        return $this->makeLabel($key);
+    }
+
+    protected function resolveOrder(array $submitted, array $existing, int $fallback): int
+    {
+        if (array_key_exists('order', $submitted) && $submitted['order'] !== '' && $submitted['order'] !== null) {
+            return (int) $submitted['order'];
+        }
+
+        if (isset($existing['order'])) {
+            return (int) $existing['order'];
+        }
+
+        return $fallback;
+    }
+
     protected function makeLabel(string $key): string
     {
         $key = Str::after($key, 'widget_');
 
         return Str::of($key)->replace('_', ' ')->headline();
+    }
+
+    protected function hasSettingsTable(): bool
+    {
+        return Schema::hasTable((new PersonalDashboardSetting())->getTable());
+    }
+
+    protected function hasCustomWidgetsTable(): bool
+    {
+        return Schema::hasTable((new PersonalDashboardCustomWidget())->getTable());
     }
 }

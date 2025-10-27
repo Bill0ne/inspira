@@ -2,6 +2,7 @@
 
 namespace Botble\PersonalDashboard\Providers;
 
+use Botble\Base\Facades\Assets;
 use Botble\Base\Supports\ServiceProvider;
 use Botble\Dashboard\Events\RenderingDashboardWidgets;
 use Botble\Dashboard\Supports\DashboardWidgetInstance;
@@ -11,16 +12,23 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
 class HookServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
         $this->app['events']->listen(RenderingDashboardWidgets::class, function (): void {
+            add_action(DASHBOARD_ACTION_REGISTER_SCRIPTS, [$this, 'registerDashboardScripts'], 19);
             add_filter(DASHBOARD_FILTER_ADMIN_LIST, [$this, 'registerGreetingWidget'], 20, 2);
             add_filter(DASHBOARD_FILTER_ADMIN_LIST, [$this, 'registerCustomWidgets'], 21, 2);
             add_filter(DASHBOARD_FILTER_ADMIN_LIST, [$this, 'applyWidgetPreferences'], 200, 2);
         });
+    }
+
+    public function registerDashboardScripts(): void
+    {
+        Assets::addScriptsDirectly(['vendor/core/plugins/personal-dashboard/js/personal-dashboard.js']);
     }
 
     public function registerGreetingWidget(array $widgets, Collection $widgetSettings): array
@@ -40,12 +48,16 @@ class HookServiceProvider extends ServiceProvider
             ->setRoute(route('personal-dashboard.widgets.greeting'))
             ->setColumn('col-12 col-md-6 col-xxl-4')
             ->setIsEqualHeight(false)
-            ->setBodyClass('p-0 border-0')
+            ->setBodyClass('p-0 border-0 personal-dashboard-widget')
             ->init($widgets, $widgetSettings);
     }
 
     public function registerCustomWidgets(array $widgets, Collection $widgetSettings): array
     {
+        if (! Schema::hasTable((new PersonalDashboardCustomWidget())->getTable())) {
+            return $widgets;
+        }
+
         $settingsService = App::make(DashboardSettingsService::class);
 
         $customWidgets = PersonalDashboardCustomWidget::query()
@@ -83,7 +95,7 @@ class HookServiceProvider extends ServiceProvider
                 ->setRoute($resolvedRoute)
                 ->setColumn($customWidget->column_class ?: 'col-12 col-md-6 col-xxl-4')
                 ->setIsEqualHeight(false)
-                ->setBodyClass('p-0 border-0')
+                ->setBodyClass('p-0 border-0 personal-dashboard-widget')
                 ->setHasLoadCallback($customWidget->has_load_callback || (bool) $customWidget->ajax_route)
                 ->setSettings($customWidget->settings ?? [])
                 ->init($widgets, $widgetSettings);

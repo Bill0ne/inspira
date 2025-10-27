@@ -31,11 +31,14 @@ AdminHelper::registerRoutes(function (): void {
             Route::post('general', [DashboardSettingsController::class, 'updateGeneral'])->name('general');
             Route::post('widgets', [DashboardSettingsController::class, 'updateWidgets'])->name('widgets');
 
-            Route::resource('custom-widgets', CustomWidgetController::class)
-                ->except(['index', 'show'])
-                ->parameters(['custom-widgets' => 'customWidget'])
-                ->names('custom-widgets')
-                ->middleware('permission:personal-dashboard.settings.custom-widgets');
+            Route::group([
+                'permission' => 'personal-dashboard.settings.custom-widgets',
+            ], function (): void {
+                Route::resource('custom-widgets', CustomWidgetController::class)
+                    ->except(['index', 'show'])
+                    ->parameters(['custom-widgets' => 'customWidget'])
+                    ->names('custom-widgets');
+            });
         });
     });
 });

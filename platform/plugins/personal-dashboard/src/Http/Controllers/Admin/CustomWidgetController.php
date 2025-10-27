@@ -156,7 +156,25 @@ class CustomWidgetController extends BaseController
     protected function getLocales(): array
     {
         if (class_exists(\Botble\Language\Facades\Language::class)) {
-            return \Botble\Language\Facades\Language::getLocales();
+            $languageManager = \Botble\Language\Facades\Language::getFacadeRoot();
+
+            if ($languageManager && method_exists($languageManager, 'getSupportedLocales')) {
+                $locales = $languageManager->getSupportedLocales();
+
+                if (is_array($locales)) {
+                    $mapped = [];
+
+                    foreach ($locales as $key => $locale) {
+                        $mapped[$key] = is_array($locale)
+                            ? (string) Arr::get($locale, 'name', $key)
+                            : (string) $locale;
+                    }
+
+                    if ($mapped !== []) {
+                        return $mapped;
+                    }
+                }
+            }
         }
 
         $locale = app()->getLocale();

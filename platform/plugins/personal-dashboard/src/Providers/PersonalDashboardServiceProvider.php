@@ -24,7 +24,8 @@ class PersonalDashboardServiceProvider extends ServiceProvider
             ->loadMigrations()
             ->loadRoutes()
             ->loadAndPublishViews()
-            ->loadAndPublishTranslations();
+            ->loadAndPublishTranslations()
+            ->publishAssets();
 
         DashboardMenu::default()->beforeRetrieving(function (): void {
             DashboardMenu::make()
