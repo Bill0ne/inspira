@@ -85,17 +85,24 @@ class DashboardSettingsService
     {
         $settings = $this->getSettings();
 
-        foreach ($widgets as $key => $item) {
+        $current = $settings['widgets'] ?? [];
+        $updated = [];
+
+        foreach ($widgets as $item) {
             if (! is_array($item)) {
                 continue;
             }
 
-            $actualKey = $item['original_key'] ?? $key;
+            $actualKey = $item['key'] ?? null;
 
-            $config = $settings['widgets'][$actualKey] ?? [
+            if (! $actualKey) {
+                continue;
+            }
+
+            $config = $current[$actualKey] ?? [
                 'label' => $this->makeLabel($actualKey),
                 'enabled' => true,
-                'order' => count($settings['widgets']) + 1,
+                'order' => count($current) + count($updated) + 1,
             ];
 
             $config['enabled'] = array_key_exists('enabled', $item)
@@ -110,7 +117,11 @@ class DashboardSettingsService
                 $config['label'] = $item['label'];
             }
 
-            $settings['widgets'][$actualKey] = $config;
+            $updated[$actualKey] = $config;
+        }
+
+        if ($updated !== []) {
+            $settings['widgets'] = array_replace($current, $updated);
         }
 
         $this->saveSettings($settings);

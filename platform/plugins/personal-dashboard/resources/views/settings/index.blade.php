@@ -137,10 +137,10 @@
                                     @foreach($settings['widgets'] as $key => $config)
                                         <tr>
                                             <td>
-                                                <input type="hidden" name="widgets[{{ $key }}][original_key]" value="{{ $key }}">
+                                                <input type="hidden" name="widgets[{{ $loop->index }}][key]" value="{{ $key }}">
                                                 <input
                                                     type="text"
-                                                    name="widgets[{{ $key }}][label]"
+                                                    name="widgets[{{ $loop->index }}][label]"
                                                     value="{{ Arr::get($config, 'label', $key) }}"
                                                     class="form-control"
                                                 >
@@ -149,7 +149,7 @@
                                             <td style="max-width: 120px;">
                                                 <input
                                                     type="number"
-                                                    name="widgets[{{ $key }}][order]"
+                                                    name="widgets[{{ $loop->index }}][order]"
                                                     value="{{ Arr::get($config, 'order', 0) }}"
                                                     class="form-control"
                                                 >
@@ -159,7 +159,7 @@
                                                     <input
                                                         class="form-check-input"
                                                         type="checkbox"
-                                                        name="widgets[{{ $key }}][enabled]"
+                                                        name="widgets[{{ $loop->index }}][enabled]"
                                                         value="1"
                                                         @checked(Arr::get($config, 'enabled', true))
                                                     >
