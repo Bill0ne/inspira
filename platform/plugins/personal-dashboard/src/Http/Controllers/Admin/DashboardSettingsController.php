@@ -3,12 +3,13 @@
 namespace Botble\PersonalDashboard\Http\Controllers\Admin;
 
 use Botble\Base\Http\Controllers\BaseController;
-use Botble\PersonalDashboard\Models\PersonalDashboardCustomWidget;
 use Botble\PersonalDashboard\Services\DashboardSettingsService;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Botble\PersonalDashboard\Models\PersonalDashboardCustomWidget;
 
 class DashboardSettingsController extends BaseController
 {
@@ -21,7 +22,9 @@ class DashboardSettingsController extends BaseController
         $this->pageTitle(trans('plugins/personal-dashboard::settings.title'));
 
         $settings = $this->settingsService->getSettings();
-        $customWidgets = PersonalDashboardCustomWidget::query()->orderBy('sort_order')->get();
+        $customWidgets = Schema::hasTable((new PersonalDashboardCustomWidget())->getTable())
+            ? PersonalDashboardCustomWidget::query()->orderBy('sort_order')->get()
+            : collect();
 
         return view('plugins/personal-dashboard::settings.index', compact('settings', 'customWidgets'));
     }
