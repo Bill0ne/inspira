@@ -58,7 +58,7 @@ foreach ($clients as $m) {
             elseif ($recentDays <= 20) $color = '#F0AD4E';
             else $color = '#E74C3C';
         }
-        $dots .= "<span style='display:inline-block;width:8px;height:8px;border-radius:50%;background:$color;margin-right:2px;'></span>";
+        $dots .= "<span class='activity-dot' data-days='$recentDays' style='background:$color;'></span>";
     }
     $m->activity_dots = $dots;
 }
@@ -85,32 +85,27 @@ $bookings = DB::table('course_bookings')
     ->limit(5)
     ->get();
 
-/* === Fallback-SVG Laden === */
-$chairSvg = '';
-$chairPath = public_path('images/icons/chair.svg');
-if (file_exists($chairPath)) {
-    $chairSvg = file_get_contents($chairPath);
-} else {
-    $chairSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-      <rect x="8" y="28" width="48" height="8" rx="2" fill="currentColor"/>
-      <rect x="12" y="8" width="40" height="18" rx="4" fill="currentColor"/>
-      <rect x="8" y="40" width="8" height="16" fill="currentColor"/>
-      <rect x="48" y="40" width="8" height="16" fill="currentColor"/>
-    </svg>';
-}
+/* === Fallback-SVGs === */
+$chairSvg = file_exists(public_path('images/icons/chair.svg'))
+    ? file_get_contents(public_path('images/icons/chair.svg'))
+    : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="8" y="28" width="48" height="8" rx="2" fill="currentColor"/><rect x="12" y="8" width="40" height="18" rx="4" fill="currentColor"/><rect x="8" y="40" width="8" height="16" fill="currentColor"/><rect x="48" y="40" width="8" height="16" fill="currentColor"/></svg>';
+
+$defaultAvatarSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="24" r="14" fill="#DDD"/><path d="M8 56c0-10.7 8.3-19 24-19s24 8.3 24 19" fill="#DDD"/></svg>';
 @endphp
 
 <style>
 .dashboard-box{background:#fff;border-radius:10px;padding:20px;box-shadow:0 0 6px rgba(0,0,0,0.05);height:100%;}
 .dashboard-item{background:#F9F9F9;border-radius:8px;padding:10px 12px;margin-bottom:8px;}
-.score-circle{position:relative;width:38px;height:38px;border-radius:50%;
-background:conic-gradient(#578E88 var(--p),#E0E0E0 0);
-display:flex;align-items:center;justify-content:center;
-font-size:12px;font-weight:600;color:#333;}
+.score-circle{position:relative;width:38px;height:38px;border-radius:50%;background:conic-gradient(#578E88 var(--p),#E0E0E0 0);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#333;}
 .chair-inline{width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:2px;color:#578E88;}
+.tooltip-box{position:relative;display:inline-block;cursor:help;}
+.tooltip-text{visibility:hidden;opacity:0;background:#333;color:#fff;text-align:center;border-radius:6px;padding:5px 8px;font-size:11px;position:absolute;z-index:10;bottom:125%;left:50%;transform:translateX(-50%);white-space:nowrap;transition:opacity .2s ease-in-out;}
+.tooltip-box:hover .tooltip-text{visibility:visible;opacity:1;}
+.activity-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px;}
 </style>
 
 <div class="row g-3">
+
   <!-- TOP KURSE -->
   <div class="col-md-4">
     <div class="dashboard-box">
@@ -151,20 +146,37 @@ font-size:12px;font-weight:600;color:#333;}
       <h6 class="fw-semibold mb-3">Top Community Mitglieder</h6>
       @foreach($topMembers as $m)
         @php
-          $avatar=$m->avatar?RvMedia::getImageUrl($m->avatar,'thumb',false,RvMedia::getDefaultImage()):RvMedia::getDefaultImage();
+          $avatar=$m->avatar?RvMedia::getImageUrl($m->avatar,'thumb',false,RvMedia::getDefaultImage()):null;
           $score=round(min($m->score,100));
+          $recentBookingAt = DB::table('course_bookings')->where('customer_id',$m->id)->max('created_at');
+          $days = $recentBookingAt ? now()->diffInDays(Carbon::parse($recentBookingAt)) : 999;
+          $actTip = $days <= 10 ? 'Aktiv in den letzten 10 Tagen' : ($days <= 20 ? 'Letzter Login vor 10–20 Tagen' : 'Mehr als 20 Tage inaktiv');
+          $scoreTip = 'Score = Buchungen (60%) + Bewertung (30%) + Aktivität (10%)';
         @endphp
+
         <div class="dashboard-item d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center">
-            <img src="{{ $avatar }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;">
+            <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;margin-right:10px;">
+              @if($avatar)
+                <img src="{{ $avatar }}" style="width:100%;height:100%;object-fit:cover;">
+              @else
+                {!! $defaultAvatarSvg !!}
+              @endif
+            </div>
             <div>
               <div class="fw-semibold" style="font-size:14px;">{{ $m->first_name }} {{ $m->last_name }}</div>
-              <div style="font-size:12px;color:#777;">{!! $m->activity_dots !!} {{ $m->label }}</div>
+              <div style="font-size:12px;color:#777;">
+                <span class="tooltip-box">
+                  {!! $m->activity_dots !!}
+                  <span class="tooltip-text">{{ $actTip }}</span>
+                </span> {{ $m->label }}
+              </div>
               <div style="font-size:12px;color:#555;">Buchungen: {{ $m->bookings }}</div>
             </div>
           </div>
-          <div class="score-circle" style="--p: {{ $score }}%;">
-            {{ $score }}
+          <div class="tooltip-box">
+            <div class="score-circle" style="--p: {{ $score }}%;">{{ $score }}</div>
+            <span class="tooltip-text">{{ $scoreTip }}</span>
           </div>
         </div>
       @endforeach
@@ -182,7 +194,7 @@ font-size:12px;font-weight:600;color:#333;}
             $color=$i<=$filled?'#578E88':'#CCC';
             $chairs.="<span class='chair-inline' style='color:$color;'>$chairSvg</span>";
           }
-          $avatar=$b->avatar?RvMedia::getImageUrl($b->avatar,'thumb',false,RvMedia::getDefaultImage()):RvMedia::getDefaultImage();
+          $avatar=$b->avatar?RvMedia::getImageUrl($b->avatar,'thumb',false,RvMedia::getDefaultImage()):null;
           $url=URL::to('/admin/course-bookings/edit/'.$b->booking_id);
           $isPaid=in_array(strtolower($b->status),['paid','completed','success']);
         @endphp
@@ -193,7 +205,13 @@ font-size:12px;font-weight:600;color:#333;}
           </div>
           <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
-              <img src="{{ $avatar }}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;margin-right:8px;">
+              <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;margin-right:8px;">
+                @if($avatar)
+                  <img src="{{ $avatar }}" style="width:100%;height:100%;object-fit:cover;">
+                @else
+                  {!! $defaultAvatarSvg !!}
+                @endif
+              </div>
               <div style="font-size:12px;">{{ $b->first_name }} {{ $b->last_name }}</div>
             </div>
             <div class="text-end" style="font-size:12px;">
