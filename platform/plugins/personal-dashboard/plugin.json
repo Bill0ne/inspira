@@ -1,0 +1,11 @@
+{
+    "id": "inspira/personal-dashboard",
+    "name": "Personal Dashboard",
+    "namespace": "Botble\\PersonalDashboard\\",
+    "provider": "Botble\\PersonalDashboard\\Providers\\PersonalDashboardServiceProvider",
+    "author": "Inspira",
+    "url": "https://inspira.example",
+    "version": "1.1.0",
+    "description": "Adds personalized dashboard widgets and administration settings.",
+    "minimum_core_version": "7.3.0"
+}
