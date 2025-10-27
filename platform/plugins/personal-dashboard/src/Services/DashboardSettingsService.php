@@ -141,8 +141,8 @@ class DashboardSettingsService
 
         $settings = $this->getSettings();
 
-        if (Arr::has($settings, "widgets.{$widget->key}")) {
-            Arr::forget($settings, "widgets.{$widget->key}");
+        if (array_key_exists($widget->key, $settings['widgets'] ?? [])) {
+            unset($settings['widgets'][$widget->key]);
             $this->saveSettings($settings);
         }
     }
@@ -151,10 +151,14 @@ class DashboardSettingsService
     {
         $settings = $this->getSettings();
 
-        return Arr::get($settings, "widgets.{$key}", [
-            'enabled' => true,
-            'order' => 999,
-        ]);
+        if (! array_key_exists($key, $settings['widgets'] ?? [])) {
+            return [
+                'enabled' => true,
+                'order' => 999,
+            ];
+        }
+
+        return $settings['widgets'][$key];
     }
 
     public function applyForUserWidgets(array $widgets, Collection $widgetCollection): array
@@ -177,7 +181,7 @@ class DashboardSettingsService
                 return true;
             }
 
-            $config = Arr::get($widgetsConfig, $model->name, ['enabled' => true]);
+            $config = $widgetsConfig[$model->name] ?? ['enabled' => true];
 
             return Arr::get($config, 'enabled', true);
         }));
@@ -193,15 +197,15 @@ class DashboardSettingsService
                 continue;
             }
 
-            $orders[$model->name] = Arr::get($widgetsConfig, "{$model->name}.order", 999);
+            $orders[$model->name] = Arr::get($widgetsConfig[$model->name] ?? [], 'order', 999);
         }
 
         usort($widgetItems, function (array $first, array $second) use ($orders, $widgetCollectionById) {
             $firstModel = $widgetCollectionById->get($first['id']);
             $secondModel = $widgetCollectionById->get($second['id']);
 
-            $firstOrder = $firstModel ? Arr::get($orders, $firstModel->name, 999) : 999;
-            $secondOrder = $secondModel ? Arr::get($orders, $secondModel->name, 999) : 999;
+            $firstOrder = $firstModel ? ($orders[$firstModel->name] ?? 999) : 999;
+            $secondOrder = $secondModel ? ($orders[$secondModel->name] ?? 999) : 999;
 
             return $firstOrder <=> $secondOrder;
         });
@@ -274,7 +278,7 @@ class DashboardSettingsService
         $changed = false;
 
         foreach ($available as $widgetKey) {
-            if (! Arr::has($normalized, $widgetKey)) {
+            if (! array_key_exists($widgetKey, $normalized)) {
                 $normalized[$widgetKey] = [
                     'label' => $this->makeLabel($widgetKey),
                     'enabled' => true,
@@ -289,7 +293,7 @@ class DashboardSettingsService
             : collect();
 
         foreach ($customWidgets as $widget) {
-            $existing = Arr::get($normalized, $widget->key, []);
+            $existing = $normalized[$widget->key] ?? [];
             $updated = array_merge([
                 'label' => $widget->getTitle(),
                 'enabled' => $widget->is_active,
