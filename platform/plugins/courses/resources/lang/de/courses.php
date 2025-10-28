@@ -48,6 +48,7 @@ return [
         'views_hint_unavailable' => 'Keine Ansichten verfügbar',
         'occupancy' => 'Belegung',
         'engagement' => 'Engagement',
+        'participants' => 'Teilnehmer',
         'schedule' => 'Zeitplan',
         'score' => 'Score',
         'score_auto_label' => 'Automatisch bewertet',

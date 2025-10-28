@@ -69,6 +69,13 @@ class CourseSessionTable extends TableAbstract
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderEngagement($column->getItem())),
 
+                FormattedColumn::make('participants')
+                    ->title(trans('plugins/courses::courses.table.participants'))
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderParticipants($column->getItem())),
+
                 FormattedColumn::make('schedule')
                     ->title(trans('plugins/courses::courses.table.schedule'))
                     ->orderable(false)
@@ -343,6 +350,19 @@ HTML;
     <span class="text-muted small">{$engagementLabel}</span>
     <span class="text-muted small">{$conversionLabel}</span>
 </div>
+HTML;
+    }
+
+    protected function renderParticipants(CourseSession $session): string
+    {
+        $buttonLabel = e(trans('plugins/courses::courses.table.view_participants'));
+        $sessionId = $session->getKey();
+
+        return <<<HTML
+<button type="button" class="btn btn-sm btn-outline-primary view-participants-btn d-inline-flex align-items-center gap-2" data-session-id="{$sessionId}">
+    <i class="fa fa-users" aria-hidden="true"></i>
+    <span>{$buttonLabel}</span>
+</button>
 HTML;
     }
 

@@ -48,6 +48,7 @@ return [
         'views_hint_unavailable' => 'No view data available',
         'occupancy' => 'Occupancy',
         'engagement' => 'Engagement',
+        'participants' => 'Participants',
         'schedule' => 'Schedule',
         'score' => 'Score',
         'score_auto_label' => 'Automatic scoring',
