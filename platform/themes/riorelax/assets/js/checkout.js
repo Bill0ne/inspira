@@ -58,6 +58,7 @@ $(document).ready(function () {
             error: () => {
                 $('body').css('cursor', 'default')
                 $('.custom-checkbox label').css('cursor', 'pointer')
+                $checkoutButton.prop('disabled', false)
             },
         })
     })
@@ -119,6 +120,7 @@ $(document).ready(function () {
             error: () => {
                 $('body').css('cursor', 'default')
                 $('.custom-checkbox label').css('cursor', 'pointer')
+                $checkoutButton.prop('disabled', false)
             },
         })
     })
@@ -139,6 +141,11 @@ $(document).ready(function () {
             services[i] = $(el).val()
         })
 
+        const foods = []
+        $('.food-item:checked').each((i, el) => {
+            foods[i] = $(el).val()
+        })
+
         const slots = []
         $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
             const start = $(el).val()
@@ -148,21 +155,31 @@ $(document).ready(function () {
             }
         })
 
-        let $checkoutButton = $(document).find('.payment-checkout-btn')
-        $checkoutButton.prop('disabled', true)
-        let $selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
+        const $checkoutButton = $(document).find('.payment-checkout-btn')
+        const enableCheckout = () => $checkoutButton.prop('disabled', false)
+        const disableCheckout = () => $checkoutButton.prop('disabled', true)
+
+        disableCheckout()
+
+        const $paymentMethodList = $(document).find('.payment-checkout-form .list_payment_method')
+        const selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
+        const $couponBox = $(document).find('.order-detail-box').first()
+        const refreshUrl = $couponBox.data('refresh-url')
 
         $.ajax({
             url: '/ajax/calculate-amount',
             type: 'GET',
             data: {
                 room_id: $('input[name=room_id]').val(),
-                slots: slots,
+                slots,
                 services,
+                foods,
             },
             success: ({ error, message, data }) => {
                 if (error) {
                     RiorelaxTheme.showError(message)
+
+                    enableCheckout()
 
                     return
                 }
@@ -173,35 +190,69 @@ $(document).ready(function () {
                 $('.discount-text').text(data.discount_amount)
                 $('.tax-text').text(data.tax_amount)
 
-                $('.payment-checkout-form .list_payment_method').load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function() {
-                    $checkoutButton.prop('disabled', false)
-                    $(document).find('.payment-checkout-form .list_payment_method input[value="' + $selectedPaymentMethod + '"]').prop('checked', true).trigger('change')
-                })
+                const paymentMethodsReload = $.Deferred()
 
-                const refreshUrl = $('.order-detail-box').data('refresh-url')
-
-                $.ajax({
-                    url: refreshUrl,
-                    type: 'GET',
-                    data: {
-                        coupon_code: $('input[name=coupon_hidden]').val() ?? $('input[name=coupon_code]').val(),
-                    },
-                    success: ({ error, message, data}) => {
-                        if (error) {
-                            RiorelaxTheme.showError(message)
+                if ($paymentMethodList.length) {
+                    $paymentMethodList.load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function(response, status) {
+                        if (status === 'error') {
+                            paymentMethodsReload.reject()
 
                             return
                         }
 
-                        $('.order-detail-box').html(data)
-                    },
-                    error: (error) => {
-                        RiorelaxTheme.handleError(error)
-                    },
+                        $(document)
+                            .find('.payment-checkout-form .list_payment_method input[value="' + selectedPaymentMethod + '"]')
+                            .prop('checked', true)
+                            .trigger('change')
+
+                        paymentMethodsReload.resolve()
+                    })
+                } else {
+                    paymentMethodsReload.resolve()
+                }
+
+                const couponDetailsReload = $.Deferred()
+
+                if (refreshUrl) {
+                    $.ajax({
+                        url: refreshUrl,
+                        type: 'GET',
+                        data: {
+                            coupon_code: $('input[name=coupon_hidden]').val() ?? $('input[name=coupon_code]').val(),
+                        },
+                        success: ({ error, message, data }) => {
+                            if (error) {
+                                RiorelaxTheme.showError(message)
+
+                                couponDetailsReload.reject()
+
+                                return
+                            }
+
+                            if ($couponBox.length) {
+                                $couponBox.replaceWith(data)
+                            } else {
+                                $(document).find('.order-detail-box').first().html(data)
+                            }
+
+                            couponDetailsReload.resolve()
+                        },
+                        error: (error) => {
+                            RiorelaxTheme.handleError(error)
+                            couponDetailsReload.reject()
+                        },
+                    })
+                } else {
+                    couponDetailsReload.resolve()
+                }
+
+                $.when(paymentMethodsReload, couponDetailsReload).always(() => {
+                    enableCheckout()
                 })
             },
             error: (error) => {
                 RiorelaxTheme.handleError(error)
+                enableCheckout()
             },
         })
     }
