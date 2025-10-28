@@ -165,6 +165,7 @@ class CourseSessionTable extends TableAbstract
                                 ->with(['category:id,name', 'instructor:id,name']);
                         },
                     ])
+                    ->leftJoin('courses', 'courses.id', '=', 'course_sessions.course_id')
                     ->leftJoinSub($bookingStats, 'booking_stats', 'booking_stats.course_session_id', '=', 'course_sessions.id')
                     ->leftJoinSub($viewSub, 'course_views', 'course_views.reference_id', '=', 'course_sessions.course_id')
                     ->select([
@@ -175,14 +176,14 @@ class CourseSessionTable extends TableAbstract
                         'course_sessions.available_seats',
                         'course_sessions.created_at',
                     ])
-                    ->selectRaw('NULL as session_overview')
-                    ->selectRaw('NULL as price')
-                    ->selectRaw('NULL as views')
-                    ->selectRaw('NULL as occupancy')
-                    ->selectRaw('NULL as engagement')
-                    ->selectRaw('NULL as participants')
-                    ->selectRaw('NULL as schedule')
-                    ->selectRaw('NULL as score')
+                    ->selectRaw('courses.name as session_overview')
+                    ->selectRaw('courses.price as price')
+                    ->selectRaw("$viewsExpr as views")
+                    ->selectRaw("$occupancyExpr as occupancy")
+                    ->selectRaw("$engagementExpr as engagement")
+                    ->selectRaw("$activeExpr as participants")
+                    ->selectRaw('course_sessions.start_date as schedule')
+                    ->selectRaw("$scoreExpr as score")
                     ->selectRaw("$occupancyExpr as occupancy_value")
                     ->selectRaw("$engagementExpr as engagement_value")
                     ->selectRaw("$scoreExpr as score_value")
