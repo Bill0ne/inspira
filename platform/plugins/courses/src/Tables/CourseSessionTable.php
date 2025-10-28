@@ -175,6 +175,14 @@ class CourseSessionTable extends TableAbstract
                         'course_sessions.available_seats',
                         'course_sessions.created_at',
                     ])
+                    ->selectRaw('NULL as session_overview')
+                    ->selectRaw('NULL as price')
+                    ->selectRaw('NULL as views')
+                    ->selectRaw('NULL as occupancy')
+                    ->selectRaw('NULL as engagement')
+                    ->selectRaw('NULL as participants')
+                    ->selectRaw('NULL as schedule')
+                    ->selectRaw('NULL as score')
                     ->selectRaw("$occupancyExpr as occupancy_value")
                     ->selectRaw("$engagementExpr as engagement_value")
                     ->selectRaw("$scoreExpr as score_value")
