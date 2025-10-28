@@ -199,6 +199,8 @@ $(document).ready(function () {
 
                             enableCheckout()
 
+                            enableCheckout()
+
                             return
                         }
 
