@@ -35,6 +35,7 @@ use Botble\SeoHelper\Facades\SeoHelper;
 use Botble\SeoHelper\SeoOpenGraph;
 use Botble\Slug\Facades\SlugHelper;
 use Botble\Theme\Facades\Theme;
+use Throwable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -386,14 +387,13 @@ class PublicController extends Controller
         // ----------------------------------------
         // 🔹 Apply price rule discount once per booking
         // ----------------------------------------
-        $totalAmount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-            ->calculatePrice(
-                $totalBasePrice,
-                \Botble\PriceConfigurator\Enums\TargetTypeEnum::ROOM,
-                $room->id,
-                $customer,
-                $totalHours // use total hours across all slots
-            );
+        $totalAmount = $this->calculateDynamicPrice(
+            $totalBasePrice,
+            'room',
+            $room->id,
+            $customer,
+            $totalHours
+        );
 
         $discountAmount = max($totalBasePrice - $totalAmount, 0);
 
@@ -503,13 +503,12 @@ class PublicController extends Controller
         }
 
         // 🟢 Apply price rule once per booking using total hours
-        $priceConfigurator = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class);
-        $totalConfiguredPrice = $priceConfigurator->calculatePrice(
+        $totalConfiguredPrice = $this->calculateDynamicPrice(
             $totalBasePrice,
-            \Botble\PriceConfigurator\Enums\TargetTypeEnum::ROOM,
+            'room',
             $room->id,
             Auth::guard('customer')->user() ?? null,
-            $totalHours // total hours across all slots
+            $totalHours
         );
 
         // 🟢 Calculate rule discount
@@ -729,13 +728,12 @@ class PublicController extends Controller
         }
 
         // ✅ Step 2: Apply price rule once per booking using total hours
-        $priceConfigurator = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class);
-        $totalConfiguredPrice = $priceConfigurator->calculatePrice(
+        $totalConfiguredPrice = $this->calculateDynamicPrice(
             $totalBasePrice,
-            \Botble\PriceConfigurator\Enums\TargetTypeEnum::ROOM,
+            'room',
             $room->id,
             $customer,
-            $totalHours // total hours across all slots
+            $totalHours
         );
 
         // ✅ Step 3: Rule discount (base - configured)
@@ -922,5 +920,31 @@ class PublicController extends Controller
             $amount,
             $discountAmount,
         ];
+    }
+
+    protected function calculateDynamicPrice(
+        float $basePrice,
+        string $targetType,
+        int $targetId,
+        ?Customer $customer = null,
+        int $quantity = 1
+    ): float {
+        if (! function_exists('is_plugin_active') || ! is_plugin_active('price-configurator')) {
+            return $basePrice;
+        }
+
+        $serviceClass = 'Botble\\PriceConfigurator\\Services\\PriceConfiguratorService';
+
+        if (! class_exists($serviceClass)) {
+            return $basePrice;
+        }
+
+        try {
+            $service = app($serviceClass);
+
+            return $service->calculatePrice($basePrice, $targetType, $targetId, $customer, $quantity);
+        } catch (Throwable) {
+            return $basePrice;
+        }
     }
 }
