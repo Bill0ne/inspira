@@ -58,6 +58,7 @@ $(document).ready(function () {
             error: () => {
                 $('body').css('cursor', 'default')
                 $('.custom-checkbox label').css('cursor', 'pointer')
+                $checkoutButton.prop('disabled', false)
             },
         })
     })
@@ -119,6 +120,7 @@ $(document).ready(function () {
             error: () => {
                 $('body').css('cursor', 'default')
                 $('.custom-checkbox label').css('cursor', 'pointer')
+                $checkoutButton.prop('disabled', false)
             },
         })
     })
@@ -149,6 +151,8 @@ $(document).ready(function () {
         })
 
         let $checkoutButton = $(document).find('.payment-checkout-btn')
+        const enableCheckout = () => $checkoutButton.prop('disabled', false)
+
         $checkoutButton.prop('disabled', true)
         let $selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
 
@@ -164,6 +168,8 @@ $(document).ready(function () {
                 if (error) {
                     RiorelaxTheme.showError(message)
 
+                    enableCheckout()
+
                     return
                 }
 
@@ -174,7 +180,7 @@ $(document).ready(function () {
                 $('.tax-text').text(data.tax_amount)
 
                 $('.payment-checkout-form .list_payment_method').load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function() {
-                    $checkoutButton.prop('disabled', false)
+                    enableCheckout()
                     $(document).find('.payment-checkout-form .list_payment_method input[value="' + $selectedPaymentMethod + '"]').prop('checked', true).trigger('change')
                 })
 
@@ -190,18 +196,26 @@ $(document).ready(function () {
                         if (error) {
                             RiorelaxTheme.showError(message)
 
+                            enableCheckout()
+
                             return
                         }
 
                         $('.order-detail-box').html(data)
+                        enableCheckout()
                     },
                     error: (error) => {
                         RiorelaxTheme.handleError(error)
+                        enableCheckout()
+                    },
+                    complete: () => {
+                        enableCheckout()
                     },
                 })
             },
             error: (error) => {
                 RiorelaxTheme.handleError(error)
+                enableCheckout()
             },
         })
     }
