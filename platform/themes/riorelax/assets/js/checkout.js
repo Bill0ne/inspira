@@ -195,6 +195,7 @@ $(document).ready(function () {
                     success: ({ error, message, data}) => {
                         if (error) {
                             RiorelaxTheme.showError(message)
+                            $checkoutButton.prop('disabled', false)
 
                             enableCheckout()
 
