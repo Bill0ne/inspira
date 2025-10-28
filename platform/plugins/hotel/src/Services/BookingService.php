@@ -15,7 +15,6 @@ class BookingService
         /**
          * @var Booking $booking
          */
-        dd($booking);
         $booking = Booking::query()->find($bookingId);
 
         if (! $booking) {

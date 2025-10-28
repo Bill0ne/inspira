@@ -52,8 +52,10 @@
                     <input type="hidden" name="token" value="{{ $token }}">
                     <input type="hidden" name="amount" value="{{ $total }}">
                     <input type="hidden" name="room_id" value="{{ $room->id }}">
-                    <input type="hidden" name="start_date" value="{{ $startDate->format(HotelHelper::getDateFormat()) }}">
-                    <input type="hidden" name="end_date" value="{{ $endDate->format(HotelHelper::getDateFormat()) }}">
+                    @foreach($slotSummaries as $i => $s)
+                        <input type="hidden" name="slots[{{ $i }}][start_date]" value="{{ $s['start_date']->format(HotelHelper::getDateFormat()) }}">
+                        <input type="hidden" name="slots[{{ $i }}][end_date]"   value="{{ $s['end_date']->format(HotelHelper::getDateFormat()) }}">
+                    @endforeach
                     <input type="hidden" name="adults" value="{{ $adults }}">
                     <input name="number_of_children" type="hidden" value="{{ $children }}">
                     <input name="rooms" type="hidden" value="{{ $rooms }}"/>
@@ -325,45 +327,80 @@
                         <img src="{{ RvMedia::getImageUrl($room->image, default: RvMedia::getDefaultImage()) }}" alt="{{ $room->name }}">
 
                         <div class="room-information">
-                            <span>{{ $room->name  }}</span>
+                            <span>{{ $room->name }}</span>
                         </div>
                     </div>
+
                     <div class="form-information text-white">
                         <p class="text-center fw-bold text-uppercase">{{ __('Your Reservation') }}</p>
                         <div>
-                            <p>{{ __('Check-In') }}: {{ $startDate->translatedFormat('l, d M, Y') }}</p>
-                            <p>{{ __('Check-Out') }}: {{ $endDate->translatedFormat('l, d M, Y') }}</p>
+                            {{-- If multiple slots exist, show them --}}
+                            <div class="mt-3 p-3 border rounded">
+                                <h5 class="text-warning mb-3">{{ __('Your Selected Periods') }}</h5>
+
+                                @if (!empty($slotSummaries))
+                                    <ul class="list-unstyled mb-0">
+                                        @foreach ($slotSummaries as $i => $slot)
+                                            @php
+                                                $start = $slot['start_date'];
+                                                $end = $slot['end_date'];
+                                            @endphp
+                                            <li class="mb-2">
+
+                                                @if ($start->isSameDay($end))
+                                                    {{-- Same day: show date once, and time range --}}
+                                                    {{ $start->format('d M Y') }}
+                                                    <span class="text-gray-500 mx-1"></span>
+                                                    {{ $start->format('h:i A') }} – {{ $end->format('h:i A') }}
+                                                @else
+                                                    {{-- Different days: show full date-times --}}
+                                                    {{ $start->format('d M Y h:i A') }} → {{ $end->format('d M Y h:i A') }}
+                                                @endif
+
+                                                <br>
+                                                    <span class="fw-bold text-warning small">
+    <span class="text-light fw-normal">{{ __('Price') }}:</span> {{ format_price($slot['final_price']) }}
+</span>
+
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    {{-- Fallback: single booking --}}
+                                    <p>{{ __('Check-In') }}: {{ $displayStart ? $displayStart->translatedFormat('l, d M, Y') : '-' }}</p>
+                                    <p>{{ __('Check-Out') }}: {{ $displayEnd ? $displayEnd->translatedFormat('l, d M, Y') : '-' }}</p>
+                                @endif
+                            </div>
+
+
                             <p>{{ __('Number of rooms') }}: {{ $rooms }}</p>
                             <p>{{ __('Number of adults') }}: {{ $adults }}</p>
                             <p>{{ __('Number of children') }}: {{ $children }}</p>
 
                             @php
-                                // Difference between original and configured price
-                                $priceDifference = $basePrice - $amount;
+                                $priceDifference = $totalBasePrice - $totalAmount;
                             @endphp
 
                             {{-- Show configurator discount if applicable --}}
-                            @if ($amount < $basePrice)
-                                {{-- Price decreased --}}
+                            @if ($totalAmount < $totalBasePrice)
                                 <div class="kv">
                                     <span class="text-light">{{ __('Original Price') }}</span>
-                                    <b class="text-light text-decoration-line-through opacity-75">{{ format_price($basePrice) }}</b>
+                                    <b class="text-light text-decoration-line-through opacity-75">{{ format_price($totalBasePrice) }}</b>
                                 </div>
                                 <div class="kv">
                                     <span class="text-light">{{ __('Discounted Price') }}</span>
-                                    <b class="fw-bold text-warning amount-text">{{ format_price($amount) }}</b>
+                                    <b class="fw-bold text-warning amount-text">{{ format_price($totalAmount) }}</b>
                                 </div>
                                 <div class="kv small mt-1">
                                     <i class="fas fa-tag me-1 text-warning"></i>
                                     <span class="text-warning">
-                    {{ __('You save :amount', ['amount' => format_price(abs($priceDifference))]) }}
-                </span>
+                            {{ __('You save :amount', ['amount' => format_price(abs($priceDifference))]) }}
+                        </span>
                                 </div>
                             @else
-                                {{-- Price same or increased --}}
                                 <div class="kv">
                                     <span class="text-light">{{ __('Price') }}</span>
-                                    <b class="fw-bold text-warning amount-text">{{ format_price($amount) }}</b>
+                                    <b class="fw-bold text-warning amount-text">{{ format_price($totalAmount) }}</b>
                                 </div>
                             @endif
 
@@ -389,16 +426,16 @@
                         </div>
                     </div>
 
-
                     <div class="text-center footer">
                         <p>{{ __('Total') }}:
                             <span class="total-amount-text">
-                                {{ $isLoggedIn ? format_price($total) : __('Preis nach Login') }}
-                            </span>
+                    {{ $isLoggedIn ? format_price($total) : __('Preis nach Login') }}
+                </span>
                         </p>
                     </div>
                 </aside>
             </div>
+
         </div>
     </div>
 </section>
