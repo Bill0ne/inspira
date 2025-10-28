@@ -57,9 +57,25 @@ class BookingTable extends TableAbstract
                 ) : $item->room->room_name;
             })
             ->editColumn('booking_period', function (Booking $item) {
-                $start = \Carbon\Carbon::parse($item->room->start_date)->format('d-m-Y H:i');
-                $end = \Carbon\Carbon::parse($item->room->end_date)->format('d-m-Y H:i');
-                return $start . ' -> ' . $end;
+                if ($item->rooms->isEmpty()) {
+                    return '-';
+                }
+
+                $periods = $item->rooms->map(function ($roomBooking) {
+                    $start = \Carbon\Carbon::parse($roomBooking->start_date);
+                    $end = \Carbon\Carbon::parse($roomBooking->end_date);
+
+                    if ($start->isSameDay($end)) {
+                        // Same day: show date once, time range with AM/PM
+                        return $start->format('M d, Y') . ' ' . $start->format('h:i A') . ' → ' . $end->format('h:i A');
+                    } else {
+                        // Different days: show full date-times with AM/PM
+                        return $start->format('M d, Y h:i A') . ' → ' . $end->format('M d, Y h:i A');
+                    }
+                });
+
+                // Join multiple slots with <br> for line breaks in table
+                return $periods->implode('<br>');
             })
             ->filter(function ($query) {
                 $keyword = $this->request->input('search.value');

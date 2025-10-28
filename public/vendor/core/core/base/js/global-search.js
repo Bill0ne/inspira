@@ -1,1 +1,157 @@
-$(function(){var t=$('[data-bb-toggle="gs-modal"]'),e=$("#gs-no-result-template"),n=$('[data-bb-toggle="gs-form"]'),a=$('[data-bb-toggle="gs-input"]'),o="",r=function(t){t&&(t.addClass("active"),t.attr("aria-selected","true"))},i=function(t){t&&(t.removeClass("active"),t.attr("aria-selected","false"))},s=null,l=function(){return $('[data-bb-toggle="gs-result"]')},c=function(){var t=l(),e=t.find("a.active");return e.length<=0&&(e=t.find("a:first")),e},d=function(){var t=l().find("a");if(!(t.length<=0)){t.attr("aria-selected","false"),t.removeClass("active");var e=c();e.length<=0||e.hasClass("active")||r(e)}},f=function(e){if(e.preventDefault(),t.hasClass("show")){var r=a.val();if(r!==o){o=r;var i=l();$httpClient.make().withLoading(i).get(n.attr("action"),{keyword:r}).then(function(t){var e=t.data;i.html(e.data),d()})}}};$(document).on("keydown",function(e){t.hasClass("show")||(("Slash"===e.code||"KeyK"===e.code)&&(e.metaKey||e.ctrlKey)||"Slash"===e.code&&"BODY"===e.target.tagName)&&t.modal("show")}),$(document).on("keydown",function(e){if(t.hasClass("show")&&("ArrowUp"===e.code||"ArrowDown"===e.code)){var n="ArrowDown"===e.code,a=c();if(!(a.length<=0))if(n){var o=a.next();if(i(a),o.length<=0){var s=l().find("a:first");return void r(s)}r(o)}else{var d=a.prev();if(i(a),d.length<=0){var f=l().find("a:last");return void r(f)}r(d)}}}),$(document).on("keydown",function(e){if(t.hasClass("show")&&"Enter"===e.code){var n=c();n.length<=0||n[0].click()}}),n.on("submit",f),t.on("show.bs.modal",function(){l().html(e.html())}),t.on("shown.bs.modal",function(){a.trigger("focus"),d()}),t.on("hidden.bs.modal",function(){a.val("")}),a.on("keydown",function(t){"ArrowUp"!==t.key&&"ArrowDown"!==t.key&&"Enter"!==t.key?function(t){s&&clearTimeout(s),s=setTimeout(function(){return f(t)},200)}(t):t.preventDefault()}),$('[data-bb-toggle="gs-navbar-input"]').on("focus",function(){return t.modal("show")})});
+/******/ (() => { // webpackBootstrap
+/*!**********************************************************!*\
+  !*** ./platform/core/base/resources/js/global-search.js ***!
+  \**********************************************************/
+$(function () {
+  var $globalSearchModal = $('[data-bb-toggle="gs-modal"]');
+  var $noResultTemplate = $('#gs-no-result-template');
+  var $form = $('[data-bb-toggle="gs-form"]');
+  var $input = $('[data-bb-toggle="gs-input"]');
+  var previousValue = '';
+  var activateResult = function activateResult(element) {
+    if (!element) {
+      return;
+    }
+    element.addClass('active');
+    element.attr('aria-selected', 'true');
+  };
+  var deactivateResult = function deactivateResult(element) {
+    if (!element) {
+      return;
+    }
+    element.removeClass('active');
+    element.attr('aria-selected', 'false');
+  };
+  var searchTimeout = null;
+  var debounceSearch = function debounceSearch(e) {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    searchTimeout = setTimeout(function () {
+      return searchHandler(e);
+    }, 200);
+  };
+  var getResults = function getResults() {
+    return $('[data-bb-toggle="gs-result"]');
+  };
+  var findSelected = function findSelected() {
+    var $result = getResults();
+    var $selected = $result.find('a.active');
+    if ($selected.length <= 0) {
+      $selected = $result.find('a:first');
+    }
+    return $selected;
+  };
+  var autoSelectHandler = function autoSelectHandler() {
+    var $links = getResults().find('a');
+    if ($links.length <= 0) {
+      return;
+    }
+    $links.attr('aria-selected', 'false');
+    $links.removeClass('active');
+    var $selected = findSelected();
+    if ($selected.length <= 0) {
+      return;
+    }
+    if (!$selected.hasClass('active')) {
+      activateResult($selected);
+    }
+  };
+  var navigateHandler = function navigateHandler(e) {
+    if (!$globalSearchModal.hasClass('show')) {
+      return;
+    }
+    if (e.code !== 'ArrowUp' && e.code !== 'ArrowDown') {
+      return;
+    }
+    var isNext = e.code === 'ArrowDown';
+    var $selected = findSelected();
+    if ($selected.length <= 0) {
+      return;
+    }
+    if (isNext) {
+      var $next = $selected.next();
+      deactivateResult($selected);
+      if ($next.length <= 0) {
+        var $first = getResults().find('a:first');
+        activateResult($first);
+        return;
+      }
+      activateResult($next);
+    } else {
+      var $previous = $selected.prev();
+      deactivateResult($selected);
+      if ($previous.length <= 0) {
+        var $last = getResults().find('a:last');
+        activateResult($last);
+        return;
+      }
+      activateResult($previous);
+    }
+  };
+  var selectHandler = function selectHandler(e) {
+    if (!$globalSearchModal.hasClass('show')) {
+      return;
+    }
+    if (e.code !== 'Enter') {
+      return;
+    }
+    var $selected = findSelected();
+    if ($selected.length <= 0) {
+      return;
+    }
+    $selected[0].click();
+  };
+  var searchHandler = function searchHandler(e) {
+    e.preventDefault();
+    if (!$globalSearchModal.hasClass('show')) {
+      return;
+    }
+    var keyword = $input.val();
+    if (keyword === previousValue) {
+      return;
+    }
+    previousValue = keyword;
+    var $result = getResults();
+    $httpClient.make().withLoading($result).get($form.attr('action'), {
+      keyword: keyword
+    }).then(function (_ref) {
+      var response = _ref.data;
+      $result.html(response.data);
+      autoSelectHandler();
+    });
+  };
+  $(document).on('keydown', function (e) {
+    if ($globalSearchModal.hasClass('show')) {
+      return;
+    }
+    if ((e.code === 'Slash' || e.code === 'KeyK') && (e.metaKey || e.ctrlKey) || e.code === 'Slash' && e.target.tagName === 'BODY') {
+      $globalSearchModal.modal('show');
+    }
+  });
+  $(document).on('keydown', navigateHandler);
+  $(document).on('keydown', selectHandler);
+  $form.on('submit', searchHandler);
+  $globalSearchModal.on('show.bs.modal', function () {
+    getResults().html($noResultTemplate.html());
+  });
+  $globalSearchModal.on('shown.bs.modal', function () {
+    $input.trigger('focus');
+    autoSelectHandler();
+  });
+  $globalSearchModal.on('hidden.bs.modal', function () {
+    $input.val('');
+  });
+  $input.on('keydown', function (e) {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Enter') {
+      e.preventDefault();
+      return;
+    }
+    debounceSearch(e);
+  });
+  $('[data-bb-toggle="gs-navbar-input"]').on('focus', function () {
+    return $globalSearchModal.modal('show');
+  });
+});
+/******/ })()
+;

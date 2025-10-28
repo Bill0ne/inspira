@@ -1,1 +1,30 @@
-(()=>{"use strict";$(function(){$(document).on("click",".btn-trigger-cleanup",function(t){t.preventDefault(),$("#cleanup-modal").modal("show")}),$(document).on("click","#cleanup-submit-action",function(t){t.preventDefault(),t.stopPropagation();var n=$(t.currentTarget);Botble.showButtonLoading(n);var o=$("#form-cleanup-database"),a=$("#cleanup-modal");$httpClient.make().post(o.prop("action"),new FormData(o[0])).then(function(t){var n=t.data;return Botble.showSuccess(n.message)}).finally(function(){Botble.hideButtonLoading(n),a.modal("hide")})})})})();
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/*!****************************************************!*\
+  !*** ./platform/core/base/resources/js/cleanup.js ***!
+  \****************************************************/
+
+
+$(function () {
+  $(document).on('click', '.btn-trigger-cleanup', function (event) {
+    event.preventDefault();
+    $('#cleanup-modal').modal('show');
+  });
+  $(document).on('click', '#cleanup-submit-action', function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    var _self = $(event.currentTarget);
+    Botble.showButtonLoading(_self);
+    var $form = $('#form-cleanup-database');
+    var $modal = $('#cleanup-modal');
+    $httpClient.make().post($form.prop('action'), new FormData($form[0])).then(function (_ref) {
+      var data = _ref.data;
+      return Botble.showSuccess(data.message);
+    })["finally"](function () {
+      Botble.hideButtonLoading(_self);
+      $modal.modal('hide');
+    });
+  });
+});
+/******/ })()
+;

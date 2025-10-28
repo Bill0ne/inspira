@@ -1,1 +1,54 @@
-$(function(){var e,t,n;e=document.getElementById("google-analytics-settings"),t=document.createElement("input"),n=null,t.type="file",t.accept="application/json",t.classList.add("d-none"),t.addEventListener("change",function(t){var a=t.currentTarget,o=e.getElementsByClassName("CodeMirror"),l=null;if(o.length>0&&(l=o[0].CodeMirror,null==a||!a.files||0!==a.files.length)){var i=new FormData;i.set("json",a.files[0]),Botble.showLoading(e),$httpClient.make().postForm(n,i).then(function(e){var t=e.data;l.setValue(t.data.content)}).catch(function(e){e.response&&e.response.data&&l.setValue(e.response.data.data.content)}).finally(function(){Botble.hideLoading(e),a.value=""})}}),document.body.appendChild(t),$(document).on("click",'[data-bb-toggle="analytics-trigger-upload-json"]',function(e){e.preventDefault(),n=e.currentTarget.dataset.url,t.click()})});
+/******/ (() => { // webpackBootstrap
+/*!*************************************************************!*\
+  !*** ./platform/plugins/analytics/resources/js/settings.js ***!
+  \*************************************************************/
+$(function () {
+  var initializeParseJsonSetting = function initializeParseJsonSetting() {
+    var $setting = document.getElementById('google-analytics-settings');
+    var $field = document.createElement('input');
+    var analyticsJsonSettingUrl = null;
+    createAnalyticsJsonConfigFileField();
+    $(document).on('click', '[data-bb-toggle="analytics-trigger-upload-json"]', function (e) {
+      e.preventDefault();
+      analyticsJsonSettingUrl = e.currentTarget.dataset.url;
+      $field.click();
+    });
+    function createAnalyticsJsonConfigFileField() {
+      $field.type = 'file';
+      $field.accept = 'application/json';
+      $field.classList.add('d-none');
+      $field.addEventListener('change', function (e) {
+        var target = e.currentTarget;
+        var editor = $setting.getElementsByClassName('CodeMirror');
+        var codeMirror = null;
+        if (editor.length > 0) {
+          codeMirror = editor[0].CodeMirror;
+        } else {
+          return;
+        }
+        if (target !== null && target !== void 0 && target.files && target.files.length === 0) {
+          return;
+        }
+        var data = new FormData();
+        data.set('json', target.files[0]);
+        Botble.showLoading($setting);
+        $httpClient.make().postForm(analyticsJsonSettingUrl, data).then(function (_ref) {
+          var data = _ref.data;
+          codeMirror.setValue(data.data.content);
+        })["catch"](function (error) {
+          if (!error.response || !error.response.data) {
+            return;
+          }
+          codeMirror.setValue(error.response.data.data.content);
+        })["finally"](function () {
+          Botble.hideLoading($setting);
+          target.value = '';
+        });
+      });
+      document.body.appendChild($field);
+    }
+  };
+  initializeParseJsonSetting();
+});
+/******/ })()
+;
