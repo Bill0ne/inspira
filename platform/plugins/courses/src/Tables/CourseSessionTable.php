@@ -259,11 +259,11 @@ class CourseSessionTable extends TableAbstract
 
         return <<<HTML
 <div class="d-flex align-items-center gap-3">
-    <div class="flex-shrink-0 rounded overflow-hidden" style="width:56px;height:56px;">
+    <div class="flex-shrink-0 rounded-3 overflow-hidden" style="width:60px;height:60px;background:#F4F7F6;">
         <img src="{$thumbnail}" alt="{$courseName}" style="width:100%;height:100%;object-fit:cover;">
     </div>
     <div class="flex-grow-1">
-        <a href="{$courseUrl}" class="fw-semibold text-decoration-none text-body">{$courseName}</a>
+        <a href="{$courseUrl}" class="fw-semibold text-decoration-none" style="color:#1F2A2A;">{$courseName}</a>
         {$metaHtml}
     </div>
 </div>
@@ -278,7 +278,7 @@ HTML;
             return '—';
         }
 
-        return format_price($course->price);
+        return '<span class="fw-semibold" style="color:#1F2A2A;">' . format_price($course->price) . '</span>';
     }
 
     protected function renderViews(CourseSession $session): string
@@ -293,12 +293,7 @@ HTML;
             return '<div class="text-muted small">' . BaseHelper::clean($hint) . '</div>';
         }
 
-        $maxStars = 5;
         $reference = max(1, $this->performance()->maxReferenceViews());
-        $filledStars = (int) round(min($views / $reference, 1) * $maxStars);
-        $filledStars = max(0, min($maxStars, $filledStars));
-
-        $starsMarkup = str_repeat('★', $filledStars) . str_repeat('☆', $maxStars - $filledStars);
         $viewsLabel = trans('plugins/courses::courses.table.views_rating_label', [
             'count' => number_format($views),
         ]);
@@ -319,10 +314,27 @@ HTML;
         $hintHtml = e($hint);
         $title = e($viewsLabel);
 
+        $segments = 8;
+        $filledSegments = (int) round(min($views / $reference, 1) * $segments);
+        $filledSegments = max(0, min($segments, $filledSegments));
+
+        $segmentsMarkup = '';
+
+        for ($i = 0; $i < $segments; $i++) {
+            $isFilled = $i < $filledSegments;
+            $color = $isFilled ? '#2F6A62' : '#DDE6E4';
+            $segmentsMarkup .= '<span style="display:inline-block;width:12px;height:6px;border-radius:4px;background:' . $color . ';margin-right:6px;"></span>';
+        }
+
+        $viewsBadge = '<span class="px-3 py-1 rounded-pill" style="background:#F4F9F8;color:#24554F;font-weight:600;">' . number_format($views) . '</span>';
+
         return <<<HTML
-<div class="d-flex flex-column align-items-start">
-    <span class="fs-5" style="letter-spacing:2px;color:#578E88;" title="{$title}">{$starsMarkup}</span>
-    <span class="text-muted small">{$hintHtml}</span>
+<div class="d-flex flex-column gap-2" title="{$title}">
+    <div class="d-flex align-items-center gap-3">
+        {$viewsBadge}
+        <div class="d-flex align-items-center">{$segmentsMarkup}</div>
+    </div>
+    <div class="text-muted small">{$hintHtml}</div>
 </div>
 HTML;
     }
@@ -355,14 +367,14 @@ HTML;
 
         for ($i = 0; $i < $chairs; $i++) {
             $isFilled = $i < $filledChairs;
-            $color = $isFilled ? '#2F6A62' : '#DDE6E4';
-            $icons .= '<i class="fa fa-chair" style="color:' . $color . ';font-size:18px;margin-right:6px;"></i>';
+            $color = $isFilled ? '#2F6A62' : '#E0EAE7';
+            $icons .= '<span style="display:inline-block;width:18px;height:18px;border-radius:6px;background:' . $color . ';margin-right:6px;"></span>';
         }
 
         return <<<HTML
 <div class="d-flex flex-column gap-2">
     <div class="d-flex align-items-center gap-3">
-        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:32px;height:32px;background:#E6F1EF;color:#30655F;font-weight:600;">{$booked}</span>
+        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:34px;height:34px;background:#E6F1EF;color:#30655F;font-weight:600;">{$booked}</span>
         <div class="d-inline-flex align-items-center">{$icons}</div>
     </div>
     <div class="text-muted small">{$label}</div>
@@ -391,11 +403,13 @@ HTML;
         ]);
 
         return <<<HTML
-<div class="d-flex flex-column align-items-start gap-1">
-    <span class="badge rounded-pill px-3 py-2" style="background:#EEF5F4;color:#24554F;font-weight:600;">{$engagement}%</span>
-    <span class="text-muted small">{$engagementLabel}</span>
-    <span class="text-muted small">{$conversionLabel}</span>
-    <span class="text-muted small">{$viewsLabel}</span>
+<div class="d-flex flex-column gap-2">
+    <div class="d-inline-flex align-items-center gap-2">
+        <span class="px-3 py-2 rounded-pill" style="background:#EEF5F4;color:#24554F;font-weight:600;">{$engagement}%</span>
+        <span class="text-muted small">{$viewsLabel}</span>
+    </div>
+    <div class="text-muted small">{$engagementLabel}</div>
+    <div class="text-muted small">{$conversionLabel}</div>
 </div>
 HTML;
     }
@@ -406,7 +420,7 @@ HTML;
         $sessionId = $session->getKey();
 
         return <<<HTML
-<button type="button" class="btn btn-sm btn-outline-primary view-participants-btn d-inline-flex align-items-center gap-2" data-session-id="{$sessionId}">
+<button type="button" class="btn btn-sm view-participants-btn d-inline-flex align-items-center gap-2" data-session-id="{$sessionId}" style="background:#F4F9F8;color:#24554F;border:1px solid #C7DBD7;">
     <i class="fa fa-users" aria-hidden="true"></i>
     <span>{$buttonLabel}</span>
 </button>
@@ -424,9 +438,13 @@ HTML;
             $timeRange = $session->start_date->format('H:i');
         }
 
+        $timeBadge = $timeRange !== '—'
+            ? '<span class="px-3 py-1 rounded-pill" style="background:#F4F9F8;color:#24554F;font-weight:500;">' . $timeRange . '</span>'
+            : '<span class="text-muted small">' . $timeRange . '</span>';
+
         return <<<HTML
-<div class="fw-semibold">{$startDate}</div>
-<div class="text-muted small">{$timeRange}</div>
+<div class="fw-semibold" style="color:#1F2A2A;">{$startDate}</div>
+<div>{$timeBadge}</div>
 HTML;
     }
 
@@ -441,7 +459,7 @@ HTML;
 
         return <<<HTML
 <div class="d-flex align-items-center gap-3">
-    <span class="d-inline-flex align-items-center justify-content-center" title="{$title}" style="width:48px;height:48px;border-radius:50%;background:{$background};color:{$textColor};font-weight:700;">{$score}</span>
+    <span class="px-4 py-2 rounded-pill" title="{$title}" style="background:{$background};color:{$textColor};font-weight:700;min-width:88px;text-align:center;">{$score}</span>
     <div class="text-muted small">{$ratingLabel}</div>
 </div>
 HTML;
