@@ -64,15 +64,21 @@ foreach ($clients as $m) {
 }
 $topMembers = collect($clients)->sortByDesc('score')->take(5);
 
-/* === LETZTE BUCHUNGEN === */
+/* === LETZTE BUCHUNGEN (korrekt & sauber) === */
 $bookings = DB::table('course_bookings')
     ->join('courses', 'course_bookings.course_id', '=', 'courses.id')
     ->join('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
+    ->leftJoin('payments', function ($join) {
+        $join->on('payments.order_id', '=', 'course_bookings.id');
+    })
     ->select(
         'course_bookings.id as booking_id',
-        'course_bookings.status',
-        'course_bookings.amount',
-        'course_bookings.created_at',
+        'course_bookings.status as booking_status',
+        'course_bookings.amount as booking_amount',
+        'course_bookings.created_at as booking_created',
+        'payments.status as payment_status',
+        'payments.amount as payment_amount',
+        'payments.created_at as payment_created',
         'courses.name as course_name',
         'courses.id as course_id',
         'courses.number_of_seats',
@@ -81,9 +87,22 @@ $bookings = DB::table('course_bookings')
         'ht_customers.last_name',
         'ht_customers.avatar'
     )
-    ->orderByDesc('course_bookings.created_at')
+    // Nur reale, sinnvolle Buchungen (mit oder ohne Zahlung)
+    ->where(function($q) {
+        $q->whereNotNull('course_bookings.created_at')
+          ->orWhereNotNull('payments.id');
+    })
+    // Sortierung: Zahlung zuerst, sonst Buchung
+    ->orderByDesc(DB::raw('COALESCE(payments.created_at, course_bookings.created_at)'))
     ->limit(5)
-    ->get();
+    ->get()
+    ->map(function ($b) {
+        // === Status vereinheitlichen für dein $isPaid im Blade ===
+        $b->status = strtolower($b->payment_status ?? $b->booking_status ?? 'pending');
+        // Betrag bevorzugt aus Zahlung, sonst Buchung
+        $b->amount = $b->payment_amount ?? $b->booking_amount ?? 0;
+        return $b;
+    });
 
 /* === Fallback-SVGs === */
 $chairSvg = file_exists(public_path('images/icons/chair.svg'))
