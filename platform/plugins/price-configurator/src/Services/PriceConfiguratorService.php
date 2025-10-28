@@ -96,7 +96,7 @@ class PriceConfiguratorService
                     } elseif ($targetType == TargetTypeEnum::ROOM) {
                         $categoryId = \Botble\Hotel\Models\Room::query()
                             ->where('id', $targetId)
-                            ->value('category_id');
+                            ->value('room_category_id');
                     }
 
                     if (!$categoryId || !in_array($categoryId, $rule->target_ids ?? [])) {
