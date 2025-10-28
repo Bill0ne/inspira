@@ -7,7 +7,15 @@
         </div>
         <div class="col-lg-4">
             <div class="sidebar-widget-rooms">
-                {!! dynamic_sidebar('rooms_sidebar') !!}
+                <div class="sidebar-widget categories check-availability-custom">
+                    <div class="widget-content">
+                        <div class="booking">
+                            <div class="contact-bg">
+                                {!! Theme::partial('rooms.forms.form', ['style' => 1, 'availableForBooking' => false]) !!}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

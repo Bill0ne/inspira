@@ -1,1 +1,702 @@
-(()=>{"use strict";function e(t){return e="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(e){return typeof e}:function(e){return e&&"function"==typeof Symbol&&e.constructor===Symbol&&e!==Symbol.prototype?"symbol":typeof e},e(t)}function t(e,t){for(var i=0;i<t.length;i++){var r=t[i];r.enumerable=r.enumerable||!1,r.configurable=!0,"value"in r&&(r.writable=!0),Object.defineProperty(e,n(r.key),r)}}function n(t){var n=function(t,n){if("object"!=e(t)||!t)return t;var i=t[Symbol.toPrimitive];if(void 0!==i){var r=i.call(t,n||"default");if("object"!=e(r))return r;throw new TypeError("@@toPrimitive must return a primitive value.")}return("string"===n?String:Number)(t)}(t,"string");return"symbol"==e(n)?n:n+""}const i=function(){return e=function e(t,n,i){!function(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}(this,e),this.loader=t,this.url=n,this.t=i},(n=[{key:"upload",value:function(){var e=this;return this.loader.file.then(function(t){return new Promise(function(n,i){e._initRequest(),e._initListeners(n,i,t),e._sendRequest(t)})})}},{key:"abort",value:function(){this.xhr&&this.xhr.abort()}},{key:"_initRequest",value:function(){var e=this.xhr=new XMLHttpRequest;e.open("POST",this.url,!0),e.responseType="json"}},{key:"_initListeners",value:function(e,t,n){var i=this.xhr,r=this.loader,o=(0,this.t)("Cannot upload file:")+" ".concat(n.name,".");i.addEventListener("error",function(){return t(o)}),i.addEventListener("abort",function(){return t()}),i.addEventListener("load",function(){var n=i.response;if(!n||!n.uploaded)return t(n&&n.error&&n.error.message?n.error.message:o);e({default:n.url})}),i.upload&&i.upload.addEventListener("progress",function(e){e.lengthComputable&&(r.uploadTotal=e.total,r.uploaded=e.loaded)})}},{key:"_sendRequest",value:function(e){var t=new FormData;t.append("upload",e),t.append("_token",$('meta[name="csrf-token"]').attr("content")),this.xhr.send(t)}}])&&t(e.prototype,n),i&&t(e,i),Object.defineProperty(e,"prototype",{writable:!1}),e;var e,n,i}();function r(e){return r="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(e){return typeof e}:function(e){return e&&"function"==typeof Symbol&&e.constructor===Symbol&&e!==Symbol.prototype?"symbol":typeof e},r(e)}function o(e,t){var n=Object.keys(e);if(Object.getOwnPropertySymbols){var i=Object.getOwnPropertySymbols(e);t&&(i=i.filter(function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable})),n.push.apply(n,i)}return n}function a(e,t,n){return(t=m(t))in e?Object.defineProperty(e,t,{value:n,enumerable:!0,configurable:!0,writable:!0}):e[t]=n,e}function l(){/*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */var e,t,n="function"==typeof Symbol?Symbol:{},i=n.iterator||"@@iterator",r=n.toStringTag||"@@toStringTag";function o(n,i,r,o){var l=i&&i.prototype instanceof u?i:u,s=Object.create(l.prototype);return c(s,"_invoke",function(n,i,r){var o,l,c,u=0,s=r||[],d=!1,f={p:0,n:0,v:e,a:p,f:p.bind(e,4),d:function(t,n){return o=t,l=0,c=e,f.n=n,a}};function p(n,i){for(l=n,c=i,t=0;!d&&u&&!r&&t<s.length;t++){var r,o=s[t],p=f.p,m=o[2];n>3?(r=m===i)&&(c=o[(l=o[4])?5:(l=3,3)],o[4]=o[5]=e):o[0]<=p&&((r=n<2&&p<o[1])?(l=0,f.v=i,f.n=o[1]):p<m&&(r=n<3||o[0]>i||i>m)&&(o[4]=n,o[5]=i,f.n=m,l=0))}if(r||n>1)return a;throw d=!0,i}return function(r,s,m){if(u>1)throw TypeError("Generator is already running");for(d&&1===s&&p(s,m),l=s,c=m;(t=l<2?e:c)||!d;){o||(l?l<3?(l>1&&(f.n=-1),p(l,c)):f.n=c:f.v=c);try{if(u=2,o){if(l||(r="next"),t=o[r]){if(!(t=t.call(o,c)))throw TypeError("iterator result is not an object");if(!t.done)return t;c=t.value,l<2&&(l=0)}else 1===l&&(t=o.return)&&t.call(o),l<2&&(c=TypeError("The iterator does not provide a '"+r+"' method"),l=1);o=e}else if((t=(d=f.n<0)?c:n.call(i,f))!==a)break}catch(t){o=e,l=1,c=t}finally{u=1}}return{value:t,done:d}}}(n,r,o),!0),s}var a={};function u(){}function s(){}function d(){}t=Object.getPrototypeOf;var f=[][i]?t(t([][i]())):(c(t={},i,function(){return this}),t),p=d.prototype=u.prototype=Object.create(f);function m(e){return Object.setPrototypeOf?Object.setPrototypeOf(e,d):(e.__proto__=d,c(e,r,"GeneratorFunction")),e.prototype=Object.create(p),e}return s.prototype=d,c(p,"constructor",d),c(d,"constructor",s),s.displayName="GeneratorFunction",c(d,r,"GeneratorFunction"),c(p),c(p,r,"Generator"),c(p,i,function(){return this}),c(p,"toString",function(){return"[object Generator]"}),(l=function(){return{w:o,m}})()}function c(e,t,n,i){var r=Object.defineProperty;try{r({},"",{})}catch(e){r=0}c=function(e,t,n,i){function o(t,n){c(e,t,function(e){return this._invoke(t,n,e)})}t?r?r(e,t,{value:n,enumerable:!i,configurable:!i,writable:!i}):e[t]=n:(o("next",0),o("throw",1),o("return",2))},c(e,t,n,i)}function u(e,t,n,i,r,o,a){try{var l=e[o](a),c=l.value}catch(e){return void n(e)}l.done?t(c):Promise.resolve(c).then(i,r)}function s(e){return function(){var t=this,n=arguments;return new Promise(function(i,r){var o=e.apply(t,n);function a(e){u(o,i,r,a,l,"next",e)}function l(e){u(o,i,r,a,l,"throw",e)}a(void 0)})}}function d(e,t){var n="undefined"!=typeof Symbol&&e[Symbol.iterator]||e["@@iterator"];if(!n){if(Array.isArray(e)||(n=function(e,t){if(e){if("string"==typeof e)return f(e,t);var n={}.toString.call(e).slice(8,-1);return"Object"===n&&e.constructor&&(n=e.constructor.name),"Map"===n||"Set"===n?Array.from(e):"Arguments"===n||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)?f(e,t):void 0}}(e))||t&&e&&"number"==typeof e.length){n&&(e=n);var i=0,r=function(){};return{s:r,n:function(){return i>=e.length?{done:!0}:{done:!1,value:e[i++]}},e:function(e){throw e},f:r}}throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}var o,a=!0,l=!1;return{s:function(){n=n.call(e)},n:function(){var e=n.next();return a=e.done,e},e:function(e){l=!0,o=e},f:function(){try{a||null==n.return||n.return()}finally{if(l)throw o}}}}function f(e,t){(null==t||t>e.length)&&(t=e.length);for(var n=0,i=Array(t);n<t;n++)i[n]=e[n];return i}function p(e,t){for(var n=0;n<t.length;n++){var i=t[n];i.enumerable=i.enumerable||!1,i.configurable=!0,"value"in i&&(i.writable=!0),Object.defineProperty(e,m(i.key),i)}}function m(e){var t=function(e,t){if("object"!=r(e)||!e)return e;var n=e[Symbol.toPrimitive];if(void 0!==n){var i=n.call(e,t||"default");if("object"!=r(i))return i;throw new TypeError("@@toPrimitive must return a primitive value.")}return("string"===t?String:Number)(e)}(e,"string");return"symbol"==r(t)?t:t+""}var h=function(){return e=function e(){!function(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}(this,e),this.CKEDITOR={},this.ckEditorConfigCallbacks=[],this.ckEditorInitialCallbacks=[],this.ckFinderCallback=null,this.tinyMceConfigCallbacks=[],this.tinyMceInitialCallbacks=[],document.dispatchEvent(new CustomEvent("core-editor-init",{detail:this}))},t=[{key:"ckEditorConfigUsing",value:function(e){this.ckEditorConfigCallbacks.push(e)}},{key:"ckEditorInitialUsing",value:function(e){this.ckEditorInitialCallbacks.push(e)}},{key:"ckEditorConfig",value:function(e){var t,n=d(this.ckEditorConfigCallbacks);try{for(n.s();!(t=n.n()).done;)e=(0,t.value)(e)}catch(e){n.e(e)}finally{n.f()}return e}},{key:"ckFinderUsing",value:function(e){this.ckFinderCallback=e}},{key:"ckFinderInitial",value:(u=s(l().m(function e(t,n){var r,o,a;return l().w(function(e){for(;;)switch(e.n){case 0:if(!this.ckFinderCallback){e.n=1;break}return e.a(2,this.ckFinderCallback(t,n));case 1:(r=t.plugins.get("FileRepository"))&&"undefined"!=typeof RV_MEDIA_URL&&RV_MEDIA_URL.media_upload_from_editor&&(r.createUploadAdapter=function(e){return new i(e,RV_MEDIA_URL.media_upload_from_editor,t.t)}),o=t.commands.get("ckfinder"),a=$("#".concat(n)).parent().find('.btn_gallery[data-action="media-insert-ckeditor"]'),o&&a.length?o.execute=function(){return a.trigger("click")}:o.execute=function(){return Botble.showError("Not available.")};case 2:return e.a(2)}},e,this)})),function(e,t){return u.apply(this,arguments)})},{key:"initCkEditor",value:function(e,t){var n=this;if(this.CKEDITOR[e]||!$("#"+e).is(":visible"))return!1;var i=document.querySelector("#"+e),r=function(e){for(var t=1;t<arguments.length;t++){var n=null!=arguments[t]?arguments[t]:{};t%2?o(Object(n),!0).forEach(function(t){a(e,t,n[t])}):Object.getOwnPropertyDescriptors?Object.defineProperties(e,Object.getOwnPropertyDescriptors(n)):o(Object(n)).forEach(function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(n,t))})}return e}({fontSize:{options:[9,10,11,12,13,"default",15,16,17,18,19,20,21,22,23,24]},alignment:{options:["left","right","center","justify"]},heading:{options:[{model:"paragraph",title:"Paragraph",class:"ck-heading_paragraph"},{model:"heading1",view:"h1",title:"Heading 1",class:"ck-heading_heading1"},{model:"heading2",view:"h2",title:"Heading 2",class:"ck-heading_heading2"},{model:"heading3",view:"h3",title:"Heading 3",class:"ck-heading_heading3"},{model:"heading4",view:"h4",title:"Heading 4",class:"ck-heading_heading4"},{model:"heading5",view:"h5",title:"Heading 5",class:"ck-heading_heading4"},{model:"heading6",view:"h6",title:"Heading 6",class:"ck-heading_heading4"}]},placeholder:" ",toolbar:{items:["heading","|","fontColor","fontSize","fontBackgroundColor","fontFamily","bold","italic","underline","link","strikethrough","bulletedList","numberedList","|","alignment","direction","shortcode","outdent","indent","|","htmlEmbed","imageInsert","ckfinder","blockQuote","insertTable","mediaEmbed","bootstrapGrid","undo","redo","findAndReplace","removeFormat","sourceEditing","codeBlock","fullScreen"],shouldNotGroupWhenFull:!0},language:{ui:window.siteEditorLocale||"en",content:window.siteEditorLocale||"en"},image:{toolbar:["imageTextAlternative","imageStyle:inline","imageStyle:block","imageStyle:side","imageStyle:wrapText","imageStyle:breakText","toggleImageCaption","ImageResize"],upload:{types:["jpeg","png","gif","bmp","webp","tiff","svg+xml"]}},codeBlock:{languages:[{language:"plaintext",label:"Plain text"},{language:"c",label:"C"},{language:"cs",label:"C#"},{language:"cpp",label:"C++"},{language:"css",label:"CSS"},{language:"diff",label:"Diff"},{language:"html",label:"HTML"},{language:"java",label:"Java"},{language:"javascript",label:"JavaScript"},{language:"php",label:"PHP"},{language:"python",label:"Python"},{language:"ruby",label:"Ruby"},{language:"typescript",label:"TypeScript"},{language:"xml",label:"XML"},{language:"dart",label:"Dart",class:"language-dart"}]},link:{defaultProtocol:"http://",decorators:{openInNewTab:{mode:"manual",label:"Open in a new tab",attributes:{target:"_blank",rel:"noopener noreferrer"}}}},table:{contentToolbar:["tableColumn","tableRow","mergeTableCells","tableCellProperties","tableProperties"]},htmlSupport:{allow:[{name:/.*/,attributes:!0,classes:!0,styles:!0}]},mediaEmbed:{extraProviders:[{name:"tiktok",url:"^.*https:\\/\\/(?:m|www|vm)?\\.?tiktok\\.com\\/((?:.*\\b(?:(?:usr|v|embed|user|video)\\/|\\?shareId=|\\&item_id=)(\\d+))|\\w+)",html:function(e){return'<iframe src="https://www.tiktok.com/embed/v2/'.concat(e[1],'" width="100%" height="400" frameborder="0"></iframe>')}}]}},t);r=this.ckEditorConfig(r),ClassicEditor.create(i,r).then(function(){var t=s(l().m(function t(i){var r,o,a;return l().w(function(t){for(;;)switch(t.n){case 0:return i.insertHtml=function(e){var t=i.data.processor.toView(e),n=i.data.toModel(t);i.model.insertContent(n)},window.editor=i,n.CKEDITOR[e]=i,r=90*$("#"+e).prop("rows"),o="ckeditor-".concat(e,"-inline"),$(i.ui.view.editable.element).addClass(o).after("\n                    <style>\n                        .ck-editor__editable_inline {\n                            min-height: ".concat(r-100,"px;\n                            max-height: ").concat(r+100,"px;\n                        }\n                    </style>\n                ")),i.model.document.on("change:data",function(){clearTimeout(a),a=setTimeout(function(){i.updateSourceElement()},150)}),i.commands._commands.get("mediaEmbed").execute=function(e){i.execute("shortcode",'[media url="'.concat(e,'"][/media]'))},t.n=1,n.ckEditorInitialUsing(i);case 1:return t.n=2,n.ckFinderInitial(i,e);case 2:return t.a(2)}},t)}));return function(e){return t.apply(this,arguments)}}()).catch(function(e){console.error(e)})}},{key:"uploadImageFromEditor",value:function(e,t){var n=new FormData;"function"==typeof e.blob?n.append("upload",e.blob(),e.filename()):n.append("upload",e),$httpClient.make().postForm(RV_MEDIA_URL.media_upload_from_editor,n).then(function(e){var n=e.data;n.uploaded&&t(n.url)})}},{key:"tinyMceConfigUsing",value:function(e){this.tinyMceConfigCallbacks.push(e)}},{key:"tinyMceInitialUsing",value:function(e){this.tinyMceInitialCallbacks.push(e)}},{key:"tinyMceConfig",value:function(e){var t,n=d(this.tinyMceConfigCallbacks);try{for(n.s();!(t=n.n()).done;)e=(0,t.value)(e)}catch(e){n.e(e)}finally{n.f()}return e}},{key:"tinyMceInitial",value:(c=s(l().m(function e(t){return l().w(function(e){for(;;)if(0===e.n)return e.a(2,t)},e)})),function(e){return c.apply(this,arguments)})},{key:"initTinyMce",value:(r=s(l().m(function e(t){var n,i,r=this;return l().w(function(e){for(;;)switch(e.n){case 0:return n={menubar:!0,selector:"#".concat(t),min_height:110*$("#".concat(t)).prop("rows"),resize:"vertical",plugins:"code autolink advlist visualchars link image media table charmap hr pagebreak nonbreaking anchor insertdatetime lists wordcount imagetools visualblocks",extended_valid_elements:"input[id|name|value|type|class|style|required|placeholder|autocomplete|onclick]",toolbar:"formatselect | bold italic strikethrough forecolor backcolor | link image table | alignleft aligncenter alignright alignjustify  | numlist bullist indent  |  visualblocks code",convert_urls:!1,image_caption:!0,image_advtab:!0,image_title:!0,placeholder:"",contextmenu:"link image inserttable | cell row column deletetable",images_upload_url:RV_MEDIA_URL.media_upload_from_editor,automatic_uploads:!0,block_unsupported_drop:!1,file_picker_types:"file image media",images_upload_handler:this.uploadImageFromEditor.bind(this),file_picker_callback:function(e){$('<input type="file" accept="image/*" />').click().on("change",function(t){r.uploadImageFromEditor(t.target.files[0],e)})},directionality:$("body").prop("dir")||"ltr"},"dark"===localStorage.getItem("themeMode")&&(n.skin="oxide-dark",n.content_css="dark"),n=this.tinyMceConfig(n),i=tinymce.init(n),e.n=1,this.tinyMceInitial(i);case 1:return e.a(2)}},e,this)})),function(e){return r.apply(this,arguments)})},{key:"initEditor",value:function(e,t,n){if(!e.length)return!1;var i=this;switch(n){case"ckeditor":$.each(e,function(e,n){i.initCkEditor($(n).prop("id"),t)});break;case"tinymce":$.each(e,function(e,t){i.initTinyMce($(t).prop("id"))})}}},{key:"init",value:function(){var e=this,t=$(document).find(".editor-ckeditor"),n=$(document).find(".editor-tinymce"),i=this;return t.length>0&&i.initEditor(t,{},"ckeditor"),n.length>0&&i.initEditor(n,{},"tinymce"),$(document).off("click",".show-hide-editor-btn").on("click",".show-hide-editor-btn",function(t){t.preventDefault();var n=$(t.currentTarget).data("result"),r=$("#"+n);if(r.hasClass("editor-ckeditor")){var o=$(".editor-action-item");e.CKEDITOR[n]&&void 0!==e.CKEDITOR[n]?(e.CKEDITOR[n].destroy(),e.CKEDITOR[n]=null,o.not(".action-show-hide-editor").hide()):(i.initCkEditor(n,{},"ckeditor"),o.not(".action-show-hide-editor").show())}else r.hasClass("editor-tinymce")&&tinymce.execCommand("mceToggleEditor",!1,n)}),this}}],t&&p(e.prototype,t),n&&p(e,n),Object.defineProperty(e,"prototype",{writable:!1}),e;var e,t,n,r,c,u}();$(function(){window.EDITOR=(new h).init(),window.EditorManagement=window.EditorManagement||h,$(document).on("shown.bs.modal",function(){window.EDITOR.init()})})})();
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./platform/core/base/resources/js/ckeditor-upload-adapter.js":
+/*!********************************************************************!*\
+  !*** ./platform/core/base/resources/js/ckeditor-upload-adapter.js ***!
+  \********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
+function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+/**
+ * Upload file adapter for Botble ckeditor
+ */
+var CKEditorUploadAdapter = /*#__PURE__*/function () {
+  /**
+   * Creates a new adapter instance.
+   *
+   */
+  function CKEditorUploadAdapter(loader, url, t) {
+    _classCallCheck(this, CKEditorUploadAdapter);
+    /**
+     * FileLoader instance to use during the upload.
+     */
+    this.loader = loader;
+
+    /**
+     * Upload URL.
+     *
+     * @member {String} #url
+     */
+    this.url = url;
+
+    /**
+     * Locale translation method.
+     */
+    this.t = t;
+  }
+
+  /**
+   * Starts the upload process.
+   *
+   * @returns {Promise.<Object>}
+   */
+  return _createClass(CKEditorUploadAdapter, [{
+    key: "upload",
+    value: function upload() {
+      var _this = this;
+      return this.loader.file.then(function (file) {
+        return new Promise(function (resolve, reject) {
+          _this._initRequest();
+          _this._initListeners(resolve, reject, file);
+          _this._sendRequest(file);
+        });
+      });
+    }
+
+    /**
+     * Aborts the upload process.
+     *
+     */
+  }, {
+    key: "abort",
+    value: function abort() {
+      if (this.xhr) {
+        this.xhr.abort();
+      }
+    }
+
+    /**
+     * Initializes the XMLHttpRequest object.
+     *
+     * @private
+     */
+  }, {
+    key: "_initRequest",
+    value: function _initRequest() {
+      var xhr = this.xhr = new XMLHttpRequest();
+      xhr.open('POST', this.url, true);
+      xhr.responseType = 'json';
+    }
+
+    /**
+     * Initializes XMLHttpRequest listeners.
+     *
+     * @private
+     * @param {Function} resolve Callback function to be called when the request is successful.
+     * @param {Function} reject Callback function to be called when the request cannot be completed.
+     * @param {File} file File instance to be uploaded.
+     */
+  }, {
+    key: "_initListeners",
+    value: function _initListeners(resolve, reject, file) {
+      var xhr = this.xhr;
+      var loader = this.loader;
+      var t = this.t;
+      var genericError = t('Cannot upload file:') + " ".concat(file.name, ".");
+      xhr.addEventListener('error', function () {
+        return reject(genericError);
+      });
+      xhr.addEventListener('abort', function () {
+        return reject();
+      });
+      xhr.addEventListener('load', function () {
+        var response = xhr.response;
+        if (!response || !response.uploaded) {
+          return reject(response && response.error && response.error.message ? response.error.message : genericError);
+        }
+        resolve({
+          "default": response.url
+        });
+      });
+
+      // Upload progress when it's supported.
+      /* istanbul ignore else */
+      if (xhr.upload) {
+        xhr.upload.addEventListener('progress', function (evt) {
+          if (evt.lengthComputable) {
+            loader.uploadTotal = evt.total;
+            loader.uploaded = evt.loaded;
+          }
+        });
+      }
+    }
+
+    /**
+     * Prepares the data and sends the request.
+     *
+     * @private
+     * @param {File} file File instance to be uploaded.
+     */
+  }, {
+    key: "_sendRequest",
+    value: function _sendRequest(file) {
+      // Prepare form data.
+      var data = new FormData();
+      data.append('upload', file);
+      data.append('_token', $('meta[name="csrf-token"]').attr('content')); // laravel token
+
+      // Send request.
+      this.xhr.send(data);
+    }
+  }]);
+}();
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (CKEditorUploadAdapter);
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry needs to be wrapped in an IIFE because it needs to be isolated against other modules in the chunk.
+(() => {
+/*!***************************************************!*\
+  !*** ./platform/core/base/resources/js/editor.js ***!
+  \***************************************************/
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _ckeditor_upload_adapter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./ckeditor-upload-adapter */ "./platform/core/base/resources/js/ckeditor-upload-adapter.js");
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
+function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+var EditorManagement = /*#__PURE__*/function () {
+  function EditorManagement() {
+    _classCallCheck(this, EditorManagement);
+    this.CKEDITOR = {};
+    this.ckEditorConfigCallbacks = [];
+    this.ckEditorInitialCallbacks = [];
+    this.ckFinderCallback = null;
+    this.tinyMceConfigCallbacks = [];
+    this.tinyMceInitialCallbacks = [];
+    document.dispatchEvent(new CustomEvent('core-editor-init', {
+      detail: this
+    }));
+  }
+  return _createClass(EditorManagement, [{
+    key: "ckEditorConfigUsing",
+    value: function ckEditorConfigUsing(callback) {
+      this.ckEditorConfigCallbacks.push(callback);
+    }
+  }, {
+    key: "ckEditorInitialUsing",
+    value: function ckEditorInitialUsing(callback) {
+      this.ckEditorInitialCallbacks.push(callback);
+    }
+  }, {
+    key: "ckEditorConfig",
+    value: function ckEditorConfig(config) {
+      var _iterator = _createForOfIteratorHelper(this.ckEditorConfigCallbacks),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var callback = _step.value;
+          config = callback(config);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      return config;
+    }
+  }, {
+    key: "ckFinderUsing",
+    value: function ckFinderUsing(callback) {
+      this.ckFinderCallback = callback;
+    }
+  }, {
+    key: "ckFinderInitial",
+    value: function () {
+      var _ckFinderInitial = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(editor, element) {
+        var ckFileRepository, ckfinder, btnGalleries;
+        return _regenerator().w(function (_context) {
+          while (1) switch (_context.n) {
+            case 0:
+              if (!this.ckFinderCallback) {
+                _context.n = 1;
+                break;
+              }
+              return _context.a(2, this.ckFinderCallback(editor, element));
+            case 1:
+              ckFileRepository = editor.plugins.get('FileRepository');
+              if (ckFileRepository && typeof RV_MEDIA_URL != 'undefined' && RV_MEDIA_URL.media_upload_from_editor) {
+                ckFileRepository.createUploadAdapter = function (loader) {
+                  return new _ckeditor_upload_adapter__WEBPACK_IMPORTED_MODULE_0__["default"](loader, RV_MEDIA_URL.media_upload_from_editor, editor.t);
+                };
+              }
+              ckfinder = editor.commands.get('ckfinder');
+              btnGalleries = $("#".concat(element)).parent().find('.btn_gallery[data-action="media-insert-ckeditor"]');
+              if (ckfinder && btnGalleries.length) {
+                ckfinder.execute = function () {
+                  return btnGalleries.trigger('click');
+                };
+              } else {
+                ckfinder.execute = function () {
+                  return Botble.showError('Not available.');
+                };
+              }
+            case 2:
+              return _context.a(2);
+          }
+        }, _callee, this);
+      }));
+      function ckFinderInitial(_x, _x2) {
+        return _ckFinderInitial.apply(this, arguments);
+      }
+      return ckFinderInitial;
+    }()
+  }, {
+    key: "initCkEditor",
+    value: function initCkEditor(element, extraConfig) {
+      var _this = this;
+      if (this.CKEDITOR[element] || !$('#' + element).is(':visible')) {
+        return false;
+      }
+      var editor = document.querySelector('#' + element);
+      var config = _objectSpread({
+        fontSize: {
+          options: [9, 10, 11, 12, 13, 'default', 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+        },
+        alignment: {
+          options: ['left', 'right', 'center', 'justify']
+        },
+        heading: {
+          options: [{
+            model: 'paragraph',
+            title: 'Paragraph',
+            "class": 'ck-heading_paragraph'
+          }, {
+            model: 'heading1',
+            view: 'h1',
+            title: 'Heading 1',
+            "class": 'ck-heading_heading1'
+          }, {
+            model: 'heading2',
+            view: 'h2',
+            title: 'Heading 2',
+            "class": 'ck-heading_heading2'
+          }, {
+            model: 'heading3',
+            view: 'h3',
+            title: 'Heading 3',
+            "class": 'ck-heading_heading3'
+          }, {
+            model: 'heading4',
+            view: 'h4',
+            title: 'Heading 4',
+            "class": 'ck-heading_heading4'
+          }, {
+            model: 'heading5',
+            view: 'h5',
+            title: 'Heading 5',
+            "class": 'ck-heading_heading4'
+          }, {
+            model: 'heading6',
+            view: 'h6',
+            title: 'Heading 6',
+            "class": 'ck-heading_heading4'
+          }]
+        },
+        placeholder: ' ',
+        toolbar: {
+          items: ['heading', '|', 'fontColor', 'fontSize', 'fontBackgroundColor', 'fontFamily', 'bold', 'italic', 'underline', 'link', 'strikethrough', 'bulletedList', 'numberedList', '|', 'alignment', 'direction', 'shortcode', 'outdent', 'indent', '|', 'htmlEmbed', 'imageInsert', 'ckfinder', 'blockQuote', 'insertTable', 'mediaEmbed', 'bootstrapGrid', 'undo', 'redo', 'findAndReplace', 'removeFormat', 'sourceEditing', 'codeBlock', 'fullScreen'],
+          shouldNotGroupWhenFull: true
+        },
+        language: {
+          ui: window.siteEditorLocale || 'en',
+          content: window.siteEditorLocale || 'en'
+        },
+        image: {
+          toolbar: ['imageTextAlternative', 'imageStyle:inline', 'imageStyle:block', 'imageStyle:side', 'imageStyle:wrapText', 'imageStyle:breakText', 'toggleImageCaption', 'ImageResize'],
+          upload: {
+            types: ['jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'svg+xml']
+          }
+        },
+        codeBlock: {
+          languages: [{
+            language: 'plaintext',
+            label: 'Plain text'
+          }, {
+            language: 'c',
+            label: 'C'
+          }, {
+            language: 'cs',
+            label: 'C#'
+          }, {
+            language: 'cpp',
+            label: 'C++'
+          }, {
+            language: 'css',
+            label: 'CSS'
+          }, {
+            language: 'diff',
+            label: 'Diff'
+          }, {
+            language: 'html',
+            label: 'HTML'
+          }, {
+            language: 'java',
+            label: 'Java'
+          }, {
+            language: 'javascript',
+            label: 'JavaScript'
+          }, {
+            language: 'php',
+            label: 'PHP'
+          }, {
+            language: 'python',
+            label: 'Python'
+          }, {
+            language: 'ruby',
+            label: 'Ruby'
+          }, {
+            language: 'typescript',
+            label: 'TypeScript'
+          }, {
+            language: 'xml',
+            label: 'XML'
+          }, {
+            language: 'dart',
+            label: 'Dart',
+            "class": 'language-dart'
+          }]
+        },
+        link: {
+          defaultProtocol: 'http://',
+          decorators: {
+            openInNewTab: {
+              mode: 'manual',
+              label: 'Open in a new tab',
+              attributes: {
+                target: '_blank',
+                rel: 'noopener noreferrer'
+              }
+            }
+          }
+        },
+        table: {
+          contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableCellProperties', 'tableProperties']
+        },
+        htmlSupport: {
+          allow: [{
+            name: /.*/,
+            attributes: true,
+            classes: true,
+            styles: true
+          }]
+        },
+        mediaEmbed: {
+          extraProviders: [{
+            name: 'tiktok',
+            url: '^.*https:\\/\\/(?:m|www|vm)?\\.?tiktok\\.com\\/((?:.*\\b(?:(?:usr|v|embed|user|video)\\/|\\?shareId=|\\&item_id=)(\\d+))|\\w+)',
+            html: function html(match) {
+              return "<iframe src=\"https://www.tiktok.com/embed/v2/".concat(match[1], "\" width=\"100%\" height=\"400\" frameborder=\"0\"></iframe>");
+            }
+          }]
+        }
+      }, extraConfig);
+      config = this.ckEditorConfig(config);
+      ClassicEditor.create(editor, config).then(/*#__PURE__*/function () {
+        var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2(editor) {
+          var minHeight, className, timeout;
+          return _regenerator().w(function (_context2) {
+            while (1) switch (_context2.n) {
+              case 0:
+                // create function insert html
+                editor.insertHtml = function (html) {
+                  var viewFragment = editor.data.processor.toView(html);
+                  var modelFragment = editor.data.toModel(viewFragment);
+                  editor.model.insertContent(modelFragment);
+                };
+                window.editor = editor;
+                _this.CKEDITOR[element] = editor;
+                minHeight = $('#' + element).prop('rows') * 90;
+                className = "ckeditor-".concat(element, "-inline");
+                $(editor.ui.view.editable.element).addClass(className).after("\n                    <style>\n                        .ck-editor__editable_inline {\n                            min-height: ".concat(minHeight - 100, "px;\n                            max-height: ").concat(minHeight + 100, "px;\n                        }\n                    </style>\n                "));
+
+                // debounce content for ajax ne
+
+                editor.model.document.on('change:data', function () {
+                  clearTimeout(timeout);
+                  timeout = setTimeout(function () {
+                    editor.updateSourceElement();
+                  }, 150);
+                });
+
+                // insert media embed
+                editor.commands._commands.get('mediaEmbed').execute = function (url) {
+                  editor.execute('shortcode', "[media url=\"".concat(url, "\"][/media]"));
+                };
+                _context2.n = 1;
+                return _this.ckEditorInitialUsing(editor);
+              case 1:
+                _context2.n = 2;
+                return _this.ckFinderInitial(editor, element);
+              case 2:
+                return _context2.a(2);
+            }
+          }, _callee2);
+        }));
+        return function (_x3) {
+          return _ref.apply(this, arguments);
+        };
+      }())["catch"](function (error) {
+        console.error(error);
+      });
+    }
+  }, {
+    key: "uploadImageFromEditor",
+    value: function uploadImageFromEditor(blobInfo, callback) {
+      var formData = new FormData();
+      if (typeof blobInfo.blob === 'function') {
+        formData.append('upload', blobInfo.blob(), blobInfo.filename());
+      } else {
+        formData.append('upload', blobInfo);
+      }
+      $httpClient.make().postForm(RV_MEDIA_URL.media_upload_from_editor, formData).then(function (_ref2) {
+        var data = _ref2.data;
+        if (data.uploaded) {
+          callback(data.url);
+        }
+      });
+    }
+  }, {
+    key: "tinyMceConfigUsing",
+    value: function tinyMceConfigUsing(callback) {
+      this.tinyMceConfigCallbacks.push(callback);
+    }
+  }, {
+    key: "tinyMceInitialUsing",
+    value: function tinyMceInitialUsing(callback) {
+      this.tinyMceInitialCallbacks.push(callback);
+    }
+  }, {
+    key: "tinyMceConfig",
+    value: function tinyMceConfig(config) {
+      var _iterator2 = _createForOfIteratorHelper(this.tinyMceConfigCallbacks),
+        _step2;
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var callback = _step2.value;
+          config = callback(config);
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+      return config;
+    }
+  }, {
+    key: "tinyMceInitial",
+    value: function () {
+      var _tinyMceInitial = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3(editor) {
+        return _regenerator().w(function (_context3) {
+          while (1) switch (_context3.n) {
+            case 0:
+              return _context3.a(2, editor);
+          }
+        }, _callee3);
+      }));
+      function tinyMceInitial(_x4) {
+        return _tinyMceInitial.apply(this, arguments);
+      }
+      return tinyMceInitial;
+    }()
+  }, {
+    key: "initTinyMce",
+    value: function () {
+      var _initTinyMce = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4(element) {
+        var _this2 = this;
+        var options, tinymceInstance;
+        return _regenerator().w(function (_context4) {
+          while (1) switch (_context4.n) {
+            case 0:
+              options = {
+                menubar: true,
+                selector: "#".concat(element),
+                min_height: $("#".concat(element)).prop('rows') * 110,
+                resize: 'vertical',
+                plugins: 'code autolink advlist visualchars link image media table charmap hr pagebreak nonbreaking anchor insertdatetime lists wordcount imagetools visualblocks',
+                extended_valid_elements: 'input[id|name|value|type|class|style|required|placeholder|autocomplete|onclick]',
+                toolbar: 'formatselect | bold italic strikethrough forecolor backcolor | link image table | alignleft aligncenter alignright alignjustify  | numlist bullist indent  |  visualblocks code',
+                convert_urls: false,
+                image_caption: true,
+                image_advtab: true,
+                image_title: true,
+                placeholder: '',
+                contextmenu: 'link image inserttable | cell row column deletetable',
+                images_upload_url: RV_MEDIA_URL.media_upload_from_editor,
+                automatic_uploads: true,
+                block_unsupported_drop: false,
+                file_picker_types: 'file image media',
+                images_upload_handler: this.uploadImageFromEditor.bind(this),
+                file_picker_callback: function file_picker_callback(callback) {
+                  var $input = $('<input type="file" accept="image/*" />').click();
+                  $input.on('change', function (e) {
+                    _this2.uploadImageFromEditor(e.target.files[0], callback);
+                  });
+                },
+                directionality: $('body').prop('dir') || 'ltr'
+              };
+              if (localStorage.getItem('themeMode') === 'dark') {
+                options.skin = 'oxide-dark';
+                options.content_css = 'dark';
+              }
+              options = this.tinyMceConfig(options);
+              tinymceInstance = tinymce.init(options);
+              _context4.n = 1;
+              return this.tinyMceInitial(tinymceInstance);
+            case 1:
+              return _context4.a(2);
+          }
+        }, _callee4, this);
+      }));
+      function initTinyMce(_x5) {
+        return _initTinyMce.apply(this, arguments);
+      }
+      return initTinyMce;
+    }()
+  }, {
+    key: "initEditor",
+    value: function initEditor(element, extraConfig, type) {
+      if (!element.length) {
+        return false;
+      }
+      var current = this;
+      switch (type) {
+        case 'ckeditor':
+          $.each(element, function (index, item) {
+            current.initCkEditor($(item).prop('id'), extraConfig);
+          });
+          break;
+        case 'tinymce':
+          $.each(element, function (index, item) {
+            current.initTinyMce($(item).prop('id'));
+          });
+          break;
+      }
+    }
+  }, {
+    key: "init",
+    value: function init() {
+      var _this3 = this;
+      var $ckEditor = $(document).find('.editor-ckeditor');
+      var $tinyMce = $(document).find('.editor-tinymce');
+      var current = this;
+      if ($ckEditor.length > 0) {
+        current.initEditor($ckEditor, {}, 'ckeditor');
+      }
+      if ($tinyMce.length > 0) {
+        current.initEditor($tinyMce, {}, 'tinymce');
+      }
+      $(document).off('click', '.show-hide-editor-btn').on('click', '.show-hide-editor-btn', function (event) {
+        event.preventDefault();
+        var editorInstance = $(event.currentTarget).data('result');
+        var $result = $('#' + editorInstance);
+        if ($result.hasClass('editor-ckeditor')) {
+          var $editorActionItem = $('.editor-action-item');
+          if (_this3.CKEDITOR[editorInstance] && typeof _this3.CKEDITOR[editorInstance] !== 'undefined') {
+            _this3.CKEDITOR[editorInstance].destroy();
+            _this3.CKEDITOR[editorInstance] = null;
+            $editorActionItem.not('.action-show-hide-editor').hide();
+          } else {
+            current.initCkEditor(editorInstance, {}, 'ckeditor');
+            $editorActionItem.not('.action-show-hide-editor').show();
+          }
+        } else if ($result.hasClass('editor-tinymce')) {
+          tinymce.execCommand('mceToggleEditor', false, editorInstance);
+        }
+      });
+      return this;
+    }
+  }]);
+}();
+$(function () {
+  window.EDITOR = new EditorManagement().init();
+  window.EditorManagement = window.EditorManagement || EditorManagement;
+  $(document).on('shown.bs.modal', function () {
+    window.EDITOR.init();
+  });
+});
+})();
+
+/******/ })()
+;
