@@ -1,0 +1,2 @@
+<p <?php echo e($attributes->merge(['class' => 'card-subtitle'])); ?>><?php echo e($slot); ?></p>
+<?php /**PATH D:\xampp\htdocs\inspira\platform/core/base/resources/views/components/card/subtitle.blade.php ENDPATH**/ ?>
