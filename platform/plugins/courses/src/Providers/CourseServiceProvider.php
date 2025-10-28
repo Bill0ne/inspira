@@ -13,6 +13,7 @@ use Botble\Courses\Models\CourseCategory;
 use Botble\Base\Supports\DashboardMenuItem;
 use Botble\Courses\Facades\CourseHelper;
 use Botble\LanguageAdvanced\Supports\LanguageAdvancedManager;
+use Illuminate\Support\Facades\Schema;
 use Botble\Slug\Facades\SlugHelper;
 use Botble\Theme\Facades\SiteMapManager;
 use Illuminate\Foundation\AliasLoader;
@@ -75,9 +76,17 @@ class CourseServiceProvider extends ServiceProvider
         });
 
         if (defined('LANGUAGE_ADVANCED_MODULE_SCREEN_NAME')) {
-            LanguageAdvancedManager::registerModule(Course::class, ['name', 'description']);
-            LanguageAdvancedManager::registerModule(Instructor::class, ['name', 'bio']);
-            LanguageAdvancedManager::registerModule(CourseCategory::class, ['name', 'description']);
+            if (Schema::hasTable('courses_translations')) {
+                LanguageAdvancedManager::registerModule(Course::class, ['name', 'description']);
+            }
+
+            if (Schema::hasTable('instructors_translations')) {
+                LanguageAdvancedManager::registerModule(Instructor::class, ['name', 'bio']);
+            }
+
+            if (Schema::hasTable('course_categories_translations')) {
+                LanguageAdvancedManager::registerModule(CourseCategory::class, ['name', 'description']);
+            }
         }
 
 
