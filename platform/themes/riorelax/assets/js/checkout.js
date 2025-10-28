@@ -58,6 +58,7 @@ $(document).ready(function () {
             error: () => {
                 $('body').css('cursor', 'default')
                 $('.custom-checkbox label').css('cursor', 'pointer')
+                $checkoutButton.prop('disabled', false)
             },
         })
     })
@@ -119,6 +120,7 @@ $(document).ready(function () {
             error: () => {
                 $('body').css('cursor', 'default')
                 $('.custom-checkbox label').css('cursor', 'pointer')
+                $checkoutButton.prop('disabled', false)
             },
         })
     })
@@ -164,6 +166,8 @@ $(document).ready(function () {
                 if (error) {
                     RiorelaxTheme.showError(message)
 
+                    $checkoutButton.prop('disabled', false)
+
                     return
                 }
 
@@ -189,6 +193,7 @@ $(document).ready(function () {
                     success: ({ error, message, data}) => {
                         if (error) {
                             RiorelaxTheme.showError(message)
+                            $checkoutButton.prop('disabled', false)
 
                             return
                         }
@@ -197,11 +202,13 @@ $(document).ready(function () {
                     },
                     error: (error) => {
                         RiorelaxTheme.handleError(error)
+                        $checkoutButton.prop('disabled', false)
                     },
                 })
             },
             error: (error) => {
                 RiorelaxTheme.handleError(error)
+                $checkoutButton.prop('disabled', false)
             },
         })
     }
