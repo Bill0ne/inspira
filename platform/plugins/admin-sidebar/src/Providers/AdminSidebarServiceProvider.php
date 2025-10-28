@@ -82,6 +82,7 @@ class AdminSidebarServiceProvider extends ServiceProvider
                     'cms-plugins-payments' => 30,
                     'cms-plugins-contact' => 40,
                     'cms-plugins-team' => 50,
+                    'cms-plugins-price-configurator' => 60,
                 ],
             ],
             'cms-custom-website' => [
@@ -109,6 +110,7 @@ class AdminSidebarServiceProvider extends ServiceProvider
                     'cms-core-tools' => 20,
                     'cms-core-system-maintenance-mode' => 30,
                     'cms-core-settings' => 40,
+                    'cms-plugins-personal-dashboard' => 50,
                 ],
             ],
         ];
