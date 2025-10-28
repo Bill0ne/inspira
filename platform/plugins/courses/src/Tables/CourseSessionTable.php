@@ -367,15 +367,32 @@ HTML;
 
         for ($i = 0; $i < $chairs; $i++) {
             $isFilled = $i < $filledChairs;
-            $color = $isFilled ? '#2F6A62' : '#E0EAE7';
-            $icons .= '<span style="display:inline-block;width:18px;height:18px;border-radius:6px;background:' . $color . ';margin-right:6px;"></span>';
+            $seatFill = $isFilled ? '#2F6A62' : '#F0F5F4';
+            $seatStroke = $isFilled ? '#1E4D47' : '#C5D7D3';
+
+            $icons .= <<<SVG
+<span class="d-inline-flex" style="width:22px;height:22px;margin-right:6px;">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="8" width="20" height="10" rx="3" fill="{$seatFill}" stroke="{$seatStroke}" stroke-width="1.5" />
+        <rect x="8" y="18" width="16" height="6" rx="2" fill="{$seatFill}" stroke="{$seatStroke}" stroke-width="1.5" />
+        <rect x="6" y="24" width="6" height="4" rx="1.5" fill="{$seatStroke}" opacity="0.3" />
+        <rect x="20" y="24" width="6" height="4" rx="1.5" fill="{$seatStroke}" opacity="0.3" />
+    </svg>
+</span>
+SVG;
         }
+
+        $ratioLabel = $maxSeats !== null
+            ? '<span class="fw-semibold" style="color:#1F2A2A;min-width:68px;">' . $booked . ' / ' . max(1, $maxSeats) . '</span>'
+            : '<span class="fw-semibold" style="color:#1F2A2A;min-width:68px;">' . $booked . ' / &infin;</span>';
+
+        $label = BaseHelper::clean($label);
 
         return <<<HTML
 <div class="d-flex flex-column gap-2">
     <div class="d-flex align-items-center gap-3">
-        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:34px;height:34px;background:#E6F1EF;color:#30655F;font-weight:600;">{$booked}</span>
-        <div class="d-inline-flex align-items-center">{$icons}</div>
+        <div class="d-inline-flex align-items-center gap-2">{$icons}</div>
+        {$ratioLabel}
     </div>
     <div class="text-muted small">{$label}</div>
 </div>
@@ -439,12 +456,21 @@ HTML;
         }
 
         $timeBadge = $timeRange !== '—'
-            ? '<span class="px-3 py-1 rounded-pill" style="background:#F4F9F8;color:#24554F;font-weight:500;">' . $timeRange . '</span>'
+            ? '<span class="px-4 py-2 rounded-pill" style="background:#DFF0ED;color:#17423D;font-weight:600;min-width:110px;display:inline-flex;justify-content:center;">' . $timeRange . '</span>'
             : '<span class="text-muted small">' . $timeRange . '</span>';
 
+        $dayLabel = $session->start_date
+            ? '<div class="text-muted small">' . e($session->start_date->locale(app()->getLocale())->translatedFormat('l')) . '</div>'
+            : '';
+
         return <<<HTML
-<div class="fw-semibold" style="color:#1F2A2A;">{$startDate}</div>
-<div>{$timeBadge}</div>
+<div class="d-flex align-items-center gap-3">
+    <div>
+        <div class="fw-semibold" style="color:#1F2A2A;">{$startDate}</div>
+        {$dayLabel}
+    </div>
+    <div>{$timeBadge}</div>
+</div>
 HTML;
     }
 
@@ -454,13 +480,20 @@ HTML;
         $score = number_format($stats['score'], 1);
 
         [$background, $textColor, $ratingKey] = $this->resolveScoreStyle((float) $stats['score']);
-        $ratingLabel = trans($ratingKey);
-        $title = e($ratingLabel);
+        $ratingText = trans($ratingKey);
+        $ratingLabel = BaseHelper::clean($ratingText);
+        $title = e($ratingText);
+
+        $ringShadow = match ($background) {
+            '#2F6A62', '#4E8E85' => 'rgba(47, 106, 98, 0.3)',
+            '#F2B138' => 'rgba(242, 177, 56, 0.35)',
+            default => 'rgba(217, 108, 95, 0.35)',
+        };
 
         return <<<HTML
 <div class="d-flex align-items-center gap-3">
-    <span class="px-4 py-2 rounded-pill" title="{$title}" style="background:{$background};color:{$textColor};font-weight:700;min-width:88px;text-align:center;">{$score}</span>
-    <div class="text-muted small">{$ratingLabel}</div>
+    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" title="{$title}" style="width:48px;height:48px;background:{$background};color:{$textColor};font-weight:700;box-shadow:0 0 0 4px {$ringShadow};">{$score}</span>
+    <span class="fw-semibold" style="color:#1F2A2A;">{$ratingLabel}</span>
 </div>
 HTML;
     }
