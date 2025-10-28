@@ -1,1 +1,367 @@
-(()=>{"use strict";$(document).ready((function(){$(".service-item").on("change",(function(){var e=[],t=[];$(".service-item:checked").each((function(e,o){t[e]=$(o).val()})),$(".food-item:checked").each((function(t,o){e[t]=$(o).val()})),$("body").css("cursor","progress"),$(".custom-checkbox label").css("cursor","progress");var o=$(document).find(".payment-checkout-btn");o.prop("disabled",!0);var a=$(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val();$.ajax({type:"GET",cache:!1,url:"/ajax/calculate-amount",data:{room_id:$("input[name=room_id]").val(),start_date:$("input[name=start_date]").val(),end_date:$("input[name=end_date]").val(),services:t,foods:e},success:function(e){var t=e.error,n=e.data;t||($(".total-amount-text").text(n.total_amount),$("input[name=amount]").val(n.amount_raw),$(".amount-text").text(n.sub_total),$(".discount-text").text(n.discount_amount),$(".tax-text").text(n.tax_amount)),$("body").css("cursor","default"),$(".custom-checkbox label").css("cursor","pointer"),$(".payment-checkout-form .list_payment_method").load(window.location.href+" .payment-checkout-form .list_payment_method > *",(function(){o.prop("disabled",!1),$(document).find('.payment-checkout-form .list_payment_method input[value="'+a+'"]').prop("checked",!0).trigger("change")}))},error:function(){$("body").css("cursor","default"),$(".custom-checkbox label").css("cursor","pointer")}})})),$(".food-item").on("change",(function(){var e=[],t=[];$(".food-item:checked").each((function(t,o){e[t]=$(o).val()})),$(".service-item:checked").each((function(e,o){t[e]=$(o).val()})),$("body").css("cursor","progress"),$(".custom-checkbox label").css("cursor","progress");var o=$(document).find(".payment-checkout-btn");o.prop("disabled",!0);var a=$(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val();$.ajax({type:"GET",cache:!1,url:"/ajax/calculate-amount",data:{room_id:$("input[name=room_id]").val(),start_date:$("input[name=start_date]").val(),end_date:$("input[name=end_date]").val(),foods:e,services:t},success:function(e){var t=e.error,n=e.data;t||($(".total-amount-text").text(n.total_amount),$("input[name=amount]").val(n.amount_raw),$(".amount-text").text(n.sub_total),$(".discount-text").text(n.discount_amount),$(".tax-text").text(n.tax_amount)),$("body").css("cursor","default"),$(".custom-checkbox label").css("cursor","pointer"),$(".payment-checkout-form .list_payment_method").load(window.location.href+" .payment-checkout-form .list_payment_method > *",(function(){o.prop("disabled",!1),$(document).find('.payment-checkout-form .list_payment_method input[value="'+a+'"]').prop("checked",!0).trigger("change")}))},error:function(){$("body").css("cursor","default"),$(".custom-checkbox label").css("cursor","pointer")}})})),$(".create-customer").on("change",'input[name="register_customer"]',(function(e){var t=$(".form-create-customer-password");e.target.checked?t.removeClass("d-none"):t.addClass("d-none")}));var e=function(){var e=[];$(".service-item:checked").each((function(t,o){e[t]=$(o).val()}));var t=$(document).find(".payment-checkout-btn");t.prop("disabled",!0);var o=$(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val();$.ajax({url:"/ajax/calculate-amount",type:"GET",data:{room_id:$("input[name=room_id]").val(),start_date:$("input[name=start_date]").val(),end_date:$("input[name=end_date]").val(),services:e},success:function(e){var a,n=e.error,r=e.message,c=e.data;if(n)RiorelaxTheme.showError(r);else{$(".total-amount-text").text(c.total_amount),$("input[name=amount]").val(c.amount_raw),$(".amount-text").text(c.sub_total),$(".discount-text").text(c.discount_amount),$(".tax-text").text(c.tax_amount),$(".payment-checkout-form .list_payment_method").load(window.location.href+" .payment-checkout-form .list_payment_method > *",(function(){t.prop("disabled",!1),$(document).find('.payment-checkout-form .list_payment_method input[value="'+o+'"]').prop("checked",!0).trigger("change")}));var u=$(".order-detail-box").data("refresh-url");$.ajax({url:u,type:"GET",data:{coupon_code:null!==(a=$("input[name=coupon_hidden]").val())&&void 0!==a?a:$("input[name=coupon_code]").val()},success:function(e){var t=e.error,o=e.message,a=e.data;t?RiorelaxTheme.showError(o):$(".order-detail-box").html(a)},error:function(e){RiorelaxTheme.handleError(e)}})}},error:function(e){RiorelaxTheme.handleError(e)}})};$(document).on("click",".toggle-coupon-form",(function(){return $(document).find(".coupon-form").toggle("fast")})).on("click",".apply-coupon-code",(function(t){t.preventDefault();var o=$(t.currentTarget);$.ajax({url:o.data("url"),type:"POST",headers:{"X-CSRF-TOKEN":$('meta[name="csrf-token"]').attr("content")},data:{coupon_code:$("input[name=coupon_code]").val()},beforeSend:function(){o.addClass("button-loading")},success:function(t){var o=t.error,a=t.message;o?RiorelaxTheme.showError(a):(RiorelaxTheme.showSuccess(a),e())},error:function(e){RiorelaxTheme.handleError(e)},complete:function(){o.removeClass("button-loading")}})})).on("click",".remove-coupon-code",(function(t){t.preventDefault();var o=$(t.currentTarget);$.ajax({url:o.data("url"),type:"POST",headers:{"X-CSRF-TOKEN":$('meta[name="csrf-token"]').attr("content")},beforeSend:function(){o.addClass("button-loading")},success:function(t){var o=t.message;t.error?RiorelaxTheme.showError(o):(RiorelaxTheme.showSuccess(o),e())},error:function(e){RiorelaxTheme.handleError(e)},complete:function(){o.removeClass("button-loading")}})}))}))})();
+'use strict'
+
+$(document).ready(function () {
+    $('.service-item').on('change', function () {
+        const foods = []
+        const services = []
+        $('.service-item:checked').each((i, el) => {
+            services[i] = $(el).val()
+        })
+
+        const slots = []
+        $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+            const start = $(el).val()
+            const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+            if (start && end) {
+                slots.push({ start_date: start, end_date: end })
+            }
+        })
+
+        $('.food-item:checked').each((i, el) => {
+            foods[i] = $(el).val()
+        })
+
+        $('body').css('cursor', 'progress')
+        $('.custom-checkbox label').css('cursor', 'progress')
+
+        let $checkoutButton = $(document).find('.payment-checkout-btn')
+        $checkoutButton.prop('disabled', true)
+        let $selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
+
+        $.ajax({
+            type: 'GET',
+            cache: false,
+            url: '/ajax/calculate-amount',
+            data: {
+                room_id: $('input[name=room_id]').val(),
+                slots: slots,
+                services,
+                foods
+            },
+            success: ({ error, data }) => {
+                if (!error) {
+                    $('.total-amount-text').text(data.total_amount)
+                    $('input[name=amount]').val(data.amount_raw)
+                    $('.amount-text').text(data.sub_total)
+                    $('.discount-text').text(data.discount_amount)
+                    $('.tax-text').text(data.tax_amount)
+                }
+
+                $('body').css('cursor', 'default')
+                $('.custom-checkbox label').css('cursor', 'pointer')
+
+                $('.payment-checkout-form .list_payment_method').load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function() {
+                    $checkoutButton.prop('disabled', false)
+                    $(document).find('.payment-checkout-form .list_payment_method input[value="' + $selectedPaymentMethod + '"]').prop('checked', true).trigger('change')
+                })
+            },
+            error: () => {
+                $('body').css('cursor', 'default')
+                $('.custom-checkbox label').css('cursor', 'pointer')
+                $checkoutButton.prop('disabled', false)
+            },
+        })
+    })
+
+    $('.food-item').on('change', function () {
+        const foods = []
+        const services = []
+        $('.food-item:checked').each((i, el) => {
+            foods[i] = $(el).val()
+        })
+
+        const slots = []
+        $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+            const start = $(el).val()
+            const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+            if (start && end) {
+                slots.push({ start_date: start, end_date: end })
+            }
+        })
+
+        $('.service-item:checked').each((i, el) => {
+            services[i] = $(el).val()
+        })
+
+        $('body').css('cursor', 'progress')
+        $('.custom-checkbox label').css('cursor', 'progress')
+
+        let $checkoutButton = $(document).find('.payment-checkout-btn')
+        $checkoutButton.prop('disabled', true)
+        let $selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
+
+        $.ajax({
+            type: 'GET',
+            cache: false,
+            url: '/ajax/calculate-amount',
+            data: {
+                room_id: $('input[name=room_id]').val(),
+                slots: slots,
+                foods,
+                services,
+            },
+            success: ({ error, data }) => {
+                if (!error) {
+                    $('.total-amount-text').text(data.total_amount)
+                    $('input[name=amount]').val(data.amount_raw)
+                    $('.amount-text').text(data.sub_total)
+                    $('.discount-text').text(data.discount_amount)
+                    $('.tax-text').text(data.tax_amount)
+                }
+
+                $('body').css('cursor', 'default')
+                $('.custom-checkbox label').css('cursor', 'pointer')
+
+                $('.payment-checkout-form .list_payment_method').load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function() {
+                    $checkoutButton.prop('disabled', false)
+                    $(document).find('.payment-checkout-form .list_payment_method input[value="' + $selectedPaymentMethod + '"]').prop('checked', true).trigger('change')
+                })
+            },
+            error: () => {
+                $('body').css('cursor', 'default')
+                $('.custom-checkbox label').css('cursor', 'pointer')
+                $checkoutButton.prop('disabled', false)
+            },
+        })
+    })
+
+    $('.create-customer').on('change', 'input[name="register_customer"]', function (event) {
+        const $formCreate = $('.form-create-customer-password')
+
+        if (event.target.checked) {
+            $formCreate.removeClass('d-none')
+        } else {
+            $formCreate.addClass('d-none')
+        }
+    })
+
+    const refreshCoupon = () => {
+        const services = []
+        $('.service-item:checked').each((i, el) => {
+            services[i] = $(el).val()
+        })
+
+        const foods = []
+        $('.food-item:checked').each((i, el) => {
+            foods[i] = $(el).val()
+        })
+
+        const slots = []
+        $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+            const start = $(el).val()
+            const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+            if (start && end) {
+                slots.push({ start_date: start, end_date: end })
+            }
+        })
+
+        const $checkoutButton = $(document).find('.payment-checkout-btn')
+        const enableCheckout = () => $checkoutButton.prop('disabled', false)
+        const disableCheckout = () => $checkoutButton.prop('disabled', true)
+
+        disableCheckout()
+
+        const $paymentMethodList = $(document).find('.payment-checkout-form .list_payment_method')
+        const selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
+        const $couponBox = $(document).find('.order-detail-box').first()
+        const refreshUrl = $couponBox.data('refresh-url')
+
+        $.ajax({
+            url: '/ajax/calculate-amount',
+            type: 'GET',
+            data: {
+                room_id: $('input[name=room_id]').val(),
+                slots,
+                services,
+                foods,
+            },
+            success: ({ error, message, data }) => {
+                if (error) {
+                    RiorelaxTheme.showError(message)
+
+                    enableCheckout()
+
+                    return
+                }
+
+                $('.total-amount-text').text(data.total_amount)
+                $('input[name=amount]').val(data.amount_raw)
+                $('.amount-text').text(data.sub_total)
+                $('.discount-text').text(data.discount_amount)
+                $('.tax-text').text(data.tax_amount)
+
+                const paymentMethodsReload = $.Deferred()
+
+                if ($paymentMethodList.length) {
+                    $paymentMethodList.load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function(response, status) {
+                        if (status === 'error') {
+                            paymentMethodsReload.reject()
+
+                            return
+                        }
+
+                        $(document)
+                            .find('.payment-checkout-form .list_payment_method input[value="' + selectedPaymentMethod + '"]')
+                            .prop('checked', true)
+                            .trigger('change')
+
+                        paymentMethodsReload.resolve()
+                    })
+                } else {
+                    paymentMethodsReload.resolve()
+                }
+
+                const couponDetailsReload = $.Deferred()
+
+                if (refreshUrl) {
+                    $.ajax({
+                        url: refreshUrl,
+                        type: 'GET',
+                        data: {
+                            coupon_code: $('input[name=coupon_hidden]').val() ?? $('input[name=coupon_code]').val(),
+                        },
+                        success: ({ error, message, data }) => {
+                            if (error) {
+                                RiorelaxTheme.showError(message)
+
+                                couponDetailsReload.reject()
+
+                                return
+                            }
+
+                            if ($couponBox.length) {
+                                $couponBox.replaceWith(data)
+                            } else {
+                                $(document).find('.order-detail-box').first().html(data)
+                            }
+
+                            couponDetailsReload.resolve()
+                        },
+                        error: (error) => {
+                            RiorelaxTheme.handleError(error)
+                            couponDetailsReload.reject()
+                        },
+                    })
+                } else {
+                    couponDetailsReload.resolve()
+                }
+
+                $.when(paymentMethodsReload, couponDetailsReload).always(() => {
+                    enableCheckout()
+                })
+            },
+            error: (error) => {
+                RiorelaxTheme.handleError(error)
+                enableCheckout()
+            },
+        })
+    }
+
+    $(document)
+        .on('click', '.toggle-coupon-form', () => $(document).find('.coupon-form').toggle('fast'))
+        .on('click', '.apply-coupon-code', (e) => {
+            e.preventDefault()
+
+            const slots = []
+            $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+                const start = $(el).val()
+                const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+                if (start && end) {
+                    slots.push({ start_date: start, end_date: end })
+                }
+            })
+
+
+
+
+
+            const $button = $(e.currentTarget)
+            const $couponInput = $('input[name=coupon_code]')
+            const couponCode = ($couponInput.val() || '').trim()
+
+            if (!couponCode.length) {
+                RiorelaxTheme.showError('Please enter a coupon code.')
+
+                return
+            }
+
+            $couponInput.val(couponCode)
+
+            $.ajax({
+                url: $button.data('url'),
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: {
+                    coupon_code: couponCode,
+                },
+                beforeSend: () => {
+                    $button.addClass('button-loading')
+                },
+                success: ({ error, message, data }) => {
+                    if (error) {
+                        RiorelaxTheme.showError(message)
+
+                        return
+                    }
+
+                    const appliedCoupon = (data === null || data === void 0 ? void 0 : data.coupon_code) ?? couponCode
+
+                    let successMessage = message
+
+                    if (appliedCoupon) {
+                        if (!successMessage) {
+                            successMessage = `Applied coupon "${appliedCoupon}" successfully!`
+                        } else if (successMessage.includes('""')) {
+                            successMessage = successMessage.replace('""', `"${appliedCoupon}"`)
+                        } else if (successMessage.includes(':code')) {
+                            successMessage = successMessage.replace(':code', appliedCoupon)
+                        }
+                    }
+
+                    RiorelaxTheme.showSuccess(successMessage ?? 'Coupon applied successfully!')
+                    refreshCoupon()
+                },
+                error: (error) => {
+                    RiorelaxTheme.handleError(error)
+                },
+                complete: () => {
+                    $button.removeClass('button-loading')
+                }
+            })
+        })
+        .on('click', '.remove-coupon-code', (e) => {
+            e.preventDefault()
+
+            const $button = $(e.currentTarget)
+
+            $.ajax({
+                url: $button.data('url'),
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                beforeSend: () => {
+                    $button.addClass('button-loading')
+                },
+                success: ({ message, error }) => {
+                    if (error) {
+                        RiorelaxTheme.showError(message)
+
+                        return
+                    }
+
+                    RiorelaxTheme.showSuccess(message)
+
+                    refreshCoupon()
+                },
+                error: (error) => {
+                    RiorelaxTheme.handleError(error)
+                },
+                complete: () => {
+                    $button.removeClass('button-loading')
+                },
+            })
+        })
+})
