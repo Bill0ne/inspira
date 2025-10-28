@@ -73,6 +73,11 @@ class Booking extends BaseModel
         return $this->hasOne(BookingRoom::class, 'booking_id')->withDefault();
     }
 
+    public function rooms()
+    {
+        return $this->hasMany(BookingRoom::class, 'booking_id');
+    }
+
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class, 'payment_id')->withDefault();
