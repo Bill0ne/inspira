@@ -75,9 +75,9 @@ class CourseServiceProvider extends ServiceProvider
         });
 
         if (defined('LANGUAGE_ADVANCED_MODULE_SCREEN_NAME')) {
-            \Botble\LanguageAdvanced\Supports\LanguageAdvancedManager::registerModule(Course::class, ['name']);
-            \Botble\LanguageAdvanced\Supports\LanguageAdvancedManager::registerModule(Instructor::class, ['name']);
-            \Botble\LanguageAdvanced\Supports\LanguageAdvancedManager::registerModule(CourseCategory::class, ['name']);
+            LanguageAdvancedManager::registerModule(Course::class, ['name', 'description']);
+            LanguageAdvancedManager::registerModule(Instructor::class, ['name', 'bio']);
+            LanguageAdvancedManager::registerModule(CourseCategory::class, ['name', 'description']);
         }
 
 
@@ -147,12 +147,6 @@ class CourseServiceProvider extends ServiceProvider
             ;
         });
 
-        if (defined('LANGUAGE_MODULE_SCREEN_NAME') && defined('LANGUAGE_ADVANCED_MODULE_SCREEN_NAME')) {
-            LanguageAdvancedManager::registerModule(COURSE::class, [
-                'name',
-                'description',
-            ]);
-        }
 
         SiteMapManager::registerKey(['courses']);
     }
