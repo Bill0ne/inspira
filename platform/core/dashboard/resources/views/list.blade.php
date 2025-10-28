@@ -1,42 +1,7 @@
 @extends(BaseHelper::getAdminMasterLayoutTemplate())
 
-@push('header-action')
-    @if (count($widgets) > 0)
-        <x-core::button
-            color="primary"
-            :outlined="true"
-            class="manage-widget"
-            data-bs-toggle="modal"
-            data-bs-target="#widgets-management-modal"
-            icon="ti ti-layout-dashboard"
-        >
-            {{ trans('core/dashboard::dashboard.manage_widgets') }}
-        </x-core::button>
-    @endif
-@endpush
-
 @section('content')
     <div class="row">
-        <div class="col-12">
-            @if (config('core.base.general.enable_system_updater') && Auth::user()->isSuperUser())
-                <v-check-for-updates
-                    check-update-url="{{ route('system.check-update') }}"
-                    v-slot="{ hasNewVersion, message }"
-                    v-cloak
-                >
-                    <x-core::alert
-                        v-if="hasNewVersion"
-                        type="warning"
-                    >
-                        @{{ message }}, please go to <a
-                            href="{{ route('system.updater') }}"
-                            class="fw-bold"
-                        >System Updater</a> to upgrade to the latest version!
-                    </x-core::alert>
-                </v-check-for-updates>
-            @endif
-        </div>
-
         <div class="col-12">
             {!! apply_filters(DASHBOARD_FILTER_ADMIN_NOTIFICATIONS, null) !!}
         </div>

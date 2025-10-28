@@ -1,0 +1,40 @@
+<?php
+
+return [
+    'name' => 'Gutscheine',
+    'intro' => [
+        'button_text' => 'Gutschein erstellen',
+        'title' => 'Gutscheincodes verwalten',
+        'description' => 'Erstellen und verwalten Sie Gutscheincodes für Ihre Kunden.',
+    ],
+    'types' => [
+        'percentage' => 'Prozentual',
+        'fixed' => 'Fest',
+    ],
+    'type' => 'Typ',
+    'created_message' => 'Gutschein wurde erfolgreich erstellt.',
+    'expires_date' => 'Ablaufdatum',
+    'expires_time' => 'Ablaufzeit',
+    'never_expired' => 'Kein Ablaufdatum',
+    'save_button' => 'Speichern',
+    'coupon_code' => 'Gutscheincode',
+    'coupon_code_placeholder' => 'Gutscheincode eingeben',
+    'generate_code_button' => 'Code generieren',
+    'value' => 'Wert',
+    'value_placeholder' => 'Gutscheinwert eingeben',
+    'value_off' => ':value Rabatt',
+    'total_used' => 'Verwendet',
+    'expired' => 'Abgelaufen',
+    'active' => 'Aktiv',
+    'unlimited' => 'Unbegrenzter Gutschein',
+    'quantity' => 'Anzahl',
+    'quantity_placeholder' => 'Anzahl der Gutscheine eingeben',
+    'discount_amount' => 'Rabattbetrag',
+    'total' => 'Gesamt',
+    'toggle_coupon_form_text' => 'Haben Sie einen Gutscheincode?',
+    'apply_coupon_code' => 'Anwenden',
+    'form' => [
+        'create' => 'Neuen Gutschein erstellen',
+        'edit' => '":name" bearbeiten',
+    ],
+];

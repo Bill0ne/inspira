@@ -1,0 +1,79 @@
+name: 🎨 Deploy to Inspira Design Env
+
+on:
+  # 🔹 Trigger bei Commits oder Pushes auf design-env
+  push:
+    branches:
+      - design-desk
+    paths-ignore:
+      - README.md
+      - .github/**
+      - docs/**
+      - "*.md"
+
+  # 🔹 Optional: manuell starten (über Actions → "Run workflow")
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Design Server
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Repository auschecken
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ SSH vorbereiten
+      - name: 🔐 Setup SSH Access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "145.223.35.233 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
+
+      # 3️⃣ Rsync Deployment (Safe Mode mit Exclude-Datei)
+      - name: 📦 Sync code to Inspira Design Env
+        uses: burnett01/rsync-deployments@5.2
+        with:
+          switches: -avzr --delete --exclude-from='deploy-exclude.txt'
+          path: ./
+          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/design-env/
+          remote_host: 145.223.35.233
+          remote_port: 65002
+          remote_user: u296731902
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # 4️⃣ Laravel, Build & Cache Optimierung
+      - name: ⚙️ Run Laravel + Build setup on Design Env
+        run: |
+          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@145.223.35.233 <<'EOF'
+          cd /home/u296731902/domains/inspira-zentrum.de/public_html/design-env
+
+          echo "📦 Installing composer dependencies..."
+          composer install --no-dev --optimize-autoloader --quiet
+
+          echo "🧱 Installing Node modules & building assets..."
+          if [ -f package.json ]; then
+            yarn install --frozen-lockfile --silent || npm install --silent
+            yarn build || npm run build
+          fi
+
+          echo "🧹 Clearing & optimizing Laravel caches..."
+          php artisan optimize:clear
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:clear
+          php artisan view:cache
+          php artisan optimize
+
+          echo "🧩 Rebuilding plugin & theme cache..."
+          rm -f bootstrap/cache/plugins.php
+          php artisan cms:theme:assets:publish
+
+          echo "✅ Inspira DESIGN deployment completed successfully!"
+          EOF
+
+      # 5️⃣ Erfolgsmeldung
+      - name: 📨 Notify success
+        run: echo "✅ Inspira Design Env deployed from commit ${{ github.sha }} at $(date)"
