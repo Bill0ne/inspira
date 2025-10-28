@@ -1,0 +1,52 @@
+.navbar-nav .menu-section {
+    margin-top: 1.5rem;
+}
+
+.navbar-nav .menu-section:first-of-type {
+    margin-top: .75rem;
+}
+
+.navbar-nav .menu-section > a.nav-link {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .75rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--bb-admin-sidebar-section-color, rgba(255, 255, 255, 0.6));
+}
+
+.navbar-nav .menu-section > a.nav-link:hover {
+    color: var(--bb-admin-sidebar-section-color-hover, #fff);
+}
+
+.navbar-nav .menu-section > a.nav-link .nav-link-title {
+    flex: 1 1 auto;
+}
+
+.navbar-nav .menu-section > a.nav-link.dropdown-toggle::after {
+    display: none;
+}
+
+.navbar-nav .menu-section--admin > a.nav-link {
+    position: relative;
+    padding-right: 2rem;
+}
+
+.navbar-nav .menu-section--admin > a.nav-link::after {
+    content: '+';
+    font-size: 1rem;
+    line-height: 1;
+    font-weight: 600;
+    position: absolute;
+    right: .75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform .2s ease, color .2s ease;
+}
+
+.navbar-nav .menu-section--admin > a.nav-link.is-open::after,
+.navbar-nav .menu-section--admin > a.nav-link[aria-expanded="true"]::after {
+    content: '\2212';
+}
