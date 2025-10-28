@@ -69,6 +69,13 @@ class CourseSessionTable extends TableAbstract
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderEngagement($column->getItem())),
 
+                FormattedColumn::make('participants')
+                    ->title(trans('plugins/courses::courses.table.participants'))
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderParticipants($column->getItem())),
+
                 FormattedColumn::make('schedule')
                     ->title(trans('plugins/courses::courses.table.schedule'))
                     ->orderable(false)
@@ -196,49 +203,32 @@ class CourseSessionTable extends TableAbstract
         $courseName = BaseHelper::clean($course->name ?? '—');
         $courseUrl = route('course.edit', $course->getKey());
 
-        $badges = [];
+        $metaParts = array_filter([
+            $course->category?->name ? BaseHelper::clean($course->category->name) : null,
+            $course->instructor?->name ? BaseHelper::clean($course->instructor->name) : null,
+        ]);
 
-        if ($course->category?->name) {
-            $badges[] = sprintf(
-                '<span class="badge bg-light text-body border rounded-pill px-3 py-1">%s</span>',
-                BaseHelper::clean($course->category->name)
-            );
-        }
-
-        if ($course->instructor?->name) {
-            $badges[] = sprintf(
-                '<span class="badge bg-light text-body border rounded-pill px-3 py-1">%s</span>',
-                BaseHelper::clean($course->instructor->name)
-            );
-        }
-
-        $badgesHtml = implode(' ', $badges);
+        $metaLine = $metaParts ? implode(' • ', $metaParts) : null;
+        $sessionLabel = trans('plugins/courses::courses.table.session_id', ['id' => $session->getKey()]);
 
         $statusBadge = $course->status?->toHtml() ?? '';
 
-        $participantsLabel = trans('plugins/courses::courses.table.view_participants');
-
-        $sessionLabel = trans('plugins/courses::courses.table.session_id', ['id' => $session->getKey()]);
+        $metaHtml = array_filter([$sessionLabel, $metaLine]);
+        $metaHtml = $metaHtml
+            ? '<div class="text-muted small text-truncate">' . implode(' • ', $metaHtml) . '</div>'
+            : '';
 
         return <<<HTML
 <div class="d-flex align-items-center gap-3">
-    <div class="flex-shrink-0">
-        <img src="{$thumbnail}" alt="{$courseName}" class="rounded" style="width:56px;height:56px;object-fit:cover;">
+    <div class="flex-shrink-0 rounded overflow-hidden" style="width:56px;height:56px;">
+        <img src="{$thumbnail}" alt="{$courseName}" style="width:100%;height:100%;object-fit:cover;">
     </div>
     <div class="flex-grow-1">
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <a href="{$courseUrl}" class="fw-semibold text-decoration-none text-body">{$courseName}</a>
             {$statusBadge}
         </div>
-        <div class="text-muted small mt-1">{$sessionLabel}</div>
-        <div class="d-flex align-items-center gap-2 flex-wrap mt-2">
-            {$badgesHtml}
-        </div>
-        <div class="mt-2">
-            <button class="btn btn-outline-primary btn-sm view-participants-btn" data-session-id="{$session->getKey()}">
-                {$participantsLabel}
-            </button>
-        </div>
+        {$metaHtml}
     </div>
 </div>
 HTML;
@@ -259,9 +249,23 @@ HTML;
     {
         $stats = $this->performance()->forSession($session);
         $viewsSource = $stats['views_source'] ?? 'none';
-        $views = $viewsSource === 'none'
-            ? '—'
-            : number_format($stats['views']);
+        $views = (int) ($stats['views'] ?? 0);
+
+        if ($viewsSource === 'none') {
+            $hint = trans('plugins/courses::courses.table.views_hint_unavailable');
+
+            return '<div class="text-muted small">' . BaseHelper::clean($hint) . '</div>';
+        }
+
+        $maxStars = 5;
+        $reference = max(1, $this->performance()->maxReferenceViews());
+        $filledStars = (int) round(min($views / $reference, 1) * $maxStars);
+        $filledStars = max(0, min($maxStars, $filledStars));
+
+        $starsMarkup = str_repeat('★', $filledStars) . str_repeat('☆', $maxStars - $filledStars);
+        $viewsLabel = trans('plugins/courses::courses.table.views_rating_label', [
+            'count' => number_format($views),
+        ]);
 
         $hintKey = match ($viewsSource) {
             'analytics' => 'plugins/courses::courses.table.views_hint',
@@ -276,15 +280,22 @@ HTML;
         }
 
         $hint = trans($hintKey, $hintParams);
+        $hintHtml = e($hint);
+        $title = e($viewsLabel);
 
-        return sprintf('<div class="fw-semibold">%s</div><div class="text-muted small">%s</div>', $views, $hint);
+        return <<<HTML
+<div class="d-flex flex-column align-items-start">
+    <span class="fs-5" style="letter-spacing:2px;color:#578E88;" title="{$title}">{$starsMarkup}</span>
+    <span class="text-muted small">{$hintHtml}</span>
+</div>
+HTML;
     }
 
     protected function renderOccupancy(CourseSession $session): string
     {
         $stats = $this->performance()->forSession($session);
         $percent = (int) round(min($stats['occupancy_percent'], 100));
-        $booked = $stats['booked_seats'];
+        $booked = (int) $stats['booked_seats'];
 
         if ($stats['max_seats'] !== null) {
             $label = trans('plugins/courses::courses.table.booked_vs_remaining', [
@@ -297,11 +308,24 @@ HTML;
             ]);
         }
 
+        $segments = 10;
+        $filledSegments = (int) round(($percent / 100) * $segments);
+        $filledSegments = max(0, min($segments, $filledSegments));
+
+        $segmentsHtml = '';
+
+        for ($i = 0; $i < $segments; $i++) {
+            $color = $i < $filledSegments ? '#578E88' : '#E6EAE9';
+            $segmentsHtml .= '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'
+                . $color . ';margin-right:4px;"></span>';
+        }
+
         return <<<HTML
-<div class="small text-muted">{$label}</div>
-<div style="height:6px;background:#e9ecef;border-radius:999px;overflow:hidden;margin-top:6px;">
-    <div style="width:{$percent}%;background:#578E88;height:6px;"></div>
+<div class="d-flex align-items-center gap-3">
+    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:#E6F1EF;color:#30655F;font-weight:600;">{$booked}</span>
+    <span>{$segmentsHtml}</span>
 </div>
+<div class="text-muted small mt-2">{$label}</div>
 HTML;
     }
 
@@ -321,37 +345,55 @@ HTML;
         ]);
 
         return <<<HTML
-<div class="fw-semibold">{$engagement}%</div>
-<div class="text-muted small">{$engagementLabel}</div>
-<div class="text-muted small">{$conversionLabel}</div>
+<div class="d-flex flex-column align-items-start gap-1">
+    <span class="badge rounded-pill px-3 py-2" style="background:#F2F5F4;color:#2B2B2B;font-weight:600;">{$engagement}%</span>
+    <span class="text-muted small">{$engagementLabel}</span>
+    <span class="text-muted small">{$conversionLabel}</span>
+</div>
+HTML;
+    }
+
+    protected function renderParticipants(CourseSession $session): string
+    {
+        $buttonLabel = e(trans('plugins/courses::courses.table.view_participants'));
+        $sessionId = $session->getKey();
+
+        return <<<HTML
+<button type="button" class="btn btn-sm btn-outline-primary view-participants-btn d-inline-flex align-items-center gap-2" data-session-id="{$sessionId}">
+    <i class="fa fa-users" aria-hidden="true"></i>
+    <span>{$buttonLabel}</span>
+</button>
 HTML;
     }
 
     protected function renderSchedule(CourseSession $session): string
     {
-        $start = $this->formatDate($session->start_date, 'd.m.Y H:i');
-        $end = $this->formatDate($session->end_date, 'd.m.Y H:i');
+        $startDate = $this->formatDate($session->start_date, 'd.m.Y');
+        $timeRange = '—';
+
+        if ($session->start_date && $session->end_date) {
+            $timeRange = $session->start_date->format('H:i') . ' – ' . $session->end_date->format('H:i');
+        } elseif ($session->start_date) {
+            $timeRange = $session->start_date->format('H:i');
+        }
 
         return <<<HTML
-<div class="fw-semibold">{$start}</div>
-<div class="text-muted small">{$end}</div>
+<div class="fw-semibold">{$startDate}</div>
+<div class="text-muted small">{$timeRange}</div>
 HTML;
     }
 
     protected function renderScore(CourseSession $session): string
     {
         $stats = $this->performance()->forSession($session);
-        $score = $stats['score'];
-        $percentage = max(0, min(100, (int) round($score)));
+        $score = number_format($stats['score'], 1);
 
-        $scoreHint = trans('plugins/courses::courses.table.score_hint');
+        $scoreAutoLabel = trans('plugins/courses::courses.table.score_auto_label');
 
         return <<<HTML
-<div class="d-flex flex-column align-items-center gap-2">
-    <div style="width:52px;height:52px;border-radius:50%;background:conic-gradient(#578E88 {$percentage}%, #e9ecef {$percentage}%);display:flex;align-items:center;justify-content:center;font-weight:600;color:#2b2b2b;">
-        {$score}
-    </div>
-    <span class="text-muted small">{$scoreHint}</span>
+<div class="d-flex flex-column align-items-start gap-1">
+    <span class="badge rounded-pill px-3 py-2" style="background:#65AFA7;color:#ffffff;font-weight:600;min-width:96px;text-align:center;">{$score}</span>
+    <span class="text-muted small">{$scoreAutoLabel}</span>
 </div>
 HTML;
     }
