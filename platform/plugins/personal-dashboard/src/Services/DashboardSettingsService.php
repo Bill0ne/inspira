@@ -179,28 +179,25 @@ class DashboardSettingsService
         $widgetCollectionById = $widgetCollection->keyBy('id');
         $widgetCollectionByName = $widgetCollection->keyBy('name');
 
-        $filteredWidgets = array_values(array_filter($widgets, function (array $widget) use ($widgetsConfig, $widgetCollectionById) {
-            if (Arr::get($widget, 'type') !== 'widget') {
-                return true;
+        $filteredWidgets = array_values(array_filter(
+            $widgets,
+            function (array $widget) use ($widgetsConfig, $widgetCollectionById) {
+                $model = $widgetCollectionById->get($widget['id'] ?? null);
+
+                if (! $model) {
+                    return true;
+                }
+
+                $config = $widgetsConfig[$model->name] ?? ['enabled' => true];
+
+                return Arr::get($config, 'enabled', true);
             }
-
-            $model = $widgetCollectionById->get($widget['id'] ?? null);
-
-            if (! $model) {
-                return true;
-            }
-
-            $config = $widgetsConfig[$model->name] ?? ['enabled' => true];
-
-            return Arr::get($config, 'enabled', true);
-        }));
-
-        $widgetItems = array_values(array_filter($filteredWidgets, fn ($widget) => Arr::get($widget, 'type') === 'widget'));
-        $statItems = array_values(array_filter($filteredWidgets, fn ($widget) => Arr::get($widget, 'type') !== 'widget'));
+        ));
 
         $orders = [];
-        foreach ($widgetItems as $widget) {
-            $model = $widgetCollectionById->get($widget['id']);
+
+        foreach ($filteredWidgets as $widget) {
+            $model = $widgetCollectionById->get($widget['id'] ?? null);
 
             if (! $model) {
                 continue;
@@ -209,15 +206,29 @@ class DashboardSettingsService
             $orders[$model->name] = Arr::get($widgetsConfig[$model->name] ?? [], 'order', 999);
         }
 
-        usort($widgetItems, function (array $first, array $second) use ($orders, $widgetCollectionById) {
-            $firstModel = $widgetCollectionById->get($first['id']);
-            $secondModel = $widgetCollectionById->get($second['id']);
+        $sortWidgets = function (array $items) use ($orders, $widgetCollectionById) {
+            usort($items, function (array $first, array $second) use ($orders, $widgetCollectionById) {
+                $firstModel = $widgetCollectionById->get($first['id'] ?? null);
+                $secondModel = $widgetCollectionById->get($second['id'] ?? null);
 
-            $firstOrder = $firstModel ? ($orders[$firstModel->name] ?? 999) : 999;
-            $secondOrder = $secondModel ? ($orders[$secondModel->name] ?? 999) : 999;
+                $firstOrder = $firstModel ? ($orders[$firstModel->name] ?? 999) : 999;
+                $secondOrder = $secondModel ? ($orders[$secondModel->name] ?? 999) : 999;
 
-            return $firstOrder <=> $secondOrder;
-        });
+                return $firstOrder <=> $secondOrder;
+            });
+
+            return $items;
+        };
+
+        $widgetItems = $sortWidgets(array_values(array_filter(
+            $filteredWidgets,
+            fn ($widget) => Arr::get($widget, 'type') === 'widget'
+        )));
+
+        $statItems = $sortWidgets(array_values(array_filter(
+            $filteredWidgets,
+            fn ($widget) => Arr::get($widget, 'type') !== 'widget'
+        )));
 
         if (! $allowOverrides) {
             $this->enforceUserSettings($widgetsConfig, $widgetCollectionByName);

@@ -35,6 +35,7 @@ use Botble\Courses\Http\Requests\CourseCheckoutRequest;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class PublicController extends Controller
 {
@@ -194,13 +195,12 @@ class PublicController extends Controller
 
         $basePrice = $course->getCourseTotalPrice();
 
-        $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-            ->calculatePrice(
-                $basePrice,
-                \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                $course->id,
-                $customer
-            );
+        $amount = $this->calculateDynamicPrice(
+            $basePrice,
+            'course',
+            $course->id,
+            $customer
+        );
 
         $discountAmount = $basePrice - $amount;
 
@@ -288,13 +288,12 @@ class PublicController extends Controller
 
             $basePrice = $course->getCourseTotalPrice();
 
-            $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-                ->calculatePrice(
-                    $basePrice,
-                    \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                    $course->id,
-                    Auth::guard('customer')->user() ?? null
-                );
+            $amount = $this->calculateDynamicPrice(
+                $basePrice,
+                'course',
+                $course->id,
+                Auth::guard('customer')->user() ?? null
+            );
 
             $discountAmount = abs($basePrice - $amount);
 
@@ -460,13 +459,12 @@ class PublicController extends Controller
 
         $customer = Auth::guard('customer')->user();
         $basePrice = $course->getCourseTotalPrice();
-        $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-            ->calculatePrice(
-                $basePrice,
-                \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                $course->id,
-                $customer
-            );
+        $amount = $this->calculateDynamicPrice(
+            $basePrice,
+            'course',
+            $course->id,
+            $customer
+        );
 
         $taxAmount = $course->tax->percentage * ($amount - $discountAmount) / 100;
         $totalAmount = ($amount - $discountAmount) + $taxAmount;
@@ -510,4 +508,29 @@ class PublicController extends Controller
         return [$amount, $discountAmount];
     }
 
+    protected function calculateDynamicPrice(
+        float $basePrice,
+        string $targetType,
+        int $targetId,
+        ?Customer $customer = null,
+        int $quantity = 1
+    ): float {
+        if (! function_exists('is_plugin_active') || ! is_plugin_active('price-configurator')) {
+            return $basePrice;
+        }
+
+        $serviceClass = 'Botble\\PriceConfigurator\\Services\\PriceConfiguratorService';
+
+        if (! class_exists($serviceClass)) {
+            return $basePrice;
+        }
+
+        try {
+            $service = app($serviceClass);
+
+            return $service->calculatePrice($basePrice, $targetType, $targetId, $customer, $quantity);
+        } catch (Throwable) {
+            return $basePrice;
+        }
+    }
 }
