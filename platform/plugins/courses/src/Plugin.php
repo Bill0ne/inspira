@@ -9,7 +9,11 @@ class Plugin extends PluginOperationAbstract
 {
     public static function remove(): void
     {
-        Schema::dropIfExists('Courses');
-        Schema::dropIfExists('Courses_translations');
+        Schema::dropIfExists('courses');
+        Schema::dropIfExists('course_categories');
+        Schema::dropIfExists('instructors');
+        Schema::dropIfExists('courses_translations');
+        Schema::dropIfExists('course_categories_translations');
+        Schema::dropIfExists('instructors_translations');
     }
 }
