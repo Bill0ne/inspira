@@ -8,6 +8,15 @@ $(document).ready(function () {
             services[i] = $(el).val()
         })
 
+        const slots = []
+        $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+            const start = $(el).val()
+            const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+            if (start && end) {
+                slots.push({ start_date: start, end_date: end })
+            }
+        })
+
         $('.food-item:checked').each((i, el) => {
             foods[i] = $(el).val()
         })
@@ -25,8 +34,7 @@ $(document).ready(function () {
             url: '/ajax/calculate-amount',
             data: {
                 room_id: $('input[name=room_id]').val(),
-                start_date: $('input[name=start_date]').val(),
-                end_date: $('input[name=end_date]').val(),
+                slots: slots,
                 services,
                 foods
             },
@@ -61,6 +69,15 @@ $(document).ready(function () {
             foods[i] = $(el).val()
         })
 
+        const slots = []
+        $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+            const start = $(el).val()
+            const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+            if (start && end) {
+                slots.push({ start_date: start, end_date: end })
+            }
+        })
+
         $('.service-item:checked').each((i, el) => {
             services[i] = $(el).val()
         })
@@ -78,8 +95,7 @@ $(document).ready(function () {
             url: '/ajax/calculate-amount',
             data: {
                 room_id: $('input[name=room_id]').val(),
-                start_date: $('input[name=start_date]').val(),
-                end_date: $('input[name=end_date]').val(),
+                slots: slots,
                 foods,
                 services,
             },
@@ -123,6 +139,15 @@ $(document).ready(function () {
             services[i] = $(el).val()
         })
 
+        const slots = []
+        $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+            const start = $(el).val()
+            const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+            if (start && end) {
+                slots.push({ start_date: start, end_date: end })
+            }
+        })
+
         let $checkoutButton = $(document).find('.payment-checkout-btn')
         $checkoutButton.prop('disabled', true)
         let $selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
@@ -132,8 +157,7 @@ $(document).ready(function () {
             type: 'GET',
             data: {
                 room_id: $('input[name=room_id]').val(),
-                start_date: $('input[name=start_date]').val(),
-                end_date: $('input[name=end_date]').val(),
+                slots: slots,
                 services,
             },
             success: ({ error, message, data }) => {
@@ -187,6 +211,19 @@ $(document).ready(function () {
         .on('click', '.apply-coupon-code', (e) => {
             e.preventDefault()
 
+            const slots = []
+            $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+                const start = $(el).val()
+                const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+                if (start && end) {
+                    slots.push({ start_date: start, end_date: end })
+                }
+            })
+
+
+
+
+
             const $button = $(e.currentTarget)
 
             $.ajax({
@@ -209,7 +246,6 @@ $(document).ready(function () {
                     }
 
                     RiorelaxTheme.showSuccess(message)
-
                     refreshCoupon()
                 },
                 error: (error) => {

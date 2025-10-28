@@ -1,1 +1,38 @@
-(()=>{"use strict";$(function(){$(document).on("change",".shortcode-tabs-quantity-select",function(){var a=$(this),t=parseInt(a.val())||1,e=a.data("key"),n=a.closest(".shortcode-tabs-field-wrapper");n.length||(n=a.closest(".shortcode-admin-config")),n.find(".shortcode-template").first().clone().removeClass("shortcode-template");for(var o=1;o<=a.data("max");o++){var d=e?n.find("[data-tab-id=".concat(e,"_").concat(o,"]")):n.find("[data-tab-id=".concat(o,"]"));o<=t?d.is(":visible")||(d.slideDown(),d.find("[data-name]").map(function(a,t){return $(t).prop("name",$(t).data("name"))})):(d.slideUp(),d.find("[name]").map(function(a,t){$(t).data("name",$(t).prop("name")),$(t).removeProp("name")}))}})})})();
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/*!**********************************************************************!*\
+  !*** ./platform/packages/shortcode/resources/js/shortcode-fields.js ***!
+  \**********************************************************************/
+
+
+$(function () {
+  $(document).on('change', '.shortcode-tabs-quantity-select', function () {
+    var $this = $(this);
+    var quantity = parseInt($this.val()) || 1;
+    var key = $this.data('key');
+    var $section = $this.closest('.shortcode-tabs-field-wrapper');
+    if (!$section.length) {
+      $section = $this.closest('.shortcode-admin-config');
+    }
+    $section.find('.shortcode-template').first().clone().removeClass('shortcode-template');
+    for (var index = 1; index <= $this.data('max'); index++) {
+      var $el = key ? $section.find("[data-tab-id=".concat(key, "_").concat(index, "]")) : $section.find("[data-tab-id=".concat(index, "]"));
+      if (index <= quantity) {
+        if (!$el.is(':visible')) {
+          $el.slideDown();
+          $el.find('[data-name]').map(function (i, e) {
+            return $(e).prop('name', $(e).data('name'));
+          });
+        }
+      } else {
+        $el.slideUp();
+        $el.find('[name]').map(function (i, e) {
+          $(e).data('name', $(e).prop('name'));
+          $(e).removeProp('name');
+        });
+      }
+    }
+  });
+});
+/******/ })()
+;

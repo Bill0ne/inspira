@@ -1,7 +1,7 @@
-/**/ (() => { // webpackBootstrap
-/!*******************!\
-  !* ./platform/plugins/courses/resources/js/script.js *!
-  \*******************/
+/******/ (() => { // webpackBootstrap
+/*!*********************************************************!*\
+  !*** ./platform/plugins/courses/resources/js/script.js ***!
+  \*********************************************************/
 $(function () {
   function toggleField($checkbox) {
     var target = $($checkbox.data('target'));
@@ -83,5 +83,5 @@ $(function () {
     $courseSelect.trigger('change');
   }
 });
-/**/ })()
+/******/ })()
 ;

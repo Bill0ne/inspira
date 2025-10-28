@@ -1,1 +1,443 @@
-(()=>{"use strict";var e={6262:(e,t)=>{t.A=(e,t)=>{const n=e.__vccOpts||e;for(const[e,r]of t)n[e]=r;return n}}},t={};const n=Vue;function r(){/*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */var e,t,n="function"==typeof Symbol?Symbol:{},o=n.iterator||"@@iterator",a=n.toStringTag||"@@toStringTag";function c(n,r,o,a){var c=r&&r.prototype instanceof l?r:l,s=Object.create(c.prototype);return i(s,"_invoke",function(n,r,i){var o,a,c,l=0,s=i||[],f=!1,d={p:0,n:0,v:e,a:v,f:v.bind(e,4),d:function(t,n){return o=t,a=0,c=e,d.n=n,u}};function v(n,r){for(a=n,c=r,t=0;!f&&l&&!i&&t<s.length;t++){var i,o=s[t],v=d.p,m=o[2];n>3?(i=m===r)&&(c=o[(a=o[4])?5:(a=3,3)],o[4]=o[5]=e):o[0]<=v&&((i=n<2&&v<o[1])?(a=0,d.v=r,d.n=o[1]):v<m&&(i=n<3||o[0]>r||r>m)&&(o[4]=n,o[5]=r,d.n=m,a=0))}if(i||n>1)return u;throw f=!0,r}return function(i,s,m){if(l>1)throw TypeError("Generator is already running");for(f&&1===s&&v(s,m),a=s,c=m;(t=a<2?e:c)||!f;){o||(a?a<3?(a>1&&(d.n=-1),v(a,c)):d.n=c:d.v=c);try{if(l=2,o){if(a||(i="next"),t=o[i]){if(!(t=t.call(o,c)))throw TypeError("iterator result is not an object");if(!t.done)return t;c=t.value,a<2&&(a=0)}else 1===a&&(t=o.return)&&t.call(o),a<2&&(c=TypeError("The iterator does not provide a '"+i+"' method"),a=1);o=e}else if((t=(f=d.n<0)?c:n.call(r,d))!==u)break}catch(t){o=e,a=1,c=t}finally{l=1}}return{value:t,done:f}}}(n,o,a),!0),s}var u={};function l(){}function s(){}function f(){}t=Object.getPrototypeOf;var d=[][o]?t(t([][o]())):(i(t={},o,function(){return this}),t),v=f.prototype=l.prototype=Object.create(d);function m(e){return Object.setPrototypeOf?Object.setPrototypeOf(e,f):(e.__proto__=f,i(e,a,"GeneratorFunction")),e.prototype=Object.create(v),e}return s.prototype=f,i(v,"constructor",f),i(f,"constructor",s),s.displayName="GeneratorFunction",i(f,a,"GeneratorFunction"),i(v),i(v,a,"Generator"),i(v,o,function(){return this}),i(v,"toString",function(){return"[object Generator]"}),(r=function(){return{w:c,m}})()}function i(e,t,n,r){var o=Object.defineProperty;try{o({},"",{})}catch(e){o=0}i=function(e,t,n,r){function a(t,n){i(e,t,function(e){return this._invoke(t,n,e)})}t?o?o(e,t,{value:n,enumerable:!r,configurable:!r,writable:!r}):e[t]=n:(a("next",0),a("throw",1),a("return",2))},i(e,t,n,r)}function o(e,t,n,r,i,o,a){try{var c=e[o](a),u=c.value}catch(e){return void n(e)}c.done?t(u):Promise.resolve(u).then(r,i)}function a(e){return function(){var t=this,n=arguments;return new Promise(function(r,i){var a=e.apply(t,n);function c(e){o(a,r,i,c,u,"next",e)}function u(e){o(a,r,i,c,u,"throw",e)}c(void 0)})}}const c={props:{id:{type:String,default:function(){return null},required:!0},verifyUrl:{type:String,default:function(){return null},required:!0},activateLicenseUrl:{type:String,default:function(){return null},required:!0},deactivateLicenseUrl:{type:String,default:function(){return null},required:!0},resetLicenseUrl:{type:String,default:function(){return null},required:!0}},data:function(){return{initialized:null,loading:!0,verified:!1,license:null}},mounted:function(){this.verifyLicense()},methods:{verifyLicense:function(){var e=this;return a(r().m(function t(){var n,i,o;return r().w(function(t){for(;;)switch(t.p=t.n){case 0:if(n=function(){var e=localStorage.getItem("license_verification_time"),t="true"===localStorage.getItem("license_is_verified");if(!e)return!0;var n=Date.now(),r=parseInt(e);if(t){return n-r>2592e5}return n-r>864e5},i=localStorage.getItem("license_data"),o="true"===localStorage.getItem("license_is_verified"),!i||n()){t.n=3;break}return t.p=1,e.verified=o,e.license=JSON.parse(i),e.initialized=!0,e.loading=!1,t.a(2,Promise.resolve());case 2:t.p=2,t.v;case 3:return t.a(2,$httpClient.makeWithoutErrorHandler().get(e.verifyUrl).then(function(t){var n=t.data;e.verified=!0,e.license=n.data,localStorage.setItem("license_verification_time",Date.now().toString()),localStorage.setItem("license_is_verified","true"),localStorage.setItem("license_data",JSON.stringify(n.data))}).catch(function(e){e.response&&400===e.response.status&&Botble.showError(e.response.data.message),localStorage.setItem("license_verification_time",Date.now().toString()),localStorage.setItem("license_is_verified","false"),localStorage.removeItem("license_data")}).finally(function(){e.initialized=!0,e.loading=!1}))}},t,null,[[1,2]])}))()},onSubmit:function(){var e=this;return a(r().m(function t(){var n;return r().w(function(t){for(;;)if(0===t.n)return n=new FormData(e.$refs.formRef),t.a(2,e.doActivateLicense(n))},t)}))()},resetLicense:function(){var e=this;return a(r().m(function t(){var n;return r().w(function(t){for(;;)if(0===t.n)return n=new FormData(e.$refs.formRef),t.a(2,e.doResetLicense(n))},t)}))()},deactivateLicense:function(){var e=this;return a(r().m(function t(){return r().w(function(t){for(;;)if(0===t.n)return e.loading=!0,t.a(2,$httpClient.make().post(e.deactivateLicenseUrl).then(function(){e.verified=!1,localStorage.setItem("license_verification_time",Date.now().toString()),localStorage.setItem("license_is_verified","false"),localStorage.removeItem("license_data")}).finally(function(){e.loading=!1}))},t)}))()},doActivateLicense:function(e){var t=this;return a(r().m(function n(){return r().w(function(n){for(;;)if(0===n.n)return t.loading=!0,n.a(2,$httpClient.make().postForm(t.activateLicenseUrl,e).then(function(e){var n=e.data;t.verified=!0,t.license=n.data,Botble.showSuccess(n.message),localStorage.setItem("license_verification_time",Date.now().toString()),localStorage.setItem("license_is_verified","true"),localStorage.setItem("license_data",JSON.stringify(n.data))}).finally(function(){t.loading=!1}))},n)}))()},doResetLicense:function(e){var t=this;return a(r().m(function n(){return r().w(function(n){for(;;)if(0===n.n)return t.loading=!0,n.a(2,$httpClient.make().postForm(t.resetLicenseUrl,e).then(function(e){var n=e.data;t.verified=!1,Botble.showSuccess(n.message),localStorage.setItem("license_verification_time",Date.now().toString()),localStorage.setItem("license_is_verified","false"),localStorage.removeItem("license_data")}).finally(function(){t.loading=!1}))},n)}))()}}};var u=function n(r){var i=t[r];if(void 0!==i)return i.exports;var o=t[r]={exports:{}};return e[r](o,o.exports,n),o.exports}(6262);const l=(0,u.A)(c,[["render",function(e,t,r,i,o,a){return(0,n.openBlock)(),(0,n.createElementBlock)("form",{id:"license-form",ref:"formRef",onSubmit:t[0]||(t[0]=(0,n.withModifiers)(function(){return a.onSubmit&&a.onSubmit.apply(a,arguments)},["prevent"]))},[(0,n.renderSlot)(e.$slots,"default",(0,n.normalizeProps)((0,n.guardReactiveProps)({initialized:o.initialized,loading:o.loading,verified:o.verified,license:o.license,deactivateLicense:a.deactivateLicense,resetLicense:a.resetLicense})))],544)}]]);"undefined"!=typeof vueApp&&vueApp.booting(function(e){e.component("v-license-form",l)})})();
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=script&lang=js":
+/*!***************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=script&lang=js ***!
+  \***************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  props: {
+    id: {
+      type: String,
+      "default": function _default() {
+        return null;
+      },
+      required: true
+    },
+    verifyUrl: {
+      type: String,
+      "default": function _default() {
+        return null;
+      },
+      required: true
+    },
+    activateLicenseUrl: {
+      type: String,
+      "default": function _default() {
+        return null;
+      },
+      required: true
+    },
+    deactivateLicenseUrl: {
+      type: String,
+      "default": function _default() {
+        return null;
+      },
+      required: true
+    },
+    resetLicenseUrl: {
+      type: String,
+      "default": function _default() {
+        return null;
+      },
+      required: true
+    }
+  },
+  data: function data() {
+    return {
+      initialized: null,
+      loading: true,
+      verified: false,
+      license: null
+    };
+  },
+  mounted: function mounted() {
+    this.verifyLicense();
+  },
+  methods: {
+    verifyLicense: function verifyLicense() {
+      var _this = this;
+      return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+        var shouldVerifyLicense, cachedLicense, cachedVerified, _t;
+        return _regenerator().w(function (_context) {
+          while (1) switch (_context.p = _context.n) {
+            case 0:
+              // Check if we should make the license verification request
+              shouldVerifyLicense = function shouldVerifyLicense() {
+                var lastVerifyTime = localStorage.getItem('license_verification_time');
+                var isVerified = localStorage.getItem('license_is_verified') === 'true';
+                if (!lastVerifyTime) {
+                  return true;
+                }
+                var now = Date.now();
+                var lastTime = parseInt(lastVerifyTime);
+
+                // If verified, check once every 3 days
+                if (isVerified) {
+                  var threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+                  return now - lastTime > threeDaysInMs;
+                } else {
+                  // If not verified, check once per day
+                  var oneDayInMs = 24 * 60 * 60 * 1000;
+                  return now - lastTime > oneDayInMs;
+                }
+              }; // Try to get cached license data
+              cachedLicense = localStorage.getItem('license_data');
+              cachedVerified = localStorage.getItem('license_is_verified') === 'true';
+              if (!(cachedLicense && !shouldVerifyLicense())) {
+                _context.n = 3;
+                break;
+              }
+              _context.p = 1;
+              _this.verified = cachedVerified;
+              _this.license = JSON.parse(cachedLicense);
+              _this.initialized = true;
+              _this.loading = false;
+              return _context.a(2, Promise.resolve());
+            case 2:
+              _context.p = 2;
+              _t = _context.v;
+            case 3:
+              return _context.a(2, $httpClient.makeWithoutErrorHandler().get(_this.verifyUrl).then(function (_ref) {
+                var data = _ref.data;
+                _this.verified = true;
+                _this.license = data.data;
+
+                // Store the verification result
+                localStorage.setItem('license_verification_time', Date.now().toString());
+                localStorage.setItem('license_is_verified', 'true');
+                localStorage.setItem('license_data', JSON.stringify(data.data));
+              })["catch"](function (data) {
+                if (data.response && data.response.status === 400) {
+                  Botble.showError(data.response.data.message);
+                }
+
+                // Store that we attempted verification but it failed
+                localStorage.setItem('license_verification_time', Date.now().toString());
+                localStorage.setItem('license_is_verified', 'false');
+                localStorage.removeItem('license_data');
+              })["finally"](function () {
+                _this.initialized = true;
+                _this.loading = false;
+              }));
+          }
+        }, _callee, null, [[1, 2]]);
+      }))();
+    },
+    onSubmit: function onSubmit() {
+      var _this2 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
+        var formData;
+        return _regenerator().w(function (_context2) {
+          while (1) switch (_context2.n) {
+            case 0:
+              formData = new FormData(_this2.$refs.formRef);
+              return _context2.a(2, _this2.doActivateLicense(formData));
+          }
+        }, _callee2);
+      }))();
+    },
+    resetLicense: function resetLicense() {
+      var _this3 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
+        var formData;
+        return _regenerator().w(function (_context3) {
+          while (1) switch (_context3.n) {
+            case 0:
+              formData = new FormData(_this3.$refs.formRef);
+              return _context3.a(2, _this3.doResetLicense(formData));
+          }
+        }, _callee3);
+      }))();
+    },
+    deactivateLicense: function deactivateLicense() {
+      var _this4 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
+        return _regenerator().w(function (_context4) {
+          while (1) switch (_context4.n) {
+            case 0:
+              _this4.loading = true;
+              return _context4.a(2, $httpClient.make().post(_this4.deactivateLicenseUrl).then(function () {
+                _this4.verified = false;
+
+                // Update localStorage to reflect deactivation
+                localStorage.setItem('license_verification_time', Date.now().toString());
+                localStorage.setItem('license_is_verified', 'false');
+                localStorage.removeItem('license_data');
+              })["finally"](function () {
+                _this4.loading = false;
+              }));
+          }
+        }, _callee4);
+      }))();
+    },
+    doActivateLicense: function doActivateLicense(formData) {
+      var _this5 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
+        return _regenerator().w(function (_context5) {
+          while (1) switch (_context5.n) {
+            case 0:
+              _this5.loading = true;
+              return _context5.a(2, $httpClient.make().postForm(_this5.activateLicenseUrl, formData).then(function (_ref2) {
+                var data = _ref2.data;
+                _this5.verified = true;
+                _this5.license = data.data;
+                Botble.showSuccess(data.message);
+
+                // Update localStorage to reflect activation
+                localStorage.setItem('license_verification_time', Date.now().toString());
+                localStorage.setItem('license_is_verified', 'true');
+                localStorage.setItem('license_data', JSON.stringify(data.data));
+              })["finally"](function () {
+                _this5.loading = false;
+              }));
+          }
+        }, _callee5);
+      }))();
+    },
+    doResetLicense: function doResetLicense(formData) {
+      var _this6 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6() {
+        return _regenerator().w(function (_context6) {
+          while (1) switch (_context6.n) {
+            case 0:
+              _this6.loading = true;
+              return _context6.a(2, $httpClient.make().postForm(_this6.resetLicenseUrl, formData).then(function (_ref3) {
+                var data = _ref3.data;
+                _this6.verified = false;
+                Botble.showSuccess(data.message);
+
+                // Update localStorage to reflect reset
+                localStorage.setItem('license_verification_time', Date.now().toString());
+                localStorage.setItem('license_is_verified', 'false');
+                localStorage.removeItem('license_data');
+              })["finally"](function () {
+                _this6.loading = false;
+              }));
+          }
+        }, _callee6);
+      }))();
+    }
+  }
+});
+
+/***/ }),
+
+/***/ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=template&id=5322fe77":
+/*!*******************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=template&id=5322fe77 ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   render: () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "vue");
+/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(vue__WEBPACK_IMPORTED_MODULE_0__);
+
+function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("form", {
+    id: "license-form",
+    ref: "formRef",
+    onSubmit: _cache[0] || (_cache[0] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.withModifiers)(function () {
+      return $options.onSubmit && $options.onSubmit.apply($options, arguments);
+    }, ["prevent"]))
+  }, [(0,vue__WEBPACK_IMPORTED_MODULE_0__.renderSlot)(_ctx.$slots, "default", (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeProps)((0,vue__WEBPACK_IMPORTED_MODULE_0__.guardReactiveProps)({
+    initialized: $data.initialized,
+    loading: $data.loading,
+    verified: $data.verified,
+    license: $data.license,
+    deactivateLicense: $options.deactivateLicense,
+    resetLicense: $options.resetLicense
+  })))], 544 /* NEED_HYDRATION, NEED_PATCH */);
+}
+
+/***/ }),
+
+/***/ "./node_modules/vue-loader/dist/exportHelper.js":
+/*!******************************************************!*\
+  !*** ./node_modules/vue-loader/dist/exportHelper.js ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+// runtime helper for setting properties on components
+// in a tree-shakable way
+exports["default"] = (sfc, props) => {
+    const target = sfc.__vccOpts || sfc;
+    for (const [key, val] of props) {
+        target[key] = val;
+    }
+    return target;
+};
+
+
+/***/ }),
+
+/***/ "./platform/core/setting/resources/js/components/LicenseForm.vue":
+/*!***********************************************************************!*\
+  !*** ./platform/core/setting/resources/js/components/LicenseForm.vue ***!
+  \***********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _LicenseForm_vue_vue_type_template_id_5322fe77__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LicenseForm.vue?vue&type=template&id=5322fe77 */ "./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=template&id=5322fe77");
+/* harmony import */ var _LicenseForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LicenseForm.vue?vue&type=script&lang=js */ "./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=script&lang=js");
+/* harmony import */ var _node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../../../../node_modules/vue-loader/dist/exportHelper.js */ "./node_modules/vue-loader/dist/exportHelper.js");
+
+
+
+
+;
+const __exports__ = /*#__PURE__*/(0,_node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_2__["default"])(_LicenseForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_1__["default"], [['render',_LicenseForm_vue_vue_type_template_id_5322fe77__WEBPACK_IMPORTED_MODULE_0__.render],['__file',"platform/core/setting/resources/js/components/LicenseForm.vue"]])
+/* hot reload */
+if (false) // removed by dead control flow
+{}
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (__exports__);
+
+/***/ }),
+
+/***/ "./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=script&lang=js":
+/*!***********************************************************************************************!*\
+  !*** ./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=script&lang=js ***!
+  \***********************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* reexport safe */ _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LicenseForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__["default"])
+/* harmony export */ });
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LicenseForm_vue_vue_type_script_lang_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!../../../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./LicenseForm.vue?vue&type=script&lang=js */ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=script&lang=js");
+ 
+
+/***/ }),
+
+/***/ "./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=template&id=5322fe77":
+/*!*****************************************************************************************************!*\
+  !*** ./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=template&id=5322fe77 ***!
+  \*****************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   render: () => (/* reexport safe */ _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LicenseForm_vue_vue_type_template_id_5322fe77__WEBPACK_IMPORTED_MODULE_0__.render)
+/* harmony export */ });
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_clonedRuleSet_5_use_0_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_2_node_modules_vue_loader_dist_index_js_ruleSet_0_use_0_LicenseForm_vue_vue_type_template_id_5322fe77__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../../../node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!../../../../../../node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!../../../../../../node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./LicenseForm.vue?vue&type=template&id=5322fe77 */ "./node_modules/babel-loader/lib/index.js??clonedRuleSet-5.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[2]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./platform/core/setting/resources/js/components/LicenseForm.vue?vue&type=template&id=5322fe77");
+
+
+/***/ }),
+
+/***/ "vue":
+/*!**********************!*\
+  !*** external "Vue" ***!
+  \**********************/
+/***/ ((module) => {
+
+module.exports = Vue;
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__webpack_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__webpack_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry needs to be wrapped in an IIFE because it needs to be isolated against other modules in the chunk.
+(() => {
+/*!*****************************************************************!*\
+  !*** ./platform/core/setting/resources/js/license-component.js ***!
+  \*****************************************************************/
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _components_LicenseForm_vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./components/LicenseForm.vue */ "./platform/core/setting/resources/js/components/LicenseForm.vue");
+
+if (typeof vueApp !== 'undefined') {
+  vueApp.booting(function (vue) {
+    vue.component('v-license-form', _components_LicenseForm_vue__WEBPACK_IMPORTED_MODULE_0__["default"]);
+  });
+}
+})();
+
+/******/ })()
+;

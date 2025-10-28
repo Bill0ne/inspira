@@ -120,7 +120,11 @@ class HookServiceProvider extends ServiceProvider
         }
 
         $paymentData = apply_filters(PAYMENT_FILTER_PAYMENT_DATA, [], $request);
-        $paymentData = apply_filters(PAYMENT_COURSE_FILTER_PAYMENT_DATA, $paymentData, $request);
+        $isCourseCheckout = session()->has('course_booking_transaction_id') || $request->has('course_id') || $request->routeIs('public.course.checkout');
+
+        if ($isCourseCheckout && defined('PAYMENT_COURSE_FILTER_PAYMENT_DATA')) {
+            $paymentData = apply_filters(PAYMENT_COURSE_FILTER_PAYMENT_DATA, $paymentData, $request);
+        }
 
         if ($notSupportCurrency) {
             $usdCurrency = $currencyModel->query()->where('title', 'USD')->first();

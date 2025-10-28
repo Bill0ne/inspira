@@ -13,8 +13,18 @@ class CalculateBookingAmountRequest extends Request
 
         return [
             'room_id' => ['required', 'exists:ht_rooms,id'],
-            'start_date' => 'date|required:date_format:' . $dateFormat,
-            'end_date' => 'date|required:date_format:' . $dateFormat,
+            'slots.*.start_date' => [
+                'required',
+                'string',
+                'date_format:' . $dateFormat,
+                'after_or_equal:today',
+            ],
+            'slots.*.end_date' => [
+                'required',
+                'string',
+                'date_format:' . $dateFormat,
+                'after_or_equal:slots.*.start_date',
+            ],
             'services' => ['nullable', 'array'],
         ];
     }

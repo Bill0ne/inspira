@@ -366,7 +366,26 @@ app()->booted(function (): void {
         Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): ?string {
             $request = request();
 
-            [$startDate, $endDate, $adults, $nights, $children, $room] = HotelHelper::getRoomBookingParams();
+            // Fetch single start/end date directly from query
+            $startDateParam = $request->query('start_date');
+            $endDateParam = $request->query('end_date');
+
+            try {
+                $startDate = $startDateParam
+                    ? Carbon\Carbon::createFromFormat('d-m-Y h:i A', $startDateParam)
+                    : Carbon\Carbon::now();
+                $endDate = $endDateParam
+                    ? Carbon\Carbon::createFromFormat('d-m-Y h:i A', $endDateParam)
+                    : Carbon\Carbon::now()->addHour();
+            } catch (\Exception $e) {
+                // fallback if format mismatch
+                $startDate = Carbon\Carbon::now();
+                $endDate = Carbon\Carbon::now()->addHour();
+            }
+
+            $adults = $request->integer('adults', HotelHelper::getMinimumNumberOfGuests());
+            $children = $request->integer('children', 0);
+            $roomsCount = $request->integer('rooms', 1);
 
             $filters = [
                 'keyword' => $request->query('q'),
@@ -381,71 +400,54 @@ app()->booted(function (): void {
                     'amenities',
                     'amenities.metadata',
                     'slugable',
-                    'activeBookingRooms' => function ($query) use ($startDate, $endDate) {
-                        return $query
-                            ->where(function ($query) use ($startDate, $endDate) {
-                                return $query
-                                    ->whereDate('start_date', '>=', $startDate)
-                                    ->whereDate('start_date', '<=', $endDate);
-                            })
-                            ->orWhere(function ($query) use ($startDate, $endDate) {
-                                return $query
-                                    ->whereDate('end_date', '>=', $startDate)
-                                    ->whereDate('end_date', '<=', $endDate);
-                            })
-                            ->orWhere(function ($query) use ($startDate, $endDate) {
-                                return $query
-                                    ->whereDate('start_date', '<=', $startDate)
-                                    ->whereDate('end_date', '>=', $endDate);
-                            })
-                            ->orWhere(function ($query) use ($startDate, $endDate) {
-                                return $query
-                                    ->whereDate('start_date', '>=', $startDate)
-                                    ->whereDate('end_date', '<=', $endDate);
-                            });
-                    },
-                    'activeRoomDates' => function ($query) use ($startDate, $endDate) {
-                        return $query
-                            ->whereDate('start_date', '>=', $startDate->startOfDay())
-                            ->whereDate('end_date', '<=', $endDate->endOfDay())
-                            ->take(40);
-                    },
+                    'activeBookingRooms',
+                    'activeRoomDates',
                 ],
             ];
 
+            // Fetch all rooms
             $queriedRooms = app(RoomInterface::class)->getRooms($filters, $params);
 
-            $rooms = [];
+            $availableRooms = [];
 
-            $dateFormat = 'Y-m-d H:i';
+            $hasFilterDates = $request->has('start_date') && $request->has('end_date');
 
-            $condition = [
-                'start_date' => $startDate->format($dateFormat),
-                'end_date' => $endDate->format($dateFormat),
-                'adults' => $adults,
-                'children' => $children,
-                'rooms' => $room,
-            ];
+            foreach ($queriedRooms as $room) {
+                // If no filter applied, show all rooms
+                if (!$hasFilterDates) {
+                    $room->total_price = 0;
+                    $availableRooms[] = $room;
+                    continue;
+                }
 
-            foreach ($queriedRooms as &$room) {
+                $condition = [
+                    'start_date' => $startDate->format('Y-m-d H:i'),
+                    'end_date'   => $endDate->format('Y-m-d H:i'),
+                    'adults'     => $adults,
+                    'children'   => $children,
+                    'rooms'      => $roomsCount,
+                ];
+
                 if ($room->isAvailableAt($condition)) {
-                    $room->total_price = $room->getRoomTotalPrice($startDate, $endDate);
-
-                    $rooms[] = $room;
+                    $room->total_price = $room->getRoomTotalPrice($startDate, $endDate, $roomsCount);
+                    $availableRooms[] = $room;
                 }
             }
 
+            // Paginate results
             $rooms = new LengthAwarePaginator(
-                $rooms,
-                count($rooms),
+                $availableRooms,
+                count($availableRooms),
                 100,
                 Paginator::resolveCurrentPage(),
                 ['path' => Paginator::resolveCurrentPath()]
             );
 
+            $nights = $startDate->diffInDays($endDate);
+
             return Theme::partial(
                 'shortcodes.all-rooms.index',
-                compact('rooms', 'startDate', 'endDate', 'nights', 'adults')
+                compact('rooms', 'startDate', 'endDate', 'adults', 'children', 'roomsCount', 'nights')
             );
         });
 
