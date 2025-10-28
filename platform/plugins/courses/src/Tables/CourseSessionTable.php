@@ -367,33 +367,41 @@ HTML;
 
         for ($i = 0; $i < $chairs; $i++) {
             $isFilled = $i < $filledChairs;
-            $seatFill = $isFilled ? '#2F6A62' : '#F0F5F4';
+            $seatFill = $isFilled ? '#2F6A62' : '#E5EEEC';
             $seatStroke = $isFilled ? '#1E4D47' : '#C5D7D3';
 
             $icons .= <<<SVG
-<span class="d-inline-flex" style="width:22px;height:22px;margin-right:6px;">
-    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<span class="d-inline-flex align-items-center justify-content-center" style="width:26px;height:26px;background:#FFFFFF;border-radius:8px;border:1px solid #E1EBE8;box-shadow:0 2px 4px rgba(24, 59, 53, 0.08);">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
         <rect x="6" y="8" width="20" height="10" rx="3" fill="{$seatFill}" stroke="{$seatStroke}" stroke-width="1.5" />
         <rect x="8" y="18" width="16" height="6" rx="2" fill="{$seatFill}" stroke="{$seatStroke}" stroke-width="1.5" />
-        <rect x="6" y="24" width="6" height="4" rx="1.5" fill="{$seatStroke}" opacity="0.3" />
-        <rect x="20" y="24" width="6" height="4" rx="1.5" fill="{$seatStroke}" opacity="0.3" />
+        <rect x="6" y="24" width="6" height="4" rx="1.5" fill="{$seatStroke}" opacity="0.28" />
+        <rect x="20" y="24" width="6" height="4" rx="1.5" fill="{$seatStroke}" opacity="0.28" />
     </svg>
 </span>
 SVG;
         }
 
         $ratioLabel = $maxSeats !== null
-            ? '<span class="fw-semibold" style="color:#1F2A2A;min-width:68px;">' . $booked . ' / ' . max(1, $maxSeats) . '</span>'
-            : '<span class="fw-semibold" style="color:#1F2A2A;min-width:68px;">' . $booked . ' / &infin;</span>';
+            ? '<span class="badge rounded-pill px-3 py-2" style="background:#EEF5F4;color:#1F2A2A;font-weight:600;">' . $booked . ' / ' . max(1, $maxSeats) . '</span>'
+            : '<span class="badge rounded-pill px-3 py-2" style="background:#EEF5F4;color:#1F2A2A;font-weight:600;">' . $booked . ' / &infin;</span>';
 
         $label = BaseHelper::clean($label);
+        $progress = max(0, min(100, (int) round($ratio * 100)));
+
+        $progressBar = <<<HTML
+<div style="height:6px;background:#E1EBE8;border-radius:999px;overflow:hidden;">
+    <span style="display:block;height:100%;width:{$progress}%;background:linear-gradient(90deg,#2F6A62 0%,#51A198 100%);"></span>
+</div>
+HTML;
 
         return <<<HTML
 <div class="d-flex flex-column gap-2">
-    <div class="d-flex align-items-center gap-3">
-        <div class="d-inline-flex align-items-center gap-2">{$icons}</div>
+    <div class="d-flex align-items-center justify-content-between gap-3">
+        <div class="d-inline-flex align-items-center gap-2 flex-wrap" style="max-width:180px;">{$icons}</div>
         {$ratioLabel}
     </div>
+    {$progressBar}
     <div class="text-muted small">{$label}</div>
 </div>
 HTML;
@@ -456,20 +464,32 @@ HTML;
         }
 
         $timeBadge = $timeRange !== '—'
-            ? '<span class="px-4 py-2 rounded-pill" style="background:#DFF0ED;color:#17423D;font-weight:600;min-width:110px;display:inline-flex;justify-content:center;">' . $timeRange . '</span>'
+            ? '<span class="px-4 py-2 rounded-pill" style="background:#2F6A621A;color:#1F2A2A;font-weight:600;min-width:120px;display:inline-flex;justify-content:center;">' . $timeRange . '</span>'
             : '<span class="text-muted small">' . $timeRange . '</span>';
 
         $dayLabel = $session->start_date
             ? '<div class="text-muted small">' . e($session->start_date->locale(app()->getLocale())->translatedFormat('l')) . '</div>'
             : '';
 
+        $calendarIcon = <<<HTML
+<span class="d-inline-flex align-items-center justify-content-center" style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#2F6A62 0%,#51A198 100%);color:#fff;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="5" width="18" height="16" rx="2" fill="rgba(255,255,255,0.2)" stroke="currentColor" stroke-width="1.2" />
+        <path d="M3 9H21" stroke="currentColor" stroke-width="1.2" />
+        <path d="M8 3V7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+        <path d="M16 3V7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+    </svg>
+</span>
+HTML;
+
         return <<<HTML
 <div class="d-flex align-items-center gap-3">
-    <div>
-        <div class="fw-semibold" style="color:#1F2A2A;">{$startDate}</div>
+    {$calendarIcon}
+    <div class="d-flex flex-column">
+        <span class="fw-semibold" style="color:#1F2A2A;">{$startDate}</span>
         {$dayLabel}
     </div>
-    <div>{$timeBadge}</div>
+    <div class="ms-auto">{$timeBadge}</div>
 </div>
 HTML;
     }
@@ -479,21 +499,27 @@ HTML;
         $stats = $this->performance()->forSession($session);
         $score = number_format($stats['score'], 1);
 
-        [$background, $textColor, $ratingKey] = $this->resolveScoreStyle((float) $stats['score']);
+        [$background, $accent, $textColor, $ratingKey] = $this->resolveScoreStyle((float) $stats['score']);
         $ratingText = trans($ratingKey);
         $ratingLabel = BaseHelper::clean($ratingText);
         $title = e($ratingText);
 
-        $ringShadow = match ($background) {
-            '#2F6A62', '#4E8E85' => 'rgba(47, 106, 98, 0.3)',
-            '#F2B138' => 'rgba(242, 177, 56, 0.35)',
-            default => 'rgba(217, 108, 95, 0.35)',
-        };
+        $scoreValue = max(0, min(100, (float) $stats['score']));
+        $sweep = $scoreValue === 0.0 ? 0.01 : $scoreValue;
+
+        $circle = <<<HTML
+<span class="d-inline-flex align-items-center justify-content-center" title="{$title}" style="width:56px;height:56px;border-radius:50%;background:conic-gradient({$accent} {$sweep}%,#E7F1EF {$sweep}%);color:{$textColor};font-weight:700;position:relative;">
+    <span style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:{$background};box-shadow:0 6px 12px rgba(18,66,59,0.18);">{$score}</span>
+</span>
+HTML;
 
         return <<<HTML
 <div class="d-flex align-items-center gap-3">
-    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" title="{$title}" style="width:48px;height:48px;background:{$background};color:{$textColor};font-weight:700;box-shadow:0 0 0 4px {$ringShadow};">{$score}</span>
-    <span class="fw-semibold" style="color:#1F2A2A;">{$ratingLabel}</span>
+    {$circle}
+    <div class="d-flex flex-column">
+        <span class="fw-semibold" style="color:#1F2A2A;">{$ratingLabel}</span>
+        <span class="text-muted small">{$title}</span>
+    </div>
 </div>
 HTML;
     }
@@ -501,10 +527,10 @@ HTML;
     protected function resolveScoreStyle(float $score): array
     {
         return match (true) {
-            $score >= 85 => ['#2F6A62', '#FFFFFF', 'plugins/courses::courses.table.score_rating.great'],
-            $score >= 65 => ['#4E8E85', '#FFFFFF', 'plugins/courses::courses.table.score_rating.good'],
-            $score >= 45 => ['#F2B138', '#2B2B2B', 'plugins/courses::courses.table.score_rating.fair'],
-            default => ['#D96C5F', '#FFFFFF', 'plugins/courses::courses.table.score_rating.poor'],
+            $score >= 85 => ['#1F4B45', '#5AB2A4', '#FFFFFF', 'plugins/courses::courses.table.score_rating.great'],
+            $score >= 65 => ['#2F6A62', '#70C1B6', '#FFFFFF', 'plugins/courses::courses.table.score_rating.good'],
+            $score >= 45 => ['#F2B138', '#F7C974', '#2B2B2B', 'plugins/courses::courses.table.score_rating.fair'],
+            default => ['#D96C5F', '#E79B92', '#FFFFFF', 'plugins/courses::courses.table.score_rating.poor'],
         };
     }
 
