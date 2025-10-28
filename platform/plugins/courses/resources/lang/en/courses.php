@@ -42,6 +42,7 @@ return [
     'table' => [
         'overview' => 'Course',
         'views' => 'Views',
+        'views_rating_label' => ':count views',
         'views_hint' => 'Last :days days',
         'views_hint_fallback' => 'Stored view counter',
         'views_hint_unavailable' => 'No view data available',
@@ -49,6 +50,7 @@ return [
         'engagement' => 'Engagement',
         'schedule' => 'Schedule',
         'score' => 'Score',
+        'score_auto_label' => 'Automatic scoring',
         'score_hint' => 'Overall course score',
         'session_id' => 'Session #:id',
         'booked_vs_remaining' => ':booked booked · :remaining free',

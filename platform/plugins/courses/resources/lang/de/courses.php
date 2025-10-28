@@ -42,6 +42,7 @@ return [
     'table' => [
         'overview' => 'Kurse',
         'views' => 'Ansichten',
+        'views_rating_label' => ':count Aufrufe',
         'views_hint' => 'Letzte :days Tage',
         'views_hint_fallback' => 'Gespeicherte Aufrufzahlen',
         'views_hint_unavailable' => 'Keine Ansichten verfügbar',
@@ -49,6 +50,7 @@ return [
         'engagement' => 'Engagement',
         'schedule' => 'Zeitplan',
         'score' => 'Score',
+        'score_auto_label' => 'Automatisch bewertet',
         'score_hint' => 'Aktueller Kurs-Score',
         'session_id' => 'Sitzung #:id',
         'booked_vs_remaining' => ':booked belegt · :remaining frei',
