@@ -108,6 +108,11 @@ class CoursePerformanceService
         return $this->analyticsLookbackDays;
     }
 
+    public function maxReferenceViews(): int
+    {
+        return $this->maxViewsReference;
+    }
+
     protected function calculateScores(
         int $views,
         string $viewsSource,
