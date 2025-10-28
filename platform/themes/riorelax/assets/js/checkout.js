@@ -276,6 +276,16 @@ $(document).ready(function () {
 
 
             const $button = $(e.currentTarget)
+            const $couponInput = $('input[name=coupon_code]')
+            const couponCode = ($couponInput.val() || '').trim()
+
+            if (!couponCode.length) {
+                RiorelaxTheme.showError('Please enter a coupon code.')
+
+                return
+            }
+
+            $couponInput.val(couponCode)
 
             $.ajax({
                 url: $button.data('url'),
@@ -284,19 +294,33 @@ $(document).ready(function () {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 data: {
-                    coupon_code: $('input[name=coupon_code]').val(),
+                    coupon_code: couponCode,
                 },
                 beforeSend: () => {
                     $button.addClass('button-loading')
                 },
-                success: ({ error, message }) => {
+                success: ({ error, message, data }) => {
                     if (error) {
                         RiorelaxTheme.showError(message)
 
                         return
                     }
 
-                    RiorelaxTheme.showSuccess(message)
+                    const appliedCoupon = data?.coupon_code ?? couponCode
+
+                    let successMessage = message
+
+                    if (appliedCoupon) {
+                        if (!successMessage) {
+                            successMessage = `Applied coupon "${appliedCoupon}" successfully!`
+                        } else if (successMessage.includes('""')) {
+                            successMessage = successMessage.replace('""', `"${appliedCoupon}"`)
+                        } else if (successMessage.includes(':code')) {
+                            successMessage = successMessage.replace(':code', appliedCoupon)
+                        }
+                    }
+
+                    RiorelaxTheme.showSuccess(successMessage ?? 'Coupon applied successfully!')
                     refreshCoupon()
                 },
                 error: (error) => {
