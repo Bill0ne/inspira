@@ -169,6 +169,8 @@
                 @if($course->price)
                     @php
                         $basePrice = $course->price;
+                        $dynamicPrice = $basePrice;
+                        if (is_plugin_active('price-configurator')) {
                         $dynamicPrice = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
                             ->calculatePrice(
                                 $basePrice,
@@ -176,7 +178,7 @@
                                 $course->id,
                                 auth('customer')->user() ?? null
                             );
-
+                        }
                         $priceDifference = $basePrice - $dynamicPrice;
                     @endphp
 

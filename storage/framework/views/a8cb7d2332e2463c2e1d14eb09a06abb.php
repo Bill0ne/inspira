@@ -69,7 +69,7 @@
                     <input type="hidden" name="number_of_guests" value="<?php echo e($adults); ?>">
 
                     <?php if(! $customer->id): ?>
-                        <p><?php echo e(__('Already have an account?')); ?> <a href="<?php echo e(route('customer.login')); ?>"><?php echo e(__(' Login')); ?></a></p>
+                        <p><?php echo e(__('Already have an account?')); ?> <a href="<?php echo e(route('customer.login')); ?>"> <?php echo e(__('Login')); ?></a></p>
                     <?php endif; ?>
 
                     <div class="mb-20">

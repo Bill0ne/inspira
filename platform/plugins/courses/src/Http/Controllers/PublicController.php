@@ -193,15 +193,16 @@ class PublicController extends Controller
         $session = CourseSession::query()->findOrFail(Arr::get($sessionData, 'session_id'));
 
         $basePrice = $course->getCourseTotalPrice();
-
-        $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-            ->calculatePrice(
-                $basePrice,
-                \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                $course->id,
-                $customer
-            );
-
+        $amount = $basePrice;
+        if (is_plugin_active('price-configurator')) {
+            $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
+                ->calculatePrice(
+                    $basePrice,
+                    \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
+                    $course->id,
+                    $customer
+                );
+        }
         $discountAmount = $basePrice - $amount;
 
         $taxAmount = $course->tax->percentage * $amount / 100;
@@ -287,14 +288,16 @@ class PublicController extends Controller
             $booking->fill($request->input());
 
             $basePrice = $course->getCourseTotalPrice();
-
-            $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-                ->calculatePrice(
-                    $basePrice,
-                    \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                    $course->id,
-                    Auth::guard('customer')->user() ?? null
-                );
+            $amount = $basePrice;
+            if (is_plugin_active('price-configurator')) {
+                $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
+                    ->calculatePrice(
+                        $basePrice,
+                        \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
+                        $course->id,
+                        Auth::guard('customer')->user() ?? null
+                    );
+            }
 
             $discountAmount = abs($basePrice - $amount);
 
@@ -460,13 +463,16 @@ class PublicController extends Controller
 
         $customer = Auth::guard('customer')->user();
         $basePrice = $course->getCourseTotalPrice();
-        $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-            ->calculatePrice(
-                $basePrice,
-                \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                $course->id,
-                $customer
-            );
+        $amount = $basePrice;
+        if (is_plugin_active('price-configurator')) {
+            $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
+                ->calculatePrice(
+                    $basePrice,
+                    \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
+                    $course->id,
+                    $customer
+                );
+        }
 
         $taxAmount = $course->tax->percentage * ($amount - $discountAmount) / 100;
         $totalAmount = ($amount - $discountAmount) + $taxAmount;
