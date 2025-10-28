@@ -273,7 +273,7 @@ class CourseController extends BaseController
 
         $removedSessions = $existingManuals->filter(fn($s) => !in_array($s->id, $submittedIds));
         foreach ($removedSessions as $session) {
-            if ($session->bookings()->exists()) {
+            if ($session->activeBookings()->exists()) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'manual_sessions' => __("Cannot remove session starting at :date; it has bookings.", [
                         'date' => $session->start_date->format('Y-m-d H:i'),
