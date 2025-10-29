@@ -3,7 +3,6 @@
 
 $(document).ready(function () {
     $('.service-item').on('change', function () {
-        console.log('hello');
         const foods = []
         const services = []
         $('.service-item:checked').each((i, el) => {
