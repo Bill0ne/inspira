@@ -1,180 +1,98 @@
 @php
 use Carbon\Carbon;
 
-$margin = $margin ?? false;
 $now = now();
 
-/* === Sessions / Termine === */
-$upcomingSessionsQuery = $course->sessions()
-    ->where('start_date', '>=', $now)
-    ->orderBy('start_date');
+/* Sessions ermitteln */
+$upcoming = $course->sessions()->where('start_date', '>=', $now)->orderBy('start_date')->get();
+$next = $upcoming->first();
+$hasMultiple = $upcoming->count() > 1;
 
-$upcomingSessions = $upcomingSessionsQuery->get();
-$upcomingSessionsCount = $upcomingSessions->count();
-$nextSession = $upcomingSessionsCount ? $upcomingSessions->first() : null;
+/* Datum */
+$format = fn($s) => $s ? Carbon::parse($s->start_date)->format('d.m.Y H:i') . '–' . Carbon::parse($s->end_date)->format('H:i') : null;
+$dateLabel = $hasMultiple ? __('Mehrere Termine') : ($next ? $format($next) : __('Kein Termin verfügbar'));
 
-$lastSession = $course->sessions()
-    ->where('start_date', '<', $now)
-    ->orderByDesc('start_date')
-    ->first();
-
-/* === Datumsformatierung === */
-$formatSessionRange = static function (?object $session, string $dayFmt = 'd.m.Y', string $timeFmt = 'H:i'): ?string {
-    if (!$session) return null;
-    $s = Carbon::parse($session->start_date);
-    $e = $session->end_date ? Carbon::parse($session->end_date) : null;
-    if ($e) {
-        return $s->isSameDay($e)
-            ? $s->format("$dayFmt $timeFmt") . '–' . $e->format($timeFmt)
-            : $s->format("$dayFmt $timeFmt") . ' – ' . $e->format("$dayFmt $timeFmt");
-    }
-    return $s->format("$dayFmt $timeFmt");
-};
-
-$dateDisplay = $formatSessionRange($nextSession);
-
-/* === Date-Chip Logik === */
-$dateChipLabel = null;
-$dateChipClass = 'mtxt';
-$dateChipTitle = null;
-
-if ($upcomingSessionsCount > 1) {
-    $dateChipLabel = __('Mehrere Termine');
-    $dateChipTitle = $dateChipLabel;
-} elseif ($nextSession) {
-    $dateChipLabel = $dateDisplay;
-    $dateChipTitle = $dateDisplay;
-} elseif ($lastSession) {
-    $recentThreshold = $now->copy()->subDays(10);
-    $lastSessionDate = Carbon::parse($lastSession->start_date);
-    if ($lastSessionDate->greaterThanOrEqualTo($recentThreshold)) {
-        $dateChipLabel = __('Leider verpasst');
-        $dateChipClass .= ' missed';
-        $dateChipTitle = $dateChipLabel;
-    }
-}
-
-if (is_null($dateChipLabel) && $upcomingSessionsCount === 0 && !$lastSession) {
-    $dateChipLabel = __('Kein Termin verfügbar');
-    $dateChipTitle = $dateChipLabel;
-}
-
-/* === Sitzplatz-Infos === */
-$totalCapacity = 0;
-$totalBooked = 0;
-$hasUnlimited = false;
-
-foreach ($upcomingSessions as $session) {
-    if (is_null($session->available_seats)) {
-        $hasUnlimited = true;
-        break;
-    }
-    $bookedCount = $session->getBookedCount();
-    $totalCapacity += $session->available_seats;
-    $totalBooked += $bookedCount;
-}
-
-$hasAvailableSessions = $upcomingSessions->contains(fn($s) => $s->hasAvailableSeats());
-$isSoldOut = !$hasUnlimited && !$hasAvailableSessions;
-$percent = $totalCapacity > 0 ? (int) round(min(100, ($totalBooked / (float)$totalCapacity) * 100)) : null;
-
-$showSeatChip = false;
-$seatChipClass = '';
-
-if (!is_null($percent) && $percent >= 30) {
-    $showSeatChip  = true;
-    $seatChipClass = 'seat-gray';
-    if ($percent >= 60)  $seatChipClass = 'seat-orange';
-    if ($percent >= 80)  $seatChipClass = 'seat-red';
-}
-
-/* === Button Ziel === */
-$cartUrl = $upcomingSessionsCount > 1
-    ? $course->url
-    : (Route::has('public.course.checkout')
-        ? route('public.course.checkout', $course->id)
-        : $course->url);
-
+/* Ziel-URL */
+$cartUrl = $hasMultiple ? $course->url : (Route::has('public.course.checkout') ? route('public.course.checkout', $course->id) : $course->url);
 @endphp
 
 <style>
 .course-card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  overflow: hidden;
-  transition: all .25s ease;
-  cursor: pointer;
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  overflow:hidden;
+  transition:transform .2s ease, box-shadow .2s ease;
+  cursor:pointer;
 }
 .course-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
-
 .course-card .thumb img {
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  display: block;
+  width:100%;
+  aspect-ratio:16/9;
+  object-fit:cover;
+  display:block;
 }
-
-.course-card-body {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 100%;
+.course-body {
+  padding:16px 16px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
-
-.course-card-body h4 {
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: 600;
-  color: #000;
-  margin-bottom: 4px;
+.course-title {
+  font-size:14px;
+  font-weight:500;
+  color:#000;
+  margin:0;
 }
-
-.course-card-body .desc {
-  font-size: 12px;
-  line-height: 18px;
-  color: #333;
-  margin-bottom: 8px;
+.course-desc {
+  font-size:10px;
+  line-height:1.5;
+  color:#555;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  margin:0;
 }
-
-.course-meta-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+.course-meta {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:4px;
 }
-
-/* Chips übernehmen dein bestehendes Design */
-.course-card .mtxt {
-  background:#F3F3F3 !important;
-  color:#578E88 !important;
+.course-meta-left {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.mtxt {
+  background:#F3F3F3;
+  color:#578E88;
+  font-weight:500;
   border-radius:0;
   padding:8px 14px;
+  font-size:13px;
+  line-height:16px;
   display:inline-flex;
   align-items:center;
-  gap:7px;
-  font-size:13px;
-  font-weight:500;
-  line-height:16px;
+  gap:6px;
 }
-.course-card .mtxt.missed { color:#E74C3C !important; }
-
-.course-card .btn-cart {
+.mtxt.missed { color:#E74C3C; }
+.btn-cart {
   background:#578E88;
   color:#fff;
   padding:8px 14px;
-  border:none;
   border-radius:4px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   transition:background .2s ease;
 }
-.course-card .btn-cart:hover { background:#4b7c75; }
+.btn-cart:hover { background:#4b7c75; }
 </style>
 
 <div class="course-card" onclick="window.location='{{ $course->url }}'">
@@ -182,34 +100,29 @@ $cartUrl = $upcomingSessionsCount > 1
     <img src="{{ RvMedia::getImageUrl($course->thumbnail, 'medium') }}" alt="{{ $course->name }}">
   </div>
 
-  <div class="course-card-body">
+  <div class="course-body">
+    <h4 class="course-title">{{ $course->name }}</h4>
 
-    {{-- Titel & Beschreibung --}}
-    <h4>{{ $course->name }}</h4>
-    @if ($description = $course->description)
-      <p class="desc" title="{{ $description }}">
-        {!! BaseHelper::clean(Str::limit($description, 120)) !!}
+    @if ($course->subtitle)
+      <p class="course-subtitle" style="font-weight:600;color:#578E88;margin-bottom:2px;">
+        {{ $course->subtitle }}
       </p>
     @endif
 
-    {{-- Meta unten: Datum + Preis + Button --}}
-    <div class="course-meta-bottom">
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        @if ($dateChipLabel)
-          <span class="{{ $dateChipClass }}" title="{{ $dateChipTitle }}">
-            <i class="fal fa-calendar-alt me-1"></i> {{ $dateChipLabel }}
-          </span>
-        @endif
+    @if ($course->description)
+      <p class="course-desc">{!! BaseHelper::clean(Str::limit($course->description, 120)) !!}</p>
+    @endif
+
+    <div class="course-meta">
+      <div class="course-meta-left">
+        <span class="mtxt"><i class="fal fa-calendar-alt"></i>{{ $dateLabel }}</span>
         @if ($course->price)
           <span class="mtxt">{{ format_price($course->price) }}</span>
         @endif
       </div>
-
-      <a href="{{ $cartUrl }}" class="btn-cart" onclick="event.stopPropagation();">
+      <a href="{{ $cartUrl }}" class="btn-cart" onclick="event.stopPropagation()">
         <i class="fal fa-shopping-cart"></i>
       </a>
     </div>
-
   </div>
 </div>
-
