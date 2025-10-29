@@ -91,6 +91,9 @@ if (class_exists(PageForm::class)) {
 }
 
 app()->booted(function (): void {
+
+   // 🔹 Custom CSS: Karten-Design (Nabil / Inspira)
+    Theme::asset()->usePath()->add('riorelax-card', 'css/card.css');
     if (is_plugin_active('simple-slider')) {
         SimpleSliderItemForm::extend(function (SimpleSliderItemForm $form): void {
             $form
