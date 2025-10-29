@@ -1,9 +1,10 @@
 <?php
-    Theme::asset()->container('footer')->add('popper', 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js', ['jquery']);
-    Theme::asset()->container('footer')->add('bootstrap-js', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js', ['jquery', 'popper']);
-  Theme::asset()->container('footer')->usePath()->add('moment-js', 'vendors/moment.min.js');
-  Theme::asset()->container('footer')->usePath()->add('date-picker', 'vendors/date-picker.min.js');
-    Theme::asset()->container('footer')->usePath()->add('datetime-js', 'js/datetime.js');
+    Theme::asset()->container('footer')->usePath()->add('date-css', 'css/date.css');
+        Theme::asset()->container('footer')->add('popper', 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js', ['jquery']);
+        Theme::asset()->container('footer')->add('bootstrap-js', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js', ['jquery', 'popper']);
+      Theme::asset()->container('footer')->usePath()->add('moment-js', 'vendors/moment.min.js');
+      Theme::asset()->container('footer')->usePath()->add('date-picker', 'vendors/date-picker.min.js');
+        Theme::asset()->container('footer')->usePath()->add('datetime-js', 'js/datetime.js');
 ?>
 
 <style>

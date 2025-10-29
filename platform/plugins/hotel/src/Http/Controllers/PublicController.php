@@ -387,13 +387,18 @@ class PublicController extends Controller
         // ----------------------------------------
         // 🔹 Apply price rule discount once per booking
         // ----------------------------------------
-        $totalAmount = $this->calculateDynamicPrice(
-            $totalBasePrice,
-            'room',
-            $room->id,
-            $customer,
-            $totalHours
-        );
+        if (is_plugin_active('price-configurator')) {
+            $totalAmount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
+                ->calculatePrice(
+                    $totalBasePrice,
+                    \Botble\PriceConfigurator\Enums\TargetTypeEnum::ROOM,
+                    $room->id,
+                    $customer,
+                    $totalHours // use total hours across all slots
+                );
+        } else {
+            $totalAmount = $totalBasePrice;
+        }
 
         $discountAmount = max($totalBasePrice - $totalAmount, 0);
 
@@ -503,13 +508,18 @@ class PublicController extends Controller
         }
 
         // 🟢 Apply price rule once per booking using total hours
-        $totalConfiguredPrice = $this->calculateDynamicPrice(
+        if (is_plugin_active('price-configurator')) {
+        $priceConfigurator = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class);
+        $totalConfiguredPrice = $priceConfigurator->calculatePrice(
             $totalBasePrice,
             'room',
             $room->id,
             Auth::guard('customer')->user() ?? null,
             $totalHours
         );
+        }else {
+            $totalConfiguredPrice = $totalBasePrice;
+        }
 
         // 🟢 Calculate rule discount
         $discountAmount = abs($totalBasePrice - $totalConfiguredPrice);
@@ -728,13 +738,19 @@ class PublicController extends Controller
         }
 
         // ✅ Step 2: Apply price rule once per booking using total hours
-        $totalConfiguredPrice = $this->calculateDynamicPrice(
-            $totalBasePrice,
-            'room',
-            $room->id,
-            $customer,
-            $totalHours
-        );
+        $totalConfiguredPrice = $totalBasePrice;
+
+        if (is_plugin_active('price-configurator')) {
+            $priceConfigurator = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class);
+            $totalConfiguredPrice = $priceConfigurator->calculatePrice(
+                $totalBasePrice,
+                \Botble\PriceConfigurator\Enums\TargetTypeEnum::ROOM,
+                $room->id,
+                $customer,
+                $totalHours // total hours across all slots
+            );
+        }
+
 
         // ✅ Step 3: Rule discount (base - configured)
         $ruleDiscount = max($totalBasePrice - $totalConfiguredPrice, 0);

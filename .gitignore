@@ -52,8 +52,8 @@ stage-env/
 # === BUILD / NODE ===
 /node_modules
 /bower_components
-/public/vendor/core
-/public/themes
+#/public/vendor/core
+#/public/themes
 /public/docs
 /resources/docs
 /vendor

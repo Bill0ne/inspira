@@ -170,25 +170,15 @@
                     @php
                         $basePrice = $course->price;
                         $dynamicPrice = $basePrice;
-                        $serviceClass = 'Botble\\PriceConfigurator\\Services\\PriceConfiguratorService';
-
-                        if (
-                            function_exists('is_plugin_active') &&
-                            is_plugin_active('price-configurator') &&
-                            class_exists($serviceClass)
-                        ) {
-                            try {
-                                $dynamicPrice = app($serviceClass)->calculatePrice(
-                                    $basePrice,
-                                    'course',
-                                    $course->id,
-                                    auth('customer')->user() ?? null
-                                );
-                            } catch (\Throwable $exception) {
-                                $dynamicPrice = $basePrice;
-                            }
+                        if (is_plugin_active('price-configurator')) {
+                        $dynamicPrice = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
+                            ->calculatePrice(
+                                $basePrice,
+                                \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
+                                $course->id,
+                                auth('customer')->user() ?? null
+                            );
                         }
-
                         $priceDifference = $basePrice - $dynamicPrice;
                     @endphp
 
