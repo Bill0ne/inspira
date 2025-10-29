@@ -27,16 +27,28 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class CourseSessionTable extends TableAbstract
 {
+    protected const STYLESHEET_FALLBACK_VERSION = '2024021501';
+
     protected ?CoursePerformanceService $performanceService = null;
 
     public function setup(): void
     {
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
+        Assets::addStylesDirectly([$this->versionedStylesheet()]);
 
         $this
             ->model(CourseSession::class)
             ->addColumns([
-                IdColumn::make(),
+                IdColumn::make()
+                    ->width(60)
+                    ->alignStart()
+                    ->getValueUsing(function (IdColumn $column) {
+                        $id = (int) $column->getOriginalValue();
+
+                        return <<<HTML
+<span class="course-session-id badge rounded-pill">#{$id}</span>
+HTML;
+                    }),
 
                 FormattedColumn::make('session_overview')
                     ->title(trans('plugins/courses::courses.table.overview'))
@@ -49,12 +61,14 @@ class CourseSessionTable extends TableAbstract
                     ->title(trans('plugins/courses::courses.course.price'))
                     ->orderable(false)
                     ->searchable(false)
+                    ->alignStart()
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderPrice($column->getItem())),
 
                 FormattedColumn::make('views')
                     ->title(trans('plugins/courses::courses.table.views'))
                     ->orderable(false)
                     ->searchable(false)
+                    ->alignStart()
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderViews($column->getItem())),
 
@@ -63,37 +77,60 @@ class CourseSessionTable extends TableAbstract
                     ->orderable(true)
                     ->name('occupancy_value')
                     ->searchable(false)
+                    ->alignStart()
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderOccupancy($column->getItem())),
-
-                FormattedColumn::make('engagement')
-                    ->title(trans('plugins/courses::courses.table.engagement'))
-                    ->orderable(true)
-                    ->name('engagement_value')
-                    ->searchable(false)
-                    ->escape(false)
-                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderEngagement($column->getItem())),
 
                 FormattedColumn::make('participants')
                     ->title(trans('plugins/courses::courses.table.participants'))
                     ->orderable(false)
                     ->searchable(false)
+                    ->alignCenter()
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderParticipants($column->getItem())),
 
-                FormattedColumn::make('schedule')
-                    ->title(trans('plugins/courses::courses.table.schedule'))
+                FormattedColumn::make('date')
+                    ->title(trans('plugins/courses::courses.table.date'))
                     ->orderable(true)
                     ->name('course_sessions.start_date')
                     ->searchable(false)
+                    ->alignStart()
                     ->escape(false)
-                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderSchedule($column->getItem())),
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderDate($column->getItem())),
+
+                FormattedColumn::make('time')
+                    ->title(trans('plugins/courses::courses.table.time'))
+                    ->orderable(true)
+                    ->name('course_sessions.start_date')
+                    ->searchable(false)
+                    ->alignStart()
+                    ->escape(false)
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderTime($column->getItem())),
+
+                FormattedColumn::make('capacity')
+                    ->title(trans('plugins/courses::courses.table.capacity'))
+                    ->orderable(true)
+                    ->name('course_sessions.available_seats')
+                    ->searchable(false)
+                    ->alignCenter()
+                    ->escape(false)
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderCapacity($column->getItem())),
+
+                FormattedColumn::make('created_at')
+                    ->title(trans('plugins/courses::courses.table.created_at'))
+                    ->orderable(true)
+                    ->name('course_sessions.created_at')
+                    ->searchable(false)
+                    ->alignStart()
+                    ->escape(false)
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderCreatedAt($column->getItem())),
 
                 FormattedColumn::make('score')
                     ->title(trans('plugins/courses::courses.table.score'))
                     ->orderable(true)
                     ->name('score_value')
                     ->searchable(false)
+                    ->alignEnd()
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderScore($column->getItem())),
             ])
@@ -180,12 +217,12 @@ class CourseSessionTable extends TableAbstract
                     ->selectRaw('courses.price as price')
                     ->selectRaw("$viewsExpr as views")
                     ->selectRaw("$occupancyExpr as occupancy")
-                    ->selectRaw("$engagementExpr as engagement")
                     ->selectRaw("$activeExpr as participants")
-                    ->selectRaw('course_sessions.start_date as schedule')
+                    ->selectRaw('course_sessions.start_date as start_date_value')
+                    ->selectRaw('course_sessions.end_date as end_date_value')
+                    ->selectRaw('course_sessions.created_at as created_at_value')
                     ->selectRaw("$scoreExpr as score")
                     ->selectRaw("$occupancyExpr as occupancy_value")
-                    ->selectRaw("$engagementExpr as engagement_value")
                     ->selectRaw("$scoreExpr as score_value")
                     ->selectRaw("$activeExpr as active_bookings_count")
                     ->selectRaw("$attendedExpr as attended_bookings_count");
@@ -238,12 +275,19 @@ class CourseSessionTable extends TableAbstract
             return '<span class="text-muted">—</span>';
         }
 
-        $thumbnail = RvMedia::getImageUrl(
-            $course->thumbnail,
-            'thumb',
-            false,
-            RvMedia::getDefaultImage()
-        );
+        $thumbnailUrl = null;
+
+        if ($course->thumbnail) {
+            $thumbnailUrl = RvMedia::getImageUrl(
+                $course->thumbnail,
+                'thumb',
+                false
+            );
+        }
+
+        if (! $thumbnailUrl || $thumbnailUrl === RvMedia::getDefaultImage()) {
+            $thumbnailUrl = null;
+        }
 
         $courseName = BaseHelper::clean($course->name ?? '—');
         $courseUrl = route('course.edit', $course->getKey());
@@ -254,19 +298,49 @@ class CourseSessionTable extends TableAbstract
         ]);
 
         $metaHtml = $metaParts
-            ? '<div class="text-muted small text-truncate">' . implode(' • ', $metaParts) . '</div>'
+            ? '<div class="course-session-meta text-muted">' . implode(' • ', $metaParts) . '</div>'
             : '';
 
+        $imageAlt = e(trans('plugins/courses::courses.table.thumbnail_alt', ['course' => $courseName]));
+        $fallbackAlt = e(trans('plugins/courses::courses.table.thumbnail_fallback_alt', ['course' => $courseName]));
+
+        $thumbnailContent = $thumbnailUrl
+            ? '<img src="' . $thumbnailUrl . '" alt="' . $imageAlt . '" loading="lazy">'
+            : '<span class="course-session-thumbnail__icon" aria-hidden="true">'
+                . $this->renderFallbackThumbnailIcon($courseName)
+                . '</span>';
+
+        $thumbnailAttributes = $thumbnailUrl
+            ? 'class="course-session-thumbnail"'
+            : 'class="course-session-thumbnail course-session-thumbnail--fallback" role="img" aria-label="' . $fallbackAlt . '"';
+
         return <<<HTML
-<div class="d-flex align-items-center gap-3">
-    <div class="flex-shrink-0 rounded-3 overflow-hidden" style="width:60px;height:60px;background:#F4F7F6;">
-        <img src="{$thumbnail}" alt="{$courseName}" style="width:100%;height:100%;object-fit:cover;">
+<div class="course-session-card d-flex align-items-center gap-3">
+    <div {$thumbnailAttributes}>
+        {$thumbnailContent}
     </div>
-    <div class="flex-grow-1">
-        <a href="{$courseUrl}" class="fw-semibold text-decoration-none" style="color:#1F2A2A;">{$courseName}</a>
+    <div class="course-session-header flex-grow-1">
+        <a href="{$courseUrl}" class="course-session-title">{$courseName}</a>
         {$metaHtml}
     </div>
 </div>
+HTML;
+    }
+
+    protected function renderFallbackThumbnailIcon(string $courseName): string
+    {
+        $decoded = trim(html_entity_decode(strip_tags($courseName), ENT_QUOTES, 'UTF-8'));
+        $firstChar = $decoded !== '' ? mb_substr($decoded, 0, 1, 'UTF-8') : '•';
+        $initial = mb_strtoupper($firstChar, 'UTF-8');
+        $initialEscaped = e($initial);
+
+        return <<<HTML
+<span class="course-session-thumbnail__initial">{$initialEscaped}</span>
+<svg class="course-session-thumbnail__glyph" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z" fill="currentColor" opacity="0.12" />
+    <path d="M9.25 9.5a1.75 1.75 0 1 0 3.5 0a1.75 1.75 0 0 0-3.5 0Z" fill="currentColor" />
+    <path d="M6.5 16.5c0-1.66 1.97-3 4.5-3s4.5 1.34 4.5 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none" />
+</svg>
 HTML;
     }
 
@@ -275,10 +349,10 @@ HTML;
         $course = $session->course;
 
         if (! $course || $course->price === null) {
-            return '—';
+            return '<span class="course-session-price course-session-price--muted">—</span>';
         }
 
-        return '<span class="fw-semibold" style="color:#1F2A2A;">' . format_price($course->price) . '</span>';
+        return '<span class="course-session-price" aria-label="' . e(trans('plugins/courses::courses.table.price_label', ['price' => format_price($course->price)])) . '">' . format_price($course->price) . '</span>';
     }
 
     protected function renderViews(CourseSession $session): string
@@ -287,54 +361,28 @@ HTML;
         $viewsSource = $stats['views_source'] ?? 'none';
         $views = (int) ($stats['views'] ?? 0);
 
-        if ($viewsSource === 'none') {
-            $hint = trans('plugins/courses::courses.table.views_hint_unavailable');
-
-            return '<div class="text-muted small">' . BaseHelper::clean($hint) . '</div>';
-        }
-
-        $reference = max(1, $this->performance()->maxReferenceViews());
-        $viewsLabel = trans('plugins/courses::courses.table.views_rating_label', [
-            'count' => number_format($views),
-        ]);
-
-        $hintKey = match ($viewsSource) {
-            'analytics' => 'plugins/courses::courses.table.views_hint',
-            'metadata' => 'plugins/courses::courses.table.views_hint_fallback',
-            default => 'plugins/courses::courses.table.views_hint_unavailable',
+        $displayValue = $viewsSource === 'none' ? '—' : number_format($views, 0, ',', '.');
+        $sourceLabel = match ($viewsSource) {
+            'analytics' => trans('plugins/courses::courses.table.views_source_analytics', ['days' => $stats['analytics_days'] ?? $this->performance()->analyticsDays()]),
+            'metadata' => trans('plugins/courses::courses.table.views_source_metadata'),
+            default => trans('plugins/courses::courses.table.views_hint_unavailable'),
         };
 
-        $hintParams = [];
+        $title = e(trans('plugins/courses::courses.table.views_label', ['count' => $displayValue]));
 
-        if ($viewsSource === 'analytics') {
-            $hintParams['days'] = $stats['analytics_days'] ?? $this->performance()->analyticsDays();
-        }
-
-        $hint = trans($hintKey, $hintParams);
-        $hintHtml = e($hint);
-        $title = e($viewsLabel);
-
-        $segments = 8;
-        $filledSegments = (int) round(min($views / $reference, 1) * $segments);
-        $filledSegments = max(0, min($segments, $filledSegments));
-
-        $segmentsMarkup = '';
-
-        for ($i = 0; $i < $segments; $i++) {
-            $isFilled = $i < $filledSegments;
-            $color = $isFilled ? '#2F6A62' : '#DDE6E4';
-            $segmentsMarkup .= '<span style="display:inline-block;width:12px;height:6px;border-radius:4px;background:' . $color . ';margin-right:6px;"></span>';
-        }
-
-        $viewsBadge = '<span class="px-3 py-1 rounded-pill" style="background:#F4F9F8;color:#24554F;font-weight:600;">' . number_format($views) . '</span>';
+        $icon = <<<SVG
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 5C6.5 5 2.73 8.11 1 12c1.73 3.89 5.5 7 11 7s9.27-3.11 11-7c-1.73-3.89-5.5-7-11-7Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <circle cx="12" cy="12" r="3" fill="currentColor" />
+</svg>
+SVG;
 
         return <<<HTML
-<div class="d-flex flex-column gap-2" title="{$title}">
-    <div class="d-flex align-items-center gap-3">
-        {$viewsBadge}
-        <div class="d-flex align-items-center">{$segmentsMarkup}</div>
-    </div>
-    <div class="text-muted small">{$hintHtml}</div>
+<div class="course-session-views" role="text" aria-label="{$title}">
+    <span class="course-session-badge" title="{$sourceLabel}">
+        <span class="course-session-badge__icon">{$icon}</span>
+        <span class="course-session-badge__value">{$displayValue}</span>
+    </span>
 </div>
 HTML;
     }
@@ -346,20 +394,15 @@ HTML;
         $maxSeats = $stats['max_seats'];
 
         if ($maxSeats !== null) {
-            $label = trans('plugins/courses::courses.table.booked_vs_remaining', [
-                'booked' => $booked,
-                'remaining' => $stats['remaining_seats'],
-            ]);
             $capacity = max($maxSeats, 1);
             $ratio = $capacity > 0 ? $booked / $capacity : 0;
+            $ratioLabel = $booked . ' / ' . $capacity;
         } else {
-            $label = trans('plugins/courses::courses.table.booked_unlimited', [
-                'booked' => $booked,
-            ]);
             $ratio = $booked > 0 ? 1 : 0;
+            $ratioLabel = $booked . ' / ∞';
         }
 
-        $chairs = 5;
+        $chairs = 10;
         $filledChairs = (int) round(min(max($ratio, 0), 1) * $chairs);
         $filledChairs = max(0, min($chairs, $filledChairs));
 
@@ -367,74 +410,38 @@ HTML;
 
         for ($i = 0; $i < $chairs; $i++) {
             $isFilled = $i < $filledChairs;
-            $seatFill = $isFilled ? '#2F6A62' : '#E5EEEC';
-            $seatStroke = $isFilled ? '#1E4D47' : '#C5D7D3';
+            $seatFill = $isFilled ? '#2F6A62' : '#F5FBF9';
+            $seatStroke = $isFilled ? '#2F6A62' : '#C7DAD6';
 
             $icons .= <<<SVG
-<span class="d-inline-flex align-items-center justify-content-center" style="width:26px;height:26px;background:#FFFFFF;border-radius:8px;border:1px solid #E1EBE8;box-shadow:0 2px 4px rgba(24, 59, 53, 0.08);">
-    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
-        <rect x="6" y="8" width="20" height="10" rx="3" fill="{$seatFill}" stroke="{$seatStroke}" stroke-width="1.5" />
-        <rect x="8" y="18" width="16" height="6" rx="2" fill="{$seatFill}" stroke="{$seatStroke}" stroke-width="1.5" />
-        <rect x="6" y="24" width="6" height="4" rx="1.5" fill="{$seatStroke}" opacity="0.28" />
-        <rect x="20" y="24" width="6" height="4" rx="1.5" fill="{$seatStroke}" opacity="0.28" />
+<span class="course-session-seat" aria-hidden="true">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="5" y="8" width="14" height="7" rx="2.5" fill="{$seatFill}" stroke="{$seatStroke}" stroke-width="1.4" />
+        <rect x="7" y="15" width="10" height="5" rx="2" fill="{$seatFill}" stroke="{$seatStroke}" stroke-width="1.4" />
+        <path d="M6 20h2" stroke="{$seatStroke}" stroke-width="1.4" stroke-linecap="round" />
+        <path d="M16 20h2" stroke="{$seatStroke}" stroke-width="1.4" stroke-linecap="round" />
     </svg>
 </span>
 SVG;
         }
 
-        $ratioLabel = $maxSeats !== null
-            ? '<span class="badge rounded-pill px-3 py-2" style="background:#EEF5F4;color:#1F2A2A;font-weight:600;">' . $booked . ' / ' . max(1, $maxSeats) . '</span>'
-            : '<span class="badge rounded-pill px-3 py-2" style="background:#EEF5F4;color:#1F2A2A;font-weight:600;">' . $booked . ' / &infin;</span>';
-
-        $label = BaseHelper::clean($label);
         $progress = max(0, min(100, (int) round($ratio * 100)));
+        $accessibilityLabel = e(trans('plugins/courses::courses.table.occupancy_label', [
+            'booked' => $booked,
+            'max' => $maxSeats ?? '∞',
+        ]));
 
-        $progressBar = <<<HTML
-<div style="height:6px;background:#E1EBE8;border-radius:999px;overflow:hidden;">
-    <span style="display:block;height:100%;width:{$progress}%;background:linear-gradient(90deg,#2F6A62 0%,#51A198 100%);"></span>
-</div>
-HTML;
-
-        return <<<HTML
-<div class="d-flex flex-column gap-2">
-    <div class="d-flex align-items-center justify-content-between gap-3">
-        <div class="d-inline-flex align-items-center gap-2 flex-wrap" style="max-width:180px;">{$icons}</div>
-        {$ratioLabel}
-    </div>
-    {$progressBar}
-    <div class="text-muted small">{$label}</div>
-</div>
-HTML;
-    }
-
-    protected function renderEngagement(CourseSession $session): string
-    {
-        $stats = $this->performance()->forSession($session);
-        $engagement = number_format($stats['engagement_percent'], 1);
-        $conversion = number_format($stats['conversion_percent'], 1);
-        $views = number_format($stats['views']);
-
-        $engagementLabel = trans('plugins/courses::courses.table.engagement_ratio', [
-            'attended' => $stats['engaged_participants'],
-            'booked' => $stats['booked_seats'],
-        ]);
-
-        $conversionLabel = trans('plugins/courses::courses.table.conversion_rate', [
-            'percent' => $conversion,
-        ]);
-
-        $viewsLabel = trans('plugins/courses::courses.table.engagement_views', [
-            'count' => $views,
-        ]);
+        $seatLabel = e(trans('plugins/courses::courses.table.occupancy_ratio_label', ['ratio' => $ratioLabel]));
 
         return <<<HTML
-<div class="d-flex flex-column gap-2">
-    <div class="d-inline-flex align-items-center gap-2">
-        <span class="px-3 py-2 rounded-pill" style="background:#EEF5F4;color:#24554F;font-weight:600;">{$engagement}%</span>
-        <span class="text-muted small">{$viewsLabel}</span>
+<div class="course-session-occupancy" role="group" aria-label="{$accessibilityLabel}">
+    <div class="course-session-occupancy__row">
+        <div class="course-session-occupancy__icons" aria-hidden="true">{$icons}</div>
+        <span class="course-session-occupancy__ratio" aria-label="{$seatLabel}">{$ratioLabel}</span>
     </div>
-    <div class="text-muted small">{$engagementLabel}</div>
-    <div class="text-muted small">{$conversionLabel}</div>
+    <div class="course-session-occupancy__progress" aria-hidden="true">
+        <span style="width: {$progress}%;"></span>
+    </div>
 </div>
 HTML;
     }
@@ -445,16 +452,37 @@ HTML;
         $sessionId = $session->getKey();
 
         return <<<HTML
-<button type="button" class="btn btn-sm view-participants-btn d-inline-flex align-items-center gap-2" data-session-id="{$sessionId}" style="background:#F4F9F8;color:#24554F;border:1px solid #C7DBD7;">
-    <i class="fa fa-users" aria-hidden="true"></i>
-    <span>{$buttonLabel}</span>
+<button type="button" class="course-session-button view-participants-btn" data-session-id="{$sessionId}">
+    <span class="course-session-button__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16.5 7a3.5 3.5 0 1 1-7 0a3.5 3.5 0 0 1 7 0Z" fill="currentColor"/>
+            <path d="M4 18.5c0-2.21 2.91-4 6.5-4s6.5 1.79 6.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M17.5 10.5a2.5 2.5 0 1 1 0 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M21 18.5c0-1.39-1.56-2.58-3.75-3.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        </svg>
+    </span>
+    <span class="course-session-button__label">{$buttonLabel}</span>
 </button>
 HTML;
     }
 
-    protected function renderSchedule(CourseSession $session): string
+    protected function renderDate(CourseSession $session): string
     {
         $startDate = $this->formatDate($session->start_date, 'd.m.Y');
+        $weekday = $session->start_date
+            ? '<span class="course-session-date__weekday">' . e($session->start_date->locale(app()->getLocale())->translatedFormat('l')) . '</span>'
+            : '';
+
+        return <<<HTML
+<div class="course-session-date">
+    <span class="course-session-date__value">{$startDate}</span>
+    {$weekday}
+</div>
+HTML;
+    }
+
+    protected function renderTime(CourseSession $session): string
+    {
         $timeRange = '—';
 
         if ($session->start_date && $session->end_date) {
@@ -463,35 +491,56 @@ HTML;
             $timeRange = $session->start_date->format('H:i');
         }
 
-        $timeBadge = $timeRange !== '—'
-            ? '<span class="px-4 py-2 rounded-pill" style="background:#2F6A621A;color:#1F2A2A;font-weight:600;min-width:120px;display:inline-flex;justify-content:center;">' . $timeRange . '</span>'
-            : '<span class="text-muted small">' . $timeRange . '</span>';
-
-        $dayLabel = $session->start_date
-            ? '<div class="text-muted small">' . e($session->start_date->locale(app()->getLocale())->translatedFormat('l')) . '</div>'
-            : '';
-
-        $calendarIcon = <<<HTML
-<span class="d-inline-flex align-items-center justify-content-center" style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#2F6A62 0%,#51A198 100%);color:#fff;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="5" width="18" height="16" rx="2" fill="rgba(255,255,255,0.2)" stroke="currentColor" stroke-width="1.2" />
-        <path d="M3 9H21" stroke="currentColor" stroke-width="1.2" />
-        <path d="M8 3V7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-        <path d="M16 3V7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-    </svg>
-</span>
-HTML;
+        $timeHtml = $timeRange !== '—'
+            ? '<span class="course-session-time" aria-label="' . e(trans('plugins/courses::courses.table.time_label', ['time' => $timeRange])) . '">' . $timeRange . '</span>'
+            : '<span class="course-session-time course-session-time--muted">' . $timeRange . '</span>';
 
         return <<<HTML
-<div class="d-flex align-items-center gap-3">
-    {$calendarIcon}
-    <div class="d-flex flex-column">
-        <span class="fw-semibold" style="color:#1F2A2A;">{$startDate}</span>
-        {$dayLabel}
-    </div>
-    <div class="ms-auto">{$timeBadge}</div>
+<div class="course-session-time-wrapper">
+    {$timeHtml}
 </div>
 HTML;
+    }
+
+    protected function renderCapacity(CourseSession $session): string
+    {
+        if ($session->course?->unlimited_seats) {
+            return '<span class="course-session-capacity">∞</span>';
+        }
+
+        if ($session->available_seats !== null) {
+            return '<span class="course-session-capacity">' . number_format((int) $session->available_seats, 0, ',', '.') . '</span>';
+        }
+
+        $stats = $this->performance()->forSession($session);
+        $maxSeats = $stats['max_seats'];
+
+        if ($maxSeats !== null) {
+            return '<span class="course-session-capacity">' . number_format((int) $maxSeats, 0, ',', '.') . '</span>';
+        }
+
+        return '<span class="course-session-capacity">—</span>';
+    }
+
+    protected function renderCreatedAt(CourseSession $session): string
+    {
+        $created = $session->created_at ?? $session->getAttribute('created_at_value');
+
+        if ($created instanceof CarbonInterface) {
+            return '<span class="course-session-created">' . $created->format('d.m.Y') . '</span>';
+        }
+
+        if (is_string($created) && $created !== '') {
+            try {
+                $date = \Carbon\Carbon::parse($created);
+
+                return '<span class="course-session-created">' . $date->format('d.m.Y') . '</span>';
+            } catch (\Exception) {
+                // ignore parsing issues
+            }
+        }
+
+        return '<span class="course-session-created">—</span>';
     }
 
     protected function renderScore(CourseSession $session): string
@@ -504,33 +553,20 @@ HTML;
         $ratingLabel = BaseHelper::clean($ratingText);
         $title = e($ratingText);
 
-        $scoreValue = max(0, min(100, (float) $stats['score']));
-        $sweep = $scoreValue === 0.0 ? 0.01 : $scoreValue;
-
-        $circle = <<<HTML
-<span class="d-inline-flex align-items-center justify-content-center" title="{$title}" style="width:56px;height:56px;border-radius:50%;background:conic-gradient({$accent} {$sweep}%,#E7F1EF {$sweep}%);color:{$textColor};font-weight:700;position:relative;">
-    <span style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:{$background};box-shadow:0 6px 12px rgba(18,66,59,0.18);">{$score}</span>
-</span>
-HTML;
-
         return <<<HTML
-<div class="d-flex align-items-center gap-3">
-    {$circle}
-    <div class="d-flex flex-column">
-        <span class="fw-semibold" style="color:#1F2A2A;">{$ratingLabel}</span>
-        <span class="text-muted small">{$title}</span>
-    </div>
-</div>
+<span class="course-session-score" style="--course-session-score-bg: {$background}; --course-session-score-fg: {$textColor}; --course-session-score-ring: {$accent};" title="{$title}" aria-label="{$ratingLabel}">
+    {$score}
+</span>
 HTML;
     }
 
     protected function resolveScoreStyle(float $score): array
     {
         return match (true) {
-            $score >= 85 => ['#1F4B45', '#5AB2A4', '#FFFFFF', 'plugins/courses::courses.table.score_rating.great'],
-            $score >= 65 => ['#2F6A62', '#70C1B6', '#FFFFFF', 'plugins/courses::courses.table.score_rating.good'],
-            $score >= 45 => ['#F2B138', '#F7C974', '#2B2B2B', 'plugins/courses::courses.table.score_rating.fair'],
-            default => ['#D96C5F', '#E79B92', '#FFFFFF', 'plugins/courses::courses.table.score_rating.poor'],
+            $score >= 85 => ['#2F6A62', '#91D0C5', '#FFFFFF', 'plugins/courses::courses.table.score_rating.great'],
+            $score >= 65 => ['#3E8F80', '#A8DCD2', '#FFFFFF', 'plugins/courses::courses.table.score_rating.good'],
+            $score >= 45 => ['#F7D8A4', '#F2B138', '#553C1C', 'plugins/courses::courses.table.score_rating.fair'],
+            default => ['#F1B8B0', '#DE6F64', '#4A1B15', 'plugins/courses::courses.table.score_rating.poor'],
         };
     }
 
@@ -542,5 +578,17 @@ HTML;
     protected function formatDate(?CarbonInterface $date, string $format): string
     {
         return $date ? $date->format($format) : '—';
+    }
+
+    protected function versionedStylesheet(): string
+    {
+        $relativePath = 'vendor/core/plugins/courses/css/course-session-table.css';
+        $absolutePath = public_path($relativePath);
+
+        if (file_exists($absolutePath)) {
+            return $relativePath . '?v=' . filemtime($absolutePath);
+        }
+
+        return $relativePath . '?v=' . static::STYLESHEET_FALLBACK_VERSION;
     }
 }
