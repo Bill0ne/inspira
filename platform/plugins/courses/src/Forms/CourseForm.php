@@ -28,6 +28,7 @@ use Botble\Courses\Http\Requests\CourseRequest;
 use Botble\Courses\Models\Course;
 use Botble\Courses\Models\Instructor;
 use Botble\Courses\Models\CourseCategory;
+use Botble\Hotel\Models\Tax;
 
 class CourseForm extends FormAbstract
 {
@@ -41,6 +42,10 @@ class CourseForm extends FormAbstract
             add_filter('base_action_form_actions_extra', function () use ($course) {
                 return view('plugins/courses::extra-actions', compact('course'))->render();
             });
+        }
+        $taxes = [];
+        if (is_plugin_active('hotel')) {
+            $taxes = Tax::query()->pluck('title', 'id')->all();
         }
 
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
@@ -254,6 +259,17 @@ if ($course && $course->getKey()) {
                     ->toArray()
             )
             ->add('status', SelectField::class, StatusFieldOption::make())
+            ->add('tax_id', 'customSelect', [
+                'label' => trans('plugins/hotel::room.form.tax'),
+                'required' => true,
+                'wrapper' => [
+                    'class' => $this->formHelper->getConfig('defaults.wrapper_class') . ' col-md-4',
+                ],
+                'attr' => [
+                    'class' => 'form-control select-full',
+                ],
+                'choices' => $taxes,
+            ])
             ->setBreakFieldPoint('thumbnail');
     }
 }
