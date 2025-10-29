@@ -35,6 +35,7 @@ use Botble\Courses\Http\Requests\CourseCheckoutRequest;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class PublicController extends Controller
 {
@@ -516,4 +517,29 @@ class PublicController extends Controller
         return [$amount, $discountAmount];
     }
 
+    protected function calculateDynamicPrice(
+        float $basePrice,
+        string $targetType,
+        int $targetId,
+        ?Customer $customer = null,
+        int $quantity = 1
+    ): float {
+        if (! function_exists('is_plugin_active') || ! is_plugin_active('price-configurator')) {
+            return $basePrice;
+        }
+
+        $serviceClass = 'Botble\\PriceConfigurator\\Services\\PriceConfiguratorService';
+
+        if (! class_exists($serviceClass)) {
+            return $basePrice;
+        }
+
+        try {
+            $service = app($serviceClass);
+
+            return $service->calculatePrice($basePrice, $targetType, $targetId, $customer, $quantity);
+        } catch (Throwable) {
+            return $basePrice;
+        }
+    }
 }
