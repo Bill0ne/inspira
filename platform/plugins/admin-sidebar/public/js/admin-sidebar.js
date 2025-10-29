@@ -2,7 +2,7 @@
     'use strict';
 
     document.addEventListener('DOMContentLoaded', function () {
-        var groupsToOpen = document.querySelectorAll('.menu-section--management, .menu-section--website');
+        var groupsToOpen = document.querySelectorAll('.menu-section--inspira, .menu-section--management, .menu-section--website');
 
         groupsToOpen.forEach(function (group) {
             var toggle = group.querySelector('a.nav-link.dropdown-toggle');

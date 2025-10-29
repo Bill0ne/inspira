@@ -74,7 +74,7 @@ class AdminSidebarServiceProvider extends ServiceProvider
             'cms-custom-inspira-management' => [
                 'label' => 'plugins/admin-sidebar::menu.groups.inspira_management',
                 'priority' => -9000,
-                'class' => 'menu-section menu-section--management',
+                'class' => 'menu-section menu-section--inspira menu-section--management',
                 'items' => [
                     'cms-plugins-courses' => 0,
                     'cms-plugins-hotel' => 10,
@@ -109,6 +109,7 @@ class AdminSidebarServiceProvider extends ServiceProvider
                     'cms-core-plugins' => 10,
                     'cms-core-tools' => 20,
                     'cms-core-system-maintenance-mode' => 30,
+                    'cms-core-platform-administration' => 35,
                     'cms-core-settings' => 40,
                     'cms-plugins-personal-dashboard' => 50,
                 ],

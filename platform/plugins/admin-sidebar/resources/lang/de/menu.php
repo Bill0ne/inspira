@@ -2,7 +2,7 @@
 
 return [
     'groups' => [
-        'inspira_management' => 'Inspira verwaltung',
+        'inspira_management' => 'Inspira Zentrum',
         'website' => 'Website',
         'admin_area' => 'Admin bereich',
     ],
