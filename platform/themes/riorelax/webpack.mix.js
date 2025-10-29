@@ -14,6 +14,7 @@ mix
     .js(`${source}/assets/js/checkout.js`, `${dist}/js`)
     .js(`${source}/assets/js/course-checkout.js`, `${dist}/js`)
     .js(`${source}/assets/js/datetime.js`, `${dist}/js`)
+    .js(`${source}/assets/js/courses-toolbar.js`, `${dist}/js`)
 
 if (mix.inProduction()) {
     mix
