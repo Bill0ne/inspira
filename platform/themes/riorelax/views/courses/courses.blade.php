@@ -1,22 +1,15 @@
 @php(Theme::set('pageTitle', 'Kurse'))
+{{-- Inspira: Kursübersichtsseite – ohne Sidebar, volle Breite (12 Columns) --}}
+{{-- Dateipfad: /platform/themes/inspira/views/courses.blade.php --}}
 
-<section class="container">
+<section class="container courses-page my-5">
+    {{-- Optional: Filterbereich (kommt später) --}}
+    {{-- @include(Theme::getThemeNamespace('partials.filters')) --}}
+
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-12">
+            {{-- Kursübersicht --}}
             {!! do_shortcode('[all-courses]') !!}
-        </div>
-        <div class="col-lg-4">
-            <div class="sidebar-widget-rooms">
-                <div class="sidebar-widget categories check-availability-custom">
-                    <div class="widget-content">
-                        <div class="booking">
-                            <div class="contact-bg">
-                                {!! Theme::partial('courses.forms.form', ['style' => 1, 'availableForBooking' => false]) !!}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </section>
