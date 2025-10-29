@@ -1,8 +1,4 @@
 <section class="courses-area pt-20 pb-40">
-    <h3 class="mb-20">
-        {{ __(':count Kurse verfügbar', ['count' => $courses->total()]) }}
-    </h3>
-
     @if ($courses->isNotEmpty())
         <div class="row g-4">
             @foreach ($courses as $course)
