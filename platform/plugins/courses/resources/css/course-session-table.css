@@ -1,0 +1,293 @@
+#botble_courses_tables_course_session_table tbody tr {
+    transition: box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+    background-color: #ffffff;
+    border-bottom: 1px solid #E3EFEB;
+}
+
+#botble_courses_tables_course_session_table tbody tr:hover {
+    box-shadow: 0 12px 28px rgba(32, 95, 86, 0.12);
+    transform: translateY(-2px);
+    background-color: #F5FBF9;
+}
+
+#botble_courses_tables_course_session_table tbody tr.selected {
+    box-shadow: inset 4px 0 0 #2F6A62;
+    background-color: #F0F8F6;
+}
+
+#botble_courses_tables_course_session_table tbody tr:focus-within {
+    outline: 2px solid #2F6A62;
+    outline-offset: -2px;
+}
+
+#botble_courses_tables_course_session_table tbody td {
+    vertical-align: middle;
+    padding-top: 1.2rem;
+    padding-bottom: 1.2rem;
+}
+
+.course-session-id {
+    background: #E6F2EE;
+    color: #24554F;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+}
+
+.course-session-card {
+    min-width: 260px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.course-session-thumbnail {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #E3F2EE 0%, #F7FBFA 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 0 1px rgba(36, 85, 79, 0.08);
+}
+
+.course-session-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.course-session-header {
+    min-width: 0;
+}
+
+.course-session-title {
+    font-weight: 600;
+    color: #123B37;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1rem;
+}
+
+.course-session-title:hover,
+.course-session-title:focus {
+    color: #1F5C55;
+    text-decoration: underline;
+}
+
+.course-session-meta {
+    font-size: 0.78rem;
+    margin-top: 0.25rem;
+    white-space: nowrap;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #6F827D;
+}
+
+.course-session-price {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    color: #163F3A;
+    font-size: 0.98rem;
+}
+
+.course-session-price--muted {
+    color: #A0B1AD;
+}
+
+.course-session-views {
+    display: flex;
+    align-items: center;
+}
+
+.course-session-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    background: #E7F3F0;
+    color: #1F5C55;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.course-session-badge__icon svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+.course-session-occupancy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    min-width: 220px;
+}
+
+.course-session-occupancy__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.course-session-occupancy__icons {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+}
+
+.course-session-seat {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgba(36, 85, 79, 0.12);
+    background: #FFFFFF;
+}
+
+.course-session-seat svg {
+    width: 18px;
+    height: 18px;
+}
+
+.course-session-occupancy__ratio {
+    font-weight: 600;
+    color: #1F2D2A;
+    font-size: 0.95rem;
+    min-width: 50px;
+    text-align: right;
+}
+
+.course-session-occupancy__progress {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: #E2ECE8;
+    overflow: hidden;
+}
+
+.course-session-occupancy__progress > span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #2F6A62 0%, #68B7AA 100%);
+}
+
+.course-session-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.48rem 1.4rem;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, #2E756A 0%, #49A897 100%);
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.01em;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 6px 14px rgba(43, 119, 108, 0.25);
+}
+
+.course-session-button:focus {
+    outline: 3px solid rgba(47, 106, 98, 0.35);
+    outline-offset: 2px;
+}
+
+.course-session-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 20px rgba(43, 119, 108, 0.3);
+}
+
+.course-session-button__icon {
+    display: inline-flex;
+}
+
+.course-session-time-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.course-session-time {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 1.35rem;
+    border-radius: 999px;
+    background: rgba(47, 106, 98, 0.12);
+    color: #163F3A;
+    font-weight: 600;
+    min-width: 130px;
+    letter-spacing: 0.01em;
+}
+
+.course-session-time--muted {
+    background: transparent;
+    color: #A3B3AF;
+}
+
+.course-session-date {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #1F2D2A;
+    font-weight: 600;
+}
+
+.course-session-date__weekday {
+    font-size: 0.75rem;
+    color: #70827C;
+    font-weight: 500;
+}
+
+.course-session-capacity,
+.course-session-created {
+    font-weight: 600;
+    color: #1F2D2A;
+    font-size: 0.95rem;
+}
+
+.course-session-created {
+    color: #6C7B77;
+    font-weight: 500;
+}
+
+.course-session-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--course-session-score-bg, #E8F5F2);
+    color: var(--course-session-score-fg, #0E2E29);
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: inset 0 0 0 2px var(--course-session-score-ring, rgba(47, 106, 98, 0.35));
+}
+
+@media (max-width: 1200px) {
+    .course-session-meta {
+        max-width: 180px;
+    }
+
+    .course-session-card {
+        align-items: flex-start;
+    }
+
+    .course-session-time {
+        min-width: auto;
+        padding-inline: 1rem;
+    }
+}
