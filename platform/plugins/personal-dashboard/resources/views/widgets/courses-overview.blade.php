@@ -87,19 +87,16 @@ $bookings = DB::table('course_bookings')
         'ht_customers.last_name',
         'ht_customers.avatar'
     )
-    // ✅ Nur Buchungen mit abgeschlossener Zahlung
-    ->whereIn('payments.status', ['paid', 'completed', 'success'])
+    ->whereNotNull('payments.order_id')
+    ->where('payments.status', '=', 'completed')
     ->orderByDesc('payments.created_at')
     ->limit(5)
     ->get()
     ->map(function ($b) {
-        // Einheitlicher Status für dein Blade-Tag
         $b->status = strtolower($b->payment_status ?? $b->booking_status ?? 'pending');
-        // Betrag bevorzugt aus Payment
         $b->amount = $b->payment_amount ?? $b->booking_amount ?? 0;
         return $b;
     });
-
 
 /* === Fallback-SVGs === */
 $chairSvg = file_exists(public_path('images/icons/chair.svg'))
