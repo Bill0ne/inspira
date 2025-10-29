@@ -24,11 +24,21 @@ class CourseSessionTable extends TableAbstract
     public function setup(): void
     {
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
+        Assets::addStylesDirectly([$this->versionedStylesheet()]);
 
         $this
             ->model(CourseSession::class)
             ->addColumns([
-                IdColumn::make(),
+                IdColumn::make()
+                    ->width(60)
+                    ->alignStart()
+                    ->getValueUsing(function (IdColumn $column) {
+                        $id = (int) $column->getOriginalValue();
+
+                        return <<<HTML
+<span class="course-session-id badge rounded-pill">#{$id}</span>
+HTML;
+                    }),
 
                 FormattedColumn::make('course_id')
                     ->title(trans('plugins/courses::courses.course.name'))
