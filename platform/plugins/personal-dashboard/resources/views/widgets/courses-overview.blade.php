@@ -64,7 +64,7 @@ foreach ($clients as $m) {
 }
 $topMembers = collect($clients)->sortByDesc('score')->take(5);
 
-/* === LETZTE BUCHUNGEN (korrekt & sauber) === */
+/* === LETZTE BUCHUNGEN (nur vollständig bezahlte) === */
 $bookings = DB::table('course_bookings')
     ->join('courses', 'course_bookings.course_id', '=', 'courses.id')
     ->join('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
@@ -87,22 +87,19 @@ $bookings = DB::table('course_bookings')
         'ht_customers.last_name',
         'ht_customers.avatar'
     )
-    // Nur reale, sinnvolle Buchungen (mit oder ohne Zahlung)
-    ->where(function($q) {
-        $q->whereNotNull('course_bookings.created_at')
-          ->orWhereNotNull('payments.id');
-    })
-    // Sortierung: Zahlung zuerst, sonst Buchung
-    ->orderByDesc(DB::raw('COALESCE(payments.created_at, course_bookings.created_at)'))
+    // ✅ Nur Buchungen mit abgeschlossener Zahlung
+    ->whereIn('payments.status', ['paid', 'completed', 'success'])
+    ->orderByDesc('payments.created_at')
     ->limit(5)
     ->get()
     ->map(function ($b) {
-        // === Status vereinheitlichen für dein $isPaid im Blade ===
+        // Einheitlicher Status für dein Blade-Tag
         $b->status = strtolower($b->payment_status ?? $b->booking_status ?? 'pending');
-        // Betrag bevorzugt aus Zahlung, sonst Buchung
+        // Betrag bevorzugt aus Payment
         $b->amount = $b->payment_amount ?? $b->booking_amount ?? 0;
         return $b;
     });
+
 
 /* === Fallback-SVGs === */
 $chairSvg = file_exists(public_path('images/icons/chair.svg'))
