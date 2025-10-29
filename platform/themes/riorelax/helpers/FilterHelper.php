@@ -101,3 +101,7 @@ class FilterHelper
         }
     }
 }
+
+if (! class_exists('Theme\\Rlorenak\\Helpers\\FilterHelper')) {
+    class_alias(FilterHelper::class, 'Theme\\Rlorenak\\Helpers\\FilterHelper');
+}
