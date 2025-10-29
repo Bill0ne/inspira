@@ -34,6 +34,7 @@ class CourseRequest extends Request
             'recurring_interval' => ['nullable', 'required_if:is_recurring,1', 'integer', 'min:1'],
             'recurring_until'    => ['nullable'],
             'status' => Rule::in(BaseStatusEnum::values()),
+            'tax_id' => ['required', 'string', 'exists:ht_taxes,id'],
         ];
     }
 }
