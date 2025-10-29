@@ -11,7 +11,7 @@
 
     $trainers = $trainers ?? (
         $isCourses
-            ? \Botble\Courses\Models\Trainer::query()->orderBy('name')->get()
+            ? \Botble\Courses\Models\Instructor::query()->orderBy('name')->get()
             : collect()
     );
 
