@@ -46,11 +46,7 @@ return [
         'views_hint' => 'Letzte :days Tage',
         'views_hint_fallback' => 'Gespeicherte Aufrufzahlen',
         'views_hint_unavailable' => 'Keine Ansichten verfügbar',
-        'views_source_analytics' => 'Google Analytics · letzte :days Tage',
-        'views_source_metadata' => 'Lokale Metadaten',
-        'views_label' => 'Ansichten: :count',
         'occupancy' => 'Belegung',
-        'occupancy_label' => ':booked von :max Plätzen belegt',
         'engagement' => 'Engagement',
         'participants' => 'Teilnehmer',
         'schedule' => 'Zeitplan',
@@ -68,10 +64,7 @@ return [
         'engagement_ratio' => ':attended von :booked teilgenommen',
         'conversion_rate' => 'Conversion :percent%',
         'engagement_views' => 'Google-Analytics-Aufrufe: :count',
-        'time_label' => 'Zeit: :time',
-        'view_participants' => 'Teilnehmerliste',
-        'thumbnail_alt' => 'Kursbild für :course',
-        'price_label' => 'Preis :price',
+        'view_participants' => 'Teilnehmer anzeigen',
     ],
 
     'settings' => [
