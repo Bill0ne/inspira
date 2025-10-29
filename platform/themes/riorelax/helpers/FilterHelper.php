@@ -103,11 +103,3 @@ class FilterHelper
 }
 
 }
-
-namespace Theme\Rlorenak\Helpers {
-
-class FilterHelper extends \Theme\Riorelax\Helpers\FilterHelper
-{
-}
-
-}
