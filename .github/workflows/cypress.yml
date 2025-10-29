@@ -1,26 +1,35 @@
-name: 🚀 Cypress Tests
+name: 🚀 Cypress Tests (Inspira)
 
 on:
   push:
     branches:
       - stage-desk
       - main-desk
+  workflow_dispatch:
 
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🧱 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: npm ci
 
-      - name: Run Cypress tests
-        run: npx cypress run --record --key ${{ secrets.CYPRESS_RECORD_KEY }}
+      - name: 🧪 Run Cypress E2E tests
+        uses: cypress-io/github-action@v6
+        with:
+          record: true
+          parallel: false
+          browser: chrome
+          config: baseUrl=https://stage.inspira-zentrum.de
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
