@@ -46,7 +46,11 @@ return [
         'views_hint' => 'Last :days days',
         'views_hint_fallback' => 'Stored view counter',
         'views_hint_unavailable' => 'No view data available',
+        'views_source_analytics' => 'Google Analytics · last :days days',
+        'views_source_metadata' => 'Stored metadata',
+        'views_label' => 'Views: :count',
         'occupancy' => 'Occupancy',
+        'occupancy_label' => ':booked of :max seats booked',
         'engagement' => 'Engagement',
         'participants' => 'Participants',
         'schedule' => 'Schedule',
@@ -64,7 +68,10 @@ return [
         'engagement_ratio' => ':attended of :booked attended',
         'conversion_rate' => 'Conversion :percent%',
         'engagement_views' => 'Google Analytics views: :count',
-        'view_participants' => 'View participants',
+        'time_label' => 'Time: :time',
+        'view_participants' => 'Participant list',
+        'thumbnail_alt' => 'Course thumbnail for :course',
+        'price_label' => 'Price :price',
     ],
 
     'settings' => [
