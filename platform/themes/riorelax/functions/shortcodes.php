@@ -44,6 +44,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Request;
 use Botble\Courses\Models\Course;
+use Theme\Riorelax\Helpers\FilterHelper;
+use Illuminate\Http\Request;
 
 app()->booted(function (): void {
     ThemeSupport::registerGoogleMapsShortcode();
@@ -363,8 +365,35 @@ app()->booted(function (): void {
                 );
         });
 
-        Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): ?string {
-            $request = request();
+Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): ?string {
+    $request = request();
+
+    // ===============================
+    // 🌿 ROOMS: Filter & Sortierung
+    // ===============================
+
+    $query = \Botble\Hotel\Models\Room::query()
+        ->wherePublished()
+        ->with(['amenities', 'slugable']);
+
+    // Wendet zentrale Logik aus Helper an
+    $query = \Theme\Riorelax\Helpers\FilterHelper::apply($request, $query, 'rooms');
+
+    // Pagination mit allen Parametern
+    $rooms = $query->paginate(9)->withQueryString();
+
+    // Zusätzliche Felder (werden in Partial gebraucht)
+    $startDate = $request->get('start');
+    $endDate   = $request->get('end');
+    $adults    = $request->get('adults', 1);
+    $nights    = 1;
+
+    // Übergabe an Theme Partial
+    return Theme::partial('shortcodes.all-rooms.index', compact(
+        'rooms', 'startDate', 'endDate', 'adults', 'nights'
+    ));
+});
+
 
             // Fetch single start/end date directly from query
             $startDateParam = $request->query('start_date');
@@ -451,20 +480,27 @@ app()->booted(function (): void {
             );
         });
 
-        Shortcode::register(
-            'all-courses',
-            __('All Courses'),
-            __('Display all available courses'),
-            function (): ?string {
-                $request = request();
+Shortcode::register('all-courses', __('All Courses'), __('Display all available courses'), function (): ?string {
+    $request = request();
 
-                $params = \Botble\Courses\DataTransferObjects\CourseSearchParams::fromRequest($request->all());
+    // ===============================
+    // 📘 COURSES: Filter & Sortierung
+    // ===============================
 
-                $courses = app(\Botble\Courses\Services\GetCourseService::class)->getCourses($params);
+    $query = \Botble\Courses\Models\Course::query()
+        ->wherePublished()
+        ->with(['slugable', 'trainer']);
 
-                return Theme::partial('shortcodes.all-courses.index', compact('courses'));
-            }
-        );
+    // Wendet zentrale Logik aus Helper an
+    $query = \Theme\Riorelax\Helpers\FilterHelper::apply($request, $query, 'courses');
+
+    // Pagination mit allen Parametern
+    $courses = $query->paginate(12)->withQueryString();
+
+    // Übergabe an Theme Partial
+    return Theme::partial('shortcodes.all-courses.index', compact('courses'));
+});
+
 
         Shortcode::register(
             'service-list',
