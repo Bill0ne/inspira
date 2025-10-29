@@ -1,6 +1,6 @@
 <?php
 
-namespace Theme\Riorelax\Helpers;
+namespace Theme\Riorelax\Helpers {
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -102,6 +102,12 @@ class FilterHelper
     }
 }
 
-if (! class_exists('Theme\\Rlorenak\\Helpers\\FilterHelper')) {
-    class_alias(FilterHelper::class, 'Theme\\Rlorenak\\Helpers\\FilterHelper');
+}
+
+namespace Theme\Rlorenak\Helpers {
+
+class FilterHelper extends \Theme\Riorelax\Helpers\FilterHelper
+{
+}
+
 }
