@@ -101,6 +101,10 @@ class CourseController extends BaseController
         if ($oldRecurringUntil && $newRecurringUntil && $newRecurringUntil < $oldRecurringUntil) {
             $sessionsWithBookings = $course->sessions()
                 ->where('is_manual', false)
+                ->where(function ($query) use ($course) {
+                    $query->where('start_date', '!=', $course->start_date)
+                        ->orWhere('end_date', '!=', $course->end_date);
+                })
                 ->where('end_date', '>', $newRecurringUntil)
                 ->whereHas('bookings')
                 ->count();
@@ -115,6 +119,10 @@ class CourseController extends BaseController
 
             $course->sessions()
                 ->where('is_manual', false)
+                ->where(function ($query) use ($course) {
+                    $query->where('start_date', '!=', $course->start_date)
+                        ->orWhere('end_date', '!=', $course->end_date);
+                })
                 ->where('end_date', '>', $newRecurringUntil)
                 ->doesntHave('bookings')
                 ->delete();
