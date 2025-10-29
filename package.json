@@ -16,7 +16,8 @@
         "hot": "mix watch --hot",
         "prod": "npm run production",
         "production": "mix --production",
-        "format": "npx prettier platform/**/resources/js/**/*.{js,vue} platform/**/resources/sass/*.scss platform/**/resources/views/**/*.blade.php platform/themes/*/{layouts,partials,views,widgets}/**/*.blade.php platform/themes/*/assets/**/*.{js,scss} --write"
+        "format": "npx prettier platform/**/resources/js/**/*.{js,vue} platform/**/resources/sass/*.scss platform/**/resources/views/**/*.blade.php platform/themes/*/{layouts,partials,views,widgets}/**/*.blade.php platform/themes/*/assets/**/*.{js,scss} --write",
+        "test:frontend": "vitest run"
     },
     "devDependencies": {
         "@fullhuman/postcss-purgecss": "^6.0.0",
@@ -31,6 +32,7 @@
         "resolve-url-loader": "^5.0.0",
         "sass": "^1.89.1",
         "sass-loader": "^16.0.5",
+        "vitest": "^2.0.5",
         "vue-loader": "^17.3.0"
     },
     "dependencies": {
