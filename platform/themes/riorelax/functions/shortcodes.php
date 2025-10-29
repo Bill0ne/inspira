@@ -371,114 +371,28 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
     // ===============================
     // 🌿 ROOMS: Filter & Sortierung
     // ===============================
-
     $query = \Botble\Hotel\Models\Room::query()
         ->wherePublished()
         ->with(['amenities', 'slugable']);
 
-    // Wendet zentrale Logik aus Helper an
+    // zentrale Filter-Logik
     $query = \Theme\Riorelax\Helpers\FilterHelper::apply($request, $query, 'rooms');
 
-    // Pagination mit allen Parametern
+    // Pagination
     $rooms = $query->paginate(9)->withQueryString();
 
-    // Zusätzliche Felder (werden in Partial gebraucht)
+    // Variablen für View
     $startDate = $request->get('start');
     $endDate   = $request->get('end');
     $adults    = $request->get('adults', 1);
     $nights    = 1;
 
-    // Übergabe an Theme Partial
+    // Rückgabe
     return Theme::partial('shortcodes.all-rooms.index', compact(
         'rooms', 'startDate', 'endDate', 'adults', 'nights'
     ));
 });
 
-
-            // Fetch single start/end date directly from query
-            $startDateParam = $request->query('start_date');
-            $endDateParam = $request->query('end_date');
-
-            try {
-                $startDate = $startDateParam
-                    ? Carbon\Carbon::createFromFormat('d-m-Y h:i A', $startDateParam)
-                    : Carbon\Carbon::now();
-                $endDate = $endDateParam
-                    ? Carbon\Carbon::createFromFormat('d-m-Y h:i A', $endDateParam)
-                    : Carbon\Carbon::now()->addHour();
-            } catch (\Exception $e) {
-                // fallback if format mismatch
-                $startDate = Carbon\Carbon::now();
-                $endDate = Carbon\Carbon::now()->addHour();
-            }
-
-            $adults = $request->integer('adults', HotelHelper::getMinimumNumberOfGuests());
-            $children = $request->integer('children', 0);
-            $roomsCount = $request->integer('rooms', 1);
-
-            $filters = [
-                'keyword' => $request->query('q'),
-            ];
-
-            $params = [
-                'paginate' => [
-                    'per_page' => 100,
-                    'current_paged' => $request->integer('page', 1),
-                ],
-                'with' => [
-                    'amenities',
-                    'amenities.metadata',
-                    'slugable',
-                    'activeBookingRooms',
-                    'activeRoomDates',
-                ],
-            ];
-
-            // Fetch all rooms
-            $queriedRooms = app(RoomInterface::class)->getRooms($filters, $params);
-
-            $availableRooms = [];
-
-            $hasFilterDates = $request->has('start_date') && $request->has('end_date');
-
-            foreach ($queriedRooms as $room) {
-                // If no filter applied, show all rooms
-                if (!$hasFilterDates) {
-                    $room->total_price = 0;
-                    $availableRooms[] = $room;
-                    continue;
-                }
-
-                $condition = [
-                    'start_date' => $startDate->format('Y-m-d H:i'),
-                    'end_date'   => $endDate->format('Y-m-d H:i'),
-                    'adults'     => $adults,
-                    'children'   => $children,
-                    'rooms'      => $roomsCount,
-                ];
-
-                if ($room->isAvailableAt($condition)) {
-                    $room->total_price = $room->getRoomTotalPrice($startDate, $endDate, $roomsCount);
-                    $availableRooms[] = $room;
-                }
-            }
-
-            // Paginate results
-            $rooms = new LengthAwarePaginator(
-                $availableRooms,
-                count($availableRooms),
-                100,
-                Paginator::resolveCurrentPage(),
-                ['path' => Paginator::resolveCurrentPath()]
-            );
-
-            $nights = $startDate->diffInDays($endDate);
-
-            return Theme::partial(
-                'shortcodes.all-rooms.index',
-                compact('rooms', 'startDate', 'endDate', 'adults', 'children', 'roomsCount', 'nights')
-            );
-        });
 
 Shortcode::register('all-courses', __('All Courses'), __('Display all available courses'), function (): ?string {
     $request = request();
