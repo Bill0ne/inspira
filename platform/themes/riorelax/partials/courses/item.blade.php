@@ -89,7 +89,12 @@ if (!is_null($percent) && $percent >= 30) {
 }
 
 /* === Button Ziel === */
-$cartUrl = $upcomingSessionsCount > 1 ? $course->url : route('public.checkout', ['course' => $course->id]);
+$cartUrl = $upcomingSessionsCount > 1
+    ? $course->url
+    : (Route::has('public.course.checkout')
+        ? route('public.course.checkout', $course->id)
+        : $course->url);
+
 @endphp
 
 <style>
