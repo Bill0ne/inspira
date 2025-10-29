@@ -45,7 +45,6 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Request;
 use Botble\Courses\Models\Course;
 use Theme\Riorelax\Helpers\FilterHelper;
-use Illuminate\Support\Facades\Request;
 
 
 app()->booted(function (): void {
