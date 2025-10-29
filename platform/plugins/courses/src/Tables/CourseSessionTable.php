@@ -79,14 +79,6 @@ HTML;
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderOccupancy($column->getItem())),
 
-                FormattedColumn::make('engagement')
-                    ->title(trans('plugins/courses::courses.table.engagement'))
-                    ->orderable(true)
-                    ->name('engagement_value')
-                    ->searchable(false)
-                    ->escape(false)
-                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderEngagement($column->getItem())),
-
                 FormattedColumn::make('participants')
                     ->title(trans('plugins/courses::courses.table.participants'))
                     ->orderable(false)
@@ -95,14 +87,41 @@ HTML;
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderParticipants($column->getItem())),
 
-                FormattedColumn::make('schedule')
-                    ->title(trans('plugins/courses::courses.table.schedule'))
+                FormattedColumn::make('date')
+                    ->title(trans('plugins/courses::courses.table.date'))
                     ->orderable(true)
                     ->name('course_sessions.start_date')
                     ->searchable(false)
                     ->alignStart()
                     ->escape(false)
-                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderSchedule($column->getItem())),
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderDate($column->getItem())),
+
+                FormattedColumn::make('time')
+                    ->title(trans('plugins/courses::courses.table.time'))
+                    ->orderable(true)
+                    ->name('course_sessions.start_date')
+                    ->searchable(false)
+                    ->alignStart()
+                    ->escape(false)
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderTime($column->getItem())),
+
+                FormattedColumn::make('capacity')
+                    ->title(trans('plugins/courses::courses.table.capacity'))
+                    ->orderable(true)
+                    ->name('course_sessions.available_seats')
+                    ->searchable(false)
+                    ->alignCenter()
+                    ->escape(false)
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderCapacity($column->getItem())),
+
+                FormattedColumn::make('created_at')
+                    ->title(trans('plugins/courses::courses.table.created_at'))
+                    ->orderable(true)
+                    ->name('course_sessions.created_at')
+                    ->searchable(false)
+                    ->alignStart()
+                    ->escape(false)
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderCreatedAt($column->getItem())),
 
                 FormattedColumn::make('score')
                     ->title(trans('plugins/courses::courses.table.score'))
@@ -196,12 +215,12 @@ HTML;
                     ->selectRaw('courses.price as price')
                     ->selectRaw("$viewsExpr as views")
                     ->selectRaw("$occupancyExpr as occupancy")
-                    ->selectRaw("$engagementExpr as engagement")
                     ->selectRaw("$activeExpr as participants")
-                    ->selectRaw('course_sessions.start_date as schedule')
+                    ->selectRaw('course_sessions.start_date as start_date_value')
+                    ->selectRaw('course_sessions.end_date as end_date_value')
+                    ->selectRaw('course_sessions.created_at as created_at_value')
                     ->selectRaw("$scoreExpr as score")
                     ->selectRaw("$occupancyExpr as occupancy_value")
-                    ->selectRaw("$engagementExpr as engagement_value")
                     ->selectRaw("$scoreExpr as score_value")
                     ->selectRaw("$activeExpr as active_bookings_count")
                     ->selectRaw("$attendedExpr as attended_bookings_count");
@@ -305,7 +324,7 @@ HTML;
         $viewsSource = $stats['views_source'] ?? 'none';
         $views = (int) ($stats['views'] ?? 0);
 
-        $displayValue = $viewsSource === 'none' ? '—' : number_format($views);
+        $displayValue = $viewsSource === 'none' ? '—' : number_format($views, 0, ',', '.');
         $sourceLabel = match ($viewsSource) {
             'analytics' => trans('plugins/courses::courses.table.views_source_analytics', ['days' => $stats['analytics_days'] ?? $this->performance()->analyticsDays()]),
             'metadata' => trans('plugins/courses::courses.table.views_source_metadata'),
@@ -346,7 +365,7 @@ HTML;
             $ratioLabel = $booked . ' / ∞';
         }
 
-        $chairs = 6;
+        $chairs = 10;
         $filledChairs = (int) round(min(max($ratio, 0), 1) * $chairs);
         $filledChairs = max(0, min($chairs, $filledChairs));
 
@@ -354,8 +373,8 @@ HTML;
 
         for ($i = 0; $i < $chairs; $i++) {
             $isFilled = $i < $filledChairs;
-            $seatFill = $isFilled ? '#2F6A62' : 'none';
-            $seatStroke = $isFilled ? '#2F6A62' : '#BFD0CC';
+            $seatFill = $isFilled ? '#2F6A62' : '#F5FBF9';
+            $seatStroke = $isFilled ? '#2F6A62' : '#C7DAD6';
 
             $icons .= <<<SVG
 <span class="course-session-seat" aria-hidden="true">
@@ -375,44 +394,17 @@ SVG;
             'max' => $maxSeats ?? '∞',
         ]));
 
+        $seatLabel = e(trans('plugins/courses::courses.table.occupancy_ratio_label', ['ratio' => $ratioLabel]));
+
         return <<<HTML
 <div class="course-session-occupancy" role="group" aria-label="{$accessibilityLabel}">
     <div class="course-session-occupancy__row">
-        <div class="course-session-occupancy__icons">{$icons}</div>
-        <span class="course-session-occupancy__ratio">{$ratioLabel}</span>
+        <div class="course-session-occupancy__icons" aria-hidden="true">{$icons}</div>
+        <span class="course-session-occupancy__ratio" aria-label="{$seatLabel}">{$ratioLabel}</span>
     </div>
     <div class="course-session-occupancy__progress" aria-hidden="true">
         <span style="width: {$progress}%;"></span>
     </div>
-</div>
-HTML;
-    }
-
-    protected function renderEngagement(CourseSession $session): string
-    {
-        $stats = $this->performance()->forSession($session);
-        $engagement = number_format($stats['engagement_percent'], 1);
-        $conversion = number_format($stats['conversion_percent'], 1);
-        $views = number_format($stats['views']);
-
-        $engagementLabel = trans('plugins/courses::courses.table.engagement_ratio', [
-            'attended' => $stats['engaged_participants'],
-            'booked' => $stats['booked_seats'],
-        ]);
-
-        $conversionLabel = trans('plugins/courses::courses.table.conversion_rate', [
-            'percent' => $conversion,
-        ]);
-
-        $viewsLabel = trans('plugins/courses::courses.table.engagement_views', [
-            'count' => $views,
-        ]);
-
-        return <<<HTML
-<div class="course-session-engagement">
-    <span class="course-session-badge course-session-badge--accent" aria-label="{$engagementLabel}">{$engagement}%</span>
-    <div class="course-session-engagement__meta text-muted">{$viewsLabel}</div>
-    <div class="course-session-engagement__meta text-muted">{$conversionLabel}</div>
 </div>
 HTML;
     }
@@ -437,9 +429,23 @@ HTML;
 HTML;
     }
 
-    protected function renderSchedule(CourseSession $session): string
+    protected function renderDate(CourseSession $session): string
     {
         $startDate = $this->formatDate($session->start_date, 'd.m.Y');
+        $weekday = $session->start_date
+            ? '<span class="course-session-date__weekday">' . e($session->start_date->locale(app()->getLocale())->translatedFormat('l')) . '</span>'
+            : '';
+
+        return <<<HTML
+<div class="course-session-date">
+    <span class="course-session-date__value">{$startDate}</span>
+    {$weekday}
+</div>
+HTML;
+    }
+
+    protected function renderTime(CourseSession $session): string
+    {
         $timeRange = '—';
 
         if ($session->start_date && $session->end_date) {
@@ -448,23 +454,56 @@ HTML;
             $timeRange = $session->start_date->format('H:i');
         }
 
-        $dayLabel = $session->start_date
-            ? '<div class="course-session-schedule__weekday">' . e($session->start_date->locale(app()->getLocale())->translatedFormat('l')) . '</div>'
-            : '';
-
         $timeHtml = $timeRange !== '—'
             ? '<span class="course-session-time" aria-label="' . e(trans('plugins/courses::courses.table.time_label', ['time' => $timeRange])) . '">' . $timeRange . '</span>'
             : '<span class="course-session-time course-session-time--muted">' . $timeRange . '</span>';
 
         return <<<HTML
-<div class="course-session-schedule">
-    <div class="course-session-schedule__date">
-        <span class="course-session-schedule__day">{$startDate}</span>
-        {$dayLabel}
-    </div>
+<div class="course-session-time-wrapper">
     {$timeHtml}
 </div>
 HTML;
+    }
+
+    protected function renderCapacity(CourseSession $session): string
+    {
+        if ($session->course?->unlimited_seats) {
+            return '<span class="course-session-capacity">∞</span>';
+        }
+
+        if ($session->available_seats !== null) {
+            return '<span class="course-session-capacity">' . number_format((int) $session->available_seats, 0, ',', '.') . '</span>';
+        }
+
+        $stats = $this->performance()->forSession($session);
+        $maxSeats = $stats['max_seats'];
+
+        if ($maxSeats !== null) {
+            return '<span class="course-session-capacity">' . number_format((int) $maxSeats, 0, ',', '.') . '</span>';
+        }
+
+        return '<span class="course-session-capacity">—</span>';
+    }
+
+    protected function renderCreatedAt(CourseSession $session): string
+    {
+        $created = $session->created_at ?? $session->getAttribute('created_at_value');
+
+        if ($created instanceof CarbonInterface) {
+            return '<span class="course-session-created">' . $created->format('d.m.Y') . '</span>';
+        }
+
+        if (is_string($created) && $created !== '') {
+            try {
+                $date = \Carbon\Carbon::parse($created);
+
+                return '<span class="course-session-created">' . $date->format('d.m.Y') . '</span>';
+            } catch (\Exception) {
+                // ignore parsing issues
+            }
+        }
+
+        return '<span class="course-session-created">—</span>';
     }
 
     protected function renderScore(CourseSession $session): string
@@ -478,7 +517,7 @@ HTML;
         $title = e($ratingText);
 
         return <<<HTML
-<span class="course-session-score" title="{$title}" aria-label="{$ratingLabel}">
+<span class="course-session-score" style="--course-session-score-bg: {$background}; --course-session-score-fg: {$textColor}; --course-session-score-ring: {$accent};" title="{$title}" aria-label="{$ratingLabel}">
     {$score}
 </span>
 HTML;
@@ -487,10 +526,10 @@ HTML;
     protected function resolveScoreStyle(float $score): array
     {
         return match (true) {
-            $score >= 85 => ['#1F4B45', '#5AB2A4', '#FFFFFF', 'plugins/courses::courses.table.score_rating.great'],
-            $score >= 65 => ['#2F6A62', '#70C1B6', '#FFFFFF', 'plugins/courses::courses.table.score_rating.good'],
-            $score >= 45 => ['#F2B138', '#F7C974', '#2B2B2B', 'plugins/courses::courses.table.score_rating.fair'],
-            default => ['#D96C5F', '#E79B92', '#FFFFFF', 'plugins/courses::courses.table.score_rating.poor'],
+            $score >= 85 => ['#2F6A62', '#91D0C5', '#FFFFFF', 'plugins/courses::courses.table.score_rating.great'],
+            $score >= 65 => ['#3E8F80', '#A8DCD2', '#FFFFFF', 'plugins/courses::courses.table.score_rating.good'],
+            $score >= 45 => ['#F7D8A4', '#F2B138', '#553C1C', 'plugins/courses::courses.table.score_rating.fair'],
+            default => ['#F1B8B0', '#DE6F64', '#4A1B15', 'plugins/courses::courses.table.score_rating.poor'],
         };
     }
 

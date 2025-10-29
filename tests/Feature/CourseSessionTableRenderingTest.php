@@ -16,6 +16,8 @@ class CourseSessionTableRenderingTest extends TestCase
     {
         parent::setUp();
 
+        App::setLocale('de');
+
         $stub = new FakeCoursePerformanceService([
             1 => [
                 'views' => 1280,
@@ -70,6 +72,36 @@ class CourseSessionTableRenderingTest extends TestCase
         $this->assertStringContainsString('—', $html);
     }
 
+    public function test_date_and_time_columns_render_in_german_format(): void
+    {
+        $table = App::make(CourseSessionTable::class);
+        $session = $this->makeSession(1);
+
+        $dateHtml = $this->invokeProtected($table, 'renderDate', [$session]);
+        $timeHtml = $this->invokeProtected($table, 'renderTime', [$session]);
+
+        $this->assertStringContainsString('13.10.2025', $dateHtml);
+        $this->assertStringContainsString('Montag', $dateHtml);
+        $this->assertStringContainsString('19:30 – 20:30', $timeHtml);
+        $this->assertStringContainsString('course-session-time', $timeHtml);
+    }
+
+    public function test_capacity_column_prefers_session_seats_then_service(): void
+    {
+        $table = App::make(CourseSessionTable::class);
+        $sessionWithSeats = $this->makeSession(1);
+        $sessionWithSeats->available_seats = 15;
+
+        $capacityHtml = $this->invokeProtected($table, 'renderCapacity', [$sessionWithSeats]);
+        $this->assertStringContainsString('15', $capacityHtml);
+
+        $sessionNoSeats = $this->makeSession(2);
+        $sessionNoSeats->available_seats = null;
+
+        $capacityFallback = $this->invokeProtected($table, 'renderCapacity', [$sessionNoSeats]);
+        $this->assertStringContainsString('—', $capacityFallback);
+    }
+
     public function test_hover_and_selection_styles_are_present(): void
     {
         $css = file_get_contents(base_path('public/vendor/core/plugins/courses/css/course-session-table.css'));
@@ -77,6 +109,7 @@ class CourseSessionTableRenderingTest extends TestCase
         $this->assertStringContainsString('tbody tr:hover', $css);
         $this->assertStringContainsString('tbody tr.selected', $css);
         $this->assertStringContainsString('course-session-button:hover', $css);
+        $this->assertStringContainsString('course-session-score', $css);
     }
 
     public function test_participants_button_is_accessible_and_styled(): void
@@ -111,6 +144,7 @@ class CourseSessionTableRenderingTest extends TestCase
             'available_seats' => 10,
             'start_date' => Carbon::parse('2025-10-13 19:30:00'),
             'end_date' => Carbon::parse('2025-10-13 20:30:00'),
+            'created_at' => Carbon::parse('2024-02-01 10:00:00'),
         ], true);
 
         $session->setRelation('course', $course);
