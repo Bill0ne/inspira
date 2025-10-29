@@ -1,6 +1,6 @@
 <?php
 
-namespace Theme\Riorelax\Helpers;
+namespace Theme\Riorelax\Helpers {
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -100,4 +100,6 @@ class FilterHelper
             return false;
         }
     }
+}
+
 }
