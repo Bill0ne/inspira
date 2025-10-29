@@ -27,12 +27,14 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class CourseSessionTable extends TableAbstract
 {
+    protected const STYLESHEET_FALLBACK_VERSION = '2024021501';
+
     protected ?CoursePerformanceService $performanceService = null;
 
     public function setup(): void
     {
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
-        Assets::addStylesDirectly(['vendor/core/plugins/courses/css/course-session-table.css']);
+        Assets::addStylesDirectly([$this->versionedStylesheet()]);
 
         $this
             ->model(CourseSession::class)
@@ -273,12 +275,19 @@ HTML;
             return '<span class="text-muted">—</span>';
         }
 
-        $thumbnail = RvMedia::getImageUrl(
-            $course->thumbnail,
-            'thumb',
-            false,
-            RvMedia::getDefaultImage()
-        );
+        $thumbnailUrl = null;
+
+        if ($course->thumbnail) {
+            $thumbnailUrl = RvMedia::getImageUrl(
+                $course->thumbnail,
+                'thumb',
+                false
+            );
+        }
+
+        if (! $thumbnailUrl || $thumbnailUrl === RvMedia::getDefaultImage()) {
+            $thumbnailUrl = null;
+        }
 
         $courseName = BaseHelper::clean($course->name ?? '—');
         $courseUrl = route('course.edit', $course->getKey());
@@ -293,17 +302,45 @@ HTML;
             : '';
 
         $imageAlt = e(trans('plugins/courses::courses.table.thumbnail_alt', ['course' => $courseName]));
+        $fallbackAlt = e(trans('plugins/courses::courses.table.thumbnail_fallback_alt', ['course' => $courseName]));
+
+        $thumbnailContent = $thumbnailUrl
+            ? '<img src="' . $thumbnailUrl . '" alt="' . $imageAlt . '" loading="lazy">'
+            : '<span class="course-session-thumbnail__icon" aria-hidden="true">'
+                . $this->renderFallbackThumbnailIcon($courseName)
+                . '</span>';
+
+        $thumbnailAttributes = $thumbnailUrl
+            ? 'class="course-session-thumbnail"'
+            : 'class="course-session-thumbnail course-session-thumbnail--fallback" role="img" aria-label="' . $fallbackAlt . '"';
 
         return <<<HTML
 <div class="course-session-card d-flex align-items-center gap-3">
-    <div class="course-session-thumbnail" aria-hidden="true">
-        <img src="{$thumbnail}" alt="{$imageAlt}" loading="lazy">
+    <div {$thumbnailAttributes}>
+        {$thumbnailContent}
     </div>
     <div class="course-session-header flex-grow-1">
         <a href="{$courseUrl}" class="course-session-title">{$courseName}</a>
         {$metaHtml}
     </div>
 </div>
+HTML;
+    }
+
+    protected function renderFallbackThumbnailIcon(string $courseName): string
+    {
+        $decoded = trim(html_entity_decode(strip_tags($courseName), ENT_QUOTES, 'UTF-8'));
+        $firstChar = $decoded !== '' ? mb_substr($decoded, 0, 1, 'UTF-8') : '•';
+        $initial = mb_strtoupper($firstChar, 'UTF-8');
+        $initialEscaped = e($initial);
+
+        return <<<HTML
+<span class="course-session-thumbnail__initial">{$initialEscaped}</span>
+<svg class="course-session-thumbnail__glyph" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z" fill="currentColor" opacity="0.12" />
+    <path d="M9.25 9.5a1.75 1.75 0 1 0 3.5 0a1.75 1.75 0 0 0-3.5 0Z" fill="currentColor" />
+    <path d="M6.5 16.5c0-1.66 1.97-3 4.5-3s4.5 1.34 4.5 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none" />
+</svg>
 HTML;
     }
 
@@ -541,5 +578,17 @@ HTML;
     protected function formatDate(?CarbonInterface $date, string $format): string
     {
         return $date ? $date->format($format) : '—';
+    }
+
+    protected function versionedStylesheet(): string
+    {
+        $relativePath = 'vendor/core/plugins/courses/css/course-session-table.css';
+        $absolutePath = public_path($relativePath);
+
+        if (file_exists($absolutePath)) {
+            return $relativePath . '?v=' . filemtime($absolutePath);
+        }
+
+        return $relativePath . '?v=' . static::STYLESHEET_FALLBACK_VERSION;
     }
 }

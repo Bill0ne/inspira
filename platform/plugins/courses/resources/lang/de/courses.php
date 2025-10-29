@@ -75,6 +75,7 @@ return [
         'time_label' => 'Zeit: :time',
         'view_participants' => 'Teilnehmerliste',
         'thumbnail_alt' => 'Kursbild für :course',
+        'thumbnail_fallback_alt' => 'Platzhalter für :course',
         'price_label' => 'Preis :price',
     ],
 

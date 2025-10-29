@@ -59,6 +59,7 @@ class CourseSessionTableRenderingTest extends TestCase
         $this->assertStringContainsString('course-session-title', $html);
         $this->assertStringContainsString('Musik', $html);
         $this->assertStringContainsString('Andrea Schulz', $html);
+        $this->assertStringContainsString('course-session-thumbnail--fallback', $html);
     }
 
     public function test_views_badge_displays_placeholder_when_missing(): void
@@ -110,6 +111,15 @@ class CourseSessionTableRenderingTest extends TestCase
         $this->assertStringContainsString('tbody tr.selected', $css);
         $this->assertStringContainsString('course-session-button:hover', $css);
         $this->assertStringContainsString('course-session-score', $css);
+    }
+
+    public function test_stylesheet_registration_is_versioned(): void
+    {
+        $table = App::make(CourseSessionTable::class);
+
+        $stylesheet = $this->invokeProtected($table, 'versionedStylesheet');
+
+        $this->assertStringContainsString('course-session-table.css?v=', $stylesheet);
     }
 
     public function test_participants_button_is_accessible_and_styled(): void
