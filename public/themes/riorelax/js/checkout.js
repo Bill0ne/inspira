@@ -7,6 +7,7 @@
 
 $(document).ready(function () {
   $('.service-item').on('change', function () {
+    console.log('hello');
     var foods = [];
     var services = [];
     $('.service-item:checked').each(function (i, el) {
