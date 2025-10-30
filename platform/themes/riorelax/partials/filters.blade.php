@@ -180,19 +180,52 @@
       }
     });
   }
-  const submitForm = () => {
-    if (typeof f.requestSubmit === 'function') {
-      f.requestSubmit();
-    } else {
-      f.submit();
-    }
+  const fieldNames = ['filter_type', 'search', 'category', 'trainer', 'sort'];
+  const applyFilters = () => {
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams(url.search);
+
+    fieldNames.forEach((name) => {
+      const element = f.elements.namedItem(name);
+      if (!element) {
+        params.delete(name);
+        return;
+      }
+
+      let value = element.value;
+      if (typeof value === 'string') {
+        value = value.trim();
+      }
+
+      if (value) {
+        params.set(name, value);
+      } else {
+        params.delete(name);
+      }
+    });
+
+    params.delete('page');
+    url.search = params.toString();
+    window.location.assign(url.toString());
   };
-  f.querySelectorAll('select').forEach(el => {
-    el.addEventListener('change', submitForm);
+
+  f.addEventListener('submit', (event) => {
+    event.preventDefault();
+    applyFilters();
   });
+
+  f.querySelectorAll('select').forEach(el => {
+    el.addEventListener('change', applyFilters);
+  });
+
   const s = f.querySelector('input[name="search"]');
   if(s) {
-    s.addEventListener('keydown', e=>{ if(e.key==='Enter') submitForm(); });
+    s.addEventListener('keydown', e=>{
+      if(e.key==='Enter') {
+        e.preventDefault();
+        applyFilters();
+      }
+    });
   }
   document.addEventListener('click', (event) => {
     const chip = event.target.closest('.filter-chip');
@@ -212,7 +245,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    submitForm();
+    applyFilters();
   });
 })();
 </script>
