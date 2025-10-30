@@ -1,58 +1,64 @@
-name: 🚀 Playwright Tests (Inspira)
+name: 🚀 Run Playwright E2E Tests
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - stage-desk
-      - main-desk
 
 jobs:
   playwright-tests:
     runs-on: ubuntu-latest
-    name: 🧪 Run Playwright E2E Tests
 
     steps:
+      # === 1️⃣ Repository Checkout ===
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
+      # === 2️⃣ Node.js Setup ===
       - name: 🧱 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: ⚙️ Install Playwright
-        working-directory: tests/e2e
+      # === 3️⃣ Install Playwright ===
+      - name: 🧪 Install Playwright
         run: |
           npm ci || npm install
           npx playwright install --with-deps
 
-      - name: 🧪 Run Playwright tests
-        id: run
-        working-directory: tests/e2e
+      # === 4️⃣ Run Playwright Tests ===
+      - name: 🧩 Run Playwright tests
+        run: |
+          mkdir -p reports/${{ github.run_id }}
+          npx playwright test --reporter=json > reports/${{ github.run_id }}/results.json
         continue-on-error: true
-        run: |
-          mkdir -p artifacts
-          npx playwright test --reporter=json || true
-          mv playwright-report.json artifacts/results.json || true
 
-      - name: 🗂️ Prepare report folder
-        id: prep
-        run: echo "run_id=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
-
-      - name: 🚀 Upload reports to Inspira Server
-        if: success() || always()
+      # === 5️⃣ Prepare Report Folder ===
+      - name: 📦 Prepare report folder
         run: |
-          rsync -avz \
-            tests/e2e/artifacts/results.json \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/${{ steps.prep.outputs.run_id }}/ \
-            -e "ssh -p ${{ secrets.SSH_PORT }} -i ${{ secrets.SSH_KEY_PATH }}"
+          mkdir -p reports/${{ github.run_id }}
+          echo "Preparing report folder for upload..."
+
+      # === 6️⃣ Upload Reports to Inspira Server ===
+      - name: 📤 Upload reports to Inspira Server
         env:
-          SSH_KEY_PATH: ${{ secrets.SSH_KEY_PATH }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_PRIVATE_KEY: ${{ secrets.INSPIRA_SSH_KEY }}
+          REMOTE_USER: ${{ secrets.INSPIRA_USER }}
+          REMOTE_HOST: ${{ secrets.INSPIRA_HOST }}
+        run: |
+          echo "🔐 Setting up SSH credentials..."
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          echo "📡 Uploading report to Inspira dev-test-repo..."
+          rsync -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+          reports/ $REMOTE_USER@$REMOTE_HOST:/home/u296731902/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/
 
-      - name: ✅ Notify success
-        if: always()
-        run: echo "✅ Playwright pipeline completed successfully – JSON uploaded to Inspira."
+      # === 7️⃣ Notification ===
+      - name: 🔔 Notify success
+        if: success()
+        run: echo "✅ Playwright E2E Tests erfolgreich abgeschlossen!"
+
+      - name: ❌ Notify failure
+        if: failure()
+        run: echo "❌ Playwright E2E Tests sind fehlgeschlagen."
+
