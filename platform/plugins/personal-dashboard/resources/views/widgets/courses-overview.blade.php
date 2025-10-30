@@ -64,12 +64,13 @@ foreach ($clients as $m) {
 }
 $topMembers = collect($clients)->sortByDesc('score')->take(5);
 
-/* === LETZTE BUCHUNGEN (nur vollständig bezahlte & funktional sauber) === */
+/* === LETZTE BUCHUNGEN (robust für 'completed' Payments) === */
 $bookings = DB::table('course_bookings')
     ->join('courses', 'course_bookings.course_id', '=', 'courses.id')
-    ->leftJoin('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id') // ← jetzt LEFT JOIN statt JOIN
+    ->leftJoin('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
     ->leftJoin('payments', function ($join) {
-        $join->on('payments.order_id', '=', 'course_bookings.id');
+        // 🔧 sichert ab, dass auch Text-Vergleich funktioniert
+        $join->on(DB::raw('CAST(payments.order_id AS CHAR)'), '=', DB::raw('CAST(course_bookings.id AS CHAR)'));
     })
     ->select(
         'course_bookings.id as booking_id',
@@ -87,25 +88,17 @@ $bookings = DB::table('course_bookings')
         'ht_customers.last_name',
         'ht_customers.avatar'
     )
-    // ✅ Nur Zahlungen, die tatsächlich abgeschlossen sind
-    ->whereNotNull('payments.order_id')
     ->where('payments.status', '=', 'completed')
-    // Fallback: keine korrupten oder fehlerhaften Buchungen
-    ->whereNotNull('course_bookings.id')
-    ->orderByDesc('payments.created_at')
+    ->orderByDesc(DB::raw('COALESCE(payments.created_at, course_bookings.created_at)'))
     ->limit(5)
     ->get()
     ->map(function ($b) {
-        // Einheitlicher Status für Anzeige im Widget
         $b->status = strtolower($b->payment_status ?? $b->booking_status ?? 'pending');
-        // Betrag bevorzugt aus Zahlung
         $b->amount = $b->payment_amount ?? $b->booking_amount ?? 0;
-        // Sicherstellen, dass Kundenname & Avatar immer da sind
         $b->first_name = $b->first_name ?? 'Gast';
         $b->last_name  = $b->last_name ?? '';
         return $b;
     });
-
 
 /* === Fallback-SVGs === */
 $chairSvg = file_exists(public_path('images/icons/chair.svg'))
