@@ -1,7 +1,6 @@
 name: 🚀 Cypress Tests (Inspira)
 
 on:
-  # Nur manuell über "Run workflow"
   workflow_dispatch:
 
 jobs:
@@ -17,9 +16,9 @@ jobs:
         with:
           node-version: 20
 
-      - name: 📦 Install dependencies
+      - name: 📦 Install dependencies (ignore invalid versions)
         run: |
-          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps --ignore-engines --no-audit --force
           npx cypress verify
 
       - name: 🧪 Run Cypress E2E tests
