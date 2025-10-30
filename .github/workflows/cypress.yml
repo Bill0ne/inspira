@@ -1,7 +1,7 @@
 name: 🚀 Cypress Tests (Inspira)
 
 on:
-  # 🔹 Nur manuell über "Run workflow" im Actions-Tab
+  # Nur manuell über "Run workflow"
   workflow_dispatch:
 
 jobs:
@@ -9,21 +9,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Repository auschecken
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Node.js Setup
       - name: 🧱 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
-      # 3️⃣ Dependencies installieren
       - name: 📦 Install dependencies
-        run: npm install
+        run: |
+          npm install --legacy-peer-deps
+          npx cypress verify
 
-      # 4️⃣ Cypress Tests ausführen
       - name: 🧪 Run Cypress E2E tests
         uses: cypress-io/github-action@v6
         with:
