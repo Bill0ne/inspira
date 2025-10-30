@@ -16,6 +16,13 @@ use Botble\Media\Facades\RvMedia;
 use Botble\Page\Forms\PageForm;
 use Botble\SimpleSlider\Forms\SimpleSliderItemForm;
 
+if (!class_exists('Theme\\Rlorenak\\Helpers\\FilterHelper') && class_exists('Theme\\Riorelax\\Helpers\\FilterHelper')) {
+    class_alias(
+        \Theme\Riorelax\Helpers\FilterHelper::class,
+        'Theme\\Rlorenak\\Helpers\\FilterHelper'
+    );
+}
+
 register_page_template([
     'default' => __('Default'),
     'side-menu' => __('Side menu'),
