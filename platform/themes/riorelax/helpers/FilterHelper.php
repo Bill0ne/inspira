@@ -27,6 +27,7 @@ class FilterHelper
         // 📂 Kategorie
         if ($category = $request->get('category')) {
             $column = $type === 'courses' ? 'category_id' : 'room_category_id';
+
             if (self::has($query, $column)) {
                 $query->where($column, $category);
             }
@@ -35,6 +36,7 @@ class FilterHelper
         // 👩‍🏫 Coach / Trainer (nur Kurse)
         if ($type === 'courses' && ($trainer = $request->get('trainer'))) {
             $column = 'instructor_id';
+
             if (self::has($query, $column)) {
                 $query->where($column, $trainer);
             }
@@ -96,9 +98,11 @@ class FilterHelper
 
     public static function count(Request $request, string $type): int
     {
-        $query = $type === 'courses'
-            ? \Botble\Courses\Models\Course::query()
-            : \Botble\Hotel\Models\Room::query();
+        if ($type === 'courses') {
+            $query = \Botble\Courses\Models\Course::query()->wherePublished();
+        } else {
+            $query = \Botble\Hotel\Models\Room::query()->wherePublished();
+        }
 
         return self::apply($request, $query, $type)->count();
     }
