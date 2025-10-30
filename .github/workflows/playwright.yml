@@ -19,16 +19,16 @@ jobs:
           node-version: 20
 
       - name: 📦 Install Playwright deps
-        working-directory: tests/e2e
+        working-directory: ./tests/e2e
         run: |
           npm ci || npm install
           npx playwright install --with-deps
 
       - name: 🧪 Run Playwright tests
-        working-directory: tests/e2e
+        working-directory: ./tests/e2e
         env:
           BASE_URL: https://stage.inspira-zentrum.de
-        run: npm test --silent
+        run: npx playwright test --reporter=html
 
       - name: 📑 Upload HTML report
         if: always()
