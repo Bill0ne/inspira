@@ -70,18 +70,60 @@ function diffChipAbs($current, $prev, $currency = false) {
     return "<span class='chip {$class}'>{$value}</span>";
 }
 
-/* === STATISTIKEN === */
-$paid = ['paid','completed','success'];
+/* === STATISTIKEN (nur bezahlte Buchungen) === */
+$paid = ['paid', 'completed', 'success'];
+$today = now()->toDateString();
+$yesterday = now()->subDay()->toDateString();
+$monthStart = now()->startOfMonth();
+$prevMonthStart = now()->subMonth()->startOfMonth();
+$prevMonthEnd = now()->subMonth()->endOfMonth();
 
-/* Buchungen */
-$bookingsToday = DB::table('course_bookings')->whereDate('created_at',$today)->count();
-$bookingsYesterday = DB::table('course_bookings')->whereDate('created_at',$yesterday)->count();
-$bookingsMonth = DB::table('course_bookings')->whereBetween('created_at',[$monthStart,now()])->count();
-$bookingsPrevMonth = DB::table('course_bookings')->whereBetween('created_at',[$prevMonthStart,$prevMonthEnd])->count();
+/* Buchungen (nur bezahlte Zahlungen) */
+$bookingsToday = DB::table('course_bookings')
+    ->join('payments', function ($join) {
+        $join->on(DB::raw('CAST(course_bookings.payment_id AS CHAR)'), '=', DB::raw('CAST(payments.id AS CHAR)'));
+    })
+    ->whereIn('payments.status', ['paid', 'completed', 'success'])
+    ->whereDate('payments.created_at', $today)
+    ->count();
+
+$bookingsYesterday = DB::table('course_bookings')
+    ->join('payments', function ($join) {
+        $join->on(DB::raw('CAST(course_bookings.payment_id AS CHAR)'), '=', DB::raw('CAST(payments.id AS CHAR)'));
+    })
+    ->whereIn('payments.status', ['paid', 'completed', 'success'])
+    ->whereDate('payments.created_at', $yesterday)
+    ->count();
+
+$bookingsMonth = DB::table('course_bookings')
+    ->join('payments', function ($join) {
+        $join->on(DB::raw('CAST(course_bookings.payment_id AS CHAR)'), '=', DB::raw('CAST(payments.id AS CHAR)'));
+    })
+    ->whereIn('payments.status', ['paid', 'completed', 'success'])
+    ->whereBetween('payments.created_at', [$monthStart, now()])
+    ->count();
+
+$bookingsPrevMonth = DB::table('course_bookings')
+    ->join('payments', function ($join) {
+        $join->on(DB::raw('CAST(course_bookings.payment_id AS CHAR)'), '=', DB::raw('CAST(payments.id AS CHAR)'));
+    })
+    ->whereIn('payments.status', ['paid', 'completed', 'success'])
+    ->whereBetween('payments.created_at', [$prevMonthStart, $prevMonthEnd])
+    ->count();
+
+/* Chart (nur bezahlte Buchungen der letzten 7 Tage) */
 $bookingsChart = DB::table('course_bookings')
-    ->selectRaw('DATE(created_at) as d, COUNT(*) as c')
-    ->whereBetween('created_at',[now()->subDays(6), now()])
-    ->groupBy('d')->orderBy('d')->pluck('c')->toArray();
+    ->join('payments', function ($join) {
+        $join->on(DB::raw('CAST(course_bookings.payment_id AS CHAR)'), '=', DB::raw('CAST(payments.id AS CHAR)'));
+    })
+    ->whereIn('payments.status', ['paid', 'completed', 'success'])
+    ->whereBetween('payments.created_at', [now()->subDays(6), now()])
+    ->selectRaw('DATE(payments.created_at) as d, COUNT(*) as c')
+    ->groupBy('d')
+    ->orderBy('d')
+    ->pluck('c')
+    ->toArray();
+
 
 /* Umsatz */
 $revenueToday = DB::table('payments')->whereDate('created_at',$today)->whereIn('status',$paid)->sum('amount');
@@ -93,15 +135,32 @@ $revenueChart = DB::table('payments')
     ->whereBetween('created_at',[now()->subDays(6), now()])
     ->whereIn('status',$paid)->groupBy('d')->orderBy('d')->pluck('s')->toArray();
 
-/* Kurse */
-$coursesToday = DB::table('courses')->whereDate('created_at',$today)->count();
-$coursesYesterday = DB::table('courses')->whereDate('created_at',$yesterday)->count();
-$coursesMonth = DB::table('courses')->whereBetween('created_at',[$monthStart,now()])->count();
-$coursesPrevMonth = DB::table('courses')->whereBetween('created_at',[$prevMonthStart,$prevMonthEnd])->count();
+/* === KURSE (nach Startdatum, nicht nach Erstellungsdatum) === */
+$coursesToday = DB::table('courses')
+    ->whereDate('start_date', $today)
+    ->count();
+
+$coursesYesterday = DB::table('courses')
+    ->whereDate('start_date', $yesterday)
+    ->count();
+
+$coursesMonth = DB::table('courses')
+    ->whereBetween('start_date', [$monthStart, now()])
+    ->count();
+
+$coursesPrevMonth = DB::table('courses')
+    ->whereBetween('start_date', [$prevMonthStart, $prevMonthEnd])
+    ->count();
+
+/* === Kurs-Chart: letzte 7 Tage, basierend auf Startdatum === */
 $coursesChart = DB::table('courses')
-    ->selectRaw('DATE(created_at) as d, COUNT(*) as c')
-    ->whereBetween('created_at',[now()->subDays(6), now()])
-    ->groupBy('d')->orderBy('d')->pluck('c')->toArray();
+    ->selectRaw('DATE(start_date) as d, COUNT(*) as c')
+    ->whereBetween('start_date', [now()->subDays(6), now()])
+    ->groupBy('d')
+    ->orderBy('d')
+    ->pluck('c')
+    ->toArray();
+
 
 /* Kunden */
 $customersToday = DB::table('ht_customers')->whereDate('created_at',$today)->count();
