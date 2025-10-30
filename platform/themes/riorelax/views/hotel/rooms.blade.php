@@ -1,7 +1,7 @@
 @php(Theme::set('pageTitle', __('Rooms')))
 
 <section class="container rooms-page my-5">
-    @include(Theme::getThemeNamespace('partials.filters'))
+    @include(Theme::getThemeNamespace('partials.filters'), ['filterType' => 'rooms'])
     <div class="row">
         <div class="col-lg-12">
             {!! do_shortcode('[all-rooms]') !!}
