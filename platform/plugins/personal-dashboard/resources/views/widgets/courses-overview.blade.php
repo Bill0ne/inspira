@@ -64,10 +64,10 @@ foreach ($clients as $m) {
 }
 $topMembers = collect($clients)->sortByDesc('score')->take(5);
 
-/* === LETZTE BUCHUNGEN (nur vollständig bezahlte) === */
+/* === LETZTE BUCHUNGEN (nur vollständig bezahlte & funktional sauber) === */
 $bookings = DB::table('course_bookings')
     ->join('courses', 'course_bookings.course_id', '=', 'courses.id')
-    ->join('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
+    ->leftJoin('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id') // ← jetzt LEFT JOIN statt JOIN
     ->leftJoin('payments', function ($join) {
         $join->on('payments.order_id', '=', 'course_bookings.id');
     })
@@ -87,16 +87,25 @@ $bookings = DB::table('course_bookings')
         'ht_customers.last_name',
         'ht_customers.avatar'
     )
+    // ✅ Nur Zahlungen, die tatsächlich abgeschlossen sind
     ->whereNotNull('payments.order_id')
     ->where('payments.status', '=', 'completed')
+    // Fallback: keine korrupten oder fehlerhaften Buchungen
+    ->whereNotNull('course_bookings.id')
     ->orderByDesc('payments.created_at')
     ->limit(5)
     ->get()
     ->map(function ($b) {
+        // Einheitlicher Status für Anzeige im Widget
         $b->status = strtolower($b->payment_status ?? $b->booking_status ?? 'pending');
+        // Betrag bevorzugt aus Zahlung
         $b->amount = $b->payment_amount ?? $b->booking_amount ?? 0;
+        // Sicherstellen, dass Kundenname & Avatar immer da sind
+        $b->first_name = $b->first_name ?? 'Gast';
+        $b->last_name  = $b->last_name ?? '';
         return $b;
     });
+
 
 /* === Fallback-SVGs === */
 $chairSvg = file_exists(public_path('images/icons/chair.svg'))
