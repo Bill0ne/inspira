@@ -108,6 +108,11 @@ class CoursePerformanceService
         return $this->analyticsLookbackDays;
     }
 
+    public function maxReferenceViews(): int
+    {
+        return $this->maxViewsReference;
+    }
+
     protected function calculateScores(
         int $views,
         string $viewsSource,
@@ -191,36 +196,54 @@ class CoursePerformanceService
         $path = trim($prefix ? $prefix . '/' . $slug->key : $slug->key, '/');
         $fullUrl = url($path);
 
-        if (! $this->canQueryAnalytics) {
-            if ($hasStoredViews) {
-                $result = ['count' => $storedCount, 'source' => 'metadata'];
+        if ($this->canQueryAnalytics) {
+            $analyticsViews = $this->fetchAnalyticsViews('fullPageUrl', $fullUrl);
+
+            if ($analyticsViews === null || $analyticsViews === 0) {
+                $localizedPaths = array_unique(array_filter([
+                    '/' . ltrim($path, '/'),
+                    '/' . ltrim(app()->getLocale() . '/' . $path, '/'),
+                ]));
+
+                foreach ($localizedPaths as $pagePath) {
+                    $analyticsViews = $this->fetchAnalyticsViews('pagePath', $pagePath);
+
+                    if ($analyticsViews !== null && $analyticsViews > 0) {
+                        break;
+                    }
+                }
             }
 
-            return $this->viewCache[$courseId] = $result;
+            if ($analyticsViews !== null && $analyticsViews >= 0) {
+                $result = ['count' => $analyticsViews, 'source' => 'analytics'];
+            }
+        }
+
+        if (($result['source'] === 'none' || $result['count'] === 0) && $hasStoredViews) {
+            $result = ['count' => $storedCount, 'source' => 'metadata'];
+        }
+
+        return $this->viewCache[$courseId] = $result;
+    }
+
+    protected function fetchAnalyticsViews(string $dimension, string $value): ?int
+    {
+        if (! $this->canQueryAnalytics || ! $value) {
+            return null;
         }
 
         try {
             $queryResult = Analytics::dateRange(Period::days($this->analyticsLookbackDays))
                 ->metrics('screenPageViews')
-                ->dimensions('fullPageUrl')
-                ->whereDimension('fullPageUrl', MatchType::MATCH_TYPE_EXACT, $fullUrl)
+                ->dimensions($dimension)
+                ->whereDimension($dimension, MatchType::MATCH_TYPE_EXACT, $value)
                 ->limit(1)
                 ->get()
                 ->table;
 
-            $views = (int) Arr::get($queryResult->first() ?? [], 'screenPageViews', 0);
-
-            $result = ['count' => $views, 'source' => 'analytics'];
+            return (int) Arr::get($queryResult->first() ?? [], 'screenPageViews', 0);
         } catch (InvalidConfiguration|Throwable) {
-            if ($hasStoredViews) {
-                $result = ['count' => $storedCount, 'source' => 'metadata'];
-            }
+            return null;
         }
-
-        if ($result['source'] === 'none' && $hasStoredViews) {
-            $result = ['count' => $storedCount, 'source' => 'metadata'];
-        }
-
-        return $this->viewCache[$courseId] = $result;
     }
 }

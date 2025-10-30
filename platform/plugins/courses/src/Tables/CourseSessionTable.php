@@ -4,6 +4,9 @@ namespace Botble\Courses\Tables;
 
 use Botble\Base\Facades\Assets;
 use Botble\Base\Facades\BaseHelper;
+use Botble\Base\Models\MetaBox;
+use Botble\Courses\Models\Course;
+use Botble\Courses\Models\CourseBooking;
 use Botble\Courses\Models\CourseSession;
 use Botble\Courses\Services\CoursePerformanceService;
 use Botble\Hotel\Enums\BookingStatusEnum;
@@ -57,28 +60,39 @@ class CourseSessionTable extends TableAbstract
 
                 FormattedColumn::make('occupancy')
                     ->title(trans('plugins/courses::courses.table.occupancy'))
-                    ->orderable(false)
+                    ->orderable(true)
+                    ->name('occupancy_value')
                     ->searchable(false)
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderOccupancy($column->getItem())),
 
                 FormattedColumn::make('engagement')
                     ->title(trans('plugins/courses::courses.table.engagement'))
-                    ->orderable(false)
+                    ->orderable(true)
+                    ->name('engagement_value')
                     ->searchable(false)
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderEngagement($column->getItem())),
 
+                FormattedColumn::make('participants')
+                    ->title(trans('plugins/courses::courses.table.participants'))
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn (FormattedColumn $column) => $this->renderParticipants($column->getItem())),
+
                 FormattedColumn::make('schedule')
                     ->title(trans('plugins/courses::courses.table.schedule'))
-                    ->orderable(false)
+                    ->orderable(true)
+                    ->name('course_sessions.start_date')
                     ->searchable(false)
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderSchedule($column->getItem())),
 
                 FormattedColumn::make('score')
                     ->title(trans('plugins/courses::courses.table.score'))
-                    ->orderable(false)
+                    ->orderable(true)
+                    ->name('score_value')
                     ->searchable(false)
                     ->escape(false)
                     ->getValueUsing(fn (FormattedColumn $column) => $this->renderScore($column->getItem())),
@@ -100,6 +114,40 @@ class CourseSessionTable extends TableAbstract
                 CreatedAtBulkChange::make(),
             ])
             ->queryUsing(function (Builder $query) {
+                $activeStatuses = [
+                    BookingStatusEnum::PENDING,
+                    BookingStatusEnum::PROCESSING,
+                    BookingStatusEnum::COMPLETED,
+                ];
+
+                $statusList = implode("','", $activeStatuses);
+
+                $bookingStats = CourseBooking::query()
+                    ->selectRaw('course_session_id')
+                    ->selectRaw("SUM(CASE WHEN status IN ('{$statusList}') THEN 1 ELSE 0 END) as active_bookings")
+                    ->selectRaw("SUM(CASE WHEN status = '" . BookingStatusEnum::COMPLETED . "' THEN 1 ELSE 0 END) as attended_bookings")
+                    ->groupBy('course_session_id');
+
+                $viewSub = MetaBox::query()
+                    ->selectRaw('reference_id')
+                    ->selectRaw('MAX(CAST(meta_value AS UNSIGNED)) as views')
+                    ->where('meta_key', 'views')
+                    ->where('reference_type', Course::class)
+                    ->groupBy('reference_id');
+
+                $maxViewsReference = max(1, $this->performance()->maxReferenceViews());
+
+                $viewsExpr = 'COALESCE(course_views.views, 0)';
+                $activeExpr = 'COALESCE(booking_stats.active_bookings, 0)';
+                $attendedExpr = 'COALESCE(booking_stats.attended_bookings, 0)';
+                $availableSeatsExpr = 'course_sessions.available_seats';
+
+                $occupancyExpr = "CASE WHEN $availableSeatsExpr IS NULL THEN CASE WHEN $activeExpr > 0 THEN 100 ELSE 0 END ELSE LEAST((($activeExpr / NULLIF($availableSeatsExpr, 0)) * 100), 100) END";
+                $engagementExpr = "CASE WHEN $activeExpr > 0 THEN LEAST((($attendedExpr / NULLIF($activeExpr, 0)) * 100), 100) ELSE 0 END";
+                $conversionExpr = "CASE WHEN $viewsExpr > 0 THEN LEAST(((($activeExpr / NULLIF($viewsExpr, 0)) * 100) * 10), 100) ELSE 0 END";
+                $viewScoreExpr = "LEAST((($viewsExpr / {$maxViewsReference}) * 100), 100)";
+                $scoreExpr = "ROUND(LEAST((($viewScoreExpr * 0.25) + ($occupancyExpr * 0.35) + ($engagementExpr * 0.25) + ($conversionExpr * 0.15)), 100), 1)";
+
                 return $query
                     ->with([
                         'course' => function (BelongsTo $query) {
@@ -117,26 +165,30 @@ class CourseSessionTable extends TableAbstract
                                 ->with(['category:id,name', 'instructor:id,name']);
                         },
                     ])
-                    ->withCount([
-                        'bookings as active_bookings_count' => function ($query) {
-                            $query->whereIn('status', [
-                                BookingStatusEnum::PENDING,
-                                BookingStatusEnum::PROCESSING,
-                                BookingStatusEnum::COMPLETED,
-                            ]);
-                        },
-                        'bookings as attended_bookings_count' => function ($query) {
-                            $query->where('status', BookingStatusEnum::COMPLETED);
-                        },
-                    ])
+                    ->leftJoin('courses', 'courses.id', '=', 'course_sessions.course_id')
+                    ->leftJoinSub($bookingStats, 'booking_stats', 'booking_stats.course_session_id', '=', 'course_sessions.id')
+                    ->leftJoinSub($viewSub, 'course_views', 'course_views.reference_id', '=', 'course_sessions.course_id')
                     ->select([
-                        'id',
-                        'course_id',
-                        'start_date',
-                        'end_date',
-                        'available_seats',
-                        'created_at',
-                    ]);
+                        'course_sessions.id',
+                        'course_sessions.course_id',
+                        'course_sessions.start_date',
+                        'course_sessions.end_date',
+                        'course_sessions.available_seats',
+                        'course_sessions.created_at',
+                    ])
+                    ->selectRaw('courses.name as session_overview')
+                    ->selectRaw('courses.price as price')
+                    ->selectRaw("$viewsExpr as views")
+                    ->selectRaw("$occupancyExpr as occupancy")
+                    ->selectRaw("$engagementExpr as engagement")
+                    ->selectRaw("$activeExpr as participants")
+                    ->selectRaw('course_sessions.start_date as schedule')
+                    ->selectRaw("$scoreExpr as score")
+                    ->selectRaw("$occupancyExpr as occupancy_value")
+                    ->selectRaw("$engagementExpr as engagement_value")
+                    ->selectRaw("$scoreExpr as score_value")
+                    ->selectRaw("$activeExpr as active_bookings_count")
+                    ->selectRaw("$attendedExpr as attended_bookings_count");
             })
             ->onFilterQuery(function (
                 EloquentBuilder|QueryBuilder|EloquentRelation $query,
@@ -196,49 +248,23 @@ class CourseSessionTable extends TableAbstract
         $courseName = BaseHelper::clean($course->name ?? '—');
         $courseUrl = route('course.edit', $course->getKey());
 
-        $badges = [];
+        $metaParts = array_filter([
+            $course->category?->name ? BaseHelper::clean($course->category->name) : null,
+            $course->instructor?->name ? BaseHelper::clean($course->instructor->name) : null,
+        ]);
 
-        if ($course->category?->name) {
-            $badges[] = sprintf(
-                '<span class="badge bg-light text-body border rounded-pill px-3 py-1">%s</span>',
-                BaseHelper::clean($course->category->name)
-            );
-        }
-
-        if ($course->instructor?->name) {
-            $badges[] = sprintf(
-                '<span class="badge bg-light text-body border rounded-pill px-3 py-1">%s</span>',
-                BaseHelper::clean($course->instructor->name)
-            );
-        }
-
-        $badgesHtml = implode(' ', $badges);
-
-        $statusBadge = $course->status?->toHtml() ?? '';
-
-        $participantsLabel = trans('plugins/courses::courses.table.view_participants');
-
-        $sessionLabel = trans('plugins/courses::courses.table.session_id', ['id' => $session->getKey()]);
+        $metaHtml = $metaParts
+            ? '<div class="text-muted small text-truncate">' . implode(' • ', $metaParts) . '</div>'
+            : '';
 
         return <<<HTML
 <div class="d-flex align-items-center gap-3">
-    <div class="flex-shrink-0">
-        <img src="{$thumbnail}" alt="{$courseName}" class="rounded" style="width:56px;height:56px;object-fit:cover;">
+    <div class="flex-shrink-0 rounded-3 overflow-hidden" style="width:60px;height:60px;background:#F4F7F6;">
+        <img src="{$thumbnail}" alt="{$courseName}" style="width:100%;height:100%;object-fit:cover;">
     </div>
     <div class="flex-grow-1">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <a href="{$courseUrl}" class="fw-semibold text-decoration-none text-body">{$courseName}</a>
-            {$statusBadge}
-        </div>
-        <div class="text-muted small mt-1">{$sessionLabel}</div>
-        <div class="d-flex align-items-center gap-2 flex-wrap mt-2">
-            {$badgesHtml}
-        </div>
-        <div class="mt-2">
-            <button class="btn btn-outline-primary btn-sm view-participants-btn" data-session-id="{$session->getKey()}">
-                {$participantsLabel}
-            </button>
-        </div>
+        <a href="{$courseUrl}" class="fw-semibold text-decoration-none" style="color:#1F2A2A;">{$courseName}</a>
+        {$metaHtml}
     </div>
 </div>
 HTML;
@@ -252,16 +278,25 @@ HTML;
             return '—';
         }
 
-        return format_price($course->price);
+        return '<span class="fw-semibold" style="color:#1F2A2A;">' . format_price($course->price) . '</span>';
     }
 
     protected function renderViews(CourseSession $session): string
     {
         $stats = $this->performance()->forSession($session);
         $viewsSource = $stats['views_source'] ?? 'none';
-        $views = $viewsSource === 'none'
-            ? '—'
-            : number_format($stats['views']);
+        $views = (int) ($stats['views'] ?? 0);
+
+        if ($viewsSource === 'none') {
+            $hint = trans('plugins/courses::courses.table.views_hint_unavailable');
+
+            return '<div class="text-muted small">' . BaseHelper::clean($hint) . '</div>';
+        }
+
+        $reference = max(1, $this->performance()->maxReferenceViews());
+        $viewsLabel = trans('plugins/courses::courses.table.views_rating_label', [
+            'count' => number_format($views),
+        ]);
 
         $hintKey = match ($viewsSource) {
             'analytics' => 'plugins/courses::courses.table.views_hint',
@@ -276,33 +311,72 @@ HTML;
         }
 
         $hint = trans($hintKey, $hintParams);
+        $hintHtml = e($hint);
+        $title = e($viewsLabel);
 
-        return sprintf('<div class="fw-semibold">%s</div><div class="text-muted small">%s</div>', $views, $hint);
+        $segments = 8;
+        $filledSegments = (int) round(min($views / $reference, 1) * $segments);
+        $filledSegments = max(0, min($segments, $filledSegments));
+
+        $segmentsMarkup = '';
+
+        for ($i = 0; $i < $segments; $i++) {
+            $isFilled = $i < $filledSegments;
+            $color = $isFilled ? '#2F6A62' : '#DDE6E4';
+            $segmentsMarkup .= '<span style="display:inline-block;width:12px;height:6px;border-radius:4px;background:' . $color . ';margin-right:6px;"></span>';
+        }
+
+        $viewsBadge = '<span class="px-3 py-1 rounded-pill" style="background:#F4F9F8;color:#24554F;font-weight:600;">' . number_format($views) . '</span>';
+
+        return <<<HTML
+<div class="d-flex flex-column gap-2" title="{$title}">
+    <div class="d-flex align-items-center gap-3">
+        {$viewsBadge}
+        <div class="d-flex align-items-center">{$segmentsMarkup}</div>
+    </div>
+    <div class="text-muted small">{$hintHtml}</div>
+</div>
+HTML;
     }
 
     protected function renderOccupancy(CourseSession $session): string
     {
         $stats = $this->performance()->forSession($session);
-        $percent = (int) round(min($stats['occupancy_percent'], 100));
-        $booked = $stats['booked_seats'];
+        $booked = (int) $stats['booked_seats'];
+        $maxSeats = $stats['max_seats'];
 
-        if ($stats['max_seats'] !== null) {
+        if ($maxSeats !== null) {
             $label = trans('plugins/courses::courses.table.booked_vs_remaining', [
                 'booked' => $booked,
                 'remaining' => $stats['remaining_seats'],
             ]);
+            $capacity = max($maxSeats, 1);
+            $ratio = $capacity > 0 ? $booked / $capacity : 0;
         } else {
             $label = trans('plugins/courses::courses.table.booked_unlimited', [
                 'booked' => $booked,
             ]);
+            $ratio = $booked > 0 ? 1 : 0;
         }
 
-        return <<<HTML
-<div class="small text-muted">{$label}</div>
-<div style="height:6px;background:#e9ecef;border-radius:999px;overflow:hidden;margin-top:6px;">
-    <div style="width:{$percent}%;background:#578E88;height:6px;"></div>
-</div>
-HTML;
+        $chairs = 5;
+        $filledChairs = (int) round(min(max($ratio, 0), 1) * $chairs);
+        $filledChairs = max(0, min($chairs, $filledChairs));
+
+        $capacityLabel = $maxSeats !== null
+            ? $booked . ' / ' . max(1, $maxSeats)
+            : $booked . ' / ∞';
+
+        $label = BaseHelper::clean($label);
+        $progress = max(0, min(100, (int) round($ratio * 100)));
+
+        return view('plugins/courses::tables.columns.occupancy', [
+            'chairs' => $chairs,
+            'filledChairs' => $filledChairs,
+            'capacityLabel' => $capacityLabel,
+            'progress' => $progress,
+            'label' => $label,
+        ])->render();
     }
 
     protected function renderEngagement(CourseSession $session): string
@@ -310,6 +384,7 @@ HTML;
         $stats = $this->performance()->forSession($session);
         $engagement = number_format($stats['engagement_percent'], 1);
         $conversion = number_format($stats['conversion_percent'], 1);
+        $views = number_format($stats['views']);
 
         $engagementLabel = trans('plugins/courses::courses.table.engagement_ratio', [
             'attended' => $stats['engaged_participants'],
@@ -320,40 +395,93 @@ HTML;
             'percent' => $conversion,
         ]);
 
+        $viewsLabel = trans('plugins/courses::courses.table.engagement_views', [
+            'count' => $views,
+        ]);
+
         return <<<HTML
-<div class="fw-semibold">{$engagement}%</div>
-<div class="text-muted small">{$engagementLabel}</div>
-<div class="text-muted small">{$conversionLabel}</div>
+<div class="d-flex flex-column gap-2">
+    <div class="d-inline-flex align-items-center gap-2">
+        <span class="px-3 py-2 rounded-pill" style="background:#EEF5F4;color:#24554F;font-weight:600;">{$engagement}%</span>
+        <span class="text-muted small">{$viewsLabel}</span>
+    </div>
+    <div class="text-muted small">{$engagementLabel}</div>
+    <div class="text-muted small">{$conversionLabel}</div>
+</div>
+HTML;
+    }
+
+    protected function renderParticipants(CourseSession $session): string
+    {
+        $buttonLabel = e(trans('plugins/courses::courses.table.view_participants'));
+        $sessionId = $session->getKey();
+
+        return <<<HTML
+<button type="button" class="btn btn-sm view-participants-btn d-inline-flex align-items-center gap-2" data-session-id="{$sessionId}" style="background:#F4F9F8;color:#24554F;border:1px solid #C7DBD7;">
+    <i class="fa fa-users" aria-hidden="true"></i>
+    <span>{$buttonLabel}</span>
+</button>
 HTML;
     }
 
     protected function renderSchedule(CourseSession $session): string
     {
-        $start = $this->formatDate($session->start_date, 'd.m.Y H:i');
-        $end = $this->formatDate($session->end_date, 'd.m.Y H:i');
+        $startDate = $this->formatDate($session->start_date, 'd.m.Y');
+        $timeRange = '—';
 
-        return <<<HTML
-<div class="fw-semibold">{$start}</div>
-<div class="text-muted small">{$end}</div>
-HTML;
+        if ($session->start_date && $session->end_date) {
+            $timeRange = $session->start_date->format('H:i') . ' – ' . $session->end_date->format('H:i');
+        } elseif ($session->start_date) {
+            $timeRange = $session->start_date->format('H:i');
+        }
+
+        $timeBadge = $timeRange !== '—'
+            ? '<span class="px-4 py-2 rounded-pill" style="background:#2F6A621A;color:#1F2A2A;font-weight:600;min-width:124px;display:inline-flex;justify-content:center;">' . $timeRange . '</span>'
+            : '<span class="text-muted small">' . $timeRange . '</span>';
+
+        $weekdayLabel = $session->start_date
+            ? e($session->start_date->locale(app()->getLocale())->translatedFormat('l'))
+            : null;
+
+        return view('plugins/courses::tables.columns.schedule', [
+            'dateLabel' => $startDate,
+            'weekdayLabel' => $weekdayLabel,
+            'timeBadge' => $timeBadge,
+        ])->render();
     }
 
     protected function renderScore(CourseSession $session): string
     {
         $stats = $this->performance()->forSession($session);
-        $score = $stats['score'];
-        $percentage = max(0, min(100, (int) round($score)));
+        $score = number_format($stats['score'], 1);
 
-        $scoreHint = trans('plugins/courses::courses.table.score_hint');
+        [$background, $accent, $textColor, $ratingKey] = $this->resolveScoreStyle((float) $stats['score']);
+        $ratingText = trans($ratingKey);
+        $ratingLabel = BaseHelper::clean($ratingText);
+        $title = e($ratingText);
 
-        return <<<HTML
-<div class="d-flex flex-column align-items-center gap-2">
-    <div style="width:52px;height:52px;border-radius:50%;background:conic-gradient(#578E88 {$percentage}%, #e9ecef {$percentage}%);display:flex;align-items:center;justify-content:center;font-weight:600;color:#2b2b2b;">
-        {$score}
-    </div>
-    <span class="text-muted small">{$scoreHint}</span>
-</div>
-HTML;
+        $scoreValue = max(0, min(100, (float) $stats['score']));
+        $sweep = $scoreValue === 0.0 ? 0.01 : $scoreValue;
+
+        return view('plugins/courses::tables.columns.score', [
+            'score' => $score,
+            'ratingLabel' => $ratingLabel,
+            'subtitle' => $title,
+            'ringColor' => $accent,
+            'background' => $background,
+            'textColor' => $textColor,
+            'sweep' => $sweep,
+        ])->render();
+    }
+
+    protected function resolveScoreStyle(float $score): array
+    {
+        return match (true) {
+            $score >= 85 => ['#1F4B45', '#5AB2A4', '#FFFFFF', 'plugins/courses::courses.table.score_rating.great'],
+            $score >= 65 => ['#2F6A62', '#70C1B6', '#FFFFFF', 'plugins/courses::courses.table.score_rating.good'],
+            $score >= 45 => ['#F2B138', '#F7C974', '#2B2B2B', 'plugins/courses::courses.table.score_rating.fair'],
+            default => ['#D96C5F', '#E79B92', '#FFFFFF', 'plugins/courses::courses.table.score_rating.poor'],
+        };
     }
 
     protected function performance(): CoursePerformanceService
