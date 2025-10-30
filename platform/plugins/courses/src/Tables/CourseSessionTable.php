@@ -19,6 +19,8 @@ class CourseSessionTable extends TableAbstract
 
     public function setup(): void
     {
+        $this->hasOperations = false;
+
         $this
             ->model(CourseSession::class)
             ->addColumns([
