@@ -67,9 +67,9 @@ $topMembers = collect($clients)->sortByDesc('score')->take(5);
 /* === LETZTE BUCHUNGEN (nur vollständig bezahlte) === */
 $bookings = DB::table('course_bookings')
     ->join('courses', 'course_bookings.course_id', '=', 'courses.id')
-    ->join('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
+    ->leftJoin('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
     ->leftJoin('payments', function ($join) {
-        $join->on('payments.order_id', '=', 'course_bookings.id');
+        $join->on(DB::raw('CAST(course_bookings.payment_id AS CHAR)'), '=', DB::raw('CAST(payments.id AS CHAR)'));
     })
     ->select(
         'course_bookings.id as booking_id',
@@ -87,8 +87,7 @@ $bookings = DB::table('course_bookings')
         'ht_customers.last_name',
         'ht_customers.avatar'
     )
-    ->whereNotNull('payments.order_id')
-    ->where('payments.status', '=', 'completed')
+    ->whereIn('payments.status', ['completed', 'paid', 'success'])
     ->orderByDesc('payments.created_at')
     ->limit(5)
     ->get()
@@ -97,6 +96,7 @@ $bookings = DB::table('course_bookings')
         $b->amount = $b->payment_amount ?? $b->booking_amount ?? 0;
         return $b;
     });
+
 
 /* === Fallback-SVGs === */
 $chairSvg = file_exists(public_path('images/icons/chair.svg'))
