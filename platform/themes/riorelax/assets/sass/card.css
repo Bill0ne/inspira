@@ -42,7 +42,7 @@
   font-size: 16px !important;
   line-height: 20px !important;
   font-weight: 600 !important;
-  color: #4F4F4F !important;
+  color: #414141 !important; /* aktualisierte Farbe */
   margin: 0 0 2px 0 !important;
 }
 
@@ -50,7 +50,7 @@
 .course-subtitle {
   font-size: 13px !important;
   font-weight: 500 !important;
-  color: #6C6C6C !important;
+  color: #578E88 !important;
   line-height: 18px !important;
   margin-bottom: 4px !important;
 }
@@ -59,7 +59,7 @@
 .course-desc {
   font-size: 12px !important;
   line-height: 18px !important;
-  color: #666 !important;
+  color: #6C6C6C !important; /* aktualisierte Farbe */
   font-weight: 400 !important;
   margin: 0 0 8px 0 !important;
   display: -webkit-box !important;
@@ -75,7 +75,7 @@
 .course-body span,
 .course-body strong,
 .course-body em {
-  color: #4b4b4b !important;
+  color: #6C6C6C !important; /* angepasste Textfarbe */
   font-weight: 400 !important;
 }
 
