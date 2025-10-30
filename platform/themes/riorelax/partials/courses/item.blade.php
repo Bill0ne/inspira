@@ -4,7 +4,11 @@ use Carbon\Carbon;
 $now = now();
 
 /* === Sessions ermitteln === */
-$upcoming = $course->sessions()->where('start_date', '>=', $now)->orderBy('start_date')->get();
+$upcoming = $course->sessions()
+    ->where('start_date', '>=', $now)
+    ->orderBy('start_date')
+    ->get();
+
 $next = $upcoming->first();
 $hasMultiple = $upcoming->count() > 1;
 
@@ -12,7 +16,10 @@ $hasMultiple = $upcoming->count() > 1;
 $format = fn($s) => $s
     ? Carbon::parse($s->start_date)->format('d.m.Y H:i') . '–' . Carbon::parse($s->end_date)->format('H:i')
     : null;
-$dateLabel = $hasMultiple ? __('Mehrere Termine') : ($next ? $format($next) : __('Kein Termin verfügbar'));
+
+$dateLabel = $hasMultiple
+    ? __('Mehrere Termine')
+    : ($next ? $format($next) : __('Kein Termin verfügbar'));
 
 /* === Ziel-URL === */
 $cartUrl = $hasMultiple
@@ -22,8 +29,9 @@ $cartUrl = $hasMultiple
         : $course->url);
 
 /* === Fallback-Bild === */
-$image = $course->thumbnail
-    ? RvMedia::getImageUrl($course->thumbnail, 'medium')
+$thumbnail = $course->thumbnail;
+$image = $thumbnail
+    ? RvMedia::getImageUrl($thumbnail, 'medium', false, RvMedia::getDefaultImage())
     : RvMedia::getImageUrl('default-course.jpg', 'medium', false, RvMedia::getDefaultImage());
 @endphp
 
@@ -39,15 +47,11 @@ $image = $course->thumbnail
     <h4 class="course-title">{{ strip_tags($course->name) }}</h4>
 
     @if ($course->subtitle)
-      <p class="course-subtitle">
-        {{ strip_tags($course->subtitle) }}
-      </p>
+      <p class="course-subtitle">{{ strip_tags($course->subtitle) }}</p>
     @endif
 
     @if ($course->description)
-      <p class="course-desc">
-        {!! BaseHelper::clean(strip_tags($course->description, '<br><em>')) !!}
-      </p>
+      <p class="course-desc">{!! BaseHelper::clean(strip_tags($course->description, '<br><em>')) !!}</p>
     @endif
 
     {{-- === Footer-Bereich (zweizeilig) === --}}
