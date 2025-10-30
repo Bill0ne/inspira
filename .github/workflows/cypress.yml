@@ -1,11 +1,18 @@
 name: 🚀 Cypress Tests (Inspira)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # manuell startbar
+  push:
+    branches:
+      - stage-desk     # optional automatisch auf stage
 
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        containers: [1, 2]   # 2 parallele Test-Instanzen
 
     steps:
       - name: 🧩 Checkout repository
@@ -16,16 +23,16 @@ jobs:
         with:
           node-version: 20
 
-      - name: 📦 Install dependencies (ignore invalid versions)
+      - name: 📦 Install dependencies (safe mode)
         run: |
-          npm install --legacy-peer-deps --ignore-engines --no-audit --force
+          npm ci --legacy-peer-deps --ignore-engines --no-audit || npm install --legacy-peer-deps --ignore-engines --no-audit --force
           npx cypress verify
 
-      - name: 🧪 Run Cypress E2E tests
+      - name: 🧪 Run Cypress tests on Stage
         uses: cypress-io/github-action@v6
         with:
           record: true
-          parallel: false
+          parallel: true
           browser: chrome
           config: baseUrl=https://stage.inspira-zentrum.de
         env:
