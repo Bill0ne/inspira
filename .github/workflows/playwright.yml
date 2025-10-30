@@ -1,39 +1,61 @@
-name: 🚀 Playwright E2E (Inspira)
+name: 🧪 Playwright Tests (Inspira)
 
 on:
-  workflow_dispatch: # manuell startbar
+  # 🔹 Manuell auslösen oder automatisch bei Push auf stage-desk
   push:
-    branches: [ stage-desk ] # automatisch bei Push auf Stage
+    branches:
+      - stage-desk
+  workflow_dispatch:
 
 jobs:
-  e2e:
+  playwright-tests:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Repository auschecken
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Node.js Setup
       - name: 🧱 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
 
+      # 3️⃣ Install Playwright dependencies
       - name: 📦 Install Playwright deps
-        working-directory: ./tests/e2e
+        working-directory: tests/e2e
         run: |
           npm ci || npm install
           npx playwright install --with-deps
 
+      # 4️⃣ Run Playwright tests (HTML + JSON report)
       - name: 🧪 Run Playwright tests
-        working-directory: ./tests/e2e
-        env:
-          BASE_URL: https://stage.inspira-zentrum.de
-        run: npx playwright test --reporter=html
+        working-directory: tests/e2e
+        run: |
+          mkdir -p test-results
+          npx playwright test --reporter=html,json
+          mkdir -p artifacts
+          cp -r playwright-report artifacts/html
+          cp playwright-report.json artifacts/results.json
 
-      - name: 📑 Upload HTML report
-        if: always()
-        uses: actions/upload-artifact@v4
+      # 5️⃣ Prepare report folder with timestamp (e.g. /reports/43/)
+      - name: 🕒 Prepare report folder
+        id: prep
+        run: echo "run_id=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
+
+      # 6️⃣ Upload reports to Hostinger (Stage Dashboard)
+      - name: 🚀 Upload reports to Inspira Stage Server
+        uses: burnett01/rsync-deployments@5.2
         with:
-          name: playwright-report
-          path: tests/e2e/playwright-report
-          retention-days: 7
+          switches: -avzr --delete
+          path: tests/e2e/artifacts/
+          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/${{ steps.prep.outputs.run_id }}/
+          remote_host: 145.223.35.233
+          remote_port: 65002
+          remote_user: u296731902
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # 7️⃣ Notify completion
+      - name: ✅ Notify success
+        run: echo "✅ Playwright Tests completed & uploaded at $(date)"
