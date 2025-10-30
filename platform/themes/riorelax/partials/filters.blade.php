@@ -180,49 +180,61 @@
       }
     });
   }
-  const applyFilters = () => {
-    const formData = new FormData(f);
-    const params = new URLSearchParams();
-    formData.forEach((value, key) => {
-      if (value == null) {
+  const submitForm = () => {
+    const empties = [];
+
+    const searchField = f.querySelector('input[name="search"]');
+    if (searchField) {
+      searchField.value = searchField.value.trim();
+      if (searchField.value === '') {
+        empties.push(searchField);
+      }
+    }
+
+    Array.from(f.elements).forEach((el) => {
+      if (!el.name || el === searchField || el.name === 'filter_type') {
         return;
       }
 
-      let processed = value;
+      const tag = el.tagName;
+      const type = el.type;
+      const value = el.value;
 
-      if (typeof processed === 'string' && key === 'search') {
-        processed = processed.trim();
+      if (tag === 'SELECT' || type === 'text' || type === 'search') {
+        if (value == null || value === '') {
+          empties.push(el);
+        }
       }
-
-      if (processed === '') {
-        return;
-      }
-
-      params.set(key, processed);
     });
 
-    const base = f.getAttribute('action') || window.location.href;
-    const nextUrl = new URL(params.toString() ? `${base}?${params.toString()}` : base, window.location.origin);
-    const currentUrl = new URL(window.location.href);
+    empties.forEach((el) => {
+      el.dataset.filterPrevDisabled = el.disabled ? '1' : '0';
+      el.disabled = true;
+    });
 
-    // Hash-Fragmente ignorieren, wir wollen nur den eigentlichen Filterzustand vergleichen
-    nextUrl.hash = '';
-    currentUrl.hash = '';
+    f.submit();
 
-    if (nextUrl.toString() === currentUrl.toString()) {
-      window.location.reload();
-    } else {
-      window.location.assign(nextUrl.toString());
-    }
+    setTimeout(() => {
+      empties.forEach((el) => {
+        if (el.dataset.filterPrevDisabled === '1') {
+          el.disabled = true;
+        } else {
+          el.disabled = false;
+        }
+        delete el.dataset.filterPrevDisabled;
+      });
+    }, 150);
   };
 
   f.addEventListener('submit', (event) => {
     event.preventDefault();
-    applyFilters();
+    submitForm();
   });
 
   f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', applyFilters);
+    el.addEventListener('change', () => {
+      submitForm();
+    });
   });
 
   const searchField = f.querySelector('input[name="search"]');
@@ -230,7 +242,7 @@
     searchField.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        applyFilters();
+        submitForm();
       }
     });
   }
@@ -252,7 +264,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    applyFilters();
+    submitForm();
   });
 })();
 </script>
