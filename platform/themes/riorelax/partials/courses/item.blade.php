@@ -22,16 +22,18 @@ $cartUrl = $hasMultiple ? $course->url : (Route::has('public.course.checkout') ?
   </div>
 
   <div class="course-body">
-    <h4 class="course-title">{{ $course->name }}</h4>
+    <h4 class="course-title">{{ strip_tags($course->name) }}</h4>
 
     @if ($course->subtitle)
       <p class="course-subtitle" style="font-weight:600;color:#578E88;margin-bottom:2px;">
-        {{ $course->subtitle }}
+        {{ strip_tags($course->subtitle) }}
       </p>
     @endif
 
     @if ($course->description)
-      <p class="course-desc">{!! BaseHelper::clean(Str::limit($course->description, 120)) !!}</p>
+      <p class="course-desc">
+        {!! BaseHelper::clean(strip_tags($course->description, '<strong><em><br>')) !!}
+      </p>
     @endif
 
     <div class="course-meta">
