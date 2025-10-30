@@ -42,7 +42,7 @@
   font-size: 16px !important;
   line-height: 20px !important;
   font-weight: 600 !important;
-  color: #414141 !important; /* aktualisierte Farbe */
+  color: #1c1c1c !important;
   margin: 0 0 2px 0 !important;
 }
 
@@ -59,7 +59,7 @@
 .course-desc {
   font-size: 12px !important;
   line-height: 18px !important;
-  color: #6C6C6C !important; /* aktualisierte Farbe */
+  color: #666 !important;
   font-weight: 400 !important;
   margin: 0 0 8px 0 !important;
   display: -webkit-box !important;
@@ -75,7 +75,7 @@
 .course-body span,
 .course-body strong,
 .course-body em {
-  color: #6C6C6C !important; /* angepasste Textfarbe */
+  color: #4b4b4b !important;
   font-weight: 400 !important;
 }
 
