@@ -83,32 +83,65 @@ class CourseController extends BaseController
         $oldRecurringUntil = $course->recurring_until;
         $newStartDate = $request->input('start_date');
         $oldStartDate = $course->start_date;
+        $newIsRecurring = (bool) $request->input('is_recurring');
+        $oldIsRecurring = (bool) $course->is_recurring;
 
-        if ($oldRecurringUntil && $newRecurringUntil && $newRecurringUntil < $oldRecurringUntil) {
+        if ($oldIsRecurring && !$newIsRecurring) {
             $sessionsWithBookings = $course->sessions()
                 ->where('is_manual', false)
-                ->where('start_date', '>', $newRecurringUntil)
+                ->where(function ($query) use ($course) {
+                    $query->where('start_date', '!=', $course->start_date)
+                        ->orWhere('end_date', '!=', $course->end_date);
+                })
                 ->whereHas('bookings')
                 ->count();
 
             if ($sessionsWithBookings > 0) {
-                return $this
-                    ->httpResponse()
+                return $this->httpResponse()
                     ->setError()
                     ->setPreviousUrl(route('course.edit', $course->getKey()))
-                    ->setMessage('Cannot reduce recurring date. There are ' . $sessionsWithBookings . ' sessions with existing bookings. Please cancel them first.')
+                    ->setMessage("Cannot turn off recurring. There are $sessionsWithBookings recurring sessions with bookings. Cancel them first.")
                     ->toResponse($request);
             }
 
-            $sessionsToDelete = $course->sessions()
+            $course->sessions()
                 ->where('is_manual', false)
-                ->where('start_date', '>', $newRecurringUntil)
+                ->where(function ($query) use ($course) {
+                    $query->where('start_date', '!=', $course->start_date)
+                        ->orWhere('end_date', '!=', $course->end_date);
+                })
                 ->doesntHave('bookings')
-                ->get();
+                ->delete();
+        }
 
-            foreach ($sessionsToDelete as $session) {
-                $session->delete();
+        if ($oldRecurringUntil && $newRecurringUntil && $newRecurringUntil < $oldRecurringUntil) {
+            $sessionsWithBookings = $course->sessions()
+                ->where('is_manual', false)
+                ->where(function ($query) use ($course) {
+                    $query->where('start_date', '!=', $course->start_date)
+                        ->orWhere('end_date', '!=', $course->end_date);
+                })
+                ->where('end_date', '>', $newRecurringUntil)
+                ->whereHas('bookings')
+                ->count();
+
+            if ($sessionsWithBookings > 0) {
+                return $this->httpResponse()
+                    ->setError()
+                    ->setPreviousUrl(route('course.edit', $course->getKey()))
+                    ->setMessage("Cannot reduce recurring date. There are $sessionsWithBookings sessions with existing bookings.")
+                    ->toResponse($request);
             }
+
+            $course->sessions()
+                ->where('is_manual', false)
+                ->where(function ($query) use ($course) {
+                    $query->where('start_date', '!=', $course->start_date)
+                        ->orWhere('end_date', '!=', $course->end_date);
+                })
+                ->where('end_date', '>', $newRecurringUntil)
+                ->doesntHave('bookings')
+                ->delete();
         }
 
         if ($oldStartDate && $newStartDate && $newStartDate > $oldStartDate) {
@@ -119,23 +152,18 @@ class CourseController extends BaseController
                 ->count();
 
             if ($sessionsWithBookings > 0) {
-                return $this
-                    ->httpResponse()
+                return $this->httpResponse()
                     ->setError()
                     ->setPreviousUrl(route('course.edit', $course->getKey()))
-                    ->setMessage('Cannot move start date forward. There are ' . $sessionsWithBookings . ' sessions before ' . $newStartDate . ' with existing bookings.')
+                    ->setMessage("Cannot move start date forward. There are $sessionsWithBookings sessions before $newStartDate with existing bookings.")
                     ->toResponse($request);
             }
 
-            $sessionsToDelete = $course->sessions()
+            $course->sessions()
                 ->where('is_manual', false)
                 ->where('start_date', '<', $newStartDate)
                 ->doesntHave('bookings')
-                ->get();
-
-            foreach ($sessionsToDelete as $session) {
-                $session->delete();
-            }
+                ->delete();
         }
 
         CourseForm::createFromModel($course)
@@ -146,8 +174,7 @@ class CourseController extends BaseController
 
         $this->generateSessions($course);
 
-        return $this
-            ->httpResponse()
+        return $this->httpResponse()
             ->setPreviousUrl(route('course.index'))
             ->setMessage(trans('core/base::notices.update_success_message'));
     }
