@@ -181,9 +181,27 @@
     });
   }
   const fieldNames = ['filter_type', 'search', 'category', 'trainer', 'sort'];
+  let isNavigating = false;
+  const submitDirectly = () => {
+    if (typeof f.requestSubmit === 'function') {
+      f.requestSubmit();
+    } else {
+      f.submit();
+    }
+  };
   const applyFilters = () => {
-    const url = new URL(window.location.href);
-    const params = new URLSearchParams(url.search);
+    if (isNavigating) {
+      return;
+    }
+
+    if (!('URLSearchParams' in window)) {
+      submitDirectly();
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const action = f.getAttribute('action') || window.location.href;
+    const url = new URL(action, window.location.origin);
 
     fieldNames.forEach((name) => {
       const element = f.elements.namedItem(name);
@@ -206,7 +224,17 @@
 
     params.delete('page');
     url.search = params.toString();
-    window.location.assign(url.toString());
+
+    const next = url.toString();
+    const current = window.location.href;
+
+    isNavigating = true;
+
+    if (next === current) {
+      window.location.reload();
+    } else {
+      window.location.href = next;
+    }
   };
 
   f.addEventListener('submit', (event) => {
