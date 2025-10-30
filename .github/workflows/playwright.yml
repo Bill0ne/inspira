@@ -8,36 +8,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # === 1️⃣ Repository Checkout ===
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # === 2️⃣ Node.js Setup ===
       - name: 🧱 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # === 3️⃣ Install Playwright ===
       - name: 🧪 Install Playwright
         run: |
-          npm ci || npm install
+          cd tests/e2e
+          rm -f package-lock.json
+          npm install --legacy-peer-deps
           npx playwright install --with-deps
 
-      # === 4️⃣ Run Playwright Tests ===
       - name: 🧩 Run Playwright tests
         run: |
-          mkdir -p reports/${{ github.run_id }}
-          npx playwright test --reporter=json > reports/${{ github.run_id }}/results.json
+          cd tests/e2e
+          mkdir -p ../../reports/${{ github.run_id }}
+          npx playwright test --reporter=json > ../../reports/${{ github.run_id }}/results.json
         continue-on-error: true
 
-      # === 5️⃣ Prepare Report Folder ===
       - name: 📦 Prepare report folder
         run: |
           mkdir -p reports/${{ github.run_id }}
           echo "Preparing report folder for upload..."
 
-      # === 6️⃣ Upload Reports to Inspira Server ===
       - name: 📤 Upload reports to Inspira Server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.INSPIRA_SSH_KEY }}
@@ -53,7 +50,6 @@ jobs:
           rsync -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
           reports/ $REMOTE_USER@$REMOTE_HOST:/home/u296731902/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/
 
-      # === 7️⃣ Notification ===
       - name: 🔔 Notify success
         if: success()
         run: echo "✅ Playwright E2E Tests erfolgreich abgeschlossen!"
@@ -61,4 +57,3 @@ jobs:
       - name: ❌ Notify failure
         if: failure()
         run: echo "❌ Playwright E2E Tests sind fehlgeschlagen."
-
