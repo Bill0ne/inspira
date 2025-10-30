@@ -39,7 +39,6 @@
     $activeFilters = collect([
         'search'   => request('search'),
         'category' => request('category'),
-        'date'     => request('date'),
         'trainer'  => request('trainer'),
         'sort'     => request('sort'),
     ])->filter(fn ($value) => filled($value));
@@ -70,26 +69,16 @@
     </button>
 
     <div id="filterBar" class="filter-bar shadow-sm rounded-3 {{ $activeFilters->isNotEmpty() ? 'open' : '' }}">
-        <div class="filter-bar-header d-flex align-items-center justify-content-between flex-wrap mb-3">
-            <div class="d-flex align-items-center gap-2 text-muted">
-                <span class="filter-badge d-inline-flex align-items-center justify-content-center"><i class="fal fa-sliders-h"></i></span>
-                <span class="fw-semibold filter-result-label">{{ $resultLabel }}</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                @if($activeFilters->isNotEmpty())
-                    <button id="filterReset" type="button" class="btn btn-link p-0 text-decoration-none text-muted">
-                        <i class="fal fa-times-circle me-1"></i> Filter zurücksetzen
-                    </button>
-                @endif
-                <span class="badge rounded-pill bg-light text-muted border"><strong>{{ $formattedCount }}</strong></span>
-            </div>
+        <div class="filter-bar-header d-flex align-items-center gap-3 mb-3 text-muted">
+            <span class="filter-badge d-inline-flex align-items-center justify-content-center"><i class="fal fa-sliders-h"></i></span>
+            <span class="fw-semibold filter-result-label">{{ $resultLabel }}</span>
         </div>
 
-        <form id="mainFilterForm" method="GET" action="{{ url()->current() }}" class="row g-3 align-items-center">
+        <form id="mainFilterForm" method="GET" action="{{ url()->current() }}" class="row g-3 align-items-center flex-nowrap">
             <input type="hidden" name="filter_type" value="{{ $type }}">
 
             {{-- 🔍 Suche --}}
-            <div class="col-lg-3 col-md-6 col-sm-12">
+            <div class="col-lg-4 col-md-6 col-sm-12 flex-grow-1">
                 <label class="visually-hidden" for="filter-search">Suche</label>
                 <div class="search-field d-flex align-items-center">
                     <i class="fal fa-search me-2 text-muted fs-5"></i>
@@ -100,7 +89,7 @@
             </div>
 
             {{-- 🧭 Kategorie --}}
-            <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="col-lg-3 col-md-4 col-sm-6">
                 <label class="visually-hidden" for="filter-category">Kategorie</label>
                 <select id="filter-category" name="category" class="form-select form-select-sm text-muted">
                     <option value="">{{ $isCourses ? 'Kurskategorie' : 'Raumkategorie' }}</option>
@@ -112,16 +101,9 @@
                 </select>
             </div>
 
-            {{-- 🗓️ Datum (nur 1 Feld: Wann) --}}
-            <div class="col-lg-2 col-md-6 col-sm-6">
-                <label class="visually-hidden" for="filter-date">Wann</label>
-                <input id="filter-date" type="date" name="date" class="form-control form-control-sm text-muted"
-                       value="{{ request('date') }}">
-            </div>
-
             {{-- 👩‍🏫 Coach (nur bei Kursen) --}}
             @if($isCourses)
-                <div class="col-lg-2 col-md-6 col-sm-6">
+                <div class="col-lg-3 col-md-4 col-sm-6">
                     <label class="visually-hidden" for="filter-trainer">Coach</label>
                     <select id="filter-trainer" name="trainer" class="form-select form-select-sm text-muted">
                         <option value="">Coach</option>
@@ -135,7 +117,7 @@
             @endif
 
             {{-- 🔽 Sortierung --}}
-            <div class="col-lg-2 col-md-6 col-sm-6">
+            <div class="col-lg-2 col-md-4 col-sm-6">
                 <label class="visually-hidden" for="filter-sort">Sortieren</label>
                 <select id="filter-sort" name="sort" class="form-select form-select-sm text-muted">
                     <option value="">Sortieren nach</option>
@@ -154,7 +136,6 @@
                         $labelMap = [
                             'search' => 'Suche',
                             'category' => $isCourses ? 'Kategorie' : 'Kategorie',
-                            'date' => 'Datum',
                             'trainer' => 'Coach',
                             'sort' => 'Sortierung',
                         ];
@@ -172,8 +153,6 @@
                             $display = optional($categories->firstWhere('id', (int) $value))->name ?? $display;
                         } elseif ($key === 'trainer') {
                             $display = optional($trainers->firstWhere('id', (int) $value))->name ?? $display;
-                        } elseif ($key === 'date') {
-                            try { $display = \Carbon\Carbon::parse($value)->format('d.m.Y'); } catch (\Throwable $e) {}
                         } elseif ($key === 'sort') {
                             $display = $sortMap[$value] ?? $display;
                         }
@@ -212,26 +191,16 @@
       f.submit();
     }
   };
-  f.querySelectorAll('select,input[type="date"]').forEach(el => {
+  f.querySelectorAll('select').forEach(el => {
     el.addEventListener('change', submitForm);
   });
   const s = f.querySelector('input[name="search"]');
   if(s) {
     s.addEventListener('keydown', e=>{ if(e.key==='Enter') submitForm(); });
   }
-  const resetBtn = document.getElementById('filterReset');
-  if(resetBtn){
-    resetBtn.addEventListener('click', () => {
-      f.reset();
-      const filterTypeField = f.querySelector('input[name="filter_type"]');
-      if(filterTypeField){
-        filterTypeField.value = '{{ $type }}';
-      }
-      submitForm();
-    });
-  }
   f.querySelectorAll('.filter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
+    chip.addEventListener('click', (event) => {
+      event.preventDefault();
       const key = chip.getAttribute('data-key');
       if(!key) return;
       const field = f.querySelector(`[name="${key}"]`);
@@ -266,12 +235,8 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     padding-bottom: 0.75rem;
 }
-.filter-bar-header .badge {
-    background-color: #fff;
-    border-color: #d9d9d9 !important;
-    color: #444;
-    font-size: 13px;
-    padding: 0.5rem 0.85rem;
+.filter-result-label {
+    font-size: 14px;
 }
 .filter-badge {
     width: 36px;
@@ -282,14 +247,14 @@
     color: #666;
     font-size: 16px;
 }
-.filter-result-label {
-    font-size: 14px;
-}
 .filter-bar input, .filter-bar select {
     border: 1px solid #d9d9d9;
     color: #333;
     font-size: 13px;
     background-color: #fff;
+}
+.filter-bar #mainFilterForm {
+    flex-wrap: nowrap;
 }
 .filter-bar input::placeholder { color: #999; }
 .filter-toggle-btn {
@@ -356,6 +321,13 @@
     }
     #filterBar.open {
         display: block;
+    }
+    .filter-bar #mainFilterForm {
+        flex-wrap: wrap !important;
+    }
+    .filter-bar #mainFilterForm > div {
+        flex: 0 0 100%;
+        max-width: 100%;
     }
 }
 @media (max-width: 767.98px) {

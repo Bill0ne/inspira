@@ -5,7 +5,6 @@ namespace Theme\Riorelax\Helpers;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
-use Carbon\Carbon;
 
 class FilterHelper
 {
@@ -42,38 +41,6 @@ class FilterHelper
             }
         }
 
-        // 🗓️ Datum
-        $date = self::parseDate($request->get('date'));
-        if ($date) {
-            if ($type === 'courses') {
-                if (self::has($query, 'start_date')) {
-                    $query->whereDate('start_date', '<=', $date);
-                }
-
-                if (self::has($query, 'end_date')) {
-                    $query->where(function (Builder $builder) use ($date) {
-                        $builder
-                            ->whereNull('end_date')
-                            ->orWhereDate('end_date', '>=', $date);
-                    });
-                }
-            } else {
-                $query->where(function (Builder $roomQuery) use ($date) {
-                    $roomQuery
-                        ->whereDoesntHave('activeRoomDates')
-                        ->orWhereHas('activeRoomDates', function ($dates) use ($date) {
-                            $dates
-                                ->whereDate('start_date', '<=', $date)
-                                ->where(function ($range) use ($date) {
-                                    $range
-                                        ->whereNull('end_date')
-                                        ->orWhereDate('end_date', '>=', $date);
-                                });
-                        });
-                });
-            }
-        }
-
         // 🔽 Sortierung
         $query->reorder();
         switch ((string) $request->get('sort')) {
@@ -106,19 +73,6 @@ class FilterHelper
         }
 
         return self::apply($request, $query, $type)->count();
-    }
-
-    protected static function parseDate(?string $val): ?string
-    {
-        if (!$val) return null;
-        $val = trim($val);
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $val)) return $val;
-
-        try {
-            return Carbon::createFromFormat('d.m.Y', $val)->format('Y-m-d');
-        } catch (\Throwable) {
-            return null;
-        }
     }
 
     protected static function has(Builder $query, string $column): bool
