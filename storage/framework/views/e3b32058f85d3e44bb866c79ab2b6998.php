@@ -1,3 +1,11 @@
+<?php
+    Theme::asset()->container('footer')->usePath()->add('date-css', 'css/date.css');
+        Theme::asset()->container('footer')->add('popper', 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js', ['jquery']);
+        Theme::asset()->container('footer')->add('bootstrap-js', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js', ['jquery', 'popper']);
+      Theme::asset()->container('footer')->usePath()->add('moment-js', 'vendors/moment.min.js');
+      Theme::asset()->container('footer')->usePath()->add('date-picker', 'vendors/date-picker.min.js');
+        Theme::asset()->container('footer')->usePath()->add('datetime-js', 'js/datetime.js');
+?>
 <section class="booking pt-90 pb-90 p-relative fix">
     <?php if($shapeImage = $shortcode->shape_image): ?>
         <div class="animations-01">
@@ -19,17 +27,22 @@
                     <form action="<?php echo e(route('public.booking')); ?>" method="post" class="contact-form mt-30 form-booking">
                         <?php echo csrf_field(); ?>
                         <div class="row">
+                            <div id="booking-slots" class="booking-slots-wrapper">
+                                <div class="slot-item0 slot-item">
+                                    <div class="row">
                             <div class="col-lg-6 col-md-6">
                                 <div class="contact-field p-relative c-name mb-20">
                                     <label for="booking-form-start-date"><i
                                             class="fal fa-badge-check"></i><?php echo e(__('Check In Date')); ?></label>
-                                    <input type="text" id="booking-form-start-date" autocomplete="off"
-                                           class="departure-date date-picker"
-                                           data-date-format="<?php echo e(HotelHelper::getBookingFormDateFormat()); ?>"
-                                           placeholder="<?php echo e(Carbon\Carbon::now()->format(HotelHelper::getDateFormat())); ?>"
-                                           data-locale="<?php echo e(App::getLocale()); ?>"
+                                    <input
+                                            type="text"
+                                            name="slots[0][start_date]"
+                                            class="theme-date-input-start check-in"
+                                            id="checkin-0"
+                                            autocomplete="off"
+                                            placeholder="DD / MM / YYYY  HH : MM"
                                            value="<?php echo e(old('start_date', Carbon\Carbon::now()->format(HotelHelper::getDateFormat()))); ?>"
-                                           name="start_date">
+                                    >
                                 </div>
                             </div>
 
@@ -37,13 +50,17 @@
                                 <div class="contact-field p-relative c-subject mb-20">
                                     <label for="booking-form-end-date"><i
                                             class="fal fa-times-octagon"></i><?php echo e(__('Check Out Date')); ?></label>
-                                    <input type="text" id="booking-form-end-date" autocomplete="off"
-                                           class="arrival-date date-picker"
-                                           data-date-format="<?php echo e(HotelHelper::getBookingFormDateFormat()); ?>"
-                                           placeholder="<?php echo e(Carbon\Carbon::now()->addDay()->format(HotelHelper::getDateFormat())); ?>"
-                                           data-locale="<?php echo e(App::getLocale()); ?>"
-                                           value="<?php echo e(BaseHelper::stringify(old('end_date', Carbon\Carbon::now()->addDay()->format(HotelHelper::getDateFormat())))); ?>"
-                                           name="end_date">
+                                    <input
+                                            type="text"
+                                            name="slots[0][end_date]"
+                                            class="theme-date-input-end check-out"
+                                            id="checkout-0"
+                                            autocomplete="off"
+                                            placeholder="DD / MM / YYYY  HH : MM"
+                                           value="<?php echo e(BaseHelper::stringify(old('end_date', Carbon\Carbon::now()->addDay()->format(HotelHelper::getDateFormat())))); ?>">
+                                </div>
+                            </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-lg-6 col-md-6">

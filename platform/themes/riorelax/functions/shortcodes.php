@@ -44,6 +44,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Request;
 use Botble\Courses\Models\Course;
+use Theme\Riorelax\Helpers\FilterHelper;
+
 
 app()->booted(function (): void {
     ThemeSupport::registerGoogleMapsShortcode();
@@ -363,106 +365,56 @@ app()->booted(function (): void {
                 );
         });
 
-        Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): ?string {
-            $request = request();
+Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): ?string {
+    $request = request();
 
-            [$startDate, $endDate, $adults, $nights, $children, $room] = HotelHelper::getRoomBookingParams();
+    // ===============================
+    // 🌿 ROOMS: Filter & Sortierung
+    // ===============================
+    $query = \Botble\Hotel\Models\Room::query()
+        ->wherePublished()
+        ->with(['amenities', 'slugable']);
 
-            $filters = [
-                'keyword' => $request->query('q'),
-            ];
+    // zentrale Filter-Logik
+    $query = \Theme\Riorelax\Helpers\FilterHelper::apply($request, $query, 'rooms');
 
-            $params = [
-                'paginate' => [
-                    'per_page' => 100,
-                    'current_paged' => $request->integer('page', 1),
-                ],
-                'with' => [
-                    'amenities',
-                    'amenities.metadata',
-                    'slugable',
-                    'activeBookingRooms' => function ($query) use ($startDate, $endDate) {
-                        return $query
-                            ->where(function ($query) use ($startDate, $endDate) {
-                                return $query
-                                    ->whereDate('start_date', '>=', $startDate)
-                                    ->whereDate('start_date', '<=', $endDate);
-                            })
-                            ->orWhere(function ($query) use ($startDate, $endDate) {
-                                return $query
-                                    ->whereDate('end_date', '>=', $startDate)
-                                    ->whereDate('end_date', '<=', $endDate);
-                            })
-                            ->orWhere(function ($query) use ($startDate, $endDate) {
-                                return $query
-                                    ->whereDate('start_date', '<=', $startDate)
-                                    ->whereDate('end_date', '>=', $endDate);
-                            })
-                            ->orWhere(function ($query) use ($startDate, $endDate) {
-                                return $query
-                                    ->whereDate('start_date', '>=', $startDate)
-                                    ->whereDate('end_date', '<=', $endDate);
-                            });
-                    },
-                    'activeRoomDates' => function ($query) use ($startDate, $endDate) {
-                        return $query
-                            ->whereDate('start_date', '>=', $startDate->startOfDay())
-                            ->whereDate('end_date', '<=', $endDate->endOfDay())
-                            ->take(40);
-                    },
-                ],
-            ];
+    // Pagination
+    $rooms = $query->paginate(9)->withQueryString();
 
-            $queriedRooms = app(RoomInterface::class)->getRooms($filters, $params);
+    // Variablen für View
+    $startDate = $request->get('start');
+    $endDate   = $request->get('end');
+    $adults    = $request->get('adults', 1);
+    $nights    = 1;
 
-            $rooms = [];
+    // Rückgabe
+    return Theme::partial('shortcodes.all-rooms.index', compact(
+        'rooms', 'startDate', 'endDate', 'adults', 'nights'
+    ));
+});
 
-            $dateFormat = 'Y-m-d H:i';
 
-            $condition = [
-                'start_date' => $startDate->format($dateFormat),
-                'end_date' => $endDate->format($dateFormat),
-                'adults' => $adults,
-                'children' => $children,
-                'rooms' => $room,
-            ];
+Shortcode::register('all-courses', __('All Courses'), __('Display all available courses'), function (): ?string {
+    $request = request();
 
-            foreach ($queriedRooms as &$room) {
-                if ($room->isAvailableAt($condition)) {
-                    $room->total_price = $room->getRoomTotalPrice($startDate, $endDate);
+    // ===============================
+    // 📘 COURSES: Filter & Sortierung
+    // ===============================
 
-                    $rooms[] = $room;
-                }
-            }
+    $query = \Botble\Courses\Models\Course::query()
+        ->wherePublished()
+        ->with(['slugable', 'instructor']);
 
-            $rooms = new LengthAwarePaginator(
-                $rooms,
-                count($rooms),
-                100,
-                Paginator::resolveCurrentPage(),
-                ['path' => Paginator::resolveCurrentPath()]
-            );
+    // Wendet zentrale Logik aus Helper an
+    $query = \Theme\Riorelax\Helpers\FilterHelper::apply($request, $query, 'courses');
 
-            return Theme::partial(
-                'shortcodes.all-rooms.index',
-                compact('rooms', 'startDate', 'endDate', 'nights', 'adults')
-            );
-        });
+    // Pagination mit allen Parametern
+    $courses = $query->paginate(12)->withQueryString();
 
-        Shortcode::register(
-            'all-courses',
-            __('All Courses'),
-            __('Display all available courses'),
-            function (): ?string {
-                $request = request();
+    // Übergabe an Theme Partial
+    return Theme::partial('shortcodes.all-courses.index', compact('courses'));
+});
 
-                $params = \Botble\Courses\DataTransferObjects\CourseSearchParams::fromRequest($request->all());
-
-                $courses = app(\Botble\Courses\Services\GetCourseService::class)->getCourses($params);
-
-                return Theme::partial('shortcodes.all-courses.index', compact('courses'));
-            }
-        );
 
         Shortcode::register(
             'service-list',

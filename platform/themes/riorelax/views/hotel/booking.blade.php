@@ -9,12 +9,303 @@
 @endif
 @php
     Theme::set('pageTitle', __('Booking'));
-    Theme::asset()->container('footer')->usePath()->add('checkout-js', 'js/checkout.js');
 
     // <<< NEU: Login-Status für Preis-Anzeige >>>
     $isLoggedIn = auth('customer')->check() || auth()->check();
 @endphp
+<script>
+    $(document).ready(function () {
+        $('.service-item').on('change', function () {
+            const foods = []
+            const services = []
+            $('.service-item:checked').each((i, el) => {
+                services[i] = $(el).val()
+            })
 
+            const slots = []
+            $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+                const start = $(el).val()
+                const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+                if (start && end) {
+                    slots.push({ start_date: start, end_date: end })
+                }
+            })
+
+            $('.food-item:checked').each((i, el) => {
+                foods[i] = $(el).val()
+            })
+
+            $('body').css('cursor', 'progress')
+            $('.custom-checkbox label').css('cursor', 'progress')
+
+            let $checkoutButton = $(document).find('.payment-checkout-btn')
+            $checkoutButton.prop('disabled', true)
+            let $selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
+
+            $.ajax({
+                type: 'GET',
+                cache: false,
+                url: '/ajax/calculate-amount',
+                data: {
+                    room_id: $('input[name=room_id]').val(),
+                    slots: slots,
+                    services,
+                    foods
+                },
+                success: ({ error, data }) => {
+                    if (!error) {
+                        $('.total-amount-text').text(data.total_amount)
+                        $('input[name=amount]').val(data.amount_raw)
+                        $('.amount-text').text(data.sub_total)
+                        $('.discount-text').text(data.discount_amount)
+                        $('.tax-text').text(data.tax_amount)
+                    }
+
+                    $('body').css('cursor', 'default')
+                    $('.custom-checkbox label').css('cursor', 'pointer')
+
+                    $('.payment-checkout-form .list_payment_method').load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function() {
+                        $checkoutButton.prop('disabled', false)
+                        $(document).find('.payment-checkout-form .list_payment_method input[value="' + $selectedPaymentMethod + '"]').prop('checked', true).trigger('change')
+                    })
+                },
+                error: () => {
+                    $('body').css('cursor', 'default')
+                    $('.custom-checkbox label').css('cursor', 'pointer')
+                },
+            })
+        })
+
+        $('.food-item').on('change', function () {
+            const foods = []
+            const services = []
+            $('.food-item:checked').each((i, el) => {
+                foods[i] = $(el).val()
+            })
+
+            const slots = []
+            $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+                const start = $(el).val()
+                const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+                if (start && end) {
+                    slots.push({ start_date: start, end_date: end })
+                }
+            })
+
+            $('.service-item:checked').each((i, el) => {
+                services[i] = $(el).val()
+            })
+
+            $('body').css('cursor', 'progress')
+            $('.custom-checkbox label').css('cursor', 'progress')
+
+            let $checkoutButton = $(document).find('.payment-checkout-btn')
+            $checkoutButton.prop('disabled', true)
+            let $selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
+
+            $.ajax({
+                type: 'GET',
+                cache: false,
+                url: '/ajax/calculate-amount',
+                data: {
+                    room_id: $('input[name=room_id]').val(),
+                    slots: slots,
+                    foods,
+                    services,
+                },
+                success: ({ error, data }) => {
+                    if (!error) {
+                        $('.total-amount-text').text(data.total_amount)
+                        $('input[name=amount]').val(data.amount_raw)
+                        $('.amount-text').text(data.sub_total)
+                        $('.discount-text').text(data.discount_amount)
+                        $('.tax-text').text(data.tax_amount)
+                    }
+
+                    $('body').css('cursor', 'default')
+                    $('.custom-checkbox label').css('cursor', 'pointer')
+
+                    $('.payment-checkout-form .list_payment_method').load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function() {
+                        $checkoutButton.prop('disabled', false)
+                        $(document).find('.payment-checkout-form .list_payment_method input[value="' + $selectedPaymentMethod + '"]').prop('checked', true).trigger('change')
+                    })
+                },
+                error: () => {
+                    $('body').css('cursor', 'default')
+                    $('.custom-checkbox label').css('cursor', 'pointer')
+                },
+            })
+        })
+
+        $('.create-customer').on('change', 'input[name="register_customer"]', function (event) {
+            const $formCreate = $('.form-create-customer-password')
+
+            if (event.target.checked) {
+                $formCreate.removeClass('d-none')
+            } else {
+                $formCreate.addClass('d-none')
+            }
+        })
+
+        const refreshCoupon = () => {
+            const services = []
+            $('.service-item:checked').each((i, el) => {
+                services[i] = $(el).val()
+            })
+
+            const slots = []
+            $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+                const start = $(el).val()
+                const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+                if (start && end) {
+                    slots.push({ start_date: start, end_date: end })
+                }
+            })
+
+            let $checkoutButton = $(document).find('.payment-checkout-btn')
+            $checkoutButton.prop('disabled', true)
+            let $selectedPaymentMethod = $(document).find('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val()
+
+            $.ajax({
+                url: '/ajax/calculate-amount',
+                type: 'GET',
+                data: {
+                    room_id: $('input[name=room_id]').val(),
+                    slots: slots,
+                    services,
+                },
+                success: ({ error, message, data }) => {
+                    if (error) {
+                        RiorelaxTheme.showError(message)
+
+                        return
+                    }
+
+                    $('.total-amount-text').text(data.total_amount)
+                    $('input[name=amount]').val(data.amount_raw)
+                    $('.amount-text').text(data.sub_total)
+                    $('.discount-text').text(data.discount_amount)
+                    $('.tax-text').text(data.tax_amount)
+
+                    $('.payment-checkout-form .list_payment_method').load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function() {
+                        $checkoutButton.prop('disabled', false)
+                        $(document).find('.payment-checkout-form .list_payment_method input[value="' + $selectedPaymentMethod + '"]').prop('checked', true).trigger('change')
+                    })
+
+                    const refreshUrl = $('.order-detail-box').data('refresh-url')
+
+                    $.ajax({
+                        url: refreshUrl,
+                        type: 'GET',
+                        data: {
+                            coupon_code: $('input[name=coupon_hidden]').val() ?? $('input[name=coupon_code]').val(),
+                        },
+                        success: ({ error, message, data}) => {
+                            if (error) {
+                                RiorelaxTheme.showError(message)
+
+                                return
+                            }
+
+                            $('.order-detail-box').html(data)
+                        },
+                        error: (error) => {
+                            RiorelaxTheme.handleError(error)
+                        },
+                    })
+                },
+                error: (error) => {
+                    RiorelaxTheme.handleError(error)
+                },
+            })
+        }
+
+        $(document)
+            .on('click', '.toggle-coupon-form', () => $(document).find('.coupon-form').toggle('fast'))
+            .on('click', '.apply-coupon-code', (e) => {
+                e.preventDefault()
+
+                const slots = []
+                $('input[name^="slots["][name$="[start_date]"]').each(function (i, el) {
+                    const start = $(el).val()
+                    const end = $(document).find(`input[name="slots[${i}][end_date]"]`).val()
+                    if (start && end) {
+                        slots.push({ start_date: start, end_date: end })
+                    }
+                })
+
+
+
+
+
+                const $button = $(e.currentTarget)
+
+                $.ajax({
+                    url: $button.data('url'),
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: {
+                        coupon_code: $('input[name=coupon_code]').val(),
+                    },
+                    beforeSend: () => {
+                        $button.addClass('button-loading')
+                    },
+                    success: ({ error, message }) => {
+                        if (error) {
+                            RiorelaxTheme.showError(message)
+
+                            return
+                        }
+
+                        RiorelaxTheme.showSuccess(message)
+                        refreshCoupon()
+                    },
+                    error: (error) => {
+                        RiorelaxTheme.handleError(error)
+                    },
+                    complete: () => {
+                        $button.removeClass('button-loading')
+                    }
+                })
+            })
+            .on('click', '.remove-coupon-code', (e) => {
+                e.preventDefault()
+
+                const $button = $(e.currentTarget)
+
+                $.ajax({
+                    url: $button.data('url'),
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    beforeSend: () => {
+                        $button.addClass('button-loading')
+                    },
+                    success: ({ message, error }) => {
+                        if (error) {
+                            RiorelaxTheme.showError(message)
+
+                            return
+                        }
+
+                        RiorelaxTheme.showSuccess(message)
+
+                        refreshCoupon()
+                    },
+                    error: (error) => {
+                        RiorelaxTheme.handleError(error)
+                    },
+                    complete: () => {
+                        $button.removeClass('button-loading')
+                    },
+                })
+            })
+    })
+
+</script>
 {{-- CSS FIX für Layout-Probleme --}}
 <style>
     .checkout-booking-page .row {
@@ -52,8 +343,10 @@
                     <input type="hidden" name="token" value="{{ $token }}">
                     <input type="hidden" name="amount" value="{{ $total }}">
                     <input type="hidden" name="room_id" value="{{ $room->id }}">
-                    <input type="hidden" name="start_date" value="{{ $startDate->format(HotelHelper::getDateFormat()) }}">
-                    <input type="hidden" name="end_date" value="{{ $endDate->format(HotelHelper::getDateFormat()) }}">
+                    @foreach($slotSummaries as $i => $s)
+                        <input type="hidden" name="slots[{{ $i }}][start_date]" value="{{ $s['start_date']->format(HotelHelper::getDateFormat()) }}">
+                        <input type="hidden" name="slots[{{ $i }}][end_date]"   value="{{ $s['end_date']->format(HotelHelper::getDateFormat()) }}">
+                    @endforeach
                     <input type="hidden" name="adults" value="{{ $adults }}">
                     <input name="number_of_children" type="hidden" value="{{ $children }}">
                     <input name="rooms" type="hidden" value="{{ $rooms }}"/>
@@ -66,7 +359,7 @@
                     <input type="hidden" name="number_of_guests" value="{{ $adults }}">
 
                     @if (! $customer->id)
-                        <p>{{ __('Already have an account?') }} <a href="{{ route('customer.login') }}">{{ __(' Login') }}</a></p>
+                        <p>{{ __('Already have an account?') }} <a href="{{ route('customer.login') }}"> {{ __('Login') }}</a></p>
                     @endif
 
                     <div class="mb-20">
@@ -325,45 +618,80 @@
                         <img src="{{ RvMedia::getImageUrl($room->image, default: RvMedia::getDefaultImage()) }}" alt="{{ $room->name }}">
 
                         <div class="room-information">
-                            <span>{{ $room->name  }}</span>
+                            <span>{{ $room->name }}</span>
                         </div>
                     </div>
+
                     <div class="form-information text-white">
                         <p class="text-center fw-bold text-uppercase">{{ __('Your Reservation') }}</p>
                         <div>
-                            <p>{{ __('Check-In') }}: {{ $startDate->translatedFormat('l, d M, Y') }}</p>
-                            <p>{{ __('Check-Out') }}: {{ $endDate->translatedFormat('l, d M, Y') }}</p>
+                            {{-- If multiple slots exist, show them --}}
+                            <div class="mt-3 p-3 border rounded">
+                                <h5 class="text-warning mb-3">{{ __('Your Selected Periods') }}</h5>
+
+                                @if (!empty($slotSummaries))
+                                    <ul class="list-unstyled mb-0">
+                                        @foreach ($slotSummaries as $i => $slot)
+                                            @php
+                                                $start = $slot['start_date'];
+                                                $end = $slot['end_date'];
+                                            @endphp
+                                            <li class="mb-2">
+
+                                                @if ($start->isSameDay($end))
+                                                    {{-- Same day: show date once, and time range --}}
+                                                    {{ $start->format('d M Y') }}
+                                                    <span class="text-gray-500 mx-1"></span>
+                                                    {{ $start->format('h:i A') }} – {{ $end->format('h:i A') }}
+                                                @else
+                                                    {{-- Different days: show full date-times --}}
+                                                    {{ $start->format('d M Y h:i A') }} → {{ $end->format('d M Y h:i A') }}
+                                                @endif
+
+                                                <br>
+                                                    <span class="fw-bold text-warning small">
+    <span class="text-light fw-normal">{{ __('Price') }}:</span> {{ format_price($slot['final_price']) }}
+</span>
+
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    {{-- Fallback: single booking --}}
+                                    <p>{{ __('Check-In') }}: {{ $displayStart ? $displayStart->translatedFormat('l, d M, Y') : '-' }}</p>
+                                    <p>{{ __('Check-Out') }}: {{ $displayEnd ? $displayEnd->translatedFormat('l, d M, Y') : '-' }}</p>
+                                @endif
+                            </div>
+
+
                             <p>{{ __('Number of rooms') }}: {{ $rooms }}</p>
                             <p>{{ __('Number of adults') }}: {{ $adults }}</p>
                             <p>{{ __('Number of children') }}: {{ $children }}</p>
 
                             @php
-                                // Difference between original and configured price
-                                $priceDifference = $basePrice - $amount;
+                                $priceDifference = $totalBasePrice - $totalAmount;
                             @endphp
 
                             {{-- Show configurator discount if applicable --}}
-                            @if ($amount < $basePrice)
-                                {{-- Price decreased --}}
+                            @if ($totalAmount < $totalBasePrice)
                                 <div class="kv">
                                     <span class="text-light">{{ __('Original Price') }}</span>
-                                    <b class="text-light text-decoration-line-through opacity-75">{{ format_price($basePrice) }}</b>
+                                    <b class="text-light text-decoration-line-through opacity-75">{{ format_price($totalBasePrice) }}</b>
                                 </div>
                                 <div class="kv">
                                     <span class="text-light">{{ __('Discounted Price') }}</span>
-                                    <b class="fw-bold text-warning amount-text">{{ format_price($amount) }}</b>
+                                    <b class="fw-bold text-warning amount-text">{{ format_price($totalAmount) }}</b>
                                 </div>
                                 <div class="kv small mt-1">
                                     <i class="fas fa-tag me-1 text-warning"></i>
                                     <span class="text-warning">
-                    {{ __('You save :amount', ['amount' => format_price(abs($priceDifference))]) }}
-                </span>
+                            {{ __('You save :amount', ['amount' => format_price(abs($priceDifference))]) }}
+                        </span>
                                 </div>
                             @else
-                                {{-- Price same or increased --}}
                                 <div class="kv">
                                     <span class="text-light">{{ __('Price') }}</span>
-                                    <b class="fw-bold text-warning amount-text">{{ format_price($amount) }}</b>
+                                    <b class="fw-bold text-warning amount-text">{{ format_price($totalAmount) }}</b>
                                 </div>
                             @endif
 
@@ -389,16 +717,16 @@
                         </div>
                     </div>
 
-
                     <div class="text-center footer">
                         <p>{{ __('Total') }}:
                             <span class="total-amount-text">
-                                {{ $isLoggedIn ? format_price($total) : __('Preis nach Login') }}
-                            </span>
+                    {{ $isLoggedIn ? format_price($total) : __('Preis nach Login') }}
+                </span>
                         </p>
                     </div>
                 </aside>
             </div>
+
         </div>
     </div>
 </section>

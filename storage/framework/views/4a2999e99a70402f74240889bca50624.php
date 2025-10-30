@@ -68,7 +68,7 @@
     // --- Button Disable Logic ---
     $isSingleSoldOut = false;
     if (!$course->isRecurring()) {
-        $first = $course->sessions->first();
+        $first = $upcomingSessions->first();
         if ($first) {
             $isSingleSoldOut = !$first->hasAvailableSeats();
         }
@@ -173,6 +173,8 @@
                 <?php if($course->price): ?>
                     <?php
                         $basePrice = $course->price;
+                        $dynamicPrice = $basePrice;
+                        if (is_plugin_active('price-configurator')) {
                         $dynamicPrice = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
                             ->calculatePrice(
                                 $basePrice,
@@ -180,7 +182,7 @@
                                 $course->id,
                                 auth('customer')->user() ?? null
                             );
-
+                        }
                         $priceDifference = $basePrice - $dynamicPrice;
                     ?>
 
@@ -209,8 +211,8 @@
                 <?php endif; ?>
 
           </div>
-          <?php if($course->sessions->count() > 0): ?>
-            <?php if($course->isRecurring()): ?>
+          <?php if($upcomingSessionsCount > 0): ?>
+            <?php if($course->isRecurring() || $upcomingSessionsCount > 1): ?>
               <?php
                   $disableRecurringCta = $allSoldOut;
               ?>
@@ -222,7 +224,7 @@
                   <input type="hidden" name="course_id" value="<?php echo e($course->id); ?>">
 
                   <select name="session_id" class="course-detail-select mb-2" required <?php echo e($disableRecurringCta ? 'disabled' : ''); ?>>
-                    <?php $__currentLoopData = $course->sessions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $session): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php $__currentLoopData = $upcomingSessions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $session): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                       <?php
                         $label = $formatRange24h($session->start_date, $session->end_date);
                         $cap   = $session->available_seats;
@@ -245,7 +247,7 @@
               </div>
             <?php else: ?>
               <?php
-                $first = $course->sessions->first();
+                $first = $upcomingSessions->first();
                 $singleLabel = $first ? $formatRange24h($first->start_date, $first->end_date) : null;
                 $disableSingleCta = $isSingleSoldOut;
               ?>
