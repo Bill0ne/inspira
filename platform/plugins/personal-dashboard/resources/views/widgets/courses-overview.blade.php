@@ -64,29 +64,43 @@ foreach ($clients as $m) {
 }
 $topMembers = collect($clients)->sortByDesc('score')->take(5);
 
-/* === DEBUG VERSION (sicher, keine Typkonvertierung) === */
+/* === LETZTE BUCHUNGEN (nur vollständig bezahlte) === */
 $bookings = DB::table('course_bookings')
     ->join('courses', 'course_bookings.course_id', '=', 'courses.id')
     ->leftJoin('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
     ->leftJoin('payments', function ($join) {
-        // kein CAST → einfach prüfen, ob IDs überhaupt verknüpft sind
-        $join->on('payments.order_id', '=', 'course_bookings.id');
+        // Nur verbinden, wenn order_id existiert
+        $join->on('payments.order_id', '=', 'course_bookings.id')
+             ->whereNotNull('payments.order_id');
     })
     ->select(
         'course_bookings.id as booking_id',
-        'payments.order_id',
+        'course_bookings.status as booking_status',
+        'course_bookings.amount as booking_amount',
         'payments.status as payment_status',
         'payments.amount as payment_amount',
         'payments.created_at as payment_created',
         'courses.name as course_name',
+        'courses.id as course_id',
+        'courses.number_of_seats',
+        DB::raw('(SELECT COUNT(*) FROM course_bookings cb2 WHERE cb2.course_id = courses.id) as booked_count'),
         'ht_customers.first_name',
-        'ht_customers.last_name'
+        'ht_customers.last_name',
+        'ht_customers.avatar'
     )
-    ->limit(10)
-    ->get();
+    // Nur abgeschlossene Zahlungen
+    ->whereIn('payments.status', ['completed', 'paid', 'success'])
+    ->orderByDesc('payments.created_at')
+    ->limit(5)
+    ->get()
+    ->map(function ($b) {
+        // Einheitlicher Status für das Blade
+        $b->status = strtolower($b->payment_status ?? $b->booking_status ?? 'pending');
+        // Betrag bevorzugt aus Payment
+        $b->amount = $b->payment_amount ?? $b->booking_amount ?? 0;
+        return $b;
+    });
 
-// Debug-Ausgabe (keine Formatierung, reine Rohdaten)
-dd($bookings);
 
 /* === Fallback-SVGs === */
 $chairSvg = file_exists(public_path('images/icons/chair.svg'))
