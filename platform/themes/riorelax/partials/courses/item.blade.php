@@ -52,9 +52,8 @@ $image = $thumbnail
       <p class="course-desc">{!! BaseHelper::clean(strip_tags($course->description, '<br><em>')) !!}</p>
     @endif
 
-    {{-- === Footer-Bereich (zweizeilig) === --}}
+    {{-- === Footer-Bereich (Zeile 1: Chips) === --}}
     <div class="course-meta">
-      {{-- Zeile 1: Chips (Datum + Preis) --}}
       <div class="course-meta-left">
         <span class="mtxt">
           <i class="fal fa-calendar-alt"></i>{{ $dateLabel }}
@@ -63,13 +62,11 @@ $image = $thumbnail
           <span class="mtxt">{{ format_price($course->price) }}</span>
         @endif
       </div>
-
-      {{-- Zeile 2: CTA --}}
-      <div class="course-meta-cta">
-        <a href="{{ $cartUrl }}" class="btn-cart" onclick="event.stopPropagation()">
-          <i class="fal fa-shopping-cart"></i>
-        </a>
-      </div>
     </div>
   </div>
+
+  {{-- === Zeile 2: CTA – außerhalb, für volle Breite === --}}
+  <a href="{{ $cartUrl }}" class="btn-cart" onclick="event.stopPropagation()">
+    <i class="fal fa-shopping-cart"></i>
+  </a>
 </div>
