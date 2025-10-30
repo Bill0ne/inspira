@@ -180,78 +180,31 @@
       }
     });
   }
-  const fieldNames = ['filter_type', 'search', 'category', 'trainer', 'sort'];
-  let isNavigating = false;
-  const submitDirectly = () => {
+  const submitForm = () => {
     if (typeof f.requestSubmit === 'function') {
       f.requestSubmit();
     } else {
       f.submit();
     }
   };
-  const applyFilters = () => {
-    if (isNavigating) {
-      return;
+
+  f.addEventListener('submit', () => {
+    const searchInput = f.querySelector('input[name="search"]');
+    if (searchInput) {
+      searchInput.value = searchInput.value.trim();
     }
-
-    if (!('URLSearchParams' in window)) {
-      submitDirectly();
-      return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const action = f.getAttribute('action') || window.location.href;
-    const url = new URL(action, window.location.origin);
-
-    fieldNames.forEach((name) => {
-      const element = f.elements.namedItem(name);
-      if (!element) {
-        params.delete(name);
-        return;
-      }
-
-      let value = element.value;
-      if (typeof value === 'string') {
-        value = value.trim();
-      }
-
-      if (value) {
-        params.set(name, value);
-      } else {
-        params.delete(name);
-      }
-    });
-
-    params.delete('page');
-    url.search = params.toString();
-
-    const next = url.toString();
-    const current = window.location.href;
-
-    isNavigating = true;
-
-    if (next === current) {
-      window.location.reload();
-    } else {
-      window.location.href = next;
-    }
-  };
-
-  f.addEventListener('submit', (event) => {
-    event.preventDefault();
-    applyFilters();
   });
 
-  f.querySelectorAll('select').forEach(el => {
-    el.addEventListener('change', applyFilters);
+  f.querySelectorAll('select').forEach((el) => {
+    el.addEventListener('change', submitForm);
   });
 
-  const s = f.querySelector('input[name="search"]');
-  if(s) {
-    s.addEventListener('keydown', e=>{
-      if(e.key==='Enter') {
-        e.preventDefault();
-        applyFilters();
+  const searchField = f.querySelector('input[name="search"]');
+  if (searchField) {
+    searchField.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        submitForm();
       }
     });
   }
@@ -273,7 +226,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    applyFilters();
+    submitForm();
   });
 })();
 </script>
