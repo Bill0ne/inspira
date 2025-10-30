@@ -1,168 +1,170 @@
 @php
     $margin = $margin ?? false;
     $isLoggedIn = auth('customer')->check() || auth()->check();
+
+    /* === Fallback-Bild === */
+    $image = $room->images && count($room->images) > 0
+        ? RvMedia::getImageUrl(Arr::first($room->images), 'medium')
+        : RvMedia::getImageUrl('default-room.jpg', 'medium', false, RvMedia::getDefaultImage());
 @endphp
 
 <style>
-/* ===== Room-Karte (gleiches UI wie Course, ohne Chips) ===== */
-.single-services.room-card .services-thumb img{
-  width:100%;
-  height:auto;
-  display:block;
+/* === Inspira – Room Card (gleiches Design wie Course) === */
+.room-card {
+  background: #fff !important;
+  border-radius: 10px !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+  overflow: hidden !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+  cursor: pointer !important;
+  display: flex;
+  flex-direction: column;
+}
+.room-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Inhalt als Spalte; kompakte Innenabstände */
-.single-services.room-card .services-content{
-  display:flex;
-  flex-direction:column;
-  min-height:100%;
-  padding-top:5px;
-  padding-bottom:5px;
-  gap:6px;
+/* === Bild === */
+.room-thumb {
+  padding: 12px !important;
+}
+.room-thumb img {
+  width: 100% !important;
+  border-radius: 14px !important;
+  display: block !important;
+  object-fit: cover !important;
+  aspect-ratio: 16 / 9 !important;
+  background-color: #f2f2f2 !important;
 }
 
-/* Titel & Beschreibung (letzte Version: +2px) */
-.single-services.room-card h4{
-  margin:2px 0;
-  font-size:17px;
-  line-height:22px;
-  font-weight:600;
+/* === Body === */
+.room-body {
+  padding: 10px 16px 12px 16px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px !important;
 }
-.single-services.room-card .room-item-custom-truncate{
-  margin:0 0 4px 0;
-  font-size:13px;
-  line-height:18px;
-  color:#6B7280;
-  overflow:hidden;
+.room-title {
+  font-size: 16px !important;
+  line-height: 20px !important;
+  font-weight: 600 !important;
+  color: #414141 !important;
+  margin: 0 0 2px 0 !important;
 }
-
-/* Amenities / Icons – **2px** Abstand zum CTA */
-.single-services.room-card .icon{
-  margin:2px 0 2px 0;   /* 2px unten -> direkt vor CTA */
-}
-.single-services.room-card .icon ul{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px 10px;
-  justify-content:flex-start;
-  padding:0;
-  margin:0;
-  list-style:none;
-}
-.single-services.room-card .icon li{
-  display:flex; align-items:center; justify-content:center;
-}
-.single-services.room-card .icon img{
-  display:block; width:20px; height:20px; object-fit:contain;
+.room-desc {
+  font-size: 12px !important;
+  line-height: 18px !important;
+  color: #6C6C6C !important;
+  font-weight: 400 !important;
+  margin: 0 0 8px 0 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
-/* ===== Footer-Aktionen: CTA + Mehr Infos (Mehr Infos unter CTA) ===== */
-.single-services.room-card .services-content .footer-actions{
-  margin-top:0;               /* keine Extra-Lücke oben */
-  padding-top:0;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:6px;                    /* Abstand zwischen CTA und Link */
+/* === Amenities (Icons) === */
+.room-icons {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 6px !important;
+}
+.room-icons img {
+  width: 20px !important;
+  height: 20px !important;
+  object-fit: contain !important;
+  opacity: 0.9 !important;
 }
 
-/* CTA-Block – Button nutzt ORIGINAL-Padding des Themes */
-.single-services.room-card .services-content .day-book{ width:100%; margin:0; padding:0; }
-.single-services.room-card .services-content .day-book ul{ margin:0; padding:0; list-style:none; }
-.single-services.room-card .services-content .day-book li{ margin:0; padding:0; }
-.single-services.room-card .services-content .day-book .book-button-custom{
-  display:block;
-  width:100%;
-  margin:0;                   /* keine Außenabstände */
-  /* kein padding-Override -> Original bleibt */
+/* === Footer === */
+.room-footer {
+  display: flex;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-top: auto !important;
+  padding: 0 16px 12px 16px !important;
 }
 
-/* Mehr Infos – unter CTA, zentriert, dezentes Padding */
-.single-services.room-card .services-content .more-link{
-  font-size:12px;
-  font-weight:500;
-  color:#578E88;
-  text-decoration:underline;
-  text-underline-offset:2px;
-  text-decoration-thickness:1px;
-
-  display:inline-block;
-  padding:3px 6px;           /* kompakte Klickfläche */
-  margin:0;
-  line-height:16px;
-  text-align:center;
-
-  background:none; border:0; box-shadow:none;
+/* CTA */
+.btn-room-cart {
+  background: #578E88 !important;
+  color: #fff !important;
+  padding: 10px 0 !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  transition: background 0.2s ease !important;
 }
-.single-services.room-card .services-content .more-link:hover{
-  text-underline-offset:3px;
+.btn-room-cart:hover {
+  background: #4B7C75 !important;
+}
+
+/* Mehr Infos */
+.more-link {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #578E88 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px !important;
+  text-align: center !important;
+  display: block !important;
+  margin-top: 4px !important;
+}
+.more-link:hover {
+  text-underline-offset: 3px !important;
 }
 </style>
 
-<div @class(['single-services shadow-block mb-30 room-card', 'ser-m' => !$margin])>
-  <div class="services-thumb hover-zoomin wow fadeInUp animated">
-    @if ($images = $room->images)
-      <a href="{{ $room->url }}?start_date={{ BaseHelper::stringify(request()->query('start_date', $startDate)) }}&end_date={{ BaseHelper::stringify(request()->query('end_date', $endDate)) }}&adults={{ BaseHelper::stringify(request()->query('adults', HotelHelper::getMinimumNumberOfGuests())) }}&children={{ BaseHelper::stringify(request()->query('children', 0)) }}">
-        <img src="{{ RvMedia::getImageUrl(Arr::first($images), 'medium') }}" alt="{{ $room->name }}">
-      </a>
+<div class="room-card" onclick="window.location='{{ $room->url }}'">
+  {{-- === Bild === --}}
+  <div class="room-thumb">
+    <img src="{{ $image }}" alt="{{ $room->name }}">
+  </div>
+
+  {{-- === Inhalt === --}}
+  <div class="room-body">
+    <h4 class="room-title">{{ $room->name }}</h4>
+
+    @if ($room->description)
+      <p class="room-desc">{!! BaseHelper::clean(strip_tags(Str::limit($room->description, 120))) !!}</p>
+    @endif
+
+    {{-- === Amenities === --}}
+    @if ($room->amenities->isNotEmpty())
+      <div class="room-icons">
+        @foreach ($room->amenities->take(5) as $amenity)
+          @if ($icon = $amenity->getMetaData('icon_image', true))
+            <img src="{{ RvMedia::getImageUrl($icon) }}" alt="{{ $amenity->name }}">
+          @endif
+        @endforeach
+      </div>
     @endif
   </div>
 
-  <div class="services-content">
-    {{-- Titel & Beschreibung --}}
-    <h4><a href="{{ $room->url }}">{{ $room->name }}</a></h4>
-
-    @if ($description = $room->description)
-      <p class="room-item-custom-truncate" title="{{ $description }}">
-        {!! BaseHelper::clean($description) !!}
-      </p>
-    @endif
-
-    {{-- Amenities / Icons --}}
-    @if ($room->amenities->isNotEmpty())
-      <div class="icon">
-        <ul>
-          @foreach ($room->amenities->take(6) as $amenity)
-            @if ($image = $amenity->getMetaData('icon_image', true))
-              <li><img src="{{ RvMedia::getImageUrl($image) }}" alt="{{ $amenity->name }}"></li>
-            @endif
-          @endforeach
-        </ul>
-      </div>
-    @endif
-
-    {{-- Footer: CTA direkt nach Icons (2px), Mehr Infos darunter --}}
-    <div class="footer-actions">
-      @if (HotelHelper::isBookingEnabled())
-        <div class="day-book">
-          <ul>
-            <li>
-              @if ($isLoggedIn)
-                <a
-                  href="{{ $room->url }}?start_date={{ BaseHelper::stringify(request()->query('start_date', $startDate)) }}&end_date={{ BaseHelper::stringify(request()->query('end_date', $endDate)) }}&adults={{ BaseHelper::stringify(request()->query('adults', HotelHelper::getMinimumNumberOfGuests())) }}&children={{ BaseHelper::stringify(request()->query('children', 0)) }}"
-                  class="book-button-custom d-inline-block text-center"
-                  style="width:100%;"
-                  data-animation="fadeInRight"
-                  data-delay=".8s"
-                >{{ __('Jetzt Buchen') }}</a>
-              @else
-                <a
-                  href="https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf"
-                  class="book-button-custom d-inline-block text-center"
-                  style="width:100%;"
-                  data-animation="fadeInRight"
-                  data-delay=".8s"
-                >{{ __('Anfragen') }}</a>
-              @endif
-            </li>
-          </ul>
-        </div>
-      @endif
-
-      <a class="more-link" href="{{ $room->url }}" aria-label="Mehr Infos zu {{ $room->name }}">
-        {{ __('Mehr Infos') }}
+  {{-- === Footer === --}}
+  <div class="room-footer">
+    @if (HotelHelper::isBookingEnabled())
+      <a 
+        href="{{ $isLoggedIn 
+            ? $room->url . '?start_date=' . BaseHelper::stringify(request()->query('start_date', $startDate)) . '&end_date=' . BaseHelper::stringify(request()->query('end_date', $endDate)) 
+            : 'https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf' }}"
+        class="btn-room-cart"
+        onclick="event.stopPropagation()"
+      >
+        <i class="fal fa-calendar-check me-2"></i>
+        {{ $isLoggedIn ? __('Jetzt buchen') : __('Anfragen') }}
       </a>
-    </div>
+    @endif
 
+    <a class="more-link" href="{{ $room->url }}" onclick="event.stopPropagation()">
+      {{ __('Mehr Infos') }}
+    </a>
   </div>
 </div>
