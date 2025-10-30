@@ -1,4 +1,3 @@
-<style>
 /* === Inspira – Course Card Final Design === */
 .course-card {
   background: #fff !important;
@@ -27,6 +26,7 @@
   display: block !important;
   object-fit: cover !important;
   aspect-ratio: 16 / 9 !important;
+  background-color: #f2f2f2 !important; /* Fallback-Hintergrund */
 }
 
 /* === Body === */
@@ -92,7 +92,14 @@
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important; /* verhindert Umbruch */
+  justify-content: space-between !important;
+}
+.course-meta-left .mtxt {
+  max-width: 48%;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 .mtxt {
   background: #F3F3F3 !important;
@@ -135,4 +142,3 @@
 .btn-cart i {
   font-size: 15px !important;
 }
-</style>
