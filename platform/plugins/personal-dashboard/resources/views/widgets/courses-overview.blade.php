@@ -67,15 +67,16 @@ $topMembers = collect($clients)->sortByDesc('score')->take(5);
 /* === LETZTE BUCHUNGEN (nur vollständig bezahlte) === */
 $bookings = DB::table('course_bookings')
     ->join('courses', 'course_bookings.course_id', '=', 'courses.id')
-    ->join('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
+    ->leftJoin('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
     ->leftJoin('payments', function ($join) {
-        $join->on('payments.order_id', '=', 'course_bookings.id');
+        // Nur verbinden, wenn order_id existiert
+        $join->on('payments.order_id', '=', 'course_bookings.id')
+             ->whereNotNull('payments.order_id');
     })
     ->select(
         'course_bookings.id as booking_id',
         'course_bookings.status as booking_status',
         'course_bookings.amount as booking_amount',
-        'course_bookings.created_at as booking_created',
         'payments.status as payment_status',
         'payments.amount as payment_amount',
         'payments.created_at as payment_created',
@@ -87,16 +88,19 @@ $bookings = DB::table('course_bookings')
         'ht_customers.last_name',
         'ht_customers.avatar'
     )
-    ->whereNotNull('payments.order_id')
-    ->where('payments.status', '=', 'completed')
+    // Nur abgeschlossene Zahlungen
+    ->whereIn('payments.status', ['completed', 'paid', 'success'])
     ->orderByDesc('payments.created_at')
     ->limit(5)
     ->get()
     ->map(function ($b) {
+        // Einheitlicher Status für das Blade
         $b->status = strtolower($b->payment_status ?? $b->booking_status ?? 'pending');
+        // Betrag bevorzugt aus Payment
         $b->amount = $b->payment_amount ?? $b->booking_amount ?? 0;
         return $b;
     });
+
 
 /* === Fallback-SVGs === */
 $chairSvg = file_exists(public_path('images/icons/chair.svg'))

@@ -64,7 +64,6 @@ class FilterHelper
         return $query;
     }
 
-    /** Ergebnisanzahl berechnen (für das Filter-Partial) */
     public static function count(Request $request, string $type): int
     {
         if ($type === 'courses') {
