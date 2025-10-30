@@ -72,16 +72,22 @@ class HookServiceProvider extends ServiceProvider
 
                 PaymentHelper::storeLocalPayment($data);
 
-                if (session()->has('course_booking_transaction_id')) {
+                $orderType = $data['order_type'] ?? session('order_type');
+
+                session()->forget('order_type');
+
+                switch ($orderType) {
+                    case \Botble\Courses\Models\CourseBooking::class:
                         return app(\Botble\Courses\Services\CourseBookingService::class)
                             ->processBooking($orderId, $data['charge_id']);
-                    }
-                if (session()->has('booking_transaction_id')) {
-                    return app(\Botble\Hotel\Services\BookingService::class)
-                        ->processBooking($orderId, $data['charge_id']);
-                }
 
-                return null;
+                    case \Botble\Hotel\Models\Booking::class:
+                        return app(\Botble\Hotel\Services\BookingService::class)
+                            ->processBooking($orderId, $data['charge_id']);
+
+                    default:
+                        return null;
+                }
             });
         }
 
@@ -134,6 +140,7 @@ class HookServiceProvider extends ServiceProvider
                     'orders' => [$booking],
                     'address' => $address,
                     'checkout_token' => session('checkout_token'),
+                    'order_type' => \Botble\Hotel\Models\Booking::class,
                 ];
             }, 140, 2);
         }
