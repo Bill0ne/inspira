@@ -403,7 +403,7 @@ Shortcode::register('all-courses', __('All Courses'), __('Display all available 
 
     $query = \Botble\Courses\Models\Course::query()
         ->wherePublished()
-        ->with(['slugable', 'trainer']);
+        ->with(['slugable', 'instructor']);
 
     // Wendet zentrale Logik aus Helper an
     $query = \Theme\Riorelax\Helpers\FilterHelper::apply($request, $query, 'courses');
