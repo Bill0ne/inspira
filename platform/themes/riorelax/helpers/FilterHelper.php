@@ -42,7 +42,7 @@ class FilterHelper
             }
         }
 
-        // 🗓️ Datum (ein Feld „Wann“)
+        // 🗓️ Datum
         $date = self::parseDate($request->get('date'));
         if ($date) {
             if ($type === 'courses') {
@@ -96,7 +96,6 @@ class FilterHelper
         return $query;
     }
 
-    /** Ergebnisanzahl berechnen (für das Filter-Partial) */
     public static function count(Request $request, string $type): int
     {
         if ($type === 'courses') {
@@ -108,13 +107,17 @@ class FilterHelper
         return self::apply($request, $query, $type)->count();
     }
 
-    /** d.m.Y oder Y-m-d -> Y-m-d */
     protected static function parseDate(?string $val): ?string
     {
         if (!$val) return null;
         $val = trim($val);
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $val)) return $val;
-        try { return Carbon::createFromFormat('d.m.Y', $val)->format('Y-m-d'); } catch (\Throwable) { return null; }
+
+        try {
+            return Carbon::createFromFormat('d.m.Y', $val)->format('Y-m-d');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     protected static function has(Builder $query, string $column): bool
