@@ -82,22 +82,24 @@ class CustomerForm extends FormAbstract
                     'class' => $this->formHelper->getConfig('defaults.wrapper_class') . ' col-md-6',
                 ],
             ])
-            ->add('closeRow', 'html', ['html' => '</div>'])
-            ->add('customer_category_id',
-                SelectField::class,
-                SelectFieldOption::make()
-                    ->label(__('Kategorie'))
-                    ->emptyValue(__('Wählen'))
-                    ->searchable()
-                    ->choices(
-                        CustomerCategory::query()
-                            ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
-                            ->get()
-                            ->mapWithKeys(fn($item) => [$item->id => "{$item->code} - {$item->label}"])
-                            ->toArray()
-                    )
-            )
-            ->add('status', SelectField::class, StatusFieldOption::make()->toArray())
+            ->add('closeRow', 'html', ['html' => '</div>']);
+            if (is_plugin_active('price-configurator')) {
+                $this->add('customer_category_id',
+                    SelectField::class,
+                    SelectFieldOption::make()
+                        ->label(__('Kategorie'))
+                        ->emptyValue(__('Wählen'))
+                        ->searchable()
+                        ->choices(
+                            CustomerCategory::query()
+                                ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
+                                ->get()
+                                ->mapWithKeys(fn($item) => [$item->id => "{$item->code} - {$item->label}"])
+                                ->toArray()
+                        )
+                );
+            }
+            $this->add('status', SelectField::class, StatusFieldOption::make()->toArray())
             ->add('avatar', MediaImageField::class)
             ->setBreakFieldPoint('status');
     }

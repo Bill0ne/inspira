@@ -16,6 +16,13 @@ use Botble\Media\Facades\RvMedia;
 use Botble\Page\Forms\PageForm;
 use Botble\SimpleSlider\Forms\SimpleSliderItemForm;
 
+if (!class_exists('Theme\\Rlorenak\\Helpers\\FilterHelper') && class_exists('Theme\\Riorelax\\Helpers\\FilterHelper')) {
+    class_alias(
+        \Theme\Riorelax\Helpers\FilterHelper::class,
+        'Theme\\Rlorenak\\Helpers\\FilterHelper'
+    );
+}
+
 register_page_template([
     'default' => __('Default'),
     'side-menu' => __('Side menu'),
@@ -91,6 +98,9 @@ if (class_exists(PageForm::class)) {
 }
 
 app()->booted(function (): void {
+
+   // 🔹 Custom CSS: Karten-Design (Nabil / Inspira)
+    Theme::asset()->usePath()->add('riorelax-card', 'css/card.css');
     if (is_plugin_active('simple-slider')) {
         SimpleSliderItemForm::extend(function (SimpleSliderItemForm $form): void {
             $form

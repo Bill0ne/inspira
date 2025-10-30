@@ -1,14 +1,10 @@
 @php(Theme::set('pageTitle', __('Rooms')))
 
-<section class="container">
+<section class="container rooms-page mt-4 mb-5">
+    @include(Theme::getThemeNamespace('partials.filters'), ['filterType' => 'rooms'])
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-12">
             {!! do_shortcode('[all-rooms]') !!}
-        </div>
-        <div class="col-lg-4">
-            <div class="sidebar-widget-rooms">
-                {!! dynamic_sidebar('rooms_sidebar') !!}
-            </div>
         </div>
     </div>
 </section>

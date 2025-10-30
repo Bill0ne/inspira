@@ -26,7 +26,7 @@ class CouponController extends BaseController
             'coupon_code' => ['required', 'string'],
         ]);
 
-        $couponCode = $request->input('coupon_code');
+        $couponCode = trim($request->input('coupon_code'));
 
         $coupon = $couponService->getCouponByCode($couponCode);
 
@@ -41,6 +41,7 @@ class CouponController extends BaseController
         ]);
 
         return $this->response
+            ->setData(['coupon_code' => $couponCode])
             ->setMessage(__('Applied coupon ":code" successfully!', ['code' => $couponCode]));
     }
 

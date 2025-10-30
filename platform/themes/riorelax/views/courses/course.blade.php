@@ -68,7 +68,7 @@
     // --- Button Disable Logic ---
     $isSingleSoldOut = false;
     if (!$course->isRecurring()) {
-        $first = $course->sessions->first();
+        $first = $upcomingSessions->first();
         if ($first) {
             $isSingleSoldOut = !$first->hasAvailableSeats();
         }
@@ -169,6 +169,8 @@
                 @if($course->price)
                     @php
                         $basePrice = $course->price;
+                        $dynamicPrice = $basePrice;
+                        if (is_plugin_active('price-configurator')) {
                         $dynamicPrice = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
                             ->calculatePrice(
                                 $basePrice,
@@ -176,7 +178,7 @@
                                 $course->id,
                                 auth('customer')->user() ?? null
                             );
-
+                        }
                         $priceDifference = $basePrice - $dynamicPrice;
                     @endphp
 
@@ -202,8 +204,8 @@
                 @endif
 
           </div>
-          @if($course->sessions->count() > 0)
-            @if($course->isRecurring())
+          @if($upcomingSessionsCount > 0)
+            @if($course->isRecurring() || $upcomingSessionsCount > 1)
               @php
                   $disableRecurringCta = $allSoldOut;
               @endphp
@@ -215,7 +217,7 @@
                   <input type="hidden" name="course_id" value="{{ $course->id }}">
 
                   <select name="session_id" class="course-detail-select mb-2" required {{ $disableRecurringCta ? 'disabled' : '' }}>
-                    @foreach($course->sessions as $session)
+                    @foreach($upcomingSessions as $session)
                       @php
                         $label = $formatRange24h($session->start_date, $session->end_date);
                         $cap   = $session->available_seats;
@@ -236,7 +238,7 @@
               </div>
             @else
               @php
-                $first = $course->sessions->first();
+                $first = $upcomingSessions->first();
                 $singleLabel = $first ? $formatRange24h($first->start_date, $first->end_date) : null;
                 $disableSingleCta = $isSingleSoldOut;
               @endphp

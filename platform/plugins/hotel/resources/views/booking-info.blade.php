@@ -35,23 +35,57 @@
     </x-core::datagrid>
 
     <x-core::datagrid class="mb-4">
+        {{-- Room Name --}}
         <x-core::datagrid.item :title="__('Room')">
-            @if ($booking->room->room->exists && ($room = $booking->room->room))
-                <a href="{{ $room->url }}" target="_blank">{{ $room->name }}</a>
-            @else
-                {{ $booking->room->room_name }}
+            @if ($booking->rooms->isNotEmpty())
+                @php
+                    $room = $booking->rooms->first()->room ?? null;
+                @endphp
+
+                @if ($room && $room->exists)
+                    <a href="{{ $room->url }}">
+                        {{ $room->name }}
+                    </a>
+                @else
+                    {{ $booking->rooms->first()->room_name }}
+                @endif
             @endif
         </x-core::datagrid.item>
 
-        <x-core::datagrid.item :title="__('Start Date')">
-            {{ $booking->room->start_date }}
+        {{-- Start and End Dates --}}
+        <x-core::datagrid.item :title="__('Stay Duration')">
+            <div class="space-y-1 mt-1 text-sm text-gray-800">
+                @foreach ($booking->rooms as $roomBooking)
+                    @php
+                        $start = \Carbon\Carbon::parse($roomBooking->start_date);
+                        $end = \Carbon\Carbon::parse($roomBooking->end_date);
+                    @endphp
+
+                    <div class="flex items-center justify-between border-b border-gray-200 pb-1">
+                        @if ($start->isSameDay($end))
+                            {{-- Same day: show date once, and time range --}}
+                            <span>
+                        {{ $start->format('M d, Y') }}
+                        <span class="text-gray-500 mx-2"></span>
+                        {{ $start->format('h:i A') }}
+                        <span class="text-gray-500 mx-1">→</span>
+                        {{ $end->format('h:i A') }}
+                    </span>
+                        @else
+                            {{-- Different days: show full date-times --}}
+                            <span>
+                        {{ $start->format('M d, Y h:i A') }}
+                        <span class="text-gray-500 mx-2">→</span>
+                        {{ $end->format('M d, Y h:i A') }}
+                    </span>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
         </x-core::datagrid.item>
 
-        <x-core::datagrid.item :title="__('End Date')">
-            {{ $booking->room->end_date }}
-        </x-core::datagrid.item>
 
-        @if ($booking->arrival_time)
+    @if ($booking->arrival_time)
             <x-core::datagrid.item :title="__('Arrival Time')">
                 {{ $booking->arrival_time }}
             </x-core::datagrid.item>
@@ -98,65 +132,57 @@
                 <x-core::table.header.cell class="text-center">
                     {{ __('Price') }}
                 </x-core::table.header.cell>
-                <x-core::table.header.cell class="text-center">
-                    {{ __('Tax') }}
-                </x-core::table.header.cell>
             </x-core::table.header>
             <x-core::table.body>
-                <x-core::table.body.row>
-                    @if ($booking->room->room->exists && ($room = $booking->room->room))
-                        <x-core::table.body.cell
-                            class="text-center"
-                            style="width: 150px; vertical-align: middle !important;"
-                        >
-                            <a href="{{ $booking->room->room->url }}" target="_blank">
-                                <img
-                                    src="{{ RvMedia::getImageUrl($booking->room->room->image, 'thumb', false, RvMedia::getDefaultImage()) }}"
-                                    alt="{{ $booking->room->room_name }}"
-                                    width="140"
-                                >
-                            </a>
-                        </x-core::table.body.cell>
-                        <x-core::table.body.cell style="vertical-align: middle !important;">
-                            <a class="booking-information-link" href="{{ $booking->room->room->url }}" target="_blank">
-                                {{ $booking->room->room->name }}
-                            </a>
-                        </x-core::table.body.cell>
-                    @else
-                        <x-core::table.body.cell>
-                            <img
-                                src="{{ RvMedia::getImageUrl($booking->room->room_image, 'thumb', false, RvMedia::getDefaultImage()) }}"
-                                alt="{{ $booking->room->room_name }}"
-                                width="140"
-                            >
-                        </x-core::table.body.cell>
-                        <x-core::table.body.cell style="vertical-align: middle !important;">
-                            {{ $booking->room->room_name }}
-                        </x-core::table.body.cell>
-                    @endif
-                    <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
-                        {{ $booking->room->start_date }}
-                    </x-core::table.body.cell>
-                    <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
-                        {{ $booking->room->end_date }}
-                    </x-core::table.body.cell>
-                    <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
-                        {{ $booking->room->number_of_rooms }}
-                    </x-core::table.body.cell>
+                @foreach ($booking->rooms as $roomBooking)
+                    <x-core::table.body.row>
+                        @php
+                            $room = $roomBooking->room ?? null;
+                        @endphp
 
-                    @if($isLoggedIn)
+                        @if ($room && $room->exists)
+                            <x-core::table.body.cell class="text-center" style="width: 150px; vertical-align: middle !important;">
+                                <a href="{{ $room->url }}" target="_blank">
+                                    <img src="{{ RvMedia::getImageUrl($room->image, 'thumb', false, RvMedia::getDefaultImage()) }}"
+                                         alt="{{ $roomBooking->room_name }}" width="140">
+                                </a>
+                            </x-core::table.body.cell>
+                            <x-core::table.body.cell style="vertical-align: middle !important;">
+                                <a class="booking-information-link" href="{{ $room->url }}" target="_blank">
+                                    {{ $room->name }}
+                                </a>
+                            </x-core::table.body.cell>
+                        @else
+                            <x-core::table.body.cell>
+                                <img src="{{ RvMedia::getImageUrl($roomBooking->room_image, 'thumb', false, RvMedia::getDefaultImage()) }}"
+                                     alt="{{ $roomBooking->room_name }}" width="140">
+                            </x-core::table.body.cell>
+                            <x-core::table.body.cell style="vertical-align: middle !important;">
+                                {{ $roomBooking->room_name }}
+                            </x-core::table.body.cell>
+                        @endif
                         <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
-                            <strong>{{ format_price($booking->room->price) }}</strong>
+                            {{ \Carbon\Carbon::parse($roomBooking->start_date)->format('M d, Y h:i A') }}
+                        </x-core::table.body.cell>
+
+                        <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
+                            {{ \Carbon\Carbon::parse($roomBooking->end_date)->format('M d, Y h:i A') }}
                         </x-core::table.body.cell>
                         <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
-                            <strong>{{ format_price($booking->tax_amount) }}</strong>
+                            {{ $roomBooking->number_of_rooms }}
                         </x-core::table.body.cell>
-                    @else
-                        <x-core::table.body.cell class="text-center" colspan="2">
-                            {{ __('Preise werden nach Login angezeigt') }}
-                        </x-core::table.body.cell>
-                    @endif
-                </x-core::table.body.row>
+
+                        @if($isLoggedIn)
+                            <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
+                                <strong>{{ format_price($roomBooking->price) }}</strong>
+                            </x-core::table.body.cell>
+                        @else
+                            <x-core::table.body.cell class="text-center" colspan="2">
+                                {{ __('Preise werden nach Login angezeigt') }}
+                            </x-core::table.body.cell>
+                        @endif
+                    </x-core::table.body.row>
+                @endforeach
             </x-core::table.body>
         </x-core::table>
     </div>
@@ -236,6 +262,9 @@
 {{--            @endif--}}
             <x-core::datagrid.item :title="__('Sub Total')">
                 {{ format_price($booking->sub_total) }}
+            </x-core::datagrid.item>
+            <x-core::datagrid.item :title="__('Rule Price')">
+                {{ format_price($booking->rule_discount) }}
             </x-core::datagrid.item>
             <x-core::datagrid.item :title="__('Discount Amount')">
                 {{ format_price($booking->coupon_amount) }}

@@ -1,48 +1,49 @@
-# === SYSTEM / ENV ===
-.env
-.env.*
+/node_modules
+/public/hot
+/public/storage
 /storage/*.key
-/storage/.license
-/storage/installing
-/storage/installed
-Homestead.json
-Homestead.yaml
-/phpunit.xml
-/phpunit.result.cache
-
-# === LOCAL / IDE ===
+/vendor
 .DS_Store
 Thumbs.db
+/bower_components
+.env
+.env.backup
 /.idea
 /.vscode
 /.vagrant
-/.phpintel
-.phpactor.json
-.phpstorm.meta.php
-_ide_helper.php
-_ide_helper_models.php
-/.php_cs.cache
-/.scribe
+Homestead.json
+Homestead.yaml
 npm-debug.log
+sftp-config.json
+.phpstorm.meta.php
+_ide_helper_models.php
+/storage/app/backup
+/storage/cache_keys.json
+
+__MACOSX
+/.phpintel
+/.php_cs.cache
+
+public/vendor/core
+
+_ide_helper.php
 yarn.lock
 bun.lockb
+/.sass-cache
 
-# === CACHE / RUNTIME ===
-/storage/framework/*
-!/storage/framework/.gitignore
-/storage/logs/*
-!/storage/logs/.gitignore
-/bootstrap/cache/*.php
-/storage/cache_keys.json
-/public/hot
-/public/storage
-/public/mix-manifest.json
+public/mix-manifest.json
 
-# === UPLOADS / USER DATA ===
-/storage/app/public/*
-/storage/app/backup/*
+public/themes
+public/docs
+resources/docs
+
+.phpunit.result.cache
+/storage/.license
 /storage/fonts
-/storage/framework/laravel-excel/
+/storage/framework/*.txt
+/storage/installing
+/storage/installed
+
 /lang/*
 !/lang/en
 !/lang/de.json
@@ -52,15 +53,16 @@ stage-env/
 /node_modules
 /bower_components
 /public/vendor/core
-/public/themes
 /public/docs
 /resources/docs
 /vendor
 
 # === MISC ===
 /log
-__MACOSX
 
-# === STAGE / DEPLOY SCRIPTS (keep!) ===
-# keep deploy.php and .yml
-/.github/workflows
+storage/framework/laravel-excel/
+/.scribe
+/.env.testing
+.phpactor.json
+
+storage/framework/maintenance.php

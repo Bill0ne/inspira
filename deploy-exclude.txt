@@ -23,3 +23,8 @@ public/storage/
 public/uploads/
 public/storage/
 public/.htaccess
+
+# === ALLOW THEME FILES (force include) ===
+!platform/themes/
+!platform/themes/riorelax/**
+

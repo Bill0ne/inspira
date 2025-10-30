@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('pconf_rules', function (Blueprint $table) {
-            $table->string('target_type')->nullable()->after('scope');
+//            $table->string('target_type')->nullable()->after('scope');
         });
     }
 

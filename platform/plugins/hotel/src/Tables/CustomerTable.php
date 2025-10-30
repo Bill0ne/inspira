@@ -52,7 +52,7 @@ class CustomerTable extends TableAbstract
                 return $query;
             })
             ->editColumn('customer_category', function ($item) {
-                if ($item->customer_category_label) {
+                if (is_plugin_active('price-configurator') && $item->customer_category_label) {
                     return $item->customer_category_code
                         ? "{$item->customer_category_code} - {$item->customer_category_label}"
                         : $item->customer_category_label;
@@ -75,36 +75,47 @@ class CustomerTable extends TableAbstract
                 'ht_customers.first_name',
                 'ht_customers.last_name',
                 'ht_customers.email',
-                'ht_customers.customer_category_id',
-                'pconf_customer_categories.code as customer_category_code',
-                'pconf_customer_categories.label as customer_category_label',
                 'ht_customers.created_at',
-            ])
-            ->leftJoin('pconf_customer_categories', 'ht_customers.customer_category_id', '=', 'pconf_customer_categories.id');
+            ]);
+
+        if (is_plugin_active('price-configurator')) {
+            $query
+                ->addSelect([
+                    'ht_customers.customer_category_id',
+                    'pconf_customer_categories.code as customer_category_code',
+                    'pconf_customer_categories.label as customer_category_label',
+                ])
+                ->leftJoin('pconf_customer_categories', 'ht_customers.customer_category_id', '=', 'pconf_customer_categories.id');
+        }
 
         return $this->applyScopes($query);
     }
 
     public function columns(): array
     {
-        return [
+        $columns = [
             IdColumn::make(),
-
-            NameColumn::make()
-                ->route('customer.edit')
-                ->orderable(false)
-                ->searchable(false),
-
+            NameColumn::make()->route('customer.edit')->orderable(false)->searchable(false),
             EmailColumn::make()->linkable(),
-            'customer_category' => [
-                'title' => __('Kategorie'),
-                'class' => 'text-start',
-                'orderable' => false,
-                'searchable' => false,
-            ],
-
             CreatedAtColumn::make(),
         ];
+
+        if (is_plugin_active('price-configurator')) {
+            $columns = array_merge(
+                array_slice($columns, 0, 3),
+                [
+                    'customer_category' => [
+                        'title' => __('Kategorie'),
+                        'class' => 'text-start',
+                        'orderable' => false,
+                        'searchable' => false,
+                    ],
+                ],
+                array_slice($columns, 3)
+            );
+        }
+
+        return $columns;
     }
 
     public function buttons(): array
@@ -121,7 +132,7 @@ class CustomerTable extends TableAbstract
 
     public function getBulkChanges(): array
     {
-        return [
+        $changes = [
             'first_name' => [
                 'title' => trans('plugins/hotel::customer.form.first_name'),
                 'type' => 'text',
@@ -132,18 +143,24 @@ class CustomerTable extends TableAbstract
                 'type' => 'text',
                 'validate' => 'required|max:120',
             ],
-            'customer_category_id' => [
-                'title' => __('Kategorie'),
-                'type' => 'select',
-                'choices' => CustomerCategory::query()
-                    ->pluck('label', 'id')
-                    ->toArray(),
-                'validate' => 'required|integer|exists:pconf_customer_categories,id',
-            ],
             'created_at' => [
                 'title' => trans('core/base::tables.created_at'),
                 'type' => 'datePicker',
             ],
         ];
+
+        if (is_plugin_active('price-configurator')) {
+            $changes['customer_category_id'] = [
+                'title' => __('Kategorie'),
+                'type' => 'select',
+                'choices' => CustomerCategory::query()
+                    ->where('status', \Botble\PriceConfigurator\Enums\PriceConfiguratorStatusEnum::ACTIVE)
+                    ->pluck('label', 'id')
+                    ->toArray(),
+                'validate' => 'required|integer|exists:pconf_customer_categories,id',
+            ];
+        }
+
+        return $changes;
     }
 }

@@ -1,22 +1,11 @@
 @php(Theme::set('pageTitle', 'Kurse'))
 
-<section class="container">
+<section class="container courses-page mt-4 mb-5">
+    @include(Theme::getThemeNamespace('partials.filters'), ['filterType' => 'courses'])
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-12">
+            {{-- Kursübersicht --}}
             {!! do_shortcode('[all-courses]') !!}
-        </div>
-        <div class="col-lg-4">
-            <div class="sidebar-widget-rooms">
-                <div class="sidebar-widget categories check-availability-custom">
-                    <div class="widget-content">
-                        <div class="booking">
-                            <div class="contact-bg">
-                                {!! Theme::partial('courses.forms.form', ['style' => 1, 'availableForBooking' => false]) !!}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </section>

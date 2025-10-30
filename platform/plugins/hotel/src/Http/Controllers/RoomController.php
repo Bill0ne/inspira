@@ -15,9 +15,24 @@ use Botble\Hotel\Models\RoomDate;
 use Botble\Hotel\Tables\RoomTable;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Theme\Riorelax\Helpers\FilterHelper;
 
 class RoomController extends BaseController
 {
+
+   public function getRooms(Request $request)
+{
+    $query = \Botble\Hotel\Models\Room::query();
+
+    // Anwenden zentraler Filterlogik
+    $query = FilterHelper::apply($request, $query, 'rooms');
+
+    $rooms = $query->paginate(12);
+
+    return Theme::scope('rooms', compact('rooms'))->render();
+}
+
+    
     public function __construct()
     {
         $this

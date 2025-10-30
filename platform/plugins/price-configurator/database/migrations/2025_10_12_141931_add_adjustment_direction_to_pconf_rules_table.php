@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('pconf_rules', function (Blueprint $table) {
-            $table->string('adjustment_direction')->nullable();
+//            $table->string('adjustment_direction')->nullable();
         });
     }
 
