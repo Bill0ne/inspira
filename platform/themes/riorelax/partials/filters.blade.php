@@ -180,14 +180,29 @@
       }
     });
   }
-  const submitForm = () => {
-    const empties = [];
+  const disableTemporarily = (el, restoreQueue) => {
+    const wasDisabled = el.disabled;
+    if (!wasDisabled) {
+      el.disabled = true;
+    }
+    restoreQueue.push(() => {
+      if (!wasDisabled) {
+        el.disabled = false;
+      }
+    });
+  };
 
+  const prepareSubmission = () => {
+    const restoreQueue = [];
     const searchField = f.querySelector('input[name="search"]');
+
     if (searchField) {
-      searchField.value = searchField.value.trim();
+      const trimmed = searchField.value.trim();
+      if (trimmed !== searchField.value) {
+        searchField.value = trimmed;
+      }
       if (searchField.value === '') {
-        empties.push(searchField);
+        disableTemporarily(searchField, restoreQueue);
       }
     }
 
@@ -198,42 +213,43 @@
 
       const tag = el.tagName;
       const type = el.type;
-      const value = el.value;
 
-      if (tag === 'SELECT' || type === 'text' || type === 'search') {
-        if (value == null || value === '') {
-          empties.push(el);
-        }
+      if ((tag === 'SELECT' || type === 'text' || type === 'search') && !el.value) {
+        disableTemporarily(el, restoreQueue);
       }
     });
 
-    empties.forEach((el) => {
-      el.dataset.filterPrevDisabled = el.disabled ? '1' : '0';
-      el.disabled = true;
-    });
-
-    f.submit();
-
-    setTimeout(() => {
-      empties.forEach((el) => {
-        if (el.dataset.filterPrevDisabled === '1') {
-          el.disabled = true;
-        } else {
-          el.disabled = false;
-        }
-        delete el.dataset.filterPrevDisabled;
-      });
-    }, 150);
+    return () => {
+      restoreQueue.forEach((restore) => restore());
+    };
   };
 
+  let restoreTimer = null;
   f.addEventListener('submit', (event) => {
-    event.preventDefault();
-    submitForm();
+    if (restoreTimer) {
+      clearTimeout(restoreTimer);
+      restoreTimer = null;
+    }
+
+    const restore = prepareSubmission();
+
+    restoreTimer = setTimeout(() => {
+      restore();
+      restoreTimer = null;
+    }, 400);
   });
+
+  const triggerSubmit = () => {
+    if (typeof f.requestSubmit === 'function') {
+      f.requestSubmit();
+    } else {
+      f.submit();
+    }
+  };
 
   f.querySelectorAll('select').forEach((el) => {
     el.addEventListener('change', () => {
-      submitForm();
+      triggerSubmit();
     });
   });
 
@@ -242,10 +258,11 @@
     searchField.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        submitForm();
+        triggerSubmit();
       }
     });
   }
+
   document.addEventListener('click', (event) => {
     const chip = event.target.closest('.filter-chip');
     if(!chip) return;
@@ -264,7 +281,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    submitForm();
+    triggerSubmit();
   });
 })();
 </script>
