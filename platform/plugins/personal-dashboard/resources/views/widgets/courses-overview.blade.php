@@ -64,18 +64,16 @@ foreach ($clients as $m) {
 }
 $topMembers = collect($clients)->sortByDesc('score')->take(5);
 
-/* === DEBUG: LETZTE BUCHUNGEN prüfen === */
+/* === DEBUG VERSION (sicher, keine Typkonvertierung) === */
 $bookings = DB::table('course_bookings')
     ->join('courses', 'course_bookings.course_id', '=', 'courses.id')
     ->leftJoin('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
     ->leftJoin('payments', function ($join) {
-        // Typensichere Verbindung: Text vs Int
-        $join->on(DB::raw('CAST(payments.order_id AS CHAR)'), '=', DB::raw('CAST(course_bookings.id AS CHAR)'));
+        // kein CAST → einfach prüfen, ob IDs überhaupt verknüpft sind
+        $join->on('payments.order_id', '=', 'course_bookings.id');
     })
     ->select(
         'course_bookings.id as booking_id',
-        'course_bookings.status as booking_status',
-        'course_bookings.amount as booking_amount',
         'payments.order_id',
         'payments.status as payment_status',
         'payments.amount as payment_amount',
@@ -84,12 +82,10 @@ $bookings = DB::table('course_bookings')
         'ht_customers.first_name',
         'ht_customers.last_name'
     )
-    ->where('payments.status', '=', 'completed')
-    ->orderByDesc(DB::raw('COALESCE(payments.created_at, course_bookings.created_at)'))
     ->limit(10)
     ->get();
 
-// 🧠 Debug-Ausgabe direkt im Browser anzeigen
+// Debug-Ausgabe (keine Formatierung, reine Rohdaten)
 dd($bookings);
 
 /* === Fallback-SVGs === */
