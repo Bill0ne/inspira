@@ -27,4 +27,5 @@ public/.htaccess
 # === ALLOW THEME FILES (force include) ===
 !platform/themes/
 !platform/themes/riorelax/**
+!tests/
 
