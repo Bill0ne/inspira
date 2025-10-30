@@ -1,45 +1,72 @@
-name: Cypress Tests (Staging)
+name: 🚀 Cypress Tests (Inspira)
 
 on:
+  # 🔹 Manueller Start über "Run workflow" im Actions-Tab
   workflow_dispatch:
+
+  # 🔹 Optional: automatisch bei Push auf stage-desk (kannst du deaktivieren)
   push:
     branches:
       - stage-desk
+    paths-ignore:
+      - README.md
+      - .github/**
+      - docs/**
+      - "*.md"
 
 jobs:
   cypress-run:
-    name: Cypress run (${{ matrix.containers }})
+    name: Run Cypress E2E Tests on Stage
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        containers: [1, 2]
+
     steps:
-      - name: Checkout repository
+      # 1️⃣ Repository auschecken
+      - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      # 2️⃣ Node.js Setup
+      - name: 🧱 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Repair invalid versions in workspace packages
+      # 3️⃣ Versionsfehler in Workspaces reparieren
+      - name: 🧩 Repair invalid versions in workspace packages
         run: |
+          echo "🔧 Repairing empty or invalid version fields..."
           find platform -type f -name "package.json" -exec bash -c '
           if grep -q "\"version\": *\"\"" "$1" || grep -q "\"version\": *null" "$1"; then
-            echo "🛠 Fixing invalid version in $1"
             sed -i "s/\"version\": *\"\"/\"version\": \"1.0.0\"/g" "$1"
             sed -i "s/\"version\": *null/\"version\": \"1.0.0\"/g" "$1"
+            echo "✅ Fixed version in $1"
           fi
           ' _ {} \;
 
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps --force --ignore-scripts
+      # 4️⃣ Dependencies installieren
+      - name: 📦 Install dependencies (force legacy)
+        run: |
+          echo "📦 Installing dependencies..."
+          npm install --force --legacy-peer-deps --no-audit --ignore-scripts
+          echo "✅ NPM installation complete."
 
-      - name: Verify Cypress binary
-        run: npx cypress verify
-
-      - name: Run Cypress tests on Stage
+      # 5️⃣ Cypress Tests ausführen
+      - name: 🧪 Run Cypress tests on Stage
+        uses: cypress-io/github-action@v6
+        with:
+          record: true
+          parallel: false
+          browser: chrome
+          config: baseUrl=https://stage.inspira-zentrum.de
         env:
-          CYPRESS_baseUrl: https://stage.inspira-zentrum.de
-        run: npx cypress run --record --parallel --browser chrome
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 6️⃣ Abschlussmeldung
+      - name: 📨 Notify success
+        if: success()
+        run: echo "✅ Cypress E2E tests completed successfully at $(date)"
+
+      # 7️⃣ Fehlerausgabe bei Abbruch
+      - name: ❌ Notify failure
+        if: failure()
+        run: echo "❌ Cypress E2E tests failed at $(date)"
