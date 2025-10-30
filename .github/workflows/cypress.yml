@@ -1,18 +1,23 @@
 name: 🚀 Cypress Tests (Inspira)
 
 on:
-  workflow_dispatch:   # manuell startbar
+  # 🔹 Manueller Start über "Run workflow" im Actions-Tab
+  workflow_dispatch:
+
+  # 🔹 Optional: automatisch bei Push auf stage-desk (kannst du deaktivieren)
   push:
     branches:
-      - stage-desk     # automatisch bei Push/Commit auf Stage
+      - stage-desk
+    paths-ignore:
+      - README.md
+      - .github/**
+      - docs/**
+      - "*.md"
 
 jobs:
   cypress-run:
+    name: Run Cypress E2E Tests on Stage
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        containers: [1, 2]
 
     steps:
       # 1️⃣ Repository auschecken
@@ -25,41 +30,43 @@ jobs:
         with:
           node-version: 20
 
-      # 3️⃣ 🧰 Repair invalid package.json files
+      # 3️⃣ Versionsfehler in Workspaces reparieren
       - name: 🧩 Repair invalid versions in workspace packages
         run: |
-          echo "🔍 Searching for invalid version fields..."
-          find platform -type f -name "package.json" -exec sed -i 's/"version": *""/"version": "1.0.0"/g' {} +
-          find platform -type f -name "package.json" -exec sed -i 's/"version": *null/"version": "1.0.0"/g' {} +
-          echo "✅ All invalid version fields fixed temporarily."
+          echo "🔧 Repairing empty or invalid version fields..."
+          find platform -type f -name "package.json" -exec bash -c '
+          if grep -q "\"version\": *\"\"" "$1" || grep -q "\"version\": *null" "$1"; then
+            sed -i "s/\"version\": *\"\"/\"version\": \"1.0.0\"/g" "$1"
+            sed -i "s/\"version\": *null/\"version\": \"1.0.0\"/g" "$1"
+            echo "✅ Fixed version in $1"
+          fi
+          ' _ {} \;
 
       # 4️⃣ Dependencies installieren
       - name: 📦 Install dependencies (force legacy)
         run: |
-          echo "🧰 Preparing NPM environment..."
-          npm config set legacy-peer-deps true
-          npm config set strict-ssl false
-          npm config set fund false
-          npm config set audit false
-          echo "📄 Generating package-lock.json if missing..."
-          if [ ! -f package-lock.json ]; then npm install --package-lock-only; fi
           echo "📦 Installing dependencies..."
-          npm install --force --legacy-peer-deps --ignore-scripts --no-audit --no-fund --ignore-engines || true
-          echo "🔍 Verifying Cypress..."
-          npx cypress verify || true
+          npm install --force --legacy-peer-deps --no-audit --ignore-scripts
+          echo "✅ NPM installation complete."
 
-      # 5️⃣ Cypress Tests auf Stage laufen lassen
+      # 5️⃣ Cypress Tests ausführen
       - name: 🧪 Run Cypress tests on Stage
         uses: cypress-io/github-action@v6
         with:
           record: true
-          parallel: true
+          parallel: false
           browser: chrome
           config: baseUrl=https://stage.inspira-zentrum.de
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 6️⃣ Ergebnis ausgeben
+      # 6️⃣ Abschlussmeldung
       - name: 📨 Notify success
-        run: echo "✅ Cypress Tests completed successfully at $(date)"
+        if: success()
+        run: echo "✅ Cypress E2E tests completed successfully at $(date)"
+
+      # 7️⃣ Fehlerausgabe bei Abbruch
+      - name: ❌ Notify failure
+        if: failure()
+        run: echo "❌ Cypress E2E tests failed at $(date)"
