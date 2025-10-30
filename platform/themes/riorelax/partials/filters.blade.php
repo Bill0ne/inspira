@@ -37,16 +37,22 @@
     );
 
     $activeFilters = collect([
-        request('search'),
-        request('category'),
-        request('date'),
-        request('trainer'),
-        request('sort'),
+        'search'   => request('search'),
+        'category' => request('category'),
+        'date'     => request('date'),
+        'trainer'  => request('trainer'),
+        'sort'     => request('sort'),
     ])->filter(fn ($value) => filled($value));
 
     $resultCount = isset($courses)
         ? ($courses->total() ?? 0)
         : (isset($rooms) ? ($rooms->total() ?? 0) : \Theme\Riorelax\Helpers\FilterHelper::count(request(), $type));
+
+    $formattedCount = number_format($resultCount, 0, ',', '.');
+
+    $resultLabel = $isCourses
+        ? ($resultCount === 1 ? '1 Kurs verfügbar' : sprintf('%s Kurse verfügbar', $formattedCount))
+        : ($resultCount === 1 ? '1 Raum verfügbar' : sprintf('%s Räume verfügbar', $formattedCount));
 @endphp
 
 <div class="filter-bar-wrapper mb-4">
@@ -64,6 +70,21 @@
     </button>
 
     <div id="filterBar" class="filter-bar shadow-sm rounded-3 {{ $activeFilters->isNotEmpty() ? 'open' : '' }}">
+        <div class="filter-bar-header d-flex align-items-center justify-content-between flex-wrap mb-3">
+            <div class="d-flex align-items-center gap-2 text-muted">
+                <span class="filter-badge d-inline-flex align-items-center justify-content-center"><i class="fal fa-sliders-h"></i></span>
+                <span class="fw-semibold filter-result-label">{{ $resultLabel }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                @if($activeFilters->isNotEmpty())
+                    <button id="filterReset" type="button" class="btn btn-link p-0 text-decoration-none text-muted">
+                        <i class="fal fa-times-circle me-1"></i> Filter zurücksetzen
+                    </button>
+                @endif
+                <span class="badge rounded-pill bg-light text-muted border"><strong>{{ $formattedCount }}</strong></span>
+            </div>
+        </div>
+
         <form id="mainFilterForm" method="GET" action="{{ url()->current() }}" class="row g-3 align-items-center">
             <input type="hidden" name="filter_type" value="{{ $type }}">
 
@@ -125,11 +146,45 @@
                 </select>
             </div>
 
-            {{-- 🔢 Ergebniszahl rechts --}}
-            <div class="col-lg-1 col-md-6 text-lg-end text-muted small">
-                <span>{{ number_format($resultCount) }} Ergebnisse</span>
-            </div>
         </form>
+        @if($activeFilters->isNotEmpty())
+            <div class="active-filter-chips d-flex flex-wrap gap-2 mt-3">
+                @foreach($activeFilters as $key => $value)
+                    @php
+                        $labelMap = [
+                            'search' => 'Suche',
+                            'category' => $isCourses ? 'Kategorie' : 'Kategorie',
+                            'date' => 'Datum',
+                            'trainer' => 'Coach',
+                            'sort' => 'Sortierung',
+                        ];
+                        $sortMap = [
+                            'newest' => 'Neueste',
+                            'oldest' => 'Älteste',
+                            'price_asc' => 'Preis aufsteigend',
+                            'price_desc' => 'Preis absteigend',
+                        ];
+
+                        $label = $labelMap[$key] ?? ucfirst($key);
+                        $display = is_array($value) ? implode(', ', $value) : $value;
+
+                        if ($key === 'category') {
+                            $display = optional($categories->firstWhere('id', (int) $value))->name ?? $display;
+                        } elseif ($key === 'trainer') {
+                            $display = optional($trainers->firstWhere('id', (int) $value))->name ?? $display;
+                        } elseif ($key === 'date') {
+                            try { $display = \Carbon\Carbon::parse($value)->format('d.m.Y'); } catch (\Throwable $e) {}
+                        } elseif ($key === 'sort') {
+                            $display = $sortMap[$value] ?? $display;
+                        }
+                    @endphp
+                    <button type="button" class="filter-chip badge bg-primary-subtle text-primary rounded-pill px-3 py-2 small d-inline-flex align-items-center gap-2" data-key="{{ $key }}">
+                        <span>{{ $label }}: {{ $display }}</span>
+                        <i class="fal fa-times"></i>
+                    </button>
+                @endforeach
+            </div>
+        @endif
     </div>
 </div>
 
@@ -150,11 +205,50 @@
       }
     });
   }
+  const submitForm = () => {
+    if (typeof f.requestSubmit === 'function') {
+      f.requestSubmit();
+    } else {
+      f.submit();
+    }
+  };
   f.querySelectorAll('select,input[type="date"]').forEach(el => {
-    el.addEventListener('change', ()=>f.submit());
+    el.addEventListener('change', submitForm);
   });
   const s = f.querySelector('input[name="search"]');
-  if(s) s.addEventListener('keydown', e=>{ if(e.key==='Enter') f.submit(); });
+  if(s) {
+    s.addEventListener('keydown', e=>{ if(e.key==='Enter') submitForm(); });
+  }
+  const resetBtn = document.getElementById('filterReset');
+  if(resetBtn){
+    resetBtn.addEventListener('click', () => {
+      f.reset();
+      const filterTypeField = f.querySelector('input[name="filter_type"]');
+      if(filterTypeField){
+        filterTypeField.value = '{{ $type }}';
+      }
+      submitForm();
+    });
+  }
+  f.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const key = chip.getAttribute('data-key');
+      if(!key) return;
+      const field = f.querySelector(`[name="${key}"]`);
+      if(field){
+        if(field.tagName === 'SELECT') {
+          field.selectedIndex = 0;
+        } else {
+          field.value = '';
+        }
+      }
+      if(key === 'sort'){
+        const sortField = f.querySelector('#filter-sort');
+        if(sortField) sortField.selectedIndex = 0;
+      }
+      submitForm();
+    });
+  });
 })();
 </script>
 
@@ -165,8 +259,31 @@
 }
 .filter-bar {
     background-color: #F4F4F4;
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem;
     border: 1px solid #e0e0e0;
+}
+.filter-bar-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding-bottom: 0.75rem;
+}
+.filter-bar-header .badge {
+    background-color: #fff;
+    border-color: #d9d9d9 !important;
+    color: #444;
+    font-size: 13px;
+    padding: 0.5rem 0.85rem;
+}
+.filter-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    color: #666;
+    font-size: 16px;
+}
+.filter-result-label {
+    font-size: 14px;
 }
 .filter-bar input, .filter-bar select {
     border: 1px solid #d9d9d9;
@@ -180,6 +297,12 @@
     border-radius: 999px;
     padding: 0.5rem 1.25rem;
     box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+}
+.filter-toggle-btn i {
+    font-size: 16px;
+}
+.filter-toggle-btn span {
+    font-weight: 500;
 }
 .filter-toggle-btn .badge {
     font-size: 11px;
@@ -196,6 +319,22 @@
     background: transparent;
     flex: 1;
     padding-left: 0;
+}
+.active-filter-chips .badge {
+    background-color: rgba(75, 119, 190, 0.15) !important;
+    color: #2a4c7c !important;
+}
+.filter-chip {
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.filter-chip:hover {
+    background-color: rgba(75, 119, 190, 0.25) !important;
+    color: #1d3658 !important;
+}
+.filter-chip i {
+    font-size: 12px;
 }
 .search-field input:focus,
 .filter-bar select:focus,
@@ -217,6 +356,13 @@
     }
     #filterBar.open {
         display: block;
+    }
+}
+@media (max-width: 767.98px) {
+    .filter-bar-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
     }
 }
 </style>

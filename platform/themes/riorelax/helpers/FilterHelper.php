@@ -75,6 +75,7 @@ class FilterHelper
         }
 
         // 🔽 Sortierung
+        $query->reorder();
         switch ((string) $request->get('sort')) {
             case 'oldest':
                 $query->orderBy('created_at', 'asc');
