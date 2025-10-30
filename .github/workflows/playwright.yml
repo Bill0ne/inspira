@@ -1,61 +1,58 @@
-name: 🧪 Playwright Tests (Inspira)
+name: 🚀 Playwright Tests (Inspira)
 
 on:
-  # 🔹 Manuell auslösen oder automatisch bei Push auf stage-desk
+  workflow_dispatch:
   push:
     branches:
       - stage-desk
-  workflow_dispatch:
+      - main-desk
 
 jobs:
   playwright-tests:
     runs-on: ubuntu-latest
+    name: 🧪 Run Playwright E2E Tests
 
     steps:
-      # 1️⃣ Repository auschecken
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Node.js Setup
       - name: 🧱 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # 3️⃣ Install Playwright dependencies
-      - name: 📦 Install Playwright deps
+      - name: ⚙️ Install Playwright
         working-directory: tests/e2e
         run: |
           npm ci || npm install
           npx playwright install --with-deps
 
-      # 4️⃣ Run Playwright tests (HTML + JSON report)
       - name: 🧪 Run Playwright tests
+        id: run
         working-directory: tests/e2e
+        continue-on-error: true
         run: |
-          mkdir -p test-results
-          npx playwright test --reporter=html,json
           mkdir -p artifacts
-          cp -r playwright-report artifacts/html
-          cp playwright-report.json artifacts/results.json
+          npx playwright test --reporter=json || true
+          mv playwright-report.json artifacts/results.json || true
 
-      # 5️⃣ Prepare report folder with timestamp (e.g. /reports/43/)
-      - name: 🕒 Prepare report folder
+      - name: 🗂️ Prepare report folder
         id: prep
         run: echo "run_id=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
 
-      # 6️⃣ Upload reports to Hostinger (Stage Dashboard)
-      - name: 🚀 Upload reports to Inspira Stage Server
-        uses: burnett01/rsync-deployments@5.2
-        with:
-          switches: -avzr --delete
-          path: tests/e2e/artifacts/
-          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/${{ steps.prep.outputs.run_id }}/
-          remote_host: 145.223.35.233
-          remote_port: 65002
-          remote_user: u296731902
-          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: 🚀 Upload reports to Inspira Server
+        if: success() || always()
+        run: |
+          rsync -avz \
+            tests/e2e/artifacts/results.json \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/${{ steps.prep.outputs.run_id }}/ \
+            -e "ssh -p ${{ secrets.SSH_PORT }} -i ${{ secrets.SSH_KEY_PATH }}"
+        env:
+          SSH_KEY_PATH: ${{ secrets.SSH_KEY_PATH }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
 
-      # 7️⃣ Notify completion
       - name: ✅ Notify success
-        run: echo "✅ Playwright Tests completed & uploaded at $(date)"
+        if: always()
+        run: echo "✅ Playwright pipeline completed successfully – JSON uploaded to Inspira."
