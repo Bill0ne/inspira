@@ -64,39 +64,29 @@ foreach ($clients as $m) {
 }
 $topMembers = collect($clients)->sortByDesc('score')->take(5);
 
-/* === LETZTE BUCHUNGEN (nur vollständig bezahlte) === */
+/* === DEBUG VERSION (sicher, keine Typkonvertierung) === */
 $bookings = DB::table('course_bookings')
     ->join('courses', 'course_bookings.course_id', '=', 'courses.id')
-    ->join('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
+    ->leftJoin('ht_customers', 'course_bookings.customer_id', '=', 'ht_customers.id')
     ->leftJoin('payments', function ($join) {
+        // kein CAST → einfach prüfen, ob IDs überhaupt verknüpft sind
         $join->on('payments.order_id', '=', 'course_bookings.id');
     })
     ->select(
         'course_bookings.id as booking_id',
-        'course_bookings.status as booking_status',
-        'course_bookings.amount as booking_amount',
-        'course_bookings.created_at as booking_created',
+        'payments.order_id',
         'payments.status as payment_status',
         'payments.amount as payment_amount',
         'payments.created_at as payment_created',
         'courses.name as course_name',
-        'courses.id as course_id',
-        'courses.number_of_seats',
-        DB::raw('(SELECT COUNT(*) FROM course_bookings cb2 WHERE cb2.course_id = courses.id) as booked_count'),
         'ht_customers.first_name',
-        'ht_customers.last_name',
-        'ht_customers.avatar'
+        'ht_customers.last_name'
     )
-    ->whereNotNull('payments.order_id')
-    ->where('payments.status', '=', 'completed')
-    ->orderByDesc('payments.created_at')
-    ->limit(5)
-    ->get()
-    ->map(function ($b) {
-        $b->status = strtolower($b->payment_status ?? $b->booking_status ?? 'pending');
-        $b->amount = $b->payment_amount ?? $b->booking_amount ?? 0;
-        return $b;
-    });
+    ->limit(10)
+    ->get();
+
+// Debug-Ausgabe (keine Formatierung, reine Rohdaten)
+dd($bookings);
 
 /* === Fallback-SVGs === */
 $chairSvg = file_exists(public_path('images/icons/chair.svg'))
