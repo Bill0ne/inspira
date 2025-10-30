@@ -1,0 +1,11 @@
+{
+    "id": "botble/admin-sidebar",
+    "name": "Admin Sidebar Organizer",
+    "namespace": "Botble\\AdminSidebar\\",
+    "provider": "Botble\\AdminSidebar\\Providers\\AdminSidebarServiceProvider",
+    "author": "Custom",
+    "url": "https://inspira",
+    "version": "1.0.1",
+    "description": "Custom sidebar grouping for Inspira admin area",
+    "minimum_core_version": "7.3.0"
+}
