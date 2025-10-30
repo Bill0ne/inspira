@@ -180,23 +180,49 @@
       }
     });
   }
-  const submitForm = () => {
-    if (typeof f.requestSubmit === 'function') {
-      f.requestSubmit();
+  const applyFilters = () => {
+    const formData = new FormData(f);
+    const params = new URLSearchParams();
+    formData.forEach((value, key) => {
+      if (value == null) {
+        return;
+      }
+
+      let processed = value;
+
+      if (typeof processed === 'string' && key === 'search') {
+        processed = processed.trim();
+      }
+
+      if (processed === '') {
+        return;
+      }
+
+      params.set(key, processed);
+    });
+
+    const base = f.getAttribute('action') || window.location.href;
+    const nextUrl = new URL(params.toString() ? `${base}?${params.toString()}` : base, window.location.origin);
+    const currentUrl = new URL(window.location.href);
+
+    // Hash-Fragmente ignorieren, wir wollen nur den eigentlichen Filterzustand vergleichen
+    nextUrl.hash = '';
+    currentUrl.hash = '';
+
+    if (nextUrl.toString() === currentUrl.toString()) {
+      window.location.reload();
     } else {
-      f.submit();
+      window.location.assign(nextUrl.toString());
     }
   };
 
-  f.addEventListener('submit', () => {
-    const searchInput = f.querySelector('input[name="search"]');
-    if (searchInput) {
-      searchInput.value = searchInput.value.trim();
-    }
+  f.addEventListener('submit', (event) => {
+    event.preventDefault();
+    applyFilters();
   });
 
   f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', submitForm);
+    el.addEventListener('change', applyFilters);
   });
 
   const searchField = f.querySelector('input[name="search"]');
@@ -204,7 +230,7 @@
     searchField.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        submitForm();
+        applyFilters();
       }
     });
   }
@@ -226,7 +252,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    submitForm();
+    applyFilters();
   });
 })();
 </script>
