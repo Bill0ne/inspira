@@ -24,7 +24,7 @@ class CourseSessionTable extends TableAbstract
             ->addColumns([
                 IdColumn::make(),
 
-                // === Kurs-Infos (Name + Bild)
+                // === Kurs-Infos (Name + Bild + Button)
                 FormattedColumn::make('session_overview')
                     ->title('Kurs')
                     ->orderable(false)
@@ -32,7 +32,7 @@ class CourseSessionTable extends TableAbstract
                     ->escape(false)
                     ->getValueUsing(fn($col) => $this->renderSessionOverview($col->getItem())),
 
-                // === Coach (Instructor)
+                // === Coach
                 FormattedColumn::make('coach')
                     ->title('Coach')
                     ->orderable(false)
@@ -55,7 +55,7 @@ class CourseSessionTable extends TableAbstract
                     ->searchable(false)
                     ->getValueUsing(fn($col) => $this->renderPrice($col->getItem())),
 
-                // === Belegung
+                // === Belegung (SVG-Stühle)
                 FormattedColumn::make('occupancy')
                     ->title('Belegung')
                     ->orderable(false)
@@ -94,19 +94,33 @@ class CourseSessionTable extends TableAbstract
                 return $query
                     ->with(['course.category:id,name', 'course.instructor:id,name'])
                     ->withCount(['bookings as active_bookings_count'])
-                    ->select(['id', 'course_id', 'start_date', 'end_date', 'available_seats', 'created_at']);
+                    ->select([
+                        'id',
+                        'course_id',
+                        'start_date',
+                        'end_date',
+                        'available_seats',
+                        'created_at',
+                    ]);
             });
     }
 
-    // === Kursname + Thumbnail
+    // === Kursname + Thumbnail + Teilnehmer-Button ===
     protected function renderSessionOverview(CourseSession $session): string
     {
         $course = $session->course;
         if (!$course) return '<span class="text-muted">—</span>';
 
-        $thumbnail = RvMedia::getImageUrl($course->thumbnail, 'thumb', false, RvMedia::getDefaultImage());
+        $thumbnail = RvMedia::getImageUrl(
+            $course->thumbnail,
+            'thumb',
+            false,
+            RvMedia::getImageUrl('default-course.jpg', 'thumb', false, RvMedia::getDefaultImage())
+        );
+
         $name = BaseHelper::clean($course->name ?? '—');
         $url = route('course.edit', $course->getKey());
+        $btnLabel = __('Teilnehmer anzeigen');
 
         return <<<HTML
 <div class="d-flex align-items-center gap-3">
@@ -114,54 +128,69 @@ class CourseSessionTable extends TableAbstract
     <img src="{$thumbnail}" alt="{$name}" class="rounded" style="width:56px;height:56px;object-fit:cover;">
   </div>
   <div class="flex-grow-1">
-    <a href="{$url}" class="fw-semibold text-body text-decoration-none">{$name}</a>
+    <a href="{$url}" class="fw-semibold text-body text-decoration-none d-block">{$name}</a>
+    <button class="btn btn-outline-primary btn-sm mt-2 view-participants-btn" data-session-id="{$session->getKey()}">{$btnLabel}</button>
   </div>
 </div>
 HTML;
     }
 
+    // === Coach ===
     protected function renderCoach(CourseSession $session): string
     {
         $coach = $session->course?->instructor?->name;
         return $coach ? "<span class='badge bg-light text-dark border px-3 py-1'>{$coach}</span>" : '—';
     }
 
+    // === Kategorie ===
     protected function renderCategory(CourseSession $session): string
     {
         $cat = $session->course?->category?->name;
         return $cat ? "<span class='badge bg-light text-dark border px-3 py-1'>{$cat}</span>" : '—';
     }
 
+    // === Preis ===
     protected function renderPrice(CourseSession $session): string
     {
         $price = $session->course?->price;
         return $price ? format_price($price) : '—';
     }
 
-    // === Belegung mit 10 Stühlen
+    // === Belegung: SVG-Stühle ===
     protected function renderOccupancy(CourseSession $session): string
     {
         $stats = $this->performance()->forSession($session);
         $filled = (int) round(($stats['occupancy_percent'] / 100) * 10);
+
+        $chairSvg = <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+  <path d="M6 10V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v5h1a1 1 0 0 1 0 2h-1v7a1 1 0 0 1-2 0v-7H8v7a1 1 0 0 1-2 0v-7H5a1 1 0 0 1 0-2h1z" fill="currentColor"/>
+</svg>
+SVG;
+
         $chairs = '';
         for ($i = 1; $i <= 10; $i++) {
-            $color = $i <= $filled ? '#578E88' : '#ccc';
-            $chairs .= "<span style='color:{$color};margin-right:3px;'>🪑</span>";
+            $color = $i <= $filled ? '#578E88' : '#D1D5DB';
+            $chairs .= "<span style='color:{$color};margin-right:2px;'>{$chairSvg}</span>";
         }
-        return "<div class='small'>{$chairs}</div>";
+
+        return "<div class='d-flex align-items-center'>{$chairs}<span class='ms-2 small text-muted'>{$filled}/10</span></div>";
     }
 
+    // === Datum ===
     protected function renderDate(CourseSession $session): string
     {
         return $session->start_date ? $session->start_date->format('d.m.Y') : '—';
     }
 
+    // === Uhrzeit ===
     protected function renderTime(CourseSession $session): string
     {
         if (!$session->start_date || !$session->end_date) return '—';
         return $session->start_date->format('H:i') . ' – ' . $session->end_date->format('H:i');
     }
 
+    // === Score-Kreis ohne Text ===
     protected function renderScore(CourseSession $session): string
     {
         $stats = $this->performance()->forSession($session);
