@@ -1,6 +1,6 @@
 <?php
 
-namespace Theme\Riorelax\Helpers {
+namespace Theme\Riorelax\Helpers;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -27,7 +27,6 @@ class FilterHelper
         // 📂 Kategorie
         if ($category = $request->get('category')) {
             $column = $type === 'courses' ? 'category_id' : 'room_category_id';
-
             if (self::has($query, $column)) {
                 $query->where($column, $category);
             }
@@ -36,13 +35,12 @@ class FilterHelper
         // 👩‍🏫 Coach / Trainer (nur Kurse)
         if ($type === 'courses' && ($trainer = $request->get('trainer'))) {
             $column = 'instructor_id';
-
             if (self::has($query, $column)) {
                 $query->where($column, $trainer);
             }
         }
 
-        // 🗓️ Datum (ein Feld „Wann“)
+        // 🗓️ Datum
         $date = self::parseDate($request->get('date'));
         if ($date) {
             if ($type === 'courses') {
@@ -96,25 +94,26 @@ class FilterHelper
         return $query;
     }
 
-    /** Ergebnisanzahl berechnen (für das Filter-Partial) */
     public static function count(Request $request, string $type): int
     {
-        if ($type === 'courses') {
-            $query = \Botble\Courses\Models\Course::query();
-        } else {
-            $query = \Botble\Hotel\Models\Room::query();
-        }
+        $query = $type === 'courses'
+            ? \Botble\Courses\Models\Course::query()
+            : \Botble\Hotel\Models\Room::query();
 
         return self::apply($request, $query, $type)->count();
     }
 
-    /** d.m.Y oder Y-m-d -> Y-m-d */
     protected static function parseDate(?string $val): ?string
     {
         if (!$val) return null;
         $val = trim($val);
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $val)) return $val;
-        try { return Carbon::createFromFormat('d.m.Y', $val)->format('Y-m-d'); } catch (\Throwable) { return null; }
+
+        try {
+            return Carbon::createFromFormat('d.m.Y', $val)->format('Y-m-d');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     protected static function has(Builder $query, string $column): bool
@@ -126,6 +125,4 @@ class FilterHelper
             return false;
         }
     }
-}
-
 }
