@@ -35,7 +35,6 @@ $image = $thumbnail
     : RvMedia::getImageUrl('default-course.jpg', 'medium', false, RvMedia::getDefaultImage());
 @endphp
 
-
 <div class="course-card" onclick="window.location='{{ $course->url }}'">
   {{-- === Bildbereich === --}}
   <div class="thumb">
@@ -54,9 +53,8 @@ $image = $thumbnail
       <p class="course-desc">{!! BaseHelper::clean(strip_tags($course->description, '<br><em>')) !!}</p>
     @endif
 
-    {{-- === Footer-Bereich (zweizeilig) === --}}
+    {{-- === Footer (2 Zeilen) === --}}
     <div class="course-meta">
-      {{-- Zeile 1: Chips (Datum + Preis) --}}
       <div class="course-meta-left">
         <span class="mtxt">
           <i class="fal fa-calendar-alt"></i>{{ $dateLabel }}
@@ -66,7 +64,6 @@ $image = $thumbnail
         @endif
       </div>
 
-      {{-- Zeile 2: CTA --}}
       <div class="course-meta-cta">
         <a href="{{ $cartUrl }}" class="btn-cart" onclick="event.stopPropagation()">
           <i class="fal fa-shopping-cart"></i>
