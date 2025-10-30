@@ -1,0 +1,46 @@
+name: Cypress Tests (Staging)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - stage-desk
+
+jobs:
+  cypress-run:
+    name: Cypress run (${{ matrix.containers }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        containers: [1, 2]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Repair invalid versions in workspace packages
+        run: |
+          find platform -type f -name "package.json" -exec bash -c '
+          if grep -q "\"version\": *\"\"" "$1" || grep -q "\"version\": *null" "$1"; then
+            echo "🛠 Fixing invalid version in $1"
+            sed -i "s/\"version\": *\"\"/\"version\": \"1.0.0\"/g" "$1"
+            sed -i "s/\"version\": *null/\"version\": \"1.0.0\"/g" "$1"
+          fi
+          ' _ {} \;
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --force --ignore-scripts
+
+      - name: Verify Cypress binary
+        run: npx cypress verify
+
+      - name: Run Cypress tests on Stage
+        env:
+          CYPRESS_baseUrl: https://stage.inspira-zentrum.de
+        run: npx cypress run --record --parallel --browser chrome
