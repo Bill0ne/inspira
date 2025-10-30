@@ -21,6 +21,7 @@ class CourseSessionTable extends TableAbstract
     {
         // WICHTIG: Initialisiert u. a. den Teilnehmer-Dialog (.view-participants-btn)
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
+        $this->hasOperations = false;
 
         $this
             ->model(CourseSession::class)
