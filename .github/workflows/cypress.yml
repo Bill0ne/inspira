@@ -4,7 +4,7 @@ on:
   workflow_dispatch:   # manuell startbar
   push:
     branches:
-      - stage-desk     # automatisch nur bei Push/Commit auf Stage
+      - stage-desk     # automatisch bei Push/Commit auf Stage
 
 jobs:
   cypress-run:
@@ -25,17 +25,19 @@ jobs:
         with:
           node-version: 20
 
-      # 3️⃣ Dependencies installieren (Fehlerresistent)
+      # 3️⃣ Dependencies installieren (Fehlerresistent + Lockfile erzeugen)
       - name: 📦 Install dependencies (force legacy)
         run: |
-          echo "🧰 Setting up NPM in safe mode..."
+          echo "🧰 Preparing NPM environment..."
           npm config set legacy-peer-deps true
           npm config set strict-ssl false
           npm config set fund false
           npm config set audit false
-          echo "📦 Installing dependencies (ignore broken versions)..."
+          echo "📄 Generating package-lock.json if missing..."
+          if [ ! -f package-lock.json ]; then npm install --package-lock-only; fi
+          echo "📦 Installing dependencies..."
           npm install --force --legacy-peer-deps --ignore-scripts --no-audit --no-fund --ignore-engines || true
-          echo "🔍 Verifying Cypress installation..."
+          echo "🔍 Verifying Cypress..."
           npx cypress verify || true
 
       # 4️⃣ Cypress Tests auf Stage laufen lassen
@@ -50,6 +52,6 @@ jobs:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5️⃣ Abschließende Ausgabe
+      # 5️⃣ Ergebnis ausgeben
       - name: 📨 Notify success
-        run: echo "✅ Cypress Tests finished successfully at $(date)"
+        run: echo "✅ Cypress Tests completed successfully at $(date)"
