@@ -48,10 +48,6 @@
         : (isset($rooms) ? ($rooms->total() ?? 0) : \Theme\Riorelax\Helpers\FilterHelper::count(request(), $type));
 
     $formattedCount = number_format($resultCount, 0, ',', '.');
-
-    $resultLabel = $isCourses
-        ? ($resultCount === 1 ? '1 Kurs verfügbar' : sprintf('%s Kurse verfügbar', $formattedCount))
-        : ($resultCount === 1 ? '1 Raum verfügbar' : sprintf('%s Räume verfügbar', $formattedCount));
 @endphp
 
 <div class="filter-bar-wrapper mb-4">
@@ -69,16 +65,16 @@
     </button>
 
     <div id="filterBar" class="filter-bar shadow-sm rounded-3 {{ $activeFilters->isNotEmpty() ? 'open' : '' }}">
-        <div class="filter-bar-header d-flex align-items-center gap-3 mb-3 text-muted">
-            <span class="filter-badge d-inline-flex align-items-center justify-content-center"><i class="fal fa-sliders-h"></i></span>
-            <span class="fw-semibold filter-result-label">{{ $resultLabel }}</span>
-        </div>
-
-        <form id="mainFilterForm" method="GET" action="{{ url()->current() }}" class="row g-3 align-items-center flex-nowrap">
+        <form id="mainFilterForm" method="GET" action="{{ url()->current() }}" class="filter-form d-flex flex-wrap flex-lg-nowrap align-items-stretch gap-3">
             <input type="hidden" name="filter_type" value="{{ $type }}">
 
+            <div class="filter-meta d-flex align-items-center gap-2 text-muted">
+                <span class="filter-badge d-inline-flex align-items-center justify-content-center"><i class="fal fa-sliders-h"></i></span>
+                <span class="fw-semibold">Filter</span>
+            </div>
+
             {{-- 🔍 Suche --}}
-            <div class="col-lg-4 col-md-6 col-sm-12 flex-grow-1">
+            <div class="filter-field flex-grow-1">
                 <label class="visually-hidden" for="filter-search">Suche</label>
                 <div class="search-field d-flex align-items-center">
                     <i class="fal fa-search me-2 text-muted fs-5"></i>
@@ -89,7 +85,7 @@
             </div>
 
             {{-- 🧭 Kategorie --}}
-            <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="filter-field">
                 <label class="visually-hidden" for="filter-category">Kategorie</label>
                 <select id="filter-category" name="category" class="form-select form-select-sm text-muted">
                     <option value="">{{ $isCourses ? 'Kurskategorie' : 'Raumkategorie' }}</option>
@@ -103,7 +99,7 @@
 
             {{-- 👩‍🏫 Coach (nur bei Kursen) --}}
             @if($isCourses)
-                <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="filter-field">
                     <label class="visually-hidden" for="filter-trainer">Coach</label>
                     <select id="filter-trainer" name="trainer" class="form-select form-select-sm text-muted">
                         <option value="">Coach</option>
@@ -117,7 +113,7 @@
             @endif
 
             {{-- 🔽 Sortierung --}}
-            <div class="col-lg-2 col-md-4 col-sm-6">
+            <div class="filter-field">
                 <label class="visually-hidden" for="filter-sort">Sortieren</label>
                 <select id="filter-sort" name="sort" class="form-select form-select-sm text-muted">
                     <option value="">Sortieren nach</option>
@@ -198,25 +194,25 @@
   if(s) {
     s.addEventListener('keydown', e=>{ if(e.key==='Enter') submitForm(); });
   }
-  f.querySelectorAll('.filter-chip').forEach(chip => {
-    chip.addEventListener('click', (event) => {
-      event.preventDefault();
-      const key = chip.getAttribute('data-key');
-      if(!key) return;
-      const field = f.querySelector(`[name="${key}"]`);
-      if(field){
-        if(field.tagName === 'SELECT') {
-          field.selectedIndex = 0;
-        } else {
-          field.value = '';
-        }
+  document.addEventListener('click', (event) => {
+    const chip = event.target.closest('.filter-chip');
+    if(!chip) return;
+    event.preventDefault();
+    const key = chip.getAttribute('data-key');
+    if(!key) return;
+    const field = f.querySelector(`[name="${key}"]`);
+    if(field){
+      if(field.tagName === 'SELECT') {
+        field.selectedIndex = 0;
+      } else {
+        field.value = '';
       }
-      if(key === 'sort'){
-        const sortField = f.querySelector('#filter-sort');
-        if(sortField) sortField.selectedIndex = 0;
-      }
-      submitForm();
-    });
+    }
+    if(key === 'sort'){
+      const sortField = f.querySelector('#filter-sort');
+      if(sortField) sortField.selectedIndex = 0;
+    }
+    submitForm();
   });
 })();
 </script>
@@ -230,13 +226,6 @@
     background-color: #F4F4F4;
     padding: 1.5rem;
     border: 1px solid #e0e0e0;
-}
-.filter-bar-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    padding-bottom: 0.75rem;
-}
-.filter-result-label {
-    font-size: 14px;
 }
 .filter-badge {
     width: 36px;
@@ -253,8 +242,21 @@
     font-size: 13px;
     background-color: #fff;
 }
-.filter-bar #mainFilterForm {
-    flex-wrap: nowrap;
+.filter-form {
+    width: 100%;
+}
+.filter-form > * {
+    flex: 0 0 auto;
+}
+.filter-form .filter-field {
+    min-width: 180px;
+}
+.filter-form .filter-meta {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+.filter-form .filter-field.flex-grow-1 {
+    min-width: 220px;
 }
 .filter-bar input::placeholder { color: #999; }
 .filter-toggle-btn {
@@ -322,19 +324,14 @@
     #filterBar.open {
         display: block;
     }
-    .filter-bar #mainFilterForm {
-        flex-wrap: wrap !important;
-    }
-    .filter-bar #mainFilterForm > div {
-        flex: 0 0 100%;
-        max-width: 100%;
-    }
-}
-@media (max-width: 767.98px) {
-    .filter-bar-header {
+    .filter-form {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
+    }
+    .filter-form > * {
+        width: 100%;
+    }
+    .filter-form .filter-meta {
+        justify-content: center;
     }
 }
 </style>
