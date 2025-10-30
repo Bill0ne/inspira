@@ -1,9 +1,9 @@
-/* === Inspira Course Card – ELEGANT FINAL VERSION === */
+/* === Inspira Course Card – Polished Final Design === */
 
 .course-card {
   background: #fff !important;
-  border-radius: 8px !important; /* weniger rund */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
   overflow: hidden !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease !important;
   cursor: pointer !important;
@@ -14,23 +14,22 @@
 
 .course-card:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* === Bildbereich === */
 .course-card .thumb {
   position: relative !important;
-  padding: 6px !important; /* weniger Innenabstand */
+  padding: 2px !important;
   background: #fff !important;
-  border-radius: 8px !important;
+  border-radius: 4px !important;
   overflow: hidden !important;
-  flex-shrink: 0 !important;
 }
 
 .course-card .thumb img {
   width: 100% !important;
   height: auto !important;
-  border-radius: 6px !important;
+  border-radius: 4px !important;
   object-fit: cover !important;
   display: block !important;
   transition: transform 0.3s ease !important;
@@ -40,41 +39,45 @@
   transform: scale(1.03) !important;
 }
 
-/* === Inhalt === */
+/* === Textbereich === */
 .course-body {
-  padding: 12px 14px 8px !important; /* eleganter, kompakter */
+  padding: 10px 12px 6px !important;
   display: flex !important;
   flex-direction: column !important;
   flex: 1 !important;
+  font-family: "Poppins", "Helvetica Neue", Arial, sans-serif !important;
 }
 
 /* === Titel === */
 .course-title {
-  font-family: "Poppins", "Helvetica Neue", Arial, sans-serif !important;
   font-size: 15px !important;
   font-weight: 600 !important;
-  color: #111 !important;
-  line-height: 1.4 !important;
+  color: #222 !important;
+  line-height: 1.35 !important;
   margin-bottom: 4px !important;
   text-transform: none !important;
 }
 
-/* === Untertitel / Zwischenüberschrift (falls vorhanden) === */
-.course-body strong {
-  font-family: "Poppins", "Helvetica Neue", Arial, sans-serif !important;
-  display: block !important;
-  font-size: 13px !important;
+/* Entfernt alte Formatierungen aus dem Inhalt */
+.course-body strong,
+.course-body em,
+.course-body b {
+  all: unset !important;
   font-weight: 500 !important;
   color: #444 !important;
-  margin-bottom: 4px !important;
 }
 
-/* === Beschreibung (2 Zeilen, hell, elegant) === */
-.course-desc {
-  font-family: "Poppins", "Helvetica Neue", Arial, sans-serif !important;
-  font-size: 12px !important;
+.course-body p {
+  margin: 0 !important;
+  padding: 0 !important;
   line-height: 1.45 !important;
-  color: #777 !important;
+}
+
+/* === Beschreibung (max. 2 Zeilen) === */
+.course-desc {
+  font-size: 12px !important;
+  color: #666 !important;
+  line-height: 1.45 !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
@@ -82,14 +85,14 @@
   margin-bottom: 8px !important;
 }
 
-/* === Meta-Bereich (Chips + Button) === */
+/* === Meta-Bereich === */
 .course-meta {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 6px !important;
   flex-wrap: wrap !important;
-  padding: 0 14px 10px !important;
+  padding: 0 12px 10px !important;
 }
 
 .course-meta-left {
@@ -99,31 +102,30 @@
   flex-wrap: wrap !important;
 }
 
-/* === Chips (kompakt & sauber) === */
+/* === Chips === */
 .mtxt {
   background: #f3f3f3 !important;
   color: #578e88 !important;
   font-weight: 500 !important;
   border-radius: 4px !important;
-  padding: 5px 9px !important;
-  font-size: 11.5px !important;
-  line-height: 15px !important;
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  line-height: 14px !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
-  flex-shrink: 0 !important;
 }
 
 .mtxt.missed {
   color: #e74c3c !important;
 }
 
-/* === Preis separiert === */
+/* === Preis === */
 .course-meta .price {
   background: #f3f3f3 !important;
   color: #333 !important;
-  font-size: 11.5px !important;
-  padding: 5px 9px !important;
+  font-size: 11px !important;
+  padding: 4px 8px !important;
   border-radius: 4px !important;
   font-weight: 500 !important;
 }
@@ -132,7 +134,7 @@
 .btn-cart {
   background: #578e88 !important;
   color: #fff !important;
-  padding: 7px 13px !important;
+  padding: 6px 12px !important;
   border-radius: 4px !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -148,19 +150,16 @@
   background: #4b7c75 !important;
 }
 
-/* === Responsive Anpassungen === */
+/* === Responsive Anpassung === */
 @media (max-width: 992px) {
-  .course-card {
-    border-radius: 6px !important;
-  }
   .course-body {
-    padding: 10px 12px 8px !important;
+    padding: 8px 10px 6px !important;
   }
   .course-title {
     font-size: 14px !important;
   }
   .course-desc {
-    font-size: 11.5px !important;
+    font-size: 11px !important;
   }
 }
 
@@ -168,7 +167,7 @@
   .course-meta {
     flex-direction: column !important;
     align-items: flex-start !important;
-    gap: 6px !important;
+    gap: 5px !important;
   }
   .btn-cart {
     width: 100% !important;
@@ -177,9 +176,6 @@
 }
 
 @media (max-width: 480px) {
-  .course-body {
-    padding: 8px 10px 6px !important;
-  }
   .course-title {
     font-size: 13.5px !important;
   }
@@ -187,7 +183,7 @@
     font-size: 11px !important;
   }
   .mtxt {
-    font-size: 11px !important;
-    padding: 4px 8px !important;
+    font-size: 10.5px !important;
+    padding: 3px 7px !important;
   }
 }
