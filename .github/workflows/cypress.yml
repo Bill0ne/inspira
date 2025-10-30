@@ -1,10 +1,7 @@
 name: 🚀 Cypress Tests (Inspira)
 
 on:
-  # 🔹 Manueller Start über "Run workflow" im Actions-Tab
   workflow_dispatch:
-
-  # 🔹 Optional: automatisch bei Push auf stage-desk (kannst du deaktivieren)
   push:
     branches:
       - stage-desk
@@ -16,57 +13,65 @@ on:
 
 jobs:
   cypress-run:
-    name: Run Cypress E2E Tests on Stage
+    name: Run Cypress E2E tests on Stage
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Repository auschecken
+      # 1) Code auschecken
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Node.js Setup
+      # 2) Node bereitstellen
       - name: 🧱 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # 3️⃣ Versionsfehler in Workspaces reparieren
-      - name: 🧩 Repair invalid versions in workspace packages
+      # 3) ALLE package.json reparieren (repo-weit, außer node_modules/vendor)
+      - name: 🔧 Repair invalid package.json versions (repo-wide)
+        shell: bash
         run: |
-          echo "🔧 Repairing empty or invalid version fields..."
-          find platform -type f -name "package.json" -exec bash -c '
-          if grep -q "\"version\": *\"\"" "$1" || grep -q "\"version\": *null" "$1"; then
-            sed -i "s/\"version\": *\"\"/\"version\": \"1.0.0\"/g" "$1"
-            sed -i "s/\"version\": *null/\"version\": \"1.0.0\"/g" "$1"
-            echo "✅ Fixed version in $1"
-          fi
-          ' _ {} \;
+          echo "🔍 Fixing invalid/missing versions in all package.json..."
+          mapfile -t FILES < <(find . -type f -name "package.json" \
+            -not -path "*/node_modules/*" -not -path "*/vendor/*")
+          for f in "${FILES[@]}"; do
+            node - <<'NODE'
+            const fs = require('fs');
+            const f = process.argv[1];
+            try {
+              const raw = fs.readFileSync(f, 'utf8');
+              const json = JSON.parse(raw);
 
-      # 4️⃣ Dependencies installieren
-      - name: 📦 Install dependencies (force legacy)
-        run: |
-          echo "📦 Installing dependencies..."
-          npm install --force --legacy-peer-deps --no-audit --ignore-scripts
-          echo "✅ NPM installation complete."
+              // fallback: name/version setzen wenn fehlen/leer
+              if (!json.name || json.name === '') json.name = "inspira-workspace";
+              if (!json.version || json.version === '' || json.version === null) json.version = "1.0.0";
 
-      # 5️⃣ Cypress Tests ausführen
-      - name: 🧪 Run Cypress tests on Stage
+              fs.writeFileSync(f, JSON.stringify(json, null, 2) + "\n");
+              console.log("✅ fixed", f);
+            } catch (e) {
+              console.log("ℹ️ skip", f, e.message);
+            }
+NODE
+            "$f"
+          done
+
+      # 4) Cypress laufen lassen – ohne Installation/Lockfile
+      - name: 🧪 Run Cypress tests on Stage (no install)
         uses: cypress-io/github-action@v6
         with:
-          record: true
-          parallel: false
+          install: false                  # 🔴 wichtig: kein npm install / kein Lockfile nötig
           browser: chrome
-          config: baseUrl=https://stage.inspira-zentrum.de
+          # Wir rufen Cypress direkt via npx auf und übergeben baseUrl
+          command: npx cypress run --config baseUrl=https://stage.inspira-zentrum.de --record --parallel=false
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 6️⃣ Abschlussmeldung
+      # 5) Meldungen
       - name: 📨 Notify success
         if: success()
         run: echo "✅ Cypress E2E tests completed successfully at $(date)"
 
-      # 7️⃣ Fehlerausgabe bei Abbruch
       - name: ❌ Notify failure
         if: failure()
         run: echo "❌ Cypress E2E tests failed at $(date)"
