@@ -1,7 +1,7 @@
 name: 🎨 Deploy to Inspira Design Env
 
 on:
-  # 🔹 Trigger bei Commits oder Pushes auf design-env
+  # 🔹 Automatischer Trigger bei Push auf design-desk
   push:
     branches:
       - design-desk
@@ -11,7 +11,7 @@ on:
       - docs/**
       - "*.md"
 
-  # 🔹 Optional: manuell starten (über Actions → "Run workflow")
+  # 🔹 Manueller Start (Actions → "Run workflow")
   workflow_dispatch:
 
 jobs:
@@ -20,9 +20,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Repository auschecken
+      # 1️⃣ Repository auschecken (immer design-desk, egal ob Push oder Manuell)
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: design-desk
 
       # 2️⃣ SSH vorbereiten
       - name: 🔐 Setup SSH Access
@@ -32,19 +34,19 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           echo "145.223.35.233 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
 
-      # 3️⃣ Rsync Deployment (Safe Mode mit Exclude-Datei)
+      # 3️⃣ Rsync Deployment (mit Exclude-Liste)
       - name: 📦 Sync code to Inspira Design Env
         uses: burnett01/rsync-deployments@5.2
         with:
           switches: -avzr --delete --exclude-from='deploy-exclude.txt'
-          path: ./
+          path: ./                # alles aus Repo-Root
           remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/design-env/
           remote_host: 145.223.35.233
           remote_port: 65002
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Laravel, Build & Cache Optimierung
+      # 4️⃣ Laravel Setup & Cache Optimierung auf Server
       - name: ⚙️ Run Laravel + Build setup on Design Env
         run: |
           ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@145.223.35.233 <<'EOF'
