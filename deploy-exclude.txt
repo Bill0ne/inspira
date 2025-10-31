@@ -1,4 +1,6 @@
+# ==========================================================
 # === SYSTEM / FRAMEWORK EXCLUDES ===
+# ==========================================================
 .git*
 .github
 .env*
@@ -21,14 +23,38 @@ Homestead.*
 /phpunit.result.cache
 public/storage/
 public/uploads/
-public/storage/
 public/.htaccess
 tests/
 dev-test-repo/
 
-# === ALLOW THEME FILES (force include) ===
+# ==========================================================
+# === FORCE-INCLUDES: THEMES & CUSTOM PLUGIN BUILDS ===
+# ==========================================================
+
+# ---- THEME: RIORELAX (Inspira Frontend) ----
 !platform/themes/
 !platform/themes/riorelax/**
+!public/themes/riorelax/css/
+!public/themes/riorelax/css/**
+
+# ---- PLUGIN: HOTEL (Inspira Kundenbereich) ----
+# 1. PHP/Controller/Helper-Änderungen
+!platform/plugins/hotel/src/
+!platform/plugins/hotel/src/**
+# 2. SASS-Quellcode (für spätere Rebuilds)
+!platform/plugins/hotel/resources/assets/sass/
+!platform/plugins/hotel/resources/assets/sass/**
+# 3. Kompilierte CSS-Dateien (npm run production Output)
+!platform/plugins/hotel/public/css/
+!platform/plugins/hotel/public/css/**
+# 4. Final ausgelieferte CSS-Datei (wird vom Browser geladen)
 !public/vendor/core/plugins/hotel/css/
+!public/vendor/core/plugins/hotel/css/**
 
-
+# ==========================================================
+# === OPTIONAL: CACHE / MEDIA (falls gewünscht)
+# ==========================================================
+# Falls du lokale Caches oder Uploads beim Deploy beibehalten willst:
+# !storage/app/public/
+# !storage/app/public/**
+# ==========================================================
