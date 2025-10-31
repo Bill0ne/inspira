@@ -3,6 +3,7 @@
 namespace Botble\Hotel\Http\Controllers\Front\Customers;
 
 use Botble\Base\Http\Controllers\BaseController;
+use Botble\Hotel\Facades\HotelHelper;
 use Botble\Hotel\Facades\InvoiceHelper;
 use Botble\Hotel\Models\Booking;
 use Botble\Hotel\Models\Invoice;
@@ -14,8 +15,10 @@ class BookingController extends BaseController
 {
     public function __construct()
     {
+        $customerCssVersion = HotelHelper::getCustomerStylesVersion();
+
         Theme::asset()
-            ->add('customer-style', 'vendor/core/plugins/hotel/css/customer.css');
+            ->add('customer-style', 'vendor/core/plugins/hotel/css/customer.css', [], [], $customerCssVersion);
 
         Theme::asset()
             ->container('footer')
