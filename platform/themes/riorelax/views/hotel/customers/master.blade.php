@@ -54,7 +54,7 @@
     ];
 @endphp
 
-<div class="customer-page crop-avatar">
+<div class="customer-page crop-avatar inspira-customer">
     <div class="customer-shell">
         <div class="customer-layout">
             <aside class="customer-sidebar" aria-label="{{ __('Account navigation') }}">
