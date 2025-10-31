@@ -15,21 +15,15 @@ jobs:
       # === 2️⃣ Run Playwright Tests on Hostinger ===
       - name: 🧪 Run Playwright Tests on Hostinger
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.INSPIRA_SSH_KEY }}
-          REMOTE_USER: ${{ secrets.INSPIRA_USER }}
-          REMOTE_HOST: ${{ secrets.INSPIRA_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           echo "🔐 Setting up SSH access..."
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          echo "🧠 Checking connection info..."
-          echo "User: $REMOTE_USER"
-          echo "Host: $REMOTE_HOST"
-          
-          echo "🚀 Connecting to remote server and running Playwright..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa "$REMOTE_USER@$REMOTE_HOST" bash << 'EOF'
+          echo "🚀 Connecting to Hostinger..."
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa u296731902@fr-int-web1583.hostinger.net bash << 'EOF'
             cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env/tests/e2e
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
