@@ -56,7 +56,11 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "classmap": [
+            "platform/themes/riorelax/helpers/FilterHelper.php",
+            "platform/themes/riorelax/src/"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

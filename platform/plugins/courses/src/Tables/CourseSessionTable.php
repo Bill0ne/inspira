@@ -3,153 +3,235 @@
 namespace Botble\Courses\Tables;
 
 use Botble\Base\Facades\Assets;
+use Botble\Base\Facades\BaseHelper;
 use Botble\Courses\Models\CourseSession;
+use Botble\Courses\Services\CoursePerformanceService;
+use Botble\Media\Facades\RvMedia;
 use Botble\Table\Abstracts\TableAbstract;
 use Botble\Table\BulkActions\DeleteBulkAction;
-use Botble\Table\BulkChanges\CreatedAtBulkChange;
-use Botble\Table\BulkChanges\SelectBulkChange;
-use Botble\Table\BulkChanges\DateBulkChange;
-use Botble\Table\Columns\CreatedAtColumn;
-use Botble\Table\Columns\IdColumn;
-use Botble\Table\Columns\DateColumn;
 use Botble\Table\Columns\FormattedColumn;
+use Botble\Table\Columns\IdColumn;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\Relation as EloquentRelation;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class CourseSessionTable extends TableAbstract
 {
+    protected ?CoursePerformanceService $performanceService = null;
+
     public function setup(): void
     {
+        // WICHTIG: Initialisiert u. a. den Teilnehmer-Dialog (.view-participants-btn)
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
+        $this->hasOperations = false;
 
         $this
             ->model(CourseSession::class)
             ->addColumns([
                 IdColumn::make(),
 
-                FormattedColumn::make('course_id')
-                    ->title(trans('plugins/courses::courses.course.name'))
-                    ->getValueUsing(function (FormattedColumn $column) {
-                        return $column->getItem()->course?->name ?? '—';
-                    }),
-
-                FormattedColumn::make('view_participants')
-                    ->title(trans('Teilnehmerdetails'))
-                    ->escape(false)
+                // Kurs (Bild + Titel + Teilnehmer-Button)
+                FormattedColumn::make('session_overview')
+                    ->title('Kurs')
                     ->orderable(false)
-                    ->getValueUsing(function (FormattedColumn $column) {
-                        $session = $column->getItem();
-
-                        return '<button class="btn btn-info btn-sm view-participants-btn" data-session-id="'
-                            . $session->id . '">Sicht</button>';
-                    }),
-
-                FormattedColumn::make('seats')
-                    ->title(trans('plugins/courses::courses.course-session.seats'))
-                    ->orderable(false)
+                    ->searchable(false)
                     ->escape(false)
-                    ->getValueUsing(function (FormattedColumn $column) {
-                        $session = $column->getItem();
+                    ->getValueUsing(fn ($col) => $this->renderSessionOverview($col->getItem())),
 
-                        if (is_null($session->available_seats)) {
-                            return 'Unbegrenzt';
-                        }
+                // Coach
+                FormattedColumn::make('coach')
+                    ->title('Coach')
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn ($col) => $this->renderCoach($col->getItem())),
 
-                        $booked = (int) $session->getBookedCount();
-                        $capacity = (int) $session->available_seats;
-                        $remaining = max(0, $capacity - $booked);
+                // Kategorie
+                FormattedColumn::make('category')
+                    ->title('Kategorie')
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn ($col) => $this->renderCategory($col->getItem())),
 
-                        $percent = $capacity > 0
-                            ? (int) round(min(100, ($booked / (float) $capacity) * 100))
-                            : 0;
+                // Preis
+                FormattedColumn::make('price')
+                    ->title('Preis')
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->getValueUsing(fn ($col) => $this->renderPrice($col->getItem())),
 
-                        $label = "{$booked} gebraucht / {$remaining} übrig";
+                // Belegung (10 Stühle)
+                FormattedColumn::make('occupancy')
+                    ->title('Belegung')
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn ($col) => $this->renderOccupancy($col->getItem())),
 
-                        $bar = sprintf(
-                            '<div style="margin-top:6px;background:#e9ecef;height:6px;border-radius:4px;overflow:hidden;">
-                                <div style="width:%1$d%%;height:6px;border-radius:4px;background:#578E88;"></div>
-                             </div>',
-                            $percent
-                        );
+                // Datum
+                FormattedColumn::make('date')
+                    ->title('Datum')
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn ($col) => $this->renderDate($col->getItem())),
 
-                        return $label . $bar;
-                    }),
+                // Uhrzeit
+                FormattedColumn::make('time')
+                    ->title('Uhrzeit')
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn ($col) => $this->renderTime($col->getItem())),
 
-                DateColumn::make('start_date')
-                    ->title(trans('plugins/courses::courses.course-session.start_date'))
-                    ->dateFormat('d-m-Y H:i'),
-
-                DateColumn::make('end_date')
-                    ->title(trans('plugins/courses::courses.course-session.end_date'))
-                    ->dateFormat('d-m-Y H:i'),
-
-                FormattedColumn::make('available_seats')
-                    ->title(trans('plugins/courses::courses.course-session.available_seats'))
-                    ->getValueUsing(fn (FormattedColumn $column) => $column->getItem()->available_seats ?? 'Unbegrenzt'),
-
-                CreatedAtColumn::make(),
+                // Score (ohne Untertext)
+                FormattedColumn::make('score')
+                    ->title('Score')
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn ($col) => $this->renderScore($col->getItem())),
             ])
             ->addBulkActions([
                 DeleteBulkAction::make()->permission('course-sessions.destroy'),
             ])
-            ->addBulkChanges([
-                SelectBulkChange::make() ->name('course_id') ->title(trans('plugins/courses::courses.course.name')) ->choices(\Botble\Courses\Models\Course::query()->pluck('name', 'id')->all()), DateBulkChange::make() ->name('start_date') ->title(trans('plugins/courses::courses.course.start_date')), DateBulkChange::make() ->name('end_date') ->title(trans('plugins/courses::courses.course.end_date')),
-                CreatedAtBulkChange::make(),
-            ])
             ->queryUsing(function (Builder $query) {
                 return $query
-                    ->with(['course' => function (BelongsTo $query) {
-                        $query->select(['id', 'name']);
-                    }])
+                    ->with(['course.category:id,name', 'course.instructor:id,name'])
+                    ->withCount([
+                        // aktive Buchungen (für „booked“)
+                        'bookings as active_bookings_count',
+                    ])
                     ->select([
                         'id',
                         'course_id',
                         'start_date',
                         'end_date',
-                        'available_seats',
+                        'available_seats', // pro Sitzungs-Record (kann NULL für unlimited sein)
                         'created_at',
                     ]);
-            })->onFilterQuery(function (
-                EloquentBuilder|QueryBuilder|EloquentRelation $query,
-                string $key,
-                string $operator,
-                ?string $value
-            ) {
-                if (! $value) {
-                    return false;
-                }
-
-                if (in_array($key, ['start_date', 'end_date'])) {
-                    try {
-                        $startOfDay = \Carbon\Carbon::parse($value)->startOfDay();
-                        $endOfDay = \Carbon\Carbon::parse($value)->endOfDay();
-                    } catch (\Exception $e) {
-                        return false;
-                    }
-
-                    if ($key === 'start_date') {
-                        return $query->whereBetween('start_date', [$startOfDay, $endOfDay]);
-                    }
-
-                    if ($key === 'end_date') {
-                        return $query->whereBetween('end_date', [$startOfDay, $endOfDay]);
-                    }
-                }
-
-                if ($key === 'course_id') {
-                    return $query->where('course_id', $value);
-                }
-
-                return false;
             });
-        ;
     }
 
-    public function hasOperations(): bool
+    protected function renderSessionOverview(CourseSession $session): string
     {
-        return false;
+        $course = $session->course;
+        if (! $course) {
+            return '<span class="text-muted">—</span>';
+        }
+
+        // Fallback-Bild sicher
+        $thumb = RvMedia::getImageUrl(
+            $course->thumbnail,
+            'thumb',
+            false,
+            RvMedia::getImageUrl('default-course.jpg', 'thumb', false, RvMedia::getDefaultImage())
+        );
+
+        $name = BaseHelper::clean($course->name ?? '—');
+        $editUrl = route('course.edit', $course->getKey());
+        $btnLabel = __('Teilnehmer anzeigen');
+
+        return <<<HTML
+<div class="d-flex align-items-center gap-3">
+  <div class="flex-shrink-0">
+    <img src="{$thumb}" alt="{$name}" class="rounded" style="width:56px;height:56px;object-fit:cover;">
+  </div>
+  <div class="flex-grow-1">
+    <a href="{$editUrl}" class="fw-semibold text-body text-decoration-none d-block">{$name}</a>
+    <button class="btn btn-outline-primary btn-sm mt-2 view-participants-btn"
+            data-session-id="{$session->getKey()}">{$btnLabel}</button>
+  </div>
+</div>
+HTML;
+    }
+
+    protected function renderCoach(CourseSession $session): string
+    {
+        $coach = $session->course?->instructor?->name;
+        return $coach
+            ? "<span class='badge bg-light text-dark border px-3 py-1'>{$coach}</span>"
+            : '—';
+    }
+
+    protected function renderCategory(CourseSession $session): string
+    {
+        $cat = $session->course?->category?->name;
+        return $cat
+            ? "<span class='badge bg-light text-dark border px-3 py-1'>{$cat}</span>"
+            : '—';
+    }
+
+    protected function renderPrice(CourseSession $session): string
+    {
+        $price = $session->course?->price;
+        return $price ? format_price($price) : '—';
+    }
+
+    // 10 SVG-Stühle; Füllung basierend auf gebucht vs. maxSeats (oder Prozent bei „unlimited“)
+    protected function renderOccupancy(CourseSession $session): string
+    {
+        $stats   = $this->performance()->forSession($session);
+        $booked  = (int)($stats['booked_seats'] ?? 0);
+        $max     = $stats['max_seats'];                  // NULL = unlimited
+        $percent = (float)($stats['occupancy_percent'] ?? 0);
+
+        if ($max !== null && $max > 0) {
+            $filledChairs = (int)round(10 * min(1, $booked / $max));
+            $label = "{$booked}/{$max}";
+        } else {
+            $filledChairs = (int)round(10 * min(1, $percent / 100));
+            $label = (string)$booked; // unlimited -> nur gebucht anzeigen
+        }
+
+        $chairSvg = <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+  <path d="M6 10V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v5h1a1 1 0 0 1 0 2h-1v7a1 1 0 0 1-2 0v-7H8v7a1 1 0 0 1-2 0v-7H5a1 1 0 0 1 0-2h1z" fill="currentColor"/>
+</svg>
+SVG;
+
+        $row = '';
+        for ($i = 1; $i <= 10; $i++) {
+            $color = $i <= $filledChairs ? '#578E88' : '#D1D5DB';
+            $row  .= "<span style=\"color:{$color};margin-right:2px;\">{$chairSvg}</span>";
+        }
+
+        return "<div class='d-flex align-items-center'>{$row}<span class='ms-2 small text-muted'>{$label}</span></div>";
+    }
+
+    protected function renderDate(CourseSession $session): string
+    {
+        return $session->start_date ? $session->start_date->format('d.m.Y') : '—';
+    }
+
+    protected function renderTime(CourseSession $session): string
+    {
+        if (! $session->start_date || ! $session->end_date) {
+            return '—';
+        }
+
+        return $session->start_date->format('H:i') . ' – ' . $session->end_date->format('H:i');
+    }
+
+    protected function renderScore(CourseSession $session): string
+    {
+        $stats    = $this->performance()->forSession($session);
+        $score    = (int)($stats['score'] ?? 0);
+        $percent  = max(0, min(100, (int) round($score)));
+
+        return <<<HTML
+<div class="d-flex justify-content-center">
+  <div style="width:48px;height:48px;border-radius:50%;
+              background:conic-gradient(#578E88 {$percent}%, #e9ecef {$percent}%);
+              display:flex;align-items:center;justify-content:center;
+              font-weight:600;color:#2b2b2b;">
+    {$score}
+  </div>
+</div>
+HTML;
+    }
+
+    protected function performance(): CoursePerformanceService
+    {
+        return $this->performanceService ??= app(CoursePerformanceService::class);
     }
 }

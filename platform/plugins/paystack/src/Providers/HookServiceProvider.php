@@ -157,6 +157,7 @@ class HookServiceProvider extends ServiceProvider
                     'order_id' => $paymentData['order_id'],
                     'customer_id' => $paymentData['customer_id'],
                     'customer_type' => $paymentData['customer_type'],
+                    'order_type' => $paymentData['order_type'] ?? null,
                 ]),
             ];
 

@@ -12,9 +12,25 @@ use Botble\Courses\Models\CourseSession;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
+use Theme\Riorelax\Helpers\FilterHelper;
 
 class CourseController extends BaseController
 {
+    
+    public function getCourses(Request $request)
+{
+    $query = \Botble\Courses\Models\Course::query();
+
+    // Anwenden zentraler Filterlogik
+    $query = FilterHelper::apply($request, $query, 'courses');
+
+    $courses = $query->paginate(12);
+
+    return Theme::scope('courses', compact('courses'))->render();
+}
+    
+    
+    
     public function __construct()
     {
         $this
@@ -344,7 +360,7 @@ class CourseController extends BaseController
                 $start = Carbon::parse($session->start_date);
                 $end = Carbon::parse($session->end_date);
 
-                $text = $start->format('d/m/Y h:i A') . ' - ' . $end->format('h:i A');
+                $text = $start->format('d.m.Y H:i') . ' - ' . $end->format('H:i');
 
                 $formatted->push([
                     'id' => $session->id,

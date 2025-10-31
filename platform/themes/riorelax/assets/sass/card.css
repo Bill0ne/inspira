@@ -1,0 +1,145 @@
+
+/* === Inspira – Course Card Final Design === */
+.course-card {
+  background: #fff !important;
+  border-radius: 10px !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+  overflow: hidden !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+  cursor: pointer !important;
+  display: flex;
+  flex-direction: column;
+}
+.course-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* === Bild === */
+.course-card .thumb {
+  padding: 12px !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+.course-card .thumb img {
+  width: 100% !important;
+  border-radius: 14px !important;
+  display: block !important;
+  object-fit: cover !important;
+  aspect-ratio: 16 / 9 !important;
+  background-color: #f2f2f2 !important; /* Fallback bei leerem Bild */
+}
+
+/* === Body === */
+.course-body {
+  padding: 10px 16px 12px 16px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px !important;
+}
+
+/* Titel */
+.course-title {
+  font-size: 16px !important;
+  line-height: 20px !important;
+  font-weight: 600 !important;
+  color: #414141 !important;
+  margin: 0 0 2px 0 !important;
+}
+
+/* Untertitel */
+.course-subtitle {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #6C6C6C !important;
+  line-height: 18px !important;
+  margin-bottom: 4px !important;
+}
+
+/* Beschreibung */
+.course-desc {
+  font-size: 12px !important;
+  line-height: 18px !important;
+  color: #666 !important;
+  font-weight: 400 !important;
+  margin: 0 0 8px 0 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Standardisierte Textfarben (keine Fettelemente) */
+.course-body,
+.course-body p,
+.course-body span,
+.course-body strong,
+.course-body em {
+  color: #4b4b4b !important;
+  font-weight: 400 !important;
+}
+
+/* === Footer === */
+.course-meta {
+  display: flex;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-top: auto !important;
+}
+
+/* Zeile 1: Chips */
+.course-meta-left {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+}
+.mtxt {
+  background: #F3F3F3 !important;
+  color: #578E88 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 16px !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex: 1 1 auto !important;
+  justify-content: center !important;
+}
+.mtxt i {
+  font-size: 13px !important;
+  margin-right: 3px !important;
+}
+
+/* Zeile 2: CTA (volle Breite) */
+.course-meta-cta {
+  margin-top: 4px !important;
+  display: flex !important;
+  justify-content: stretch !important;
+  width: 100% !important;
+}
+.btn-cart {
+  background: #578E88 !important;
+  color: #fff !important;
+  padding: 10px 0 !important;
+  border-radius: 0 0 10px 10px !important; /* bündig mit Karte */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  transition: background 0.2s ease !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+.btn-cart:hover {
+  background: #4B7C75 !important;
+}
+.btn-cart i {
+  font-size: 15px !important;
+}
+

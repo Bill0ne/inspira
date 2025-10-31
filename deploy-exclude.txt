@@ -23,6 +23,11 @@ public/storage/
 public/uploads/
 public/storage/
 public/.htaccess
-
 tests/
 dev-test-repo/
+
+# === ALLOW THEME FILES (force include) ===
+!platform/themes/
+!platform/themes/riorelax/**
+
+
