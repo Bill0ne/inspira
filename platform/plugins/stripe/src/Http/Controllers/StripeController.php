@@ -110,6 +110,7 @@ class StripeController extends BaseController
                     'payment_channel' => STRIPE_PAYMENT_METHOD_NAME,
                     'status' => PaymentStatusEnum::COMPLETED,
                     'payment_fee' => Arr::get($metadata, 'payment_fee', 0),
+                    'order_type'    => Arr::get($metadata, 'order_type', null),
                 ]);
 
                 return $response

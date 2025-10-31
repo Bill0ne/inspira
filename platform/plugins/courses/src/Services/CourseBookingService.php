@@ -21,6 +21,7 @@ class CourseBookingService
             return null;
         }
 
+
         if ($chargeId && is_plugin_active('payment')) {
             $payment = Payment::query()->where(['charge_id' => $chargeId])->first();
 

@@ -42,6 +42,7 @@ class SslCommerzPaymentController extends BaseController
             'customer_type' => urldecode($request->input('value_d')),
             'payment_type' => 'direct',
             'order_id' => $orderIds,
+            'order_type'    => $request->input('order_type'),
         ]);
 
         return $response

@@ -35,12 +35,7 @@ class HookServiceProvider extends ServiceProvider
 
         if (defined('PAYMENT_ACTION_PAYMENT_PROCESSED')) {
             add_action(PAYMENT_ACTION_PAYMENT_PROCESSED, function ($data) {
-                $orderIds = (array) $data['order_id'];
-                $orderId = Arr::first($orderIds);
-
-                PaymentHelper::storeLocalPayment($data);
-
-                return $this->app->make(CourseBookingService::class)->processBooking($orderId, $data['charge_id']);
+               //
             });
         }
 
@@ -62,6 +57,7 @@ class HookServiceProvider extends ServiceProvider
                 return [
                     'amount' => (float) $booking->amount,
                     'shipping_amount' => 0,
+                    'order_type' => \Botble\Courses\Models\CourseBooking::class,
                     'shipping_method' => null,
                     'tax_amount' => $booking->tax_amount ?? 0,
                     'discount_amount' => $booking->discount_amount ?? 0,
