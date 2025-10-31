@@ -29,5 +29,6 @@ dev-test-repo/
 # === ALLOW THEME FILES (force include) ===
 !platform/themes/
 !platform/themes/riorelax/**
+!public/vendor/core/plugins/hotel/css/
 
 
