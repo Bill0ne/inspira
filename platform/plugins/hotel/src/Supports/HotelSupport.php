@@ -207,12 +207,12 @@ class HotelSupport
 
     public function getDateFormat(): string
     {
-        return (setting('hotel_booking_datetime_format') ?: config('plugins.hotel.hotel.datetime_format')) ?: 'd-m-Y h:i A';
+        return (setting('hotel_booking_datetime_format') ?: config('plugins.hotel.hotel.datetime_format')) ?: 'd.m.Y H:i';
     }
 
     public function getBookingFormDateFormat(): string
     {
-        return ($this->getDateFormatDatepicker() ?: config('plugins.hotel.hotel.booking_form_date_format')) ?: 'd-m-Y h:i A';
+        return ($this->getDateFormatDatepicker() ?: config('plugins.hotel.hotel.booking_form_date_format')) ?: 'd.m.Y H:i';
     }
 
     public function dateFromRequest(string $date): Carbon|false
@@ -282,7 +282,7 @@ class HotelSupport
         return [
             [
                 'carbon' => 'd-m-Y',
-                'datepicker' => 'dd-mm-yyyy hh:ii AA',
+                'datepicker' => 'd.m.Y H:i',
             ],
             [
                 'carbon' => 'm-d-Y',
