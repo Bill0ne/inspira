@@ -1,4 +1,4 @@
-name: 🚀 Run Playwright Stage
+name: 🚀 Run Playwright Main
 
 on:
   workflow_dispatch:
