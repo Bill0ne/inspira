@@ -208,8 +208,7 @@
                                                         class="theme-date-input-start check-in"
                                                         id="checkin-0"
                                                         autocomplete="off"
-                                                        placeholder="DD / MM / YYYY  HH : MM"
-                                                        value="<?php echo e(BaseHelper::stringify($availableForBooking ? old('start_date', $startDate) : $startDate)); ?>"
+                                                        placeholder="DD.MM.YYYY HH:mm"
                                                 />
                                             </div>
                                         </div>
@@ -225,8 +224,7 @@
                                                         class="theme-date-input-end check-out"
                                                         id="checkout-0"
                                                         autocomplete="off"
-                                                        placeholder="DD / MM / YYYY  HH : MM"
-                                                        value="<?php echo e(BaseHelper::clean($availableForBooking ? old('end_date', $endDate) : $endDate)); ?>"
+                                                        placeholder="DD.MM.YYYY HH:mm"
                                                 />
                                             </div>
                                         </div>

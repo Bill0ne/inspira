@@ -67,10 +67,10 @@ class BookingTable extends TableAbstract
 
                     if ($start->isSameDay($end)) {
                         // Same day: show date once, time range with AM/PM
-                        return $start->format('M d, Y') . ' ' . $start->format('h:i A') . ' → ' . $end->format('h:i A');
+                        return $start->format('d.m.Y') . ' ' . $start->format('H:i') . ' → ' . $end->format('H:i');
                     } else {
                         // Different days: show full date-times with AM/PM
-                        return $start->format('M d, Y h:i A') . ' → ' . $end->format('M d, Y h:i A');
+                        return $start->format('d.m.Y H:i') . ' → ' . $end->format('d.m.Y H:i');
                     }
                 });
 

@@ -125,6 +125,7 @@ class StripePaymentService extends StripePaymentAbstract
                 'return_url' => Arr::get($data, 'return_url'),
                 'callback_url' => Arr::get($data, 'callback_url'),
                 'payment_fee' => Arr::get($data, 'payment_fee', 0),
+                'order_type'    => Arr::get($data, 'order_type', null),
             ],
         ];
 
@@ -195,6 +196,7 @@ class StripePaymentService extends StripePaymentAbstract
             'payment_channel' => STRIPE_PAYMENT_METHOD_NAME,
             'status' => $paymentStatus,
             'payment_fee' => Arr::get($data, 'payment_fee', 0),
+            'order_type'    => Arr::get($data, 'order_type', null),
         ]);
 
         return $chargeId;
