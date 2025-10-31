@@ -1,4 +1,4 @@
-name: 🚀 Run Playwright E2E Report
+name: 🚀 Run Playwright E2E TestsS2
 
 on:
   workflow_dispatch:
@@ -25,7 +25,8 @@ jobs:
           echo "📦 Installing dependencies..."
           npm install
           echo "🎭 Installing Playwright browsers..."
-          npx playwright install --with-deps
+          npx playwright install --with-deps || npx playwright install chromium
+          chmod +x ./node_modules/.bin/playwright
 
       # === 4️⃣ Run Playwright Tests ===
       - name: 🧩 Run Playwright tests
@@ -45,7 +46,7 @@ jobs:
 
       # === 6️⃣ Upload Reports to Inspira Server ===
       - name: 📤 Upload reports to Inspira Server
-        if: always() # Upload even if tests failed
+        if: always()
         env:
           SSH_PRIVATE_KEY: ${{ secrets.INSPIRA_SSH_KEY }}
           REMOTE_USER: ${{ secrets.INSPIRA_USER }}
@@ -55,9 +56,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+
           echo "📡 Uploading report to Inspira dev-test-repo..."
-          
-          # Prüfe ob reports existieren
           if [ -d "reports" ]; then
             rsync -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
               reports/ $REMOTE_USER@$REMOTE_HOST:/home/u296731902/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/
