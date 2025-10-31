@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # === 1️⃣ Checkout Repository (Meta Info only)
+      # === 1️⃣ Checkout Repository ===
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # === 2️⃣ SSH: Run Tests on Remote Server ===
+      # === 2️⃣ Run Playwright Tests on Hostinger ===
       - name: 🧪 Run Playwright Tests on Hostinger
         env:
           SSH_PRIVATE_KEY: ${{ secrets.INSPIRA_SSH_KEY }}
@@ -23,18 +23,26 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh -o StrictHostKeyChecking=no $REMOTE_USER@$REMOTE_HOST << 'EOF'
+          
+          echo "🧠 Checking connection info..."
+          echo "User: $REMOTE_USER"
+          echo "Host: $REMOTE_HOST"
+          
+          echo "🚀 Connecting to remote server and running Playwright..."
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa "$REMOTE_USER@$REMOTE_HOST" bash << 'EOF'
             cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env/tests/e2e
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm use 18
             echo "🧩 Running Playwright tests..."
             npx playwright test --reporter=json > test-results/results.json
-            mkdir -p /home/u296731902/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/$(date +"%Y%m%d-%H%M%S")
-            cp -r test-results/* /home/u296731902/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/$(date +"%Y%m%d-%H%M%S")/
+            TARGET_DIR="/home/u296731902/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/$(date +'%Y%m%d-%H%M%S')"
+            mkdir -p "$TARGET_DIR"
+            cp -r test-results/* "$TARGET_DIR/"
+            echo "✅ Reports copied to $TARGET_DIR"
           EOF
 
-      # === 3️⃣ Notification ===
+      # === 3️⃣ Notifications ===
       - name: ✅ Notify Success
         if: success()
         run: echo "✅ Inspira E2E Tests executed successfully on Hostinger!"
