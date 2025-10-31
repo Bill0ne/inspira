@@ -19,11 +19,12 @@ jobs:
         run: |
           echo "🔐 Setting up SSH access..."
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          echo "🚀 Connecting to Hostinger..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa u296731902@fr-int-web1583.hostinger.net bash << 'EOF'
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "145.223.35.233 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
+
+          echo "🚀 Connecting to Hostinger via public IP..."
+          ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@145.223.35.233 << 'EOF'
             cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env/tests/e2e
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
