@@ -236,7 +236,7 @@ class PublicController extends Controller
 
         $token = $request->input('token');
 
-        if (! session()->has($token)) {
+        if (!session()->has($token)) {
             if (session()->has('course_booking_transaction_id')) {
                 return $response->setNextUrl(
                     route('public.course.booking.information', session('course_booking_transaction_id'))
@@ -254,7 +254,7 @@ class PublicController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if (! $session->hasAvailableSeats()) {
+            if (!$session->hasAvailableSeats()) {
                 DB::rollBack();
 
                 return $response
@@ -268,18 +268,18 @@ class PublicController extends Controller
             if ($request->input('register_customer') == 1) {
                 $request->validate([
                     'first_name' => 'required|string|max:60|min:2',
-                    'last_name'  => 'required|string|max:60|min:2',
-                    'email'      => 'required|max:120|min:6|email|unique:ht_customers',
-                    'phone'      => 'required|string|' . BaseHelper::getPhoneValidationRule(),
-                    'password'   => 'required|string|min:6|confirmed',
+                    'last_name' => 'required|string|max:60|min:2',
+                    'email' => 'required|max:120|min:6|email|unique:ht_customers',
+                    'phone' => 'required|string|'.BaseHelper::getPhoneValidationRule(),
+                    'password' => 'required|string|min:6|confirmed',
                 ]);
 
                 $customer = Customer::query()->forceCreate([
                     'first_name' => BaseHelper::clean($request->input('first_name')),
-                    'last_name'  => BaseHelper::clean($request->input('last_name')),
-                    'email'      => BaseHelper::clean($request->input('email')),
-                    'phone'      => BaseHelper::clean($request->input('phone')),
-                    'password'   => Hash::make($request->input('password')),
+                    'last_name' => BaseHelper::clean($request->input('last_name')),
+                    'email' => BaseHelper::clean($request->input('email')),
+                    'phone' => BaseHelper::clean($request->input('phone')),
+                    'password' => Hash::make($request->input('password')),
                 ]);
 
                 Auth::guard('customer')->loginUsingId($customer->getKey());
@@ -304,16 +304,16 @@ class PublicController extends Controller
 
             $sessionData = HotelHelper::getCheckoutData();
             $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
-            $couponCode   = Arr::get($sessionData, 'coupon_code');
+            $couponCode = Arr::get($sessionData, 'coupon_code');
 
             $taxAmount = $course->tax->percentage * ($amount - $couponAmount) / 100;
 
             $booking->course_session_id = $request->input('session_id');
-            $booking->amount            = ($amount - $couponAmount) + $taxAmount;
-            $booking->sub_total      = $amount;
-            $booking->status      = BookingStatusEnum::AWAITING_PAYMENT;
-            $booking->coupon_amount  = $couponAmount;
-            $booking->coupon_code    = $couponCode;
+            $booking->amount = ($amount - $couponAmount) + $taxAmount;
+            $booking->sub_total = $amount;
+            $booking->status = BookingStatusEnum::AWAITING_PAYMENT;
+            $booking->coupon_amount = $couponAmount;
+            $booking->coupon_code = $couponCode;
             $booking->tax_amount = $taxAmount;
             $booking->rule_discount = $discountAmount;
             $booking->transaction_id = Str::upper(Str::random(32));
@@ -353,18 +353,19 @@ class PublicController extends Controller
         ]);
 
         $data = [
-            'error'     => false,
-            'message'   => false,
-            'amount'    => $booking->amount,
-            'currency'  => strtoupper(get_application_currency()->title),
-            'type'      => $request->input('payment_method'),
+            'error' => false,
+            'message' => false,
+            'amount' => $booking->amount,
+            'currency' => strtoupper(get_application_currency()->title),
+            'type' => $request->input('payment_method'),
             'charge_id' => null,
         ];
 
         if (is_plugin_active('payment')) {
             session()->put('selected_payment_method', $data['type']);
-
+            session(['order_type' => \Botble\Courses\Models\CourseBooking::class]);
             $paymentData = apply_filters(PAYMENT_COURSE_FILTER_PAYMENT_DATA, [], $request);
+            $paymentData['order_type'] = \Botble\Courses\Models\CourseBooking::class;
 
             switch ($request->input('payment_method')) {
                 case PaymentMethodEnum::COD:
@@ -393,10 +394,10 @@ class PublicController extends Controller
                     ->setMessage($data['message']);
             }
 
-            if ($data['error'] || ! $data['charge_id']) {
+            if ($data['error'] || !$data['charge_id']) {
                 return $response
                     ->setError()
-                    ->setNextUrl(route('public.course.booking.form',$token))
+                    ->setNextUrl(route('public.course.booking.form', $token))
                     ->withInput()
                     ->setMessage($data['message'] ?: __('Checkout error!'));
             }
@@ -413,11 +414,13 @@ class PublicController extends Controller
 
         return $response
             ->setNextUrl($redirectUrl)
-            ->setMessage(__('Booking successfully!'));
+            ->setMessage(__('Course Booking successfully!'));
     }
 
     public function checkoutCourseSuccess(string $transactionId)
     {
+        session()->forget('order_type');
+
         $booking = CourseBooking::query()
             ->where('transaction_id', $transactionId)
             ->firstOrFail();
