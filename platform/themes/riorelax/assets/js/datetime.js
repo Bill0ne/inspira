@@ -10,19 +10,24 @@ jQuery(function ($) {
         try { $start.datetimepicker('destroy'); } catch (e) {}
         try { $end.datetimepicker('destroy'); } catch (e) {}
 
-        const dateFormat = 'DD-MM-YYYY hh:mm A';
+        const dateFormat = 'DD.MM.YYYY HH:mm';
 
-        // initialize new
         $start.datetimepicker({
             toolbarPlacement: 'bottom',
             showClose: true,
             sideBySide: true,
             minDate: moment(),
             format: dateFormat,
+            locale: 'de',            // 🇩🇪 German locale (uses 24h by default)
             icons: {
                 time: 'far fa-clock',
                 close: 'fas fa-check'
             },
+            stepping: 30,            // optional: set minute step
+            useCurrent: false,
+            keepOpen: false,
+            debug: false,
+            allowInputToggle: true,
         });
 
         $end.datetimepicker({
@@ -32,11 +37,15 @@ jQuery(function ($) {
             toolbarPlacement: 'bottom',
             useCurrent: false,
             format: dateFormat,
+            locale: 'de',            // force German locale
             icons: {
                 time: 'far fa-clock',
                 close: 'fas fa-check'
             },
+            stepping: 30,
+            allowInputToggle: true,
         });
+
 
         // logic for date linking
         $start.on("dp.change", function (e) {

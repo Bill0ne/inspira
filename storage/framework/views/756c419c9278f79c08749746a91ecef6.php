@@ -10,7 +10,7 @@
             <?php if($couponCode && $couponAmount): ?>
                 <div class="d-flex align-items-center justify-content-between alert alert-success mb-0 w-100">
                     <span><?php echo e(__('Coupon code: :code', ['code' => $couponCode])); ?></span>
-                    <input name="coupon_hidden" type="hidden" value="<?php echo e(! empty($couponCode)); ?>" />
+                    <input name="coupon_hidden" type="hidden" value="<?php echo e($couponCode); ?>" />
 
                     <button class="btn btn-link text-decoration-none remove-coupon-code" data-url="<?php echo e(route('coupon.remove')); ?>" type="button">
                         <?php if (isset($component)) { $__componentOriginal73995948b3bd877b76251b40caf28170 = $component; } ?>

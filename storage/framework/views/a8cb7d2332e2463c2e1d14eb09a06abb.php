@@ -654,14 +654,14 @@
 
                                                 <?php if($start->isSameDay($end)): ?>
                                                     
-                                                    <?php echo e($start->format('d M Y')); ?>
+                                                    <?php echo e($start->format('d.m.Y')); ?>
 
                                                     <span class="text-gray-500 mx-1"></span>
-                                                    <?php echo e($start->format('h:i A')); ?> – <?php echo e($end->format('h:i A')); ?>
+                                                    <?php echo e($start->format('H:i')); ?> – <?php echo e($end->format('H:i')); ?>
 
                                                 <?php else: ?>
                                                     
-                                                    <?php echo e($start->format('d M Y h:i A')); ?> → <?php echo e($end->format('d M Y h:i A')); ?>
+                                                    <?php echo e($start->format('d.m.Y H:i')); ?> → <?php echo e($end->format('d.m.Y H:i')); ?>
 
                                                 <?php endif; ?>
 
@@ -676,8 +676,8 @@
                                     </ul>
                                 <?php else: ?>
                                     
-                                    <p><?php echo e(__('Check-In')); ?>: <?php echo e($displayStart ? $displayStart->translatedFormat('l, d M, Y') : '-'); ?></p>
-                                    <p><?php echo e(__('Check-Out')); ?>: <?php echo e($displayEnd ? $displayEnd->translatedFormat('l, d M, Y') : '-'); ?></p>
+                                    <p><?php echo e(__('Check-In')); ?>: <?php echo e($displayStart ? $displayStart->translatedFormat('l, d.m.Y') : '-'); ?></p>
+                                    <p><?php echo e(__('Check-Out')); ?>: <?php echo e($displayEnd ? $displayEnd->translatedFormat('l, d.m.Y') : '-'); ?></p>
                                 <?php endif; ?>
                             </div>
 
