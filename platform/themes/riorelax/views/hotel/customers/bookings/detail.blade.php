@@ -1,15 +1,14 @@
 @extends(HotelHelper::viewPath('customers.master'))
 
 @section('content')
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h1 class="text-center mb-20">{{ SeoHelper::getTitle() }}</h1>
+    <div class="customer-card">
+        <div class="customer-card-header">
+            <h2 class="customer-card-title">{{ SeoHelper::getTitle() }}</h2>
+            <p class="customer-card-subtitle">{{ __('Here is everything we know about your stay, including invoices and room details.') }}</p>
         </div>
 
-        <div class="panel-body">
-            <div class="section-content">
-                @include('plugins/hotel::booking-info', ['route' => 'customer.generate-invoice'])
-            </div>
+        <div class="customer-card-body customer-card-body--flush">
+            @include('plugins/hotel::booking-info', ['route' => 'customer.generate-invoice'])
         </div>
     </div>
 @endsection
