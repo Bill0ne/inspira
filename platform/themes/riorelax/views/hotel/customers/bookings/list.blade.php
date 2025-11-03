@@ -15,14 +15,17 @@
                             $type = $item['type'];
                             $booking = $item['model'];
                             $statusClass = 'booking-status--' . \Illuminate\Support\Str::slug($booking->status->getValue());
-                            $invoiceId = optional($booking->invoice)->getKey();
+                            $invoice = $booking->invoice;
+                            $invoiceId = $invoice instanceof \Illuminate\Database\Eloquent\Model
+                                ? $invoice->getKey()
+                                : data_get($invoice, 'id');
                         @endphp
 
                         @if ($type === 'course')
                             @php
                                 $course = $booking->course;
                                 $session = $booking->session;
-                                $thumbnail = $course?->image;
+                                $thumbnail = $course?->thumbnail ?? $course?->image;
                                 $title = $course?->name ?? __('Course removed');
                                 $courseUrl = $course?->url;
                                 $subtitleParts = array_filter([

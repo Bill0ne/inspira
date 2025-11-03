@@ -45,7 +45,9 @@ class BookingController extends BaseController
                 'type' => 'room',
                 'model' => $booking,
                 'created_at' => $booking->created_at,
-            ]);
+            ])
+            ->values()
+            ->toBase();
 
         $combinedBookings = $roomBookings;
 
@@ -61,11 +63,23 @@ class BookingController extends BaseController
                 ])
                 ->orderByDesc('created_at')
                 ->get()
-                ->map(fn ($booking) => [
-                    'type' => 'course',
-                    'model' => $booking,
-                    'created_at' => $booking->created_at,
-                ]);
+                ->map(function ($booking) {
+                    $invoiceRelation = $booking->invoice;
+
+                    if (is_array($invoiceRelation)) {
+                        $invoiceId = data_get($invoiceRelation, 'id');
+
+                        $booking->setRelation('invoice', $invoiceId ? Invoice::query()->find($invoiceId) : null);
+                    }
+
+                    return [
+                        'type' => 'course',
+                        'model' => $booking,
+                        'created_at' => $booking->created_at,
+                    ];
+                })
+                ->values()
+                ->toBase();
 
             $combinedBookings = $combinedBookings->merge($courseBookings);
         }
