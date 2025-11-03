@@ -71,11 +71,6 @@
                 </div>
             </div>
 
-            <button class="customer-nav-toggle" type="button" aria-expanded="false" aria-controls="customer-nav" data-target="#customer-nav">
-                <span class="customer-nav-toggle-icon" aria-hidden="true"><i class="fal fa-bars"></i></span>
-                <span class="customer-nav-toggle-text">{{ __('Menu') }}</span>
-            </button>
-
             <nav id="customer-nav" class="customer-tab-nav" aria-label="{{ __('Account navigation') }}">
                 <ul class="customer-nav">
                     @foreach ($navigation as $item)
