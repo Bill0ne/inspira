@@ -84,9 +84,11 @@
     border-radius: 12px;
     padding: 14px 24px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    flex-wrap: wrap;
-    gap: 10px;
+    gap: 20px;
+    min-height: 64px;
 }
+
+/* === LEFT SIDE === */
 .customer-header-left {
     display: flex;
     align-items: center;
@@ -102,13 +104,17 @@
     font-size: 14px;
     font-weight: 500;
     color: #333;
+    white-space: nowrap;
 }
-.customer-header-center {
+
+/* === RIGHT SIDE === */
+.customer-header-right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 24px;
+    position: relative;
 }
-.customer-header-center .nav-link {
+.customer-header-right .nav-link {
     position: relative;
     color: #333;
     font-weight: 500;
@@ -116,11 +122,11 @@
     text-decoration: none;
     transition: color 0.3s ease;
 }
-.customer-header-center .nav-link.active,
-.customer-header-center .nav-link:hover {
+.customer-header-right .nav-link.active,
+.customer-header-right .nav-link:hover {
     color: #578E88;
 }
-.customer-header-center .nav-link.active::after {
+.customer-header-right .nav-link.active::after {
     content: "";
     position: absolute;
     bottom: -6px;
@@ -129,9 +135,6 @@
     height: 2px;
     background: #578E88;
     border-radius: 2px;
-}
-.customer-header-right {
-    position: relative;
 }
 .customer-header-right button {
     background: none;
@@ -150,6 +153,7 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     overflow: hidden;
     z-index: 10;
+    min-width: 160px;
 }
 .customer-header-right .dropdown a {
     display: block;
@@ -169,17 +173,18 @@
 .customer-header-right.open .dropdown {
     display: block;
 }
+
+/* === Responsive === */
 @media (max-width: 768px) {
     .customer-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
     }
-    .customer-header-center {
-        width: 100%;
-        justify-content: space-around;
-        border-top: 1px solid #eee;
-        margin-top: 10px;
-        padding-top: 10px;
+    .customer-header-right {
+        flex-direction: column;
+        gap: 12px;
     }
     .customer-header-right .dropdown {
         width: 100%;
@@ -194,24 +199,25 @@
 <div class="customer-page crop-avatar inspira-customer">
     <div class="customer-shell">
         <header class="customer-header" aria-label="{{ __('Account overview') }}">
+            {{-- LEFT SIDE: Avatar + Name --}}
             <div class="customer-header-left">
                 <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="avatar">
                 <span class="customer-name">{{ $user->name }}</span>
             </div>
 
-            <div class="customer-header-center">
+            {{-- RIGHT SIDE: Navigation + Dropdown --}}
+            <div class="customer-header-right" id="navDropdown">
                 @foreach ($primaryNavigation as $item)
                     <a href="{{ route($item['route']) }}" 
                        class="nav-link {{ $item['is_active'] ? 'active' : '' }}">
                         {{ $item['label'] }}
                     </a>
                 @endforeach
-            </div>
 
-            <div class="customer-header-right" id="navDropdown">
                 <button type="button" onclick="document.getElementById('navDropdown').classList.toggle('open')">
                     <i class="fal fa-ellipsis-h"></i>
                 </button>
+
                 <div class="dropdown">
                     @foreach ($overflowNavigation as $item)
                         <a href="{{ route($item['route']) }}" 
