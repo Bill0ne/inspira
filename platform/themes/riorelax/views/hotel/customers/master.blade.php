@@ -76,25 +76,28 @@
 @endphp
 
 <style>
-/* Reset parent theme centering */
+/* --- RESET THEME CENTERING --- */
 .customer-page,
 .customer-shell {
+    width: 100% !important;
+    max-width: 100% !important;
     text-align: left !important;
 }
 
 /* --- HEADER BASE --- */
 .customer-header {
     display: flex !important;
+    flex-direction: row !important;
     justify-content: space-between !important;
-    align-items: center;
+    align-items: center !important;
+    width: 100% !important;
     background: #fff;
     border-radius: 12px;
-    padding: 14px 24px;
+    padding: 16px 24px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    width: 100%;
+    margin: 0 auto;
     gap: 20px;
     min-height: 70px;
-    margin: 0 auto;
 }
 
 /* --- LEFT SIDE --- */
@@ -159,13 +162,16 @@
     display: none;
     position: absolute;
     right: 0;
-    top: 110%;
+    top: 120%;
     background: #fff;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-width: 160px;
     overflow: hidden;
     z-index: 10;
-    min-width: 160px;
+}
+.customer-header-right.open .dropdown {
+    display: block;
 }
 .customer-header-right .dropdown a {
     display: block;
@@ -182,11 +188,8 @@
 .customer-header-right .dropdown a.logout {
     color: #a33;
 }
-.customer-header-right.open .dropdown {
-    display: block;
-}
 
-/* --- Responsive --- */
+/* --- MOBILE --- */
 @media (max-width: 768px) {
     .customer-header {
         flex-direction: column;
@@ -226,11 +229,13 @@
                     </a>
                 @endforeach
 
-                <button type="button" onclick="document.getElementById('navDropdown').classList.toggle('open')">
+                <button type="button"
+                        aria-label="{{ __('More options') }}"
+                        onclick="document.getElementById('navDropdown').classList.toggle('open')">
                     <i class="fal fa-ellipsis-h"></i>
                 </button>
 
-                <div class="dropdown">
+                <div class="dropdown" id="dropdown-menu">
                     @foreach ($overflowNavigation as $item)
                         <a href="{{ route($item['route']) }}" 
                            class="{{ $item['is_logout'] ?? false ? 'logout' : '' }}">
