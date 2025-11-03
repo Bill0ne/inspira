@@ -1,23 +1,242 @@
 @if (is_plugin_active('payment'))
-    <link rel="stylesheet" href="{{ asset('vendor/core/plugins/payment/css/payment.css') }}?v=1.0.3">
-    @php
-        Theme::asset()->container('header')->usePath()->add('jquery', 'plugins/jquery.min.js');
-        Theme::asset()->container('header')->add('payment-js', 'vendor/core/plugins/payment/js/payment.js');
-    @endphp
-    {!! apply_filters(PAYMENT_FILTER_HEADER_ASSETS, null) !!}
+  <link rel="stylesheet" href="{{ asset('vendor/core/plugins/payment/css/payment.css') }}?v=1.0.6">
+  @php
+    Theme::asset()->container('header')->usePath()->add('jquery', 'plugins/jquery.min.js');
+    Theme::asset()->container('header')->add('payment-js', 'vendor/core/plugins/payment/js/payment.js');
+  @endphp
+  {!! apply_filters(PAYMENT_FILTER_HEADER_ASSETS, null) !!}
 @endif
 
 @php
-    // Seitentitel unterdrücken – wir zeigen nur den Ticket-Header
-    Theme::set('pageTitle', '');
-
-    Theme::asset()->container('footer')->usePath()->add('checkout-js', 'js/course-checkout.js');
-
-    // Labels im 24h-Format
-    $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
-    $endLabel24   = $session->end_date ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i') : null;
+  Theme::set('pageTitle', '');
+  Theme::asset()->container('footer')->usePath()->add('checkout-js', 'js/course-checkout.js');
+  $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
+  $endLabel24   = $session->end_date ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i') : null;
 @endphp
 
+<style>
+:root { --mint:#578E88; --gray:#E5E7EB; }
+
+.header,.topbar,.page-title,.breadcrumb,.page-breadcrumb,.hero-banner{display:none!important;}
+.checkout-fw .container{max-width:980px;}
+body .pt-120{padding-top:24px!important;}
+body .pb-40{padding-bottom:24px!important;}
+section.checkout-booking-page{background:#fff;}
+
+/* Ticket */
+.ticket{display:grid;grid-template-columns:1.1fr 1.4fr 1fr;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:28px;}
+.ticket__col{padding:20px 22px;display:flex;flex-direction:column;justify-content:center;}
+.ticket__media img{width:100%;min-height:220px;object-fit:cover;display:block;}
+.ticket__details{background:var(--mint);color:rgba(255,255,255,.95);}
+.ticket__details .title,.ticket__totals .title{font-weight:600;font-size:15px;margin-bottom:10px;color:#fff;}
+.ticket__details .kv,.ticket__totals .kv{display:flex;justify-content:space-between;margin:4px 0;font-size:13px;line-height:1.6;}
+.ticket__totals{background:#000;color:#fff;border-left:2px solid rgba(255,255,255,.08);}
+.ticket__totals hr{border:none;height:1px;background:rgba(255,255,255,.15);margin:10px 0;}
+.ticket__totals .total{font-size:16px;font-weight:700;}
+@media(max-width:768px){
+  .ticket{grid-template-columns:1fr;border-radius:12px;}
+  .ticket__media img{min-height:180px;}
+  .ticket__details,.ticket__totals{padding:18px 20px;}
+  .ticket__details{border-bottom:1px solid rgba(255,255,255,.15);}
+  .ticket__totals{border-top:1px solid rgba(255,255,255,.15);border-left:none;}
+}
+
+/* Stepper */
+.stepper-wrap{text-align:center;padding-bottom:24px;margin-bottom:4px;}
+.stepper-title{font-size:16px;font-weight:600;color:#3b4a47;margin-bottom:18px;letter-spacing:.3px;}
+.stepper{display:flex;align-items:center;justify-content:space-between;width:100%;}
+.stepper .line{flex:1;height:2px;background:#E5E7EB;transition:background .3s ease;}
+.stepper .line.active{background:var(--mint);}
+.stepper .dot{width:13px;height:13px;border-radius:50%;background:#D5D8D7;transition:all .3s ease;box-shadow:0 0 0 3px #fff inset;z-index:2;}
+.stepper .dot.active{background:var(--mint);box-shadow:0 0 0 4px rgba(87,142,136,.18);}
+@media(max-width:768px){.stepper-title{font-size:15px;margin-bottom:14px;}.stepper .dot{width:11px;height:11px;}}
+
+/* Panels */
+.step-panel{display:none;padding:30px 26px 24px;background:#fff;border:none;}
+.step-panel.active{display:block;animation:fade .2s ease-out;}
+@keyframes fade{from{opacity:.4;transform:translateY(3px);}to{opacity:1;transform:none;}}
+
+/* Inputs */
+.form-control{height:46px;border-radius:6px;}
+textarea.form-control{min-height:100px;}
+.is-invalid{border-color:#dc3545!important;}
+
+/* Coupon & Payment */
+.coupon-wrapper{background:#F9F9F9;border:1px solid var(--gray);border-radius:8px;padding:20px;margin-bottom:24px;}
+.coupon-wrapper .btn{background:var(--mint)!important;color:#fff!important;border:none!important;}
+.list_payment_method{border:1px solid var(--gray);border-radius:8px;margin-bottom:20px;}
+.list_payment_method li{padding:14px 16px;border-bottom:1px solid #f0f0f0;}
+.list_payment_method li:last-child{border-bottom:none;}
+
+/* Info/Error Box */
+.form-alert{display:none;background:#f9f9f9;border:1px solid var(--mint);border-radius:6px;padding:12px 16px;color:#333;font-size:13px;margin-bottom:16px;text-align:center;}
+
+/* Buttons */
+.btnrow{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:24px;}
+.btnX{display:inline-flex;align-items:center;justify-content:center;height:48px;min-width:150px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-radius:4px;transition:all .25s ease;}
+.btn-outline-mint{border:1px solid var(--mint);color:var(--mint);background:#fff;}
+.btn-outline-mint:hover{background:var(--mint);color:#fff;}
+.btn-mint{flex:1;max-width:82%;background:var(--mint);color:#fff;border:1px solid var(--mint);}
+.btn-mint:hover{filter:brightness(.93);}
+@media(max-width:768px){
+  .btnrow{flex-direction:column;gap:10px;}      /* Reihenfolge mobile */
+  .btnX{width:100%;padding:14px 0;font-size:13px;}
+  .btn-mint{order:1;}                            /* Weiter oben */
+  .btn-outline-mint{order:2;}                    /* Abbrechen unten */
+}
+
+/* Accordion (storno geschlossen default) */
+.cxl-accordion details{border-radius:10px;background:#fff;border:1px solid var(--gray);margin-top:20px;}
+.cxl-accordion summary{cursor:pointer;padding:14px 18px;font-weight:600;list-style:none;}
+.cxl-accordion .cxl-body{padding:0 18px 18px;}
+.cxl-accordion summary::after{content:'▾';float:right;transition:transform .3s ease;}
+.cxl-accordion details[open] summary::after{transform:rotate(180deg);}
+</style>
+
+<section class="checkout-booking-page checkout-fw">
+  <div class="container pt-120 pb-40 checkout-booking">
+
+    {{-- Ticket --}}
+    <div class="ticket">
+      <div class="ticket__col ticket__media">
+        <img src="{{ RvMedia::getImageUrl($course->thumbnail, default: RvMedia::getDefaultImage()) }}" alt="{{ $course->name }}">
+      </div>
+      <div class="ticket__col ticket__details">
+        <h5 class="title">Ihre Reservierung</h5>
+        <div class="kv"><span>{{ $course->name }}</span></div>
+        <div class="kv"><span>Startdatum der Sitzung</span><b>{{ $startLabel24 }}</b></div>
+        @if($endLabel24)
+          <div class="kv"><span>Enddatum der Sitzung</span><b>{{ $endLabel24 }}</b></div>
+        @endif
+      </div>
+      <div class="ticket__col ticket__totals">
+        <h5 class="title">Gesamtpreis</h5>
+        <div class="kv"><span>Preis</span><b>{{ format_price($amount) }}</b></div>
+        <div class="kv"><span>Rabatt (Coupon)</span><b>{{ format_price($couponAmount) }}</b></div>
+        <div class="kv"><span>Steuern</span><b>{{ format_price($taxAmount) }}</b></div>
+        <hr>
+        <div class="kv total"><span>Gesamt</span><b>{{ format_price($total) }}</b></div>
+      </div>
+    </div>
+
+    {{-- Stepper --}}
+    <div class="stepper-wrap">
+      <div class="stepper-title" id="stepTitle">Allgemeine Informationen</div>
+      <div class="stepper">
+        <div class="dot active" data-step-dot="1"></div>
+        <div class="line" data-step-line="1"></div>
+        <div class="dot" data-step-dot="2"></div>
+        <div class="line" data-step-line="2"></div>
+        <div class="dot" data-step-dot="3"></div>
+      </div>
+    </div>
+
+    {{-- Form --}}
+    <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form">
+      @csrf
+      <input type="hidden" name="token" value="{{ $token }}">
+      <input type="hidden" name="amount" value="{{ $total }}">
+      <input type="hidden" name="course_id" value="{{ $course->id }}">
+      <input type="hidden" name="session_id" value="{{ $session->id }}">
+      <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
+      <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
+
+      {{-- Schritt 1 --}}
+      <div class="step-panel active" data-step="1">
+        @if ($customer->id)
+          <p>Angemeldet als <b>{{ $customer->name ?? $customer->email }}</b></p>
+          <div class="btnrow">
+            <a href="{{ url()->previous() }}" class="btnX btn-outline-mint">Abbrechen</a>
+            <button type="button" class="btnX btn-mint" data-next>Weiter</button>
+          </div>
+        @else
+          <p>Wie möchtest du fortfahren?</p>
+          <div class="btnrow">
+            <button type="button" class="btnX btn-mint" data-next>Als Gast buchen</button>
+            <a href="{{ route('customer.login') }}?redirect={{ urlencode(request()->fullUrl()) }}" class="btnX btn-outline-mint">Einloggen</a>
+          </div>
+        @endif
+      </div>
+
+      {{-- Schritt 2 --}}
+      <div class="step-panel" data-step="2">
+        <p>Pflichtfelder sind mit * gekennzeichnet</p>
+        <div class="form-alert" id="formAlertStep2"></div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3"><label>Vorname *</label><input type="text" class="form-control" id="txt-first_name" name="first_name" required value="{{ old('first_name', $customer) }}"></div>
+          <div class="col-md-6 mb-3"><label>Nachname *</label><input type="text" class="form-control" id="txt-last_name" name="last_name" required value="{{ old('last_name', $customer) }}"></div>
+          <div class="col-md-6 mb-3"><label>E-Mail *</label><input type="email" class="form-control" id="txt-email" name="email" required value="{{ old('email', $customer) }}"></div>
+          <div class="col-md-6 mb-3"><label>Telefon *</label><input type="text" class="form-control" id="txt-phone" name="phone" required value="{{ old('phone', $customer) }}"></div>
+          <div class="col-md-6 mb-3"><label>Land</label><input type="text" class="form-control" id="txt-country" name="country" value="{{ old('country', $customer) }}"></div>
+          <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input type="text" class="form-control" id="txt-state" name="state" value="{{ old('state', $customer) }}"></div>
+          <div class="col-md-6 mb-3"><label>Stadt</label><input type="text" class="form-control" id="txt-city" name="city" value="{{ old('city', $customer) }}"></div>
+          <div class="col-md-6 mb-3"><label>Adresse</label><input type="text" class="form-control" id="txt-address" name="address" value="{{ old('address', $customer) }}"></div>
+          <div class="col-md-6 mb-3"><label>Postleitzahl</label><input type="text" class="form-control" id="txt-zip" name="zip" value="{{ old('zip', $customer) }}"></div>
+        </div>
+
+        @if(! $customer->id)
+          <div class="mb-3"><label><input type="checkbox" id="register-customer" name="register_customer" value="1"> Konto mit den obigen Angaben registrieren?</label></div>
+          <div class="row">
+            <div class="col-md-6 mb-3"><label>Passwort</label><input type="password" class="form-control" name="password"></div>
+            <div class="col-md-6 mb-3"><label>Passwort bestätigen</label><input type="password" class="form-control" name="password_confirmation"></div>
+          </div>
+        @endif
+
+        <div class="mb-3"><label>Anfragen</label><textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas...">{{ old('requests') }}</textarea></div>
+
+        <div class="btnrow">
+          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
+          <button type="button" class="btnX btn-mint" data-next>Weiter</button>
+        </div>
+      </div>
+
+      {{-- Schritt 3 --}}
+      <div class="step-panel" data-step="3">
+        <div class="form-alert" id="formAlertStep3"></div>
+
+        <div class="coupon-wrapper" id="couponBox">@include('plugins/courses::coupons.partials.form')</div>
+
+        <label class="mb-2">Zahlungsmethode</label>
+        <ul class="list-group list_payment_method">
+          {!! apply_filters(PAYMENT_FILTER_ADDITIONAL_PAYMENT_METHODS, null, [
+              'amount' => $total,
+              'currency' => strtoupper(get_application_currency()->title),
+              'name' => $course->name,
+              'selected' => PaymentMethods::getSelectedMethod(),
+              'default' => PaymentMethods::getDefaultMethod(),
+              'selecting' => PaymentMethods::getSelectingMethod(),
+          ]) !!}
+          {!! PaymentMethods::render() !!}
+        </ul>
+
+        <label class="d-block mb-3">
+          <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1">
+          Allgemeine Geschäftsbedingungen *
+        </label>
+
+        <div class="btnrow">
+          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
+          <button type="submit" class="btnX btn-mint payment-checkout-btn" data-processing-text="Wird verarbeitet..." data-error-header="Fehler">Abschließen</button>
+        </div>
+      </div>
+    </form>
+
+    {{-- Storno geschlossen (default) --}}
+    @if ($cancellation = theme_option('cancellation'))
+      <div class="cxl-accordion">
+        <details>
+          <summary>Stornierungsbedingungen</summary>
+          <div class="cxl-body">{!! BaseHelper::clean($cancellation) !!}</div>
+        </details>
+      </div>
+    @endif
+  </div>
+</section>
+
+@if (is_plugin_active('payment'))
+  {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
+@endif
 <script>
 (function(){
   const form   = document.getElementById('bookingForm');
@@ -170,340 +389,6 @@
     // Coupon immer offen
     const c=document.querySelector('#couponBox .collapse');
     if(c&&!c.classList.contains('show'))c.classList.add('show');
-  }
-})();
-</script>
-
-<section class="checkout-booking-page checkout-fw">
-  <div class="container pt-120 pb-40 checkout-booking">
-
-    {{-- =================== HEADER: Ticket =================== --}}
-    <div class="ticket">
-      <div class="ticket__col ticket__media">
-        <img src="{{ RvMedia::getImageUrl($course->thumbnail, default: RvMedia::getDefaultImage()) }}"
-             alt="{{ $course->name }}">
-      </div>
-
-      <div class="ticket__col ticket__details">
-        <h5 class="title">{{ __('Ihre Reservierung') }}</h5>
-        <div class="kv"><span>{{ $course->name }}</span></div>
-        <div class="kv">
-          <span>{{ __('Startdatum der Sitzung') }}</span>
-          <b class="session-start-date">{{ $startLabel24 }}</b>
-        </div>
-        @if($endLabel24)
-          <div class="kv">
-            <span>{{ __('Enddatum der Sitzung') }}</span>
-            <b class="session-end-date">{{ $endLabel24 }}</b>
-          </div>
-        @endif
-      </div>
-
-      <div class="ticket__col ticket__totals">
-        <h5 class="title">{{ __('Gesamtpreis') }}</h5>
-        @php $priceDifference = $basePrice - $amount; @endphp
-
-        @if($amount < $basePrice)
-          <div class="kv">
-            <span>{{ __('Originalpreis') }}</span>
-            <b class="text-muted text-decoration-line-through">{{ format_price($basePrice) }}</b>
-          </div>
-          <div class="kv">
-            <span>{{ __('Rabattierter Preis') }}</span>
-            <b class="text-success fw-bold amount-text">{{ format_price($amount) }}</b>
-          </div>
-          <div class="kv small text-success mt-1">
-            <i class="fas fa-tag me-1"></i>
-            {{ __('You save :amount', ['amount' => format_price(abs($priceDifference))]) }}
-          </div>
-        @else
-          <div class="kv">
-            <span>{{ __('Preis') }}</span>
-            <b class="amount-text">{{ format_price($amount) }}</b>
-          </div>
-        @endif
-
-        <div class="kv">
-          <span>{{ __('Rabatt (Coupon)') }}</span>
-          <b class="discount-text">{{ format_price($couponAmount) }}</b>
-        </div>
-        <div class="kv">
-          <span>{{ __('Steuern') }}</span>
-          <b class="tax-text">{{ format_price($taxAmount) }}</b>
-        </div>
-
-        <hr>
-
-        <div class="kv total">
-          <span>{{ __('Gesamt') }}</span>
-          <span class="total-amount-text fw-bold">{{ format_price($total) }}</span>
-        </div>
-      </div>
-    </div>
-
-    {{-- =================== MITTE: 3-Schritt-Form =================== --}}
-    <div class="card form-card shadow-block">
-      <div class="card-body">
-
-        {{-- Stepper --}}
-        <div class="stepper" id="stepper">
-          <div class="dot active" data-step-dot="1"></div>
-          <div class="line" data-step-line="1"></div>
-          <div class="dot" data-step-dot="2"></div>
-          <div class="line" data-step-line="2"></div>
-          <div class="dot" data-step-dot="3"></div>
-        </div>
-
-        <form action="{{ route('public.course.booking.checkout') }}" class="booking-form-main payment-checkout-form" method="POST" id="bookingForm">
-          @csrf
-          <input type="hidden" name="token" value="{{ $token }}">
-          <input type="hidden" name="amount" value="{{ $total }}">
-          <input type="hidden" name="course_id" value="{{ $course->id }}">
-          <input type="hidden" name="session_id" value="{{ $session->id }}">
-          <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
-          <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
-          @if (is_plugin_active('paypal'))
-            <input type="hidden" name="callback_url" value="{{ route('payments.paypal.status') }}">
-          @endif
-
-          <div class="steps-wrap">
-
-            {{-- ===== Schritt 1: Anmeldung ===== --}}
-            <div class="step-panel active" data-step="1">
-              @if ($customer->id)
-                <p class="mb-3">{{ __('Angemeldet als') }} <b>{{ $customer->name ?? $customer->email }}</b></p>
-                <div class="btn-row">
-                  <button type="button" class="btn btn-primary" data-next>{{ __('Weiter') }}</button>
-                  <a class="btn btn-secondary" href="{{ url()->previous() }}">{{ __('Abbrechen') }}</a>
-                </div>
-              @else
-                <div class="mb-3">
-                  <p class="mb-2">{{ __('Wie möchtest du fortfahren?') }}</p>
-                  <div class="btn-row">
-                    <button type="button" class="btn btn-primary" data-next>{{ __('Als Gast buchen') }}</button>
-                    <a href="{{ route('customer.login') }}?redirect={{ urlencode(request()->fullUrl()) }}" class="btn btn-secondary">
-                      {{ __('Einloggen') }}
-                    </a>
-                  </div>
-                </div>
-              @endif
-            </div>
-
-            {{-- ===== Schritt 2: Persönliche Angaben ===== --}}
-            <div class="step-panel" data-step="2">
-              <p class="mb-20">{{ __('Required fields are followed by *') }}</p>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group mb-20">
-                    <label for="txt-first-name">{{ __('First Name') }} <span class="required">*</span></label>
-                    <input type="text" name="first_name" id="txt-first-name" class="form-control" required value="{{ old('first_name', $customer) }}">
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group mb-20">
-                    <label for="txt-last-name">{{ __('Last Name') }} <span class="required">*</span></label>
-                    <input type="text" name="last_name" id="txt-last-name" class="form-control" required value="{{ old('last_name', $customer) }}">
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group mb-20">
-                    <label for="txt-email">{{ __('Email') }} <span class="required">*</span></label>
-                    <input type="email" name="email" id="txt-email" class="form-control" required value="{{ old('email', $customer) }}">
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group mb-20">
-                    <label for="txt-phone">{{ __('Phone') }} <span class="required">*</span></label>
-                    <input type="text" name="phone" id="txt-phone" class="form-control" required value="{{ old('phone', $customer) }}">
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group mb-20">
-                    <label for="txt-country">{{ __('Country') }}</label>
-                    <input type="text" name="country" id="txt-country" class="form-control" value="{{ old('country', $customer) }}">
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group mb-20">
-                    <label for="txt-state">{{ __('State / Province') }}</label>
-                    <input type="text" name="state" id="txt-state" class="form-control" value="{{ old('state', $customer) }}">
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group mb-20">
-                    <label for="txt-city">{{ __('City') }}</label>
-                    <input type="text" name="city" id="txt-city" class="form-control" value="{{ old('city', $customer) }}">
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group mb-20">
-                    <label for="txt-address">{{ __('Address') }}</label>
-                    <input type="text" name="address" id="txt-address" class="form-control" value="{{ old('address', $customer) }}">
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group mb-20">
-                    <label for="txt-zip">{{ __('Postal / Zip code') }}</label>
-                    <input type="text" name="zip" id="txt-zip" class="form-control" value="{{ old('zip', $customer) }}">
-                  </div>
-                </div>
-              </div>
-
-              @if(! $customer->id)
-                <div class="create-customer">
-                  <div class="row">
-                    <div class="form-group mb-20 custom-checkbox d-block">
-                      <label for="register-customer" class="w-100">
-                        <input type="checkbox" id="register-customer" name="register_customer" value="1">
-                        {{ __('Register an account with above information?') }}
-                        <span></span>
-                      </label>
-                    </div>
-                  </div>
-                  <div class="row form-create-customer-password">
-                    <div class="col-md-6">
-                      <div class="form-group mb-20">
-                        <label for="password">{{ __('Password') }}</label>
-                        <input type="password" name="password" id="password" class="form-control">
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="form-group mb-20">
-                        <label for="password_confirmation">{{ __('Password confirm') }}</label>
-                        <input type="password" name="password_confirmation" id="password_confirmation" class="form-control">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              @endif
-
-              <div class="form-group mb-20">
-                <label for="requests">{{ __('Requests') }}</label>
-                <textarea name="requests" rows="3" class="form-control" id="requests" placeholder="{{ __('Write Something') }}...">{{ old('requests') }}</textarea>
-              </div>
-
-              <div class="btn-row">
-                <button type="button" class="btn btn-secondary" data-prev>{{ __('Abbrechen') }}</button>
-                <button type="button" class="btn btn-primary" data-next>{{ __('Weiter') }}</button>
-              </div>
-            </div>
-
-            {{-- ===== Schritt 3: Zahlung & Abschluss ===== --}}
-            <div class="step-panel" data-step="3">
-              @include('plugins/courses::coupons.partials.form')
-
-              @if (is_plugin_active('payment') && ($defaultPaymentMethod = PaymentMethods::getDefaultMethod()) && get_payment_setting('status', $defaultPaymentMethod))
-                <div class="form-group mb-20">
-                  <label>{{ __('Payment method') }}</label>
-                  <ul class="list-group list_payment_method">
-                    {!! apply_filters(PAYMENT_FILTER_ADDITIONAL_PAYMENT_METHODS, null, [
-                        'amount' => $total,
-                        'currency' => strtoupper(get_application_currency()->title),
-                        'name' => $course->name,
-                        'selected' => PaymentMethods::getSelectedMethod(),
-                        'default' => $defaultPaymentMethod,
-                        'selecting' => PaymentMethods::getSelectingMethod(),
-                    ]) !!}
-                    {!! PaymentMethods::render() !!}
-                  </ul>
-                </div>
-              @endif
-
-              {!! apply_filters('form_extra_fields_render', null) !!}
-
-              <div class="form-group mb-20 custom-checkbox d-block">
-                <label for="terms_conditions" class="w-100">
-                  <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @if (old('terms_conditions') == 1) checked @endif>
-                  {{ __('Terms & conditions *') }} <span></span>
-                </label>
-              </div>
-
-              <div class="btn-row">
-                <button type="button" class="btn btn-secondary" data-prev>{{ __('Abbrechen') }}</button>
-                <button type="submit" class="btn btn-primary payment-checkout-btn"
-                        data-processing-text="{{ __('Processing. Please wait...') }}"
-                        data-error-header="{{ __('Error') }}">{{ __('Abschließen') }}</button>
-              </div>
-            </div>
-
-          </div> {{-- /steps-wrap --}}
-        </form>
-      </div>
-    </div>
-
-    {{-- =================== UNTERER BEREICH: Storno als Accordion =================== --}}
-    @if ($cancellation = theme_option('cancellation'))
-      <div class="cxl-accordion">
-        <details>
-          <summary>{{ __('Stornierungsbedingungen') }}</summary>
-          <div class="cxl-body">
-            {!! BaseHelper::clean($cancellation) !!}
-          </div>
-        </details>
-      </div>
-    @endif
-
-    {{-- ===== Optional: Standard-Footer bleibt erhalten (Theme) ===== --}}
-
-  </div>
-</section>
-
-@if (is_plugin_active('payment'))
-  {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
-  @php
-      Theme::asset()->container('footer')
-          ->add('js-validation', 'vendor/core/core/js-validation/js/js-validation.js', ['jquery'])
-          ->writeContent('checkout-validator', JsValidator::formRequest(Botble\Hotel\Http\Requests\CheckoutRequest::class))
-  @endphp
-@endif
-
-{{-- ===== Minimal-JS für Step-Navigation (Vanilla, keine externe Lib) ===== --}}
-<script>
-(function(){
-  const form   = document.getElementById('bookingForm');
-  const panels = Array.from(document.querySelectorAll('.step-panel'));
-  const dots   = stepIdx => document.querySelector('[data-step-dot="'+stepIdx+'"]');
-  const lines  = lineIdx => document.querySelector('[data-step-line="'+lineIdx+'"]');
-
-  let step = {{ $customer->id ? 2 : 1 }}; // eingeloggte User starten direkt bei Schritt 2
-  show(step);
-
-  // Next/Prev Handler
-  form.addEventListener('click', function(e){
-    const next = e.target.closest('[data-next]');
-    const prev = e.target.closest('[data-prev]');
-    if(next){ e.preventDefault(); go(step+1); }
-    if(prev){ e.preventDefault(); go(step-1); }
-  });
-
-  function go(target){
-    step = Math.min(Math.max(target,1),3);
-    show(step);
-    // Scroll-Fix: oben bleiben (One-Page ohne Scroll)
-    window.scrollTo({ top: document.querySelector('.checkout-booking').offsetTop, behavior: 'instant' });
-  }
-
-  function show(s){
-    panels.forEach(p => p.classList.toggle('active', p.dataset.step == s));
-    // Stepper-Status
-    [1,2,3].forEach(i=>{
-      const d = dots(i); if(!d) return;
-      d.classList.toggle('active', i<=s);
-      const l = lines(i); if(l) l.classList.toggle('active', i < s);
-    });
   }
 })();
 </script>
