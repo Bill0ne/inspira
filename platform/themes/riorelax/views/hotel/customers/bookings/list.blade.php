@@ -25,7 +25,7 @@
                             @php
                                 $course = $booking->course;
                                 $session = $booking->session;
-                                $thumbnail = $course?->image;
+                                $thumbnail = $course?->thumbnail ?? $course?->image;
                                 $title = $course?->name ?? __('Course removed');
                                 $courseUrl = $course?->url;
                                 $subtitleParts = array_filter([
