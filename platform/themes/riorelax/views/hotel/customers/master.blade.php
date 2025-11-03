@@ -11,6 +11,12 @@
             'pattern' => 'customer.overview',
         ],
         [
+            'label' => __('My Bookings'),
+            'route' => 'customer.bookings',
+            'icon' => 'fal fa-calendar-check',
+            'pattern' => ['customer.bookings', 'customer.course-bookings'],
+        ],
+        [
             'label' => __('Profile'),
             'route' => 'customer.edit-account',
             'icon' => 'fal fa-id-card',
@@ -21,12 +27,6 @@
             'route' => 'customer.change-password',
             'icon' => 'fal fa-lock',
             'pattern' => 'customer.change-password',
-        ],
-        [
-            'label' => __('My Bookings'),
-            'route' => 'customer.bookings',
-            'icon' => 'fal fa-calendar-check',
-            'pattern' => ['customer.bookings', 'customer.course-bookings'],
         ],
     ];
 
@@ -46,6 +46,37 @@
         'pattern' => null,
         'is_logout' => true,
     ];
+
+    $primaryRoutes = ['customer.overview', 'customer.bookings'];
+    $primaryNavigation = [];
+    $overflowNavigation = [];
+    $overflowHasActive = false;
+
+    $isNavItemActive = static function (array $item) use ($currentRoute) {
+        $patterns = $item['pattern'] ? (array) $item['pattern'] : [$item['route']];
+
+        foreach ($patterns as $pattern) {
+            if (\Illuminate\Support\Str::startsWith($currentRoute, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    foreach ($navigation as $item) {
+        $item['is_active'] = $isNavItemActive($item);
+
+        if (in_array($item['route'], $primaryRoutes, true)) {
+            $primaryNavigation[] = $item;
+        } else {
+            $overflowNavigation[] = $item;
+
+            if ($item['is_active']) {
+                $overflowHasActive = true;
+            }
+        }
+    }
 @endphp
 
 <div class="customer-page crop-avatar inspira-customer">
@@ -72,30 +103,34 @@
             </div>
 
             <nav id="customer-nav" class="customer-tab-nav" aria-label="{{ __('Account navigation') }}">
-                <ul class="customer-nav">
-                    @foreach ($navigation as $item)
-                        @php
-                            $patterns = $item['pattern'] ? (array) $item['pattern'] : [];
-                            $isActive = false;
-
-                            foreach ($patterns as $pattern) {
-                                if (\Illuminate\Support\Str::startsWith($currentRoute, $pattern)) {
-                                    $isActive = true;
-                                    break;
-                                }
-                            }
-                        @endphp
-
-                        <li class="customer-nav-item {{ $isActive ? 'is-active' : '' }} {{ $item['is_logout'] ?? false ? 'is-logout' : '' }}">
-                            <a class="customer-nav-link" href="{{ route($item['route']) }}">
-                                <span class="customer-nav-icon" aria-hidden="true">
-                                    <i class="{{ $item['icon'] }}"></i>
-                                </span>
+                <ul class="customer-nav customer-nav--primary">
+                    @foreach ($primaryNavigation as $item)
+                        <li class="customer-nav-item {{ $item['is_active'] ? 'is-active' : '' }}">
+                            <a class="customer-nav-link" href="{{ route($item['route']) }}" @if ($item['is_active']) aria-current="page" @endif>
                                 <span class="customer-nav-text">{{ $item['label'] }}</span>
                             </a>
                         </li>
                     @endforeach
                 </ul>
+
+                @if (! empty($overflowNavigation))
+                    <details class="customer-nav-overflow {{ $overflowHasActive ? 'is-active' : '' }}">
+                        <summary class="customer-nav-overflow-trigger" aria-label="{{ __('More account links') }}">
+                            <i class="fal fa-ellipsis-h" aria-hidden="true"></i>
+                            <span class="customer-visually-hidden">{{ __('More account links') }}</span>
+                        </summary>
+
+                        <ul class="customer-nav customer-nav--overflow">
+                            @foreach ($overflowNavigation as $item)
+                                <li class="customer-nav-item {{ $item['is_active'] ? 'is-active' : '' }} {{ $item['is_logout'] ?? false ? 'is-logout' : '' }}">
+                                    <a class="customer-nav-link" href="{{ route($item['route']) }}" @if ($item['is_active']) aria-current="page" @endif>
+                                        <span class="customer-nav-text">{{ $item['label'] }}</span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </details>
+                @endif
             </nav>
         </header>
 
