@@ -84,6 +84,8 @@
     border-radius: 12px;
     padding: 14px 24px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    width: 100%; /* volle Breite erzwingen */
+    text-align: left; /* überschreibt Theme-Zentrierung */
     gap: 20px;
     min-height: 64px;
 }
@@ -93,6 +95,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    flex: 0 0 auto;
 }
 .customer-header-left .avatar {
     width: 42px;
@@ -111,7 +114,9 @@
 .customer-header-right {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 24px;
+    flex: 1 1 auto;
     position: relative;
 }
 .customer-header-right .nav-link {
@@ -193,6 +198,7 @@
         border-top: 1px solid #eee;
         border-radius: 0;
     }
+}
 }
 </style>
 
