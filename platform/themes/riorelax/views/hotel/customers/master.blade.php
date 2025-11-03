@@ -1,70 +1,142 @@
 @php
-    Theme::set('pageTitle',  "Profile");
+    Theme::set('pageTitle', 'Profile');
+
+    $user = auth('customer')->user();
+    $currentRoute = Route::currentRouteName();
+    $navigation = [
+        [
+            'label' => __('Overview'),
+            'route' => 'customer.overview',
+            'icon' => 'fal fa-circle-user',
+            'pattern' => 'customer.overview',
+        ],
+        [
+            'label' => __('My Bookings'),
+            'route' => 'customer.bookings',
+            'icon' => 'fal fa-calendar-check',
+            'pattern' => ['customer.bookings', 'customer.course-bookings'],
+        ],
+        [
+            'label' => __('Profile'),
+            'route' => 'customer.edit-account',
+            'icon' => 'fal fa-id-card',
+            'pattern' => 'customer.edit-account',
+        ],
+        [
+            'label' => __('Change password'),
+            'route' => 'customer.change-password',
+            'icon' => 'fal fa-lock',
+            'pattern' => 'customer.change-password',
+        ],
+    ];
+
+    if (HotelHelper::isReviewEnabled()) {
+        $navigation[] = [
+            'label' => __('My Reviews'),
+            'route' => 'customer.reviews',
+            'icon' => 'fal fa-star',
+            'pattern' => 'customer.reviews',
+        ];
+    }
+
+    $navigation[] = [
+        'label' => __('Logout'),
+        'route' => 'customer.logout',
+        'icon' => 'fal fa-sign-out',
+        'pattern' => null,
+        'is_logout' => true,
+    ];
+
+    $primaryRoutes = ['customer.overview', 'customer.bookings'];
+    $primaryNavigation = [];
+    $overflowNavigation = [];
+    $overflowHasActive = false;
+
+    $isNavItemActive = static function (array $item) use ($currentRoute) {
+        $patterns = $item['pattern'] ? (array) $item['pattern'] : [$item['route']];
+
+        foreach ($patterns as $pattern) {
+            if (\Illuminate\Support\Str::startsWith($currentRoute, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    foreach ($navigation as $item) {
+        $item['is_active'] = $isNavItemActive($item);
+
+        if (in_array($item['route'], $primaryRoutes, true)) {
+            $primaryNavigation[] = $item;
+        } else {
+            $overflowNavigation[] = $item;
+
+            if ($item['is_active']) {
+                $overflowHasActive = true;
+            }
+        }
+    }
 @endphp
 
-<div class="customer-page crop-avatar">
-    <div class="container">
-        <div class="customer-body">
-            <div class="row body-border">
-                <div class="col-md-3">
-                    <div class="profile-sidebar">
-                        <form id="avatar-upload-form" enctype="multipart/form-data" action="javascript:void(0)" onsubmit="return false">
-                            <div class="avatar-upload-container">
-                                <div class="form-group mb-3">
-                                    <div id="account-avatar">
-                                        <div class="profile-image custom-avatar-master">
-                                            <div class="avatar-view mt-card-avatar">
-                                                <img class="br2" src="{{ auth('customer')->user()->avatar_url }}" alt="{{ auth('customer')->user()->name }}" />
-                                            </div>
-                                            <i class="fa fa-pencil avatar-view"></i>
-                                        </div>
-                                    </div>
+<div class="customer-page crop-avatar inspira-customer">
+    <div class="customer-shell">
+        <header class="customer-header" aria-label="{{ __('Account overview') }}">
+            <div class="customer-header-main">
+                <form id="avatar-upload-form" class="customer-header-avatar" enctype="multipart/form-data" action="javascript:void(0)" onsubmit="return false">
+                    <div class="avatar-upload-container">
+                        <div id="account-avatar" class="customer-avatar-frame">
+                            <div class="profile-image custom-avatar-master">
+                                <div class="avatar-view mt-card-avatar">
+                                    <img class="br2" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" />
                                 </div>
-                                <div id="print-msg" class="text-danger hidden"></div>
-                            </div>
-                        </form>
-
-                        <div class="text-center">
-                            <div class="profile-usertitle-name">
-                                <strong>{{ auth('customer')->user()->name }}</strong>
+                                <i class="fa fa-pencil avatar-view"></i>
                             </div>
                         </div>
-
-                        <div class="profile-usermenu">
-                            <ul class="list-group">
-                                <li class="list-group-item">
-                                    <a href="{{ route('customer.overview') }}" class="d-inline-block w-100 collection-item @if (Route::currentRouteName() == 'customer.overview') active @endif">{{ __('Overview') }}</a>
-                                </li>
-                                <li class="list-group-item">
-                                    <a href="{{ route('customer.edit-account') }}" class="d-inline-block w-100 collection-item @if (Route::currentRouteName() == 'customer.edit-account') active @endif">{{ __('Profile') }}</a>
-                                </li>
-                                <li class="list-group-item">
-                                    <a href="{{ route('customer.change-password') }}" class="d-inline-block w-100 collection-item @if (Route::currentRouteName() == 'customer.change-password') active @endif">{{ __('Change password') }}</a>
-                                </li>
-                                <li class="list-group-item">
-                                    <a href="{{ route('customer.bookings') }}" class="d-inline-block w-100 collection-item @if (Route::currentRouteName() == 'customer.bookings') active @endif">{{ __('My Bookings') }}</a>
-                                </li>
-                                <li class="list-group-item">
-                                    <a href="{{ route('customer.course-bookings') }}" class="d-inline-block w-100 collection-item @if (Route::currentRouteName() == 'customer.course-bookings') active @endif">{{ __('My Course Bookings') }}</a>
-                                </li>
-                                @if (HotelHelper::isReviewEnabled())
-                                    <li class="list-group-item">
-                                        <a href="{{ route('customer.reviews') }}" class="d-inline-block w-100 collection-item @if (Route::currentRouteName() == 'customer.reviews') active @endif">{{ __('My Reviews') }}</a>
-                                    </li>
-                                @endif
-                                <li class="list-group-item">
-                                    <a href="{{ route('customer.logout') }}" class="d-inline-block w-100 collection-item">{{ __('Logout') }}</a>
-                                </li>
-                            </ul>
-                        </div>
+                        <div id="print-msg" class="text-danger hidden"></div>
                     </div>
-                </div>
+                </form>
 
-                <div class="col-md-9">
-                    <div class="profile-content">
-                        @yield('content')
-                    </div>
+                <div class="customer-header-meta">
+                    <p class="customer-header-name">{{ $user->name }}</p>
                 </div>
+            </div>
+
+            <nav id="customer-nav" class="customer-tab-nav" aria-label="{{ __('Account navigation') }}">
+                <ul class="customer-nav customer-nav--primary">
+                    @foreach ($primaryNavigation as $item)
+                        <li class="customer-nav-item {{ $item['is_active'] ? 'is-active' : '' }}">
+                            <a class="customer-nav-link" href="{{ route($item['route']) }}" @if ($item['is_active']) aria-current="page" @endif>
+                                <span class="customer-nav-text">{{ $item['label'] }}</span>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+
+                @if (! empty($overflowNavigation))
+                    <details class="customer-nav-overflow {{ $overflowHasActive ? 'is-active' : '' }}">
+                        <summary class="customer-nav-overflow-trigger" aria-label="{{ __('More account links') }}">
+                            <i class="fal fa-ellipsis-h" aria-hidden="true"></i>
+                            <span class="customer-visually-hidden">{{ __('More account links') }}</span>
+                        </summary>
+
+                        <ul class="customer-nav customer-nav--overflow">
+                            @foreach ($overflowNavigation as $item)
+                                <li class="customer-nav-item {{ $item['is_active'] ? 'is-active' : '' }} {{ $item['is_logout'] ?? false ? 'is-logout' : '' }}">
+                                    <a class="customer-nav-link" href="{{ route($item['route']) }}" @if ($item['is_active']) aria-current="page" @endif>
+                                        <span class="customer-nav-text">{{ $item['label'] }}</span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </details>
+                @endif
+            </nav>
+        </header>
+
+        <div class="customer-content">
+            <div class="customer-content-inner">
+                @yield('content')
             </div>
         </div>
     </div>

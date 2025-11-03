@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Throwable;
@@ -63,6 +64,28 @@ class HotelSupport
         }
 
         return (bool) $this->getSetting('load_countries_states_cities_from_location_plugin', 0);
+    }
+
+    public function getCustomerStylesVersion(): ?string
+    {
+        $path = public_path('vendor/core/plugins/hotel/css/customer.css');
+
+        if (! File::exists($path)) {
+            return null;
+        }
+
+        return (string) File::lastModified($path);
+    }
+
+    public function getCustomerScriptsVersion(): ?string
+    {
+        $path = public_path('vendor/core/plugins/hotel/js/customer.js');
+
+        if (! File::exists($path)) {
+            return null;
+        }
+
+        return (string) File::lastModified($path);
     }
 
     public function viewPath(string $view): string
