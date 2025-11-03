@@ -49,13 +49,7 @@ class PaymentHelper
 
         $paymentChannel = Arr::get($data, 'payment_channel', PaymentMethodEnum::COD);
 
-        $orderType = null;
-
-        if (session()->has('course_booking_transaction_id')) {
-            $orderType = \Botble\Courses\Models\CourseBooking::class;
-        } elseif (session()->has('booking_transaction_id')) {
-            $orderType = \Botble\Hotel\Models\Booking::class;
-        }
+        $orderType = $data['order_type'] ?? null;
 
         // Get payment fee using PaymentFeeHelper
         $paymentFee = 0;

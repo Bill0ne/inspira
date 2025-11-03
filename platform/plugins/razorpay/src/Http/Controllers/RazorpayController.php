@@ -158,6 +158,7 @@ class RazorpayController extends BaseController
                     'order_id' => $orderId,
                     'customer_id' => $request->input('customer_id'),
                     'customer_type' => $request->input('customer_type'),
+                    'order_type'    => $request->input('order_type'),
                 ]);
             } else {
                 // Log missing order ID or signature
@@ -366,6 +367,7 @@ class RazorpayController extends BaseController
                                 'order_id' => $orderId,
                                 'status' => $status,
                                 'payment_channel' => RAZORPAY_PAYMENT_METHOD_NAME,
+                                'order_type'    => $request->input('order_type'),
                             ]);
 
                             return response('Webhook processed successfully');

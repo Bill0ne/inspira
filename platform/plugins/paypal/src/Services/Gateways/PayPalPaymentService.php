@@ -24,6 +24,7 @@ class PayPalPaymentService extends PayPalPaymentAbstract
             'order_id' => $data['order_id'],
             'customer_id' => Arr::get($data, 'customer_id'),
             'customer_type' => Arr::get($data, 'customer_type'),
+            'order_type' => Arr::get($data, 'order_type') ?? null,
         ];
 
         if ($cancelUrl = $data['return_url'] ?: PaymentHelper::getCancelURL()) {
@@ -61,6 +62,7 @@ class PayPalPaymentService extends PayPalPaymentAbstract
             'order_id' => $orderIds,
             'customer_id' => Arr::get($data, 'customer_id'),
             'customer_type' => Arr::get($data, 'customer_type'),
+            'order_type' => Arr::get($data, 'order_type') ?? null,
             'payment_channel' => PAYPAL_PAYMENT_METHOD_NAME,
             'status' => $status,
         ]);

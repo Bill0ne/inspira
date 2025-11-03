@@ -20,12 +20,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if (
-            class_exists(\Theme\Riorelax\Helpers\FilterHelper::class) &&
-            ! class_exists('Theme\\Rlorenak\\Helpers\\FilterHelper', false)
+            class_exists(\Theme\Riorelax\Supports\FilterHelper::class) &&
+            ! class_exists('Theme\\Rlorenak\\Supports\\FilterHelper', false)
         ) {
             class_alias(
-                \Theme\Riorelax\Helpers\FilterHelper::class,
-                'Theme\\Rlorenak\\Helpers\\FilterHelper'
+                \Theme\Riorelax\Supports\FilterHelper::class,
+                'Theme\\Rlorenak\\Supports\\FilterHelper'
             );
         }
     }

@@ -6,6 +6,7 @@ use Botble\Base\Casts\SafeContent;
 use Botble\Base\Enums\BaseStatusEnum;
 use Botble\Base\Models\BaseModel;
 use Botble\Hotel\Models\Tax;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -127,5 +128,14 @@ class Course extends BaseModel
         return $this->hasMany(CourseSession::class, 'course_id');
     }
 
+    public function isPast(): bool
+    {
+        $sessions = $this->sessions;
+        if ($sessions->isEmpty()) {
+            return $this->end_date && $this->end_date < Carbon::now();
+        }
+
+        return $sessions->every(fn($session) => $session->start_date < Carbon::now());
+    }
 
 }
