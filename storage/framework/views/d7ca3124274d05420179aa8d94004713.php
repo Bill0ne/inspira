@@ -2,11 +2,11 @@
     <thead>
     <tr>
         <th>#</th>
-        <th>Name</th>
-        <th>E-mail</th>
-        <th>Telefon</th>
+        <th><?php echo e(__('Name')); ?></th>
+        <th><?php echo e(__('E-mail')); ?></th>
+        <th><?php echo e(__('Phone')); ?></th>
         <th>Zahlungsstatus</th>
-        <th>Aktion</th>
+        <th><?php echo e(__('Action')); ?></th>
     </tr>
     </thead>
     <tbody>
@@ -18,32 +18,33 @@
             <?php elseif($booking->address): ?>
                 <td><?php echo e($booking->address->first_name); ?> <?php echo e($booking->address->last_name); ?></td>
             <?php else: ?>
-                <td>N/A</td>
+                <td><?php echo e(__('N/A')); ?></td>
             <?php endif; ?>
             <?php if($booking->customer && $booking->customer->email): ?>
                 <td><?php echo e($booking->customer->email); ?></td>
             <?php elseif($booking->address && $booking->address->email): ?>
                 <td><?php echo e($booking->address->email); ?></td>
             <?php else: ?>
-                <td>N/A</td>
+                <td><?php echo e(__('N/A')); ?></td>
             <?php endif; ?>
             <?php if($booking->customer && $booking->customer->phone): ?>
                 <td><?php echo e($booking->customer->phone); ?></td>
             <?php elseif($booking->address && $booking->address->phone): ?>
                 <td><?php echo e($booking->address->phone); ?></td>
             <?php else: ?>
-                <td>N/A</td>
+                <td><?php echo e(__('N/A')); ?></td>
             <?php endif; ?>
-            <td><?php echo $booking->payment?->status->toHtml() ?? 'N/A'; ?></td>
+            <td><?php echo $booking->payment?->status->toHtml() ?? __('N/A'); ?></td>
             <td>
                 <a href="<?php echo e(route('course-booking.edit', $booking->id)); ?>" class="btn btn-sm btn-primary">
-                    Sicht
+                    <?php echo e(__('View')); ?>
+
                 </a>
             </td>
         </tr>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <tr>
-            <td colspan="6" class="text-center">No participants found.</td>
+            <td colspan="6" class="text-center"><?php echo e(__('No participants found.')); ?></td>
         </tr>
     <?php endif; ?>
     </tbody>

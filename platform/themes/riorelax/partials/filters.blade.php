@@ -45,7 +45,7 @@
 
     $resultCount = isset($courses)
         ? ($courses->total() ?? 0)
-        : (isset($rooms) ? ($rooms->total() ?? 0) : \Theme\Riorelax\Helpers\FilterHelper::count(request(), $type));
+        : (isset($rooms) ? ($rooms->total() ?? 0) : \Theme\Riorelax\Supports\FilterHelper::count(request(), $type));
 
     $formattedCount = number_format($resultCount, 0, ',', '.');
 @endphp
