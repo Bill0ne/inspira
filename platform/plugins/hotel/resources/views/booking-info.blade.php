@@ -65,18 +65,18 @@
                         @if ($start->isSameDay($end))
                             {{-- Same day: show date once, and time range --}}
                             <span>
-                        {{ $start->format('M d, Y') }}
+                        {{ $start->format('d.m.Y') }}
                         <span class="text-gray-500 mx-2"></span>
-                        {{ $start->format('h:i A') }}
+                        {{ $start->format('H:i') }}
                         <span class="text-gray-500 mx-1">→</span>
-                        {{ $end->format('h:i A') }}
+                        {{ $end->format('H:i') }}
                     </span>
                         @else
                             {{-- Different days: show full date-times --}}
                             <span>
-                        {{ $start->format('M d, Y h:i A') }}
+                        {{ $start->format('d.m.Y H:i') }}
                         <span class="text-gray-500 mx-2">→</span>
-                        {{ $end->format('M d, Y h:i A') }}
+                        {{ $end->format('d.m.Y H:i') }}
                     </span>
                         @endif
                     </div>
@@ -162,11 +162,11 @@
                             </x-core::table.body.cell>
                         @endif
                         <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
-                            {{ \Carbon\Carbon::parse($roomBooking->start_date)->format('M d, Y h:i A') }}
+                            {{ \Carbon\Carbon::parse($roomBooking->start_date)->format('d.m.Y H:i') }}
                         </x-core::table.body.cell>
 
                         <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
-                            {{ \Carbon\Carbon::parse($roomBooking->end_date)->format('M d, Y h:i A') }}
+                            {{ \Carbon\Carbon::parse($roomBooking->end_date)->format('d.m.Y H:i') }}
                         </x-core::table.body.cell>
                         <x-core::table.body.cell class="text-center" style="vertical-align: middle !important;">
                             {{ $roomBooking->number_of_rooms }}

@@ -233,22 +233,22 @@
                         <?php if($start->isSameDay($end)): ?>
                             
                             <span>
-                        <?php echo e($start->format('M d, Y')); ?>
+                        <?php echo e($start->format('d.m.Y')); ?>
 
                         <span class="text-gray-500 mx-2"></span>
-                        <?php echo e($start->format('h:i A')); ?>
+                        <?php echo e($start->format('H:i')); ?>
 
                         <span class="text-gray-500 mx-1">→</span>
-                        <?php echo e($end->format('h:i A')); ?>
+                        <?php echo e($end->format('H:i')); ?>
 
                     </span>
                         <?php else: ?>
                             
                             <span>
-                        <?php echo e($start->format('M d, Y h:i A')); ?>
+                        <?php echo e($start->format('d.m.Y H:i')); ?>
 
                         <span class="text-gray-500 mx-2">→</span>
-                        <?php echo e($end->format('M d, Y h:i A')); ?>
+                        <?php echo e($end->format('d.m.Y H:i')); ?>
 
                     </span>
                         <?php endif; ?>
@@ -671,7 +671,7 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['class' => 'text-center','style' => 'vertical-align: middle !important;']); ?>
-                            <?php echo e(\Carbon\Carbon::parse($roomBooking->start_date)->format('M d, Y h:i A')); ?>
+                            <?php echo e(\Carbon\Carbon::parse($roomBooking->start_date)->format('d.m.Y H:i')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
@@ -694,7 +694,7 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['class' => 'text-center','style' => 'vertical-align: middle !important;']); ?>
-                            <?php echo e(\Carbon\Carbon::parse($roomBooking->end_date)->format('M d, Y h:i A')); ?>
+                            <?php echo e(\Carbon\Carbon::parse($roomBooking->end_date)->format('d.m.Y H:i')); ?>
 
                          <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>

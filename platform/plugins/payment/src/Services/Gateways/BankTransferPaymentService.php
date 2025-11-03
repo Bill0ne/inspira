@@ -23,6 +23,7 @@ class BankTransferPaymentService
             'customer_type' => $data['customer_type'],
             'payment_channel' => PaymentMethodEnum::BANK_TRANSFER,
             'status' => PaymentStatusEnum::PENDING,
+            'order_type'      => $data['order_type'] ?? null,
         ]);
 
         return $chargeId;

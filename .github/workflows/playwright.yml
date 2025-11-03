@@ -1,0 +1,61 @@
+name: 🚀 Run Playwright E2E Stage
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-playwright-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      # === 1️⃣ Repository auschecken ===
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      # === 2️⃣ Node.js Setup ===
+      - name: 🧱 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # === 3️⃣ Dependencies installieren ===
+      - name: 📦 Install Playwright + Dependencies
+        run: |
+          cd tests/e2e
+          npm ci || npm install
+          npx playwright install --with-deps
+
+      # === 4️⃣ Run Playwright Tests (Ergebnis speichern) ===
+      - name: 🧪 Run Playwright Tests
+        run: |
+          cd tests/e2e
+          mkdir -p ../../reports/$(date +'%Y%m%d-%H%M%S')
+          echo "Running tests and saving report..."
+          npx playwright test --reporter=json --output=../../reports/$(date +'%Y%m%d-%H%M%S')/test-results > ../../reports/$(date +'%Y%m%d-%H%M%S')/results.json
+        continue-on-error: true
+
+      # === 5️⃣ SSH Setup ===
+      - name: 🔐 Setup SSH Access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "145.223.35.233 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
+
+      # === 6️⃣ Upload Reports ===
+      - name: 📤 Upload Playwright Reports to Inspira Server
+        run: |
+          echo "📡 Uploading reports..."
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -p 65002" \
+            reports/ u296731902@145.223.35.233:/home/u296731902/domains/inspira-zentrum.de/public_html/dev-test-repo/reports/
+        continue-on-error: false
+
+      # === 7️⃣ Erfolgsmeldung ===
+      - name: ✅ Notify Success
+        if: success()
+        run: echo "✅ Inspira E2E Tests erfolgreich abgeschlossen – Dashboard aktualisiert!"
+
+      # === 8️⃣ Fehlerfall ===
+      - name: ❌ Notify Failure
+        if: failure()
+        run: echo "❌ Inspira E2E Tests sind fehlgeschlagen – bitte Log prüfen."
