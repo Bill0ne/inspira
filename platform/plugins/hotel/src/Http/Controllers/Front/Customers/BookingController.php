@@ -45,7 +45,9 @@ class BookingController extends BaseController
                 'type' => 'room',
                 'model' => $booking,
                 'created_at' => $booking->created_at,
-            ]);
+            ])
+            ->values()
+            ->toBase();
 
         $combinedBookings = $roomBookings;
 
@@ -75,7 +77,9 @@ class BookingController extends BaseController
                         'model' => $booking,
                         'created_at' => $booking->created_at,
                     ];
-                });
+                })
+                ->values()
+                ->toBase();
 
             $combinedBookings = $combinedBookings->merge($courseBookings);
         }
