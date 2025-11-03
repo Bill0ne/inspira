@@ -1,24 +1,11 @@
 <?php (Theme::set('pageTitle', __('Rooms'))); ?>
 
-<section class="container">
+<section class="container rooms-page mt-4 mb-5">
+    <?php echo $__env->make(Theme::getThemeNamespace('partials.filters'), ['filterType' => 'rooms'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-12">
             <?php echo do_shortcode('[all-rooms]'); ?>
 
-        </div>
-        <div class="col-lg-4">
-            <div class="sidebar-widget-rooms">
-                <div class="sidebar-widget categories check-availability-custom">
-                    <div class="widget-content">
-                        <div class="booking">
-                            <div class="contact-bg">
-                                <?php echo Theme::partial('rooms.forms.form', ['style' => 1, 'availableForBooking' => false]); ?>
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </section>
