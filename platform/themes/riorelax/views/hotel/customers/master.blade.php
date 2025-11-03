@@ -54,24 +54,20 @@
 
     $isNavItemActive = static function (array $item) use ($currentRoute) {
         $patterns = $item['pattern'] ? (array) $item['pattern'] : [$item['route']];
-
         foreach ($patterns as $pattern) {
             if (\Illuminate\Support\Str::startsWith($currentRoute, $pattern)) {
                 return true;
             }
         }
-
         return false;
     };
 
     foreach ($navigation as $item) {
         $item['is_active'] = $isNavItemActive($item);
-
         if (in_array($item['route'], $primaryRoutes, true)) {
             $primaryNavigation[] = $item;
         } else {
             $overflowNavigation[] = $item;
-
             if ($item['is_active']) {
                 $overflowHasActive = true;
             }
@@ -79,59 +75,152 @@
     }
 @endphp
 
+<style>
+.customer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.customer-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.customer-header-left .avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.customer-header-left .customer-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+.customer-header-center {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.customer-header-center .nav-link {
+    position: relative;
+    color: #333;
+    font-weight: 500;
+    font-size: 13px;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+.customer-header-center .nav-link.active,
+.customer-header-center .nav-link:hover {
+    color: #578E88;
+}
+.customer-header-center .nav-link.active::after {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #578E88;
+    border-radius: 2px;
+}
+.customer-header-right {
+    position: relative;
+}
+.customer-header-right button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #333;
+    cursor: pointer;
+}
+.customer-header-right .dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 110%;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    z-index: 10;
+}
+.customer-header-right .dropdown a {
+    display: block;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #333;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.customer-header-right .dropdown a:hover {
+    background: #f3f3f3;
+    color: #578E88;
+}
+.customer-header-right .dropdown a.logout {
+    color: #a33;
+}
+.customer-header-right.open .dropdown {
+    display: block;
+}
+@media (max-width: 768px) {
+    .customer-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .customer-header-center {
+        width: 100%;
+        justify-content: space-around;
+        border-top: 1px solid #eee;
+        margin-top: 10px;
+        padding-top: 10px;
+    }
+    .customer-header-right .dropdown {
+        width: 100%;
+        position: static;
+        box-shadow: none;
+        border-top: 1px solid #eee;
+        border-radius: 0;
+    }
+}
+</style>
+
 <div class="customer-page crop-avatar inspira-customer">
     <div class="customer-shell">
         <header class="customer-header" aria-label="{{ __('Account overview') }}">
-            <div class="customer-header-main">
-                <form id="avatar-upload-form" class="customer-header-avatar" enctype="multipart/form-data" action="javascript:void(0)" onsubmit="return false">
-                    <div class="avatar-upload-container">
-                        <div id="account-avatar" class="customer-avatar-frame">
-                            <div class="profile-image custom-avatar-master">
-                                <div class="avatar-view mt-card-avatar">
-                                    <img class="br2" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" />
-                                </div>
-                                <i class="fa fa-pencil avatar-view"></i>
-                            </div>
-                        </div>
-                        <div id="print-msg" class="text-danger hidden"></div>
-                    </div>
-                </form>
-
-                <div class="customer-header-meta">
-                    <p class="customer-header-name">{{ $user->name }}</p>
-                </div>
+            <div class="customer-header-left">
+                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="avatar">
+                <span class="customer-name">{{ $user->name }}</span>
             </div>
 
-            <nav id="customer-nav" class="customer-tab-nav" aria-label="{{ __('Account navigation') }}">
-                <ul class="customer-nav customer-nav--primary">
-                    @foreach ($primaryNavigation as $item)
-                        <li class="customer-nav-item {{ $item['is_active'] ? 'is-active' : '' }}">
-                            <a class="customer-nav-link" href="{{ route($item['route']) }}" @if ($item['is_active']) aria-current="page" @endif>
-                                <span class="customer-nav-text">{{ $item['label'] }}</span>
-                            </a>
-                        </li>
+            <div class="customer-header-center">
+                @foreach ($primaryNavigation as $item)
+                    <a href="{{ route($item['route']) }}" 
+                       class="nav-link {{ $item['is_active'] ? 'active' : '' }}">
+                        {{ $item['label'] }}
+                    </a>
+                @endforeach
+            </div>
+
+            <div class="customer-header-right" id="navDropdown">
+                <button type="button" onclick="document.getElementById('navDropdown').classList.toggle('open')">
+                    <i class="fal fa-ellipsis-h"></i>
+                </button>
+                <div class="dropdown">
+                    @foreach ($overflowNavigation as $item)
+                        <a href="{{ route($item['route']) }}" 
+                           class="{{ $item['is_logout'] ?? false ? 'logout' : '' }}">
+                            {{ $item['label'] }}
+                        </a>
                     @endforeach
-                </ul>
-
-                @if (! empty($overflowNavigation))
-                    <details class="customer-nav-overflow {{ $overflowHasActive ? 'is-active' : '' }}">
-                        <summary class="customer-nav-overflow-trigger" aria-label="{{ __('More account links') }}">
-                            <i class="fal fa-ellipsis-h" aria-hidden="true"></i>
-                            <span class="customer-visually-hidden">{{ __('More account links') }}</span>
-                        </summary>
-
-                        <ul class="customer-nav customer-nav--overflow">
-                            @foreach ($overflowNavigation as $item)
-                                <li class="customer-nav-item {{ $item['is_active'] ? 'is-active' : '' }} {{ $item['is_logout'] ?? false ? 'is-logout' : '' }}">
-                                    <a class="customer-nav-link" href="{{ route($item['route']) }}" @if ($item['is_active']) aria-current="page" @endif>
-                                        <span class="customer-nav-text">{{ $item['label'] }}</span>
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </details>
-                @endif
-            </nav>
+                </div>
+            </div>
         </header>
 
         <div class="customer-content">
@@ -141,6 +230,7 @@
         </div>
     </div>
 
+    {{-- Avatar Upload Modal --}}
     <div class="modal fade" id="avatar-modal" tabindex="-1" role="dialog" aria-labelledby="avatar-modal-label" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
