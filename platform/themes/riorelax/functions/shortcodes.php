@@ -44,8 +44,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Request;
 use Botble\Courses\Models\Course;
-use Theme\Riorelax\Helpers\FilterHelper;
-
+use Carbon\Carbon;
 
 app()->booted(function (): void {
     ThemeSupport::registerGoogleMapsShortcode();
@@ -376,7 +375,7 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
         ->with(['amenities', 'slugable']);
 
     // zentrale Filter-Logik
-    $query = \Theme\Riorelax\Helpers\FilterHelper::apply($request, $query, 'rooms');
+    $query = \Theme\Riorelax\Supports\FilterHelper::apply($request, $query, 'rooms');
 
     // Pagination
     $rooms = $query->paginate(9)->withQueryString();
@@ -397,21 +396,17 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
 Shortcode::register('all-courses', __('All Courses'), __('Display all available courses'), function (): ?string {
     $request = request();
 
-    // ===============================
-    // 📘 COURSES: Filter & Sortierung
-    // ===============================
-
     $query = \Botble\Courses\Models\Course::query()
         ->wherePublished()
-        ->with(['slugable', 'instructor']);
+        ->with(['slugable', 'instructor'])
+        ->whereHas('sessions', function ($q) {
+            $q->where('start_date', '>=', Carbon::now());
+        });
 
-    // Wendet zentrale Logik aus Helper an
-    $query = \Theme\Riorelax\Helpers\FilterHelper::apply($request, $query, 'courses');
+    $query = \Theme\Riorelax\Supports\FilterHelper::apply($request, $query, 'courses');
 
-    // Pagination mit allen Parametern
     $courses = $query->paginate(12)->withQueryString();
 
-    // Übergabe an Theme Partial
     return Theme::partial('shortcodes.all-courses.index', compact('courses'));
 });
 

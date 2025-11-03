@@ -640,12 +640,12 @@
 
                                                 @if ($start->isSameDay($end))
                                                     {{-- Same day: show date once, and time range --}}
-                                                    {{ $start->format('d M Y') }}
+                                                    {{ $start->format('d.m.Y') }}
                                                     <span class="text-gray-500 mx-1"></span>
-                                                    {{ $start->format('h:i A') }} – {{ $end->format('h:i A') }}
+                                                    {{ $start->format('H:i') }} – {{ $end->format('H:i') }}
                                                 @else
                                                     {{-- Different days: show full date-times --}}
-                                                    {{ $start->format('d M Y h:i A') }} → {{ $end->format('d M Y h:i A') }}
+                                                    {{ $start->format('d.m.Y H:i') }} → {{ $end->format('d.m.Y H:i') }}
                                                 @endif
 
                                                 <br>
@@ -658,8 +658,8 @@
                                     </ul>
                                 @else
                                     {{-- Fallback: single booking --}}
-                                    <p>{{ __('Check-In') }}: {{ $displayStart ? $displayStart->translatedFormat('l, d M, Y') : '-' }}</p>
-                                    <p>{{ __('Check-Out') }}: {{ $displayEnd ? $displayEnd->translatedFormat('l, d M, Y') : '-' }}</p>
+                                    <p>{{ __('Check-In') }}: {{ $displayStart ? $displayStart->translatedFormat('l, d.m.Y') : '-' }}</p>
+                                    <p>{{ __('Check-Out') }}: {{ $displayEnd ? $displayEnd->translatedFormat('l, d.m.Y') : '-' }}</p>
                                 @endif
                             </div>
 

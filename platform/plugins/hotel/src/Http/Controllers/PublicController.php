@@ -623,8 +623,9 @@ class PublicController extends Controller
 
         if (is_plugin_active('payment')) {
             session()->put('selected_payment_method', $data['type']);
-
+            $paymentData['order_type'] = \Botble\Hotel\Models\Booking::class;
             $paymentData = apply_filters(PAYMENT_FILTER_PAYMENT_DATA, [], $request);
+            $paymentData['order_type'] = \Botble\Hotel\Models\Booking::class;
 
             switch ($request->input('payment_method')) {
                 case PaymentMethodEnum::COD:
