@@ -21,8 +21,10 @@ class PublicController extends BaseController
 {
     public function __construct()
     {
+        $customerCssVersion = HotelHelper::getCustomerStylesVersion();
+
         Theme::asset()
-            ->add('customer-style', 'vendor/core/plugins/hotel/css/customer.css');
+            ->add('customer-style', 'vendor/core/plugins/hotel/css/customer.css', [], [], $customerCssVersion);
 
         Theme::asset()
             ->container('footer')
