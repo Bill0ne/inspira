@@ -4,7 +4,7 @@
     <div class="customer-card">
         <div class="customer-card-header">
             <h2 class="customer-card-title">{{ SeoHelper::getTitle() }}</h2>
-            <p class="customer-card-subtitle">{{ __('Track every stay at a glance, including status, schedule, and invoice access.') }}</p>
+            <p class="customer-card-subtitle">{{ __('Behalten Sie jede Buchung im Blick – inklusive Status, Zeitplan und Rechnungszugriff.') }}</p>
         </div>
 
         <div class="customer-card-body">
@@ -26,15 +26,15 @@
                                 $course = $booking->course;
                                 $session = $booking->session;
                                 $thumbnail = $course?->thumbnail ?? $course?->image;
-                                $title = $course?->name ?? __('Course removed');
+                                $title = $course?->name ?? __('Kurs entfernt');
                                 $courseUrl = $course?->url;
                                 $subtitleParts = array_filter([
                                     $course?->instructor?->name,
                                     $course?->category?->name,
                                 ]);
                                 $subtitle = implode(' • ', $subtitleParts);
-                                $start = $session?->start_date ? \Carbon\Carbon::parse($session->start_date)->format('d M Y H:i') : null;
-                                $end = $session?->end_date ? \Carbon\Carbon::parse($session->end_date)->format('d M Y H:i') : null;
+                                $start = $session?->start_date ? \Carbon\Carbon::parse($session->start_date)->format('d.m.Y H:i') : null;
+                                $end = $session?->end_date ? \Carbon\Carbon::parse($session->end_date)->format('d.m.Y H:i') : null;
                                 $detailUrl = $courseUrl ?? route('customer.bookings');
                             @endphp
 
@@ -63,9 +63,9 @@
                                     <div class="booking-card-meta">
                                         <span>
                                             <i class="fal fa-calendar"></i>
-                                            {{ $start && $end ? $start . ' – ' . $end : __('Schedule pending') }}
+                                            {{ $start && $end ? $start . ' – ' . $end : __('Termin steht noch aus') }}
                                         </span>
-                                        <span><i class="fal fa-clock"></i>{{ __('Booked on :date', ['date' => $booking->created_at->format('d M Y')]) }}</span>
+                                        <span><i class="fal fa-clock"></i>{{ __('Gebucht am :date', ['date' => $booking->created_at->format('d.m.Y')]) }}</span>
                                         <span><i class="fal fa-hashtag"></i>{{ $booking->booking_number }}</span>
                                     </div>
                                 </div>
@@ -74,15 +74,15 @@
                                     <div class="booking-card-price">{{ format_price($booking->amount) }}</div>
 
                                     <div class="booking-card-actions">
-                                        <a class="booking-card-action" href="{{ $detailUrl }}" title="{{ __('Course details') }}">
+                                        <a class="booking-card-action" href="{{ $detailUrl }}" title="{{ __('Kursdetails') }}">
                                             <i class="fal fa-calendar-day" aria-hidden="true"></i>
-                                            <span class="visually-hidden">{{ __('Course details') }}</span>
+                                            <span class="visually-hidden">{{ __('Kursdetails') }}</span>
                                         </a>
 
                                         @if ($invoiceId)
-                                            <a class="booking-card-action" href="{{ route('customer.generate-invoice', $invoiceId) }}" title="{{ __('Download invoice') }}" data-bs-toggle="tooltip">
+                                            <a class="booking-card-action" href="{{ route('customer.generate-invoice', $invoiceId) }}" title="{{ __('Rechnung herunterladen') }}" data-bs-toggle="tooltip">
                                                 <i class="fal fa-download" aria-hidden="true"></i>
-                                                <span class="visually-hidden">{{ __('Download invoice') }}</span>
+                                                <span class="visually-hidden">{{ __('Rechnung herunterladen') }}</span>
                                             </a>
                                         @endif
                                     </div>
@@ -96,8 +96,8 @@
                                 $roomUrl = $hasRoom ? $roomRelation->url : null;
                                 $roomImage = $hasRoom ? $roomRelation->image : $booking->room->room_image;
                                 $category = $hasRoom ? optional($roomRelation->category)->name : null;
-                                $start = $booking->room->start_date ? \Carbon\Carbon::parse($booking->room->start_date)->format('d M Y H:i') : null;
-                                $end = $booking->room->end_date ? \Carbon\Carbon::parse($booking->room->end_date)->format('d M Y H:i') : null;
+                                $start = $booking->room->start_date ? \Carbon\Carbon::parse($booking->room->start_date)->format('d.m.Y H:i') : null;
+                                $end = $booking->room->end_date ? \Carbon\Carbon::parse($booking->room->end_date)->format('d.m.Y H:i') : null;
                             @endphp
 
                             <article class="booking-card booking-card--room">
@@ -128,7 +128,7 @@
                                         @elseif ($booking->room->booking_period)
                                             <span><i class="fal fa-calendar"></i>{{ $booking->room->booking_period }}</span>
                                         @endif
-                                        <span><i class="fal fa-clock"></i>{{ __('Booked on :date', ['date' => $booking->created_at->format('d M Y')]) }}</span>
+                                        <span><i class="fal fa-clock"></i>{{ __('Gebucht am :date', ['date' => $booking->created_at->format('d.m.Y')]) }}</span>
                                         <span><i class="fal fa-hashtag"></i>{{ $booking->booking_number }}</span>
                                     </div>
                                 </div>
@@ -137,15 +137,15 @@
                                     <div class="booking-card-price">{{ format_price($booking->amount) }}</div>
 
                                     <div class="booking-card-actions">
-                                        <a class="booking-card-action" href="{{ route('customer.bookings.show', $booking->transaction_id) }}" title="{{ __('View details') }}">
+                                        <a class="booking-card-action" href="{{ route('customer.bookings.show', $booking->transaction_id) }}" title="{{ __('Details anzeigen') }}">
                                             <i class="fal fa-calendar-day" aria-hidden="true"></i>
-                                            <span class="visually-hidden">{{ __('View details') }}</span>
+                                            <span class="visually-hidden">{{ __('Details anzeigen') }}</span>
                                         </a>
 
                                         @if ($invoiceId)
-                                            <a class="booking-card-action" href="{{ route('customer.generate-invoice', $invoiceId) }}" title="{{ __('Download invoice') }}" data-bs-toggle="tooltip">
+                                            <a class="booking-card-action" href="{{ route('customer.generate-invoice', $invoiceId) }}" title="{{ __('Rechnung herunterladen') }}" data-bs-toggle="tooltip">
                                                 <i class="fal fa-download" aria-hidden="true"></i>
-                                                <span class="visually-hidden">{{ __('Download invoice') }}</span>
+                                                <span class="visually-hidden">{{ __('Rechnung herunterladen') }}</span>
                                             </a>
                                         @endif
                                     </div>
@@ -157,7 +157,7 @@
             @else
                 <div class="customer-empty-state">
                     <i class="fal fa-calendar-times" aria-hidden="true"></i>
-                    <p>{{ __('No bookings!') }}</p>
+                    <p>{{ __('Keine Buchungen!') }}</p>
                 </div>
             @endif
         </div>

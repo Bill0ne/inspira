@@ -12,9 +12,9 @@
                     <table class="table table-striped custom-review-table">
                         <thead class="text-center">
                             <tr>
-                                <th style="width: 15%">{{ __('Room') }}</th>
-                                <th style="width: 15%">{{ __('Image') }}</th>
-                                <th>{{ __('Content') }}</th>
+                                <th style="width: 15%">{{ __('Zimmer') }}</th>
+                                <th style="width: 15%">{{ __('Bild') }}</th>
+                                <th>{{ __('Inhalt') }}</th>
                             </tr>
                         </thead>
 
@@ -38,7 +38,7 @@
                             @endforeach
                         @else
                             <tr>
-                                <td colspan="5" class="text-center">{{ __('No reviews!') }}</td>
+                                <td colspan="5" class="text-center">{{ __('Keine Bewertungen!') }}</td>
                             </tr>
                         @endif
                         </tbody>

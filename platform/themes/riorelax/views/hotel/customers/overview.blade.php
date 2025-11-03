@@ -10,35 +10,35 @@
                 'value' => $user->name,
             ],
             [
-                'label' => __('Email'),
+                'label' => __('E-Mail'),
                 'value' => $user->email,
             ],
             [
-                'label' => __('Date of birth'),
+                'label' => __('Geburtsdatum'),
                 'value' => $user->dob,
             ],
             [
-                'label' => __('Phone'),
+                'label' => __('Telefon'),
                 'value' => $user->phone,
             ],
             [
-                'label' => __('Country'),
+                'label' => __('Land'),
                 'value' => $user->country,
             ],
             [
-                'label' => __('State / Province'),
+                'label' => __('Bundesland / Provinz'),
                 'value' => $user->state,
             ],
             [
-                'label' => __('City'),
+                'label' => __('Stadt'),
                 'value' => $user->city,
             ],
             [
-                'label' => __('Address'),
+                'label' => __('Adresse'),
                 'value' => $user->address,
             ],
             [
-                'label' => __('Postal / Zip code'),
+                'label' => __('Postleitzahl'),
                 'value' => $user->zip,
             ],
         ];
@@ -46,8 +46,8 @@
 
     <div class="customer-card">
         <div class="customer-card-header">
-            <h2 class="customer-card-title">{{ __('Account information') }}</h2>
-            <p class="customer-card-subtitle">{{ __('Review and keep your personal information up to date.') }}</p>
+            <h2 class="customer-card-title">{{ __('Kontoinformationen') }}</h2>
+            <p class="customer-card-subtitle">{{ __('Prüfen Sie Ihre persönlichen Daten und halten Sie sie aktuell.') }}</p>
         </div>
 
         <div class="customer-card-body">
