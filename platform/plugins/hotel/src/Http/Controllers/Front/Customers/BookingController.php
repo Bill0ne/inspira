@@ -10,6 +10,7 @@ use Botble\Hotel\Models\Invoice;
 use Botble\SeoHelper\Facades\SeoHelper;
 use Botble\Theme\Facades\Theme;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class BookingController extends BaseController
 {
@@ -27,17 +28,63 @@ class BookingController extends BaseController
             ->add('avatar-js', 'vendor/core/plugins/hotel/js/avatar.js', ['jquery']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         SeoHelper::setTitle(__('Bookings'));
 
-        $bookings = Booking::query()
-            ->where([
-                'customer_id' => auth('customer')->id(),
-            ])
-            ->with('room')
+        $customerId = auth('customer')->id();
+
+        $roomBookings = Booking::query()
+            ->where('customer_id', $customerId)
+            ->with(['room.room', 'invoice'])
             ->orderByDesc('created_at')
-            ->paginate(5);
+            ->get()
+            ->map(fn ($booking) => [
+                'type' => 'room',
+                'model' => $booking,
+                'created_at' => $booking->created_at,
+            ]);
+
+        $combinedBookings = $roomBookings;
+
+        if (is_plugin_active('courses') && class_exists(\Botble\Courses\Models\CourseBooking::class)) {
+            $courseBookings = \Botble\Courses\Models\CourseBooking::query()
+                ->where('customer_id', $customerId)
+                ->with([
+                    'course' => function ($query) {
+                        $query->with(['instructor', 'category']);
+                    },
+                    'session',
+                    'invoice',
+                ])
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(fn ($booking) => [
+                    'type' => 'course',
+                    'model' => $booking,
+                    'created_at' => $booking->created_at,
+                ]);
+
+            $combinedBookings = $combinedBookings->merge($courseBookings);
+        }
+
+        $combinedBookings = $combinedBookings
+            ->sortByDesc('created_at')
+            ->values();
+
+        $perPage = 5;
+        $currentPage = max((int) $request->input('page', 1), 1);
+
+        $bookings = new LengthAwarePaginator(
+            $combinedBookings->forPage($currentPage, $perPage)->values(),
+            $combinedBookings->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         Theme::breadcrumb()
             ->add(__('Bookings'), route('customer.bookings'));

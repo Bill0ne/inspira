@@ -26,13 +26,7 @@
             'label' => __('My Bookings'),
             'route' => 'customer.bookings',
             'icon' => 'fal fa-calendar-check',
-            'pattern' => 'customer.bookings',
-        ],
-        [
-            'label' => __('My Course Bookings'),
-            'route' => 'customer.course-bookings',
-            'icon' => 'fal fa-graduation-cap',
-            'pattern' => 'customer.course-bookings',
+            'pattern' => ['customer.bookings', 'customer.course-bookings'],
         ],
     ];
 
@@ -56,11 +50,11 @@
 
 <div class="customer-page crop-avatar inspira-customer">
     <div class="customer-shell">
-        <div class="customer-layout">
-            <aside class="customer-sidebar" aria-label="{{ __('Account navigation') }}">
-                <form id="avatar-upload-form" enctype="multipart/form-data" action="javascript:void(0)" onsubmit="return false">
+        <header class="customer-header" aria-label="{{ __('Account overview') }}">
+            <div class="customer-header-main">
+                <form id="avatar-upload-form" class="customer-header-avatar" enctype="multipart/form-data" action="javascript:void(0)" onsubmit="return false">
                     <div class="avatar-upload-container">
-                        <div id="account-avatar" class="customer-sidebar-avatar">
+                        <div id="account-avatar" class="customer-avatar-frame">
                             <div class="profile-image custom-avatar-master">
                                 <div class="avatar-view mt-card-avatar">
                                     <img class="br2" src="{{ $user->avatar_url }}" alt="{{ $user->name }}" />
@@ -72,42 +66,42 @@
                     </div>
                 </form>
 
-                <div class="customer-sidebar-meta">
-                    <p class="customer-sidebar-name">{{ $user->name }}</p>
+                <div class="customer-header-meta">
+                    <p class="customer-header-name">{{ $user->name }}</p>
                 </div>
+            </div>
 
-                <nav class="customer-sidebar-nav">
-                    <ul class="customer-nav">
-                        @foreach ($navigation as $item)
-                            @php
-                                $patterns = $item['pattern'] ? (array) $item['pattern'] : [];
-                                $isActive = false;
+            <nav class="customer-tab-nav" aria-label="{{ __('Account navigation') }}">
+                <ul class="customer-nav">
+                    @foreach ($navigation as $item)
+                        @php
+                            $patterns = $item['pattern'] ? (array) $item['pattern'] : [];
+                            $isActive = false;
 
-                                foreach ($patterns as $pattern) {
-                                    if (\Illuminate\Support\Str::startsWith($currentRoute, $pattern)) {
-                                        $isActive = true;
-                                        break;
-                                    }
+                            foreach ($patterns as $pattern) {
+                                if (\Illuminate\Support\Str::startsWith($currentRoute, $pattern)) {
+                                    $isActive = true;
+                                    break;
                                 }
-                            @endphp
+                            }
+                        @endphp
 
-                            <li class="customer-nav-item {{ $isActive ? 'is-active' : '' }} {{ $item['is_logout'] ?? false ? 'is-logout' : '' }}">
-                                <a class="customer-nav-link" href="{{ route($item['route']) }}">
-                                    <span class="customer-nav-icon" aria-hidden="true">
-                                        <i class="{{ $item['icon'] }}"></i>
-                                    </span>
-                                    <span class="customer-nav-text">{{ $item['label'] }}</span>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </nav>
-            </aside>
+                        <li class="customer-nav-item {{ $isActive ? 'is-active' : '' }} {{ $item['is_logout'] ?? false ? 'is-logout' : '' }}">
+                            <a class="customer-nav-link" href="{{ route($item['route']) }}">
+                                <span class="customer-nav-icon" aria-hidden="true">
+                                    <i class="{{ $item['icon'] }}"></i>
+                                </span>
+                                <span class="customer-nav-text">{{ $item['label'] }}</span>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </nav>
+        </header>
 
-            <div class="customer-content">
-                <div class="customer-content-inner">
-                    @yield('content')
-                </div>
+        <div class="customer-content">
+            <div class="customer-content-inner">
+                @yield('content')
             </div>
         </div>
     </div>
