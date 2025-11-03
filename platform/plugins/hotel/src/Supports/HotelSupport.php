@@ -77,6 +77,17 @@ class HotelSupport
         return (string) File::lastModified($path);
     }
 
+    public function getCustomerScriptsVersion(): ?string
+    {
+        $path = public_path('vendor/core/plugins/hotel/js/customer.js');
+
+        if (! File::exists($path)) {
+            return null;
+        }
+
+        return (string) File::lastModified($path);
+    }
+
     public function viewPath(string $view): string
     {
         $themeView = Theme::getThemeNamespace() . '::views.hotel.' . $view;

@@ -13,12 +13,14 @@ class ReviewController extends BaseController
     public function __construct()
     {
         $customerCssVersion = HotelHelper::getCustomerStylesVersion();
+        $customerScriptVersion = HotelHelper::getCustomerScriptsVersion();
 
         Theme::asset()
             ->add('customer-style', 'vendor/core/plugins/hotel/css/customer.css', [], [], $customerCssVersion);
 
         Theme::asset()
             ->container('footer')
+            ->add('customer-js', 'vendor/core/plugins/hotel/js/customer.js', ['jquery'], [], $customerScriptVersion)
             ->add('utilities-js', 'vendor/core/plugins/hotel/js/utilities.js', ['jquery'])
             ->add('cropper-js', 'vendor/core/core/base/libraries/cropper.min.js', ['jquery'])
             ->add('avatar-js', 'vendor/core/plugins/hotel/js/avatar.js', ['jquery']);

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static array|string|int|null getSetting(string $key, string|int|bool|null $default = '')
  * @method static bool loadCountriesStatesCitiesFromPluginLocation()
  * @method static string|null getCustomerStylesVersion()
+ * @method static string|null getCustomerScriptsVersion()
  * @method static string viewPath(string $view)
  * @method static array getRoomFilters(\Illuminate\Http\Request|array $request)
  * @method static array getRoomBookingParams()
