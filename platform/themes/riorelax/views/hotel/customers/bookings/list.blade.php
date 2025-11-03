@@ -15,7 +15,10 @@
                             $type = $item['type'];
                             $booking = $item['model'];
                             $statusClass = 'booking-status--' . \Illuminate\Support\Str::slug($booking->status->getValue());
-                            $invoiceId = optional($booking->invoice)->getKey();
+                            $invoice = $booking->invoice;
+                            $invoiceId = $invoice instanceof \Illuminate\Database\Eloquent\Model
+                                ? $invoice->getKey()
+                                : data_get($invoice, 'id');
                         @endphp
 
                         @if ($type === 'course')

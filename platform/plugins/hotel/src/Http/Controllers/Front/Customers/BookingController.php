@@ -61,11 +61,21 @@ class BookingController extends BaseController
                 ])
                 ->orderByDesc('created_at')
                 ->get()
-                ->map(fn ($booking) => [
-                    'type' => 'course',
-                    'model' => $booking,
-                    'created_at' => $booking->created_at,
-                ]);
+                ->map(function ($booking) {
+                    $invoiceRelation = $booking->invoice;
+
+                    if (is_array($invoiceRelation)) {
+                        $invoiceId = data_get($invoiceRelation, 'id');
+
+                        $booking->setRelation('invoice', $invoiceId ? Invoice::query()->find($invoiceId) : null);
+                    }
+
+                    return [
+                        'type' => 'course',
+                        'model' => $booking,
+                        'created_at' => $booking->created_at,
+                    ];
+                });
 
             $combinedBookings = $combinedBookings->merge($courseBookings);
         }
