@@ -76,21 +76,28 @@
 @endphp
 
 <style>
+/* Reset parent theme centering */
+.customer-page,
+.customer-shell {
+    text-align: left !important;
+}
+
+/* --- HEADER BASE --- */
 .customer-header {
-    display: flex;
+    display: flex !important;
+    justify-content: space-between !important;
     align-items: center;
-    justify-content: space-between;
     background: #fff;
     border-radius: 12px;
     padding: 14px 24px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    width: 100%; /* volle Breite erzwingen */
-    text-align: left; /* überschreibt Theme-Zentrierung */
+    width: 100%;
     gap: 20px;
-    min-height: 64px;
+    min-height: 70px;
+    margin: 0 auto;
 }
 
-/* === LEFT SIDE === */
+/* --- LEFT SIDE --- */
 .customer-header-left {
     display: flex;
     align-items: center;
@@ -110,7 +117,7 @@
     white-space: nowrap;
 }
 
-/* === RIGHT SIDE === */
+/* --- RIGHT SIDE --- */
 .customer-header-right {
     display: flex;
     align-items: center;
@@ -179,7 +186,7 @@
     display: block;
 }
 
-/* === Responsive === */
+/* --- Responsive --- */
 @media (max-width: 768px) {
     .customer-header {
         flex-direction: column;
@@ -198,7 +205,6 @@
         border-top: 1px solid #eee;
         border-radius: 0;
     }
-}
 }
 </style>
 
