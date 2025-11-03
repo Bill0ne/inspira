@@ -67,3 +67,8 @@
 
 
 
+/* Inspira responsive navigation updates */
+.customer-page.inspira-customer .customer-nav-toggle{display:none;align-items:center;gap:10px;align-self:flex-start;padding:10px 18px;border-radius:999px;border:1px solid #e0e0e0;background-color:#fff;color:#222222;font-size:14px;font-weight:600;cursor:pointer;transition:background-color .2s ease,border-color .2s ease,color .2s ease;text-decoration:none}
+.customer-page.inspira-customer .customer-nav-toggle:hover,.customer-page.inspira-customer .customer-nav-toggle:focus{background-color:#f3f3f3;border-color:#d0d0d0;color:#222222;outline:none}
+.customer-page.inspira-customer .customer-nav-toggle i{font-size:16px}
+@media (max-width:767.98px){.customer-page.inspira-customer .customer-nav-toggle{display:inline-flex}.customer-page.inspira-customer .customer-tab-nav{display:none;width:100%;margin:12px 0 0;padding:0}.customer-page.inspira-customer .customer-tab-nav.is-open{display:block}.customer-page.inspira-customer .customer-nav{flex-direction:column;align-items:stretch;gap:8px;flex-wrap:nowrap;overflow:visible}.customer-page.inspira-customer .customer-nav-item{width:100%}.customer-page.inspira-customer .customer-nav-link{width:100%;justify-content:flex-start}.customer-page.inspira-customer .booking-card-summary{width:100%;min-width:0}}
