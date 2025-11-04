@@ -46,7 +46,6 @@
         background: #000;
         color: #fff;
     }
-
 </style>
 
 <?php if(is_plugin_active('hotel')): ?>
@@ -198,42 +197,27 @@
                         <div id="booking-slots" class="booking-slots-wrapper">
                             <div class="slot-item0 slot-item">
                                 <div class="row">
-                                    <div class="col-lg-12">
-                                        <div class="contact-field mb-15">
-                                            <label><i class="fal fa-badge-check"></i> <?php echo e(__('Check In Time')); ?></label>
-                                            <div class="input-group date" data-target-input="nearest">
-                                                <input
-                                                        type="text"
-                                                        name="slots[0][start_date]"
-                                                        class="theme-date-input-start check-in"
-                                                        id="checkin-0"
-                                                        autocomplete="off"
-                                                        placeholder="DD.MM.YYYY HH:mm"
-                                                />
+                                    <div class="contact-field col-lg-12">
+                                        <label><i class="fal fa-badge-check"></i> <?php echo e(__('Date & Time')); ?></label>
+                                        <div class="input-group date time-range-picker" id="booking-slot" data-target-input="nearest">
+                                            <input
+                                                    type="text"
+                                                    name="slots[]"
+                                                    id="booking_range"
+                                                    class="datetime-range-input input-group-append"
+                                                    data-target="#booking-slot" data-toggle="datetimepicker"
+                                                    placeholder="DD.MM.YYYY HH:mm - HH:mm"
+                                                    autocomplete="off"
+                                            />
+                                            <div class="input-group-append" data-target="#booking-slot" data-toggle="datetimepicker">
+                                                <div style="display: none" class="input-group-text"></div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div class="col-lg-12">
-                                        <div class="contact-field mb-15">
-                                            <label><i class="fal fa-times-octagon"></i> <?php echo e(__('Check Out Time')); ?></label>
-                                            <div class="input-group date" data-target-input="nearest">
-                                                <input
-                                                        type="text"
-                                                        name="slots[0][end_date]"
-                                                        class="theme-date-input-end check-out"
-                                                        id="checkout-0"
-                                                        autocomplete="off"
-                                                        placeholder="DD.MM.YYYY HH:mm"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
                                 </div>
                             </div>
-
                         </div>
+
                         <div class="mb-3">
                             <button type="button" id="add-slot" class="btn btn-add-slot">
                                 + <?php echo e(__('Add New')); ?>
