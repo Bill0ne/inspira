@@ -1,5 +1,5 @@
 <style>
-/* === Inspira – Course Card Final Design === */
+/* === Inspira – Course Card Final Design (Optimiert für einheitliche Höhe) === */
 .course-card {
   background: #fff !important;
   border-radius: 10px !important;
@@ -7,9 +7,12 @@
   overflow: hidden !important;
   transition: transform 0.25s ease, box-shadow 0.25s ease !important;
   cursor: pointer !important;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-height: 420px !important; /* Einheitliche Kartenhöhe */
 }
+
 .course-card:hover {
   transform: translateY(-2px) !important;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
@@ -33,18 +36,26 @@
 /* === Body === */
 .course-body {
   padding: 10px 16px 12px 16px !important;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
   gap: 6px !important;
+  flex-grow: 1 !important;
 }
 
-/* Titel */
+/* Titel (max. 3 Zeilen, feste Höhe) */
 .course-title {
   font-size: 16px !important;
   line-height: 20px !important;
   font-weight: 600 !important;
   color: #414141 !important;
   margin: 0 0 2px 0 !important;
+
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-height: calc(3 * 20px) !important; /* Platz für 3 Zeilen */
 }
 
 /* Untertitel */
@@ -56,18 +67,19 @@
   margin-bottom: 4px !important;
 }
 
-/* Beschreibung */
+/* Beschreibung (max. 2 Zeilen + extra Abstand nach unten) */
 .course-desc {
   font-size: 12px !important;
   line-height: 18px !important;
   color: #666 !important;
   font-weight: 400 !important;
-  margin: 0 0 8px 0 !important;
+  margin: 0 0 14px 0 !important; /* zusätzlicher Abstand nach unten */
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  min-height: calc(2 * 18px) !important; /* feste Höhe für 2 Zeilen */
 }
 
 /* Standardisierte Textfarben (keine Fettelemente) */
@@ -82,7 +94,7 @@
 
 /* === Footer === */
 .course-meta {
-  display: flex;
+  display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
   margin-top: auto !important;
