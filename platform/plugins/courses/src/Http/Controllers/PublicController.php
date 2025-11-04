@@ -102,7 +102,7 @@ class PublicController extends Controller
 
         $relatedCourses = $this->getCourseService->getRelatedCourses(
             $course->getKey(),
-            (int) theme_option('number_of_related_courses', 2),
+            (int) theme_option('number_of_related_courses', 4),
             ['with' => ['instructor', 'category']]
         );
 
