@@ -300,9 +300,9 @@
     @if($relatedCourses->isNotEmpty())
       <div class="related-courses mt-5">
         <h3 class="mb-4">{{ __('Related Courses') }}</h3>
-        <div class="row">
+        <div class="row g-4">
           @foreach($relatedCourses as $related)
-            <div class="col-md-6 mb-3">
+            <div class="col-12 col-sm-6 col-lg-3">
               {!! Theme::partial('courses.item', ['course' => $related]) !!}
             </div>
           @endforeach
