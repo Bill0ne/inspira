@@ -1,96 +1,65 @@
 @extends(HotelHelper::viewPath('customers.master'))
 
 @section('content')
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h1 class="text-center">{{ __('Account information') }}</h1>
+    @php
+        $user = auth('customer')->user();
+
+        $details = [
+            [
+                'label' => __('Name'),
+                'value' => $user->name,
+            ],
+            [
+                'label' => __('E-Mail'),
+                'value' => $user->email,
+            ],
+            [
+                'label' => __('Geburtsdatum'),
+                'value' => $user->dob,
+            ],
+            [
+                'label' => __('Telefon'),
+                'value' => $user->phone,
+            ],
+            [
+                'label' => __('Land'),
+                'value' => $user->country,
+            ],
+            [
+                'label' => __('Bundesland / Provinz'),
+                'value' => $user->state,
+            ],
+            [
+                'label' => __('Stadt'),
+                'value' => $user->city,
+            ],
+            [
+                'label' => __('Adresse'),
+                'value' => $user->address,
+            ],
+            [
+                'label' => __('Postleitzahl'),
+                'value' => $user->zip,
+            ],
+        ];
+    @endphp
+
+    <div class="customer-card">
+        <div class="customer-card-header">
+            <h2 class="customer-card-title">{{ __('Kontoinformationen') }}</h2>
+            <p class="customer-card-subtitle">{{ __('Prüfen Sie Ihre persönlichen Daten und halten Sie sie aktuell.') }}</p>
         </div>
 
-        <div class="mt-30">
-            <div class="row">
-                <div class="col-md-6">
-                    @if (auth('customer')->user()->name)
-                        <p>
-                            <strong>
-                                {{ __('Name') }}
-                            </strong>:
-                            <i>{{ auth('customer')->user()->name }}</i>
-                        </p>
-                    @endif
+        <div class="customer-card-body">
+            <div class="customer-info-grid">
+                @foreach ($details as $item)
+                    @continue(blank($item['value']))
 
-                    @if (auth('customer')->user()->email)
-                        <p>
-                            <strong>
-                                {{ __('Email') }}
-                            </strong>:
-                            <i>{{ auth('customer')->user()->email }}</i>
-                        </p>
-                    @endif
-
-                    @if (auth('customer')->user()->country)
-                        <p>
-                            <strong>
-                                {{ __('Country') }}
-                            </strong>:
-                            <i>{{ auth('customer')->user()->country }}</i>
-                        </p>
-                    @endif
-
-                    @if (auth('customer')->user()->city)
-                        <p>
-                            <strong>
-                                {{ __('City') }}
-                            </strong>:
-                            <i>{{ auth('customer')->user()->city }}</i>
-                        </p>
-                    @endif
-
-                    @if (auth('customer')->user()->zip)
-                        <p>
-                            <strong>
-                                {{ __('Postal / Zip code') }}
-                            </strong>:
-                            <i>{{ auth('customer')->user()->zip }}</i>
-                        </p>
-                    @endif
-                </div>
-                <div class="col-md-6">
-                    @if (auth('customer')->user()->dob)
-                        <p>
-                            <strong>
-                                {{ __('Date of birth') }}
-                            </strong>:
-                            <i>{{ auth('customer')->user()->dob }}</i>
-                        </p>
-                    @endif
-
-                    @if (auth('customer')->user()->phone)
-                        <p>
-                            <strong>
-                                {{ __('Phone') }}
-                            </strong>:
-                            <i>{{ auth('customer')->user()->phone }}</i>
-                        </p>
-                    @endif
-
-                    @if (auth('customer')->user()->state)
-                        <p>
-                            <strong>
-                                {{ __('State / Province') }}
-                            </strong>:
-                            <i>{{ auth('customer')->user()->state }}</i>
-                        </p>
-                    @endif
-
-                    @if (auth('customer')->user()->address)
-                        <p>
-                            <strong>
-                                {{ __('Address') }}
-                            </strong>:
-                            <i>{{ auth('customer')->user()->address }}</i>
-                        </p>
-                    @endif
-                </div>
+                    <div class="customer-info-item">
+                        <span class="customer-info-label">{{ $item['label'] }}</span>
+                        <span class="customer-info-value">{{ $item['value'] }}</span>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
