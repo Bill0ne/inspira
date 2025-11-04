@@ -43,6 +43,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class PublicController extends Controller
 {
@@ -263,13 +264,43 @@ class PublicController extends Controller
             ->with(['currency', 'category'])
             ->findOrFail($request->input('room_id'));
 
-        $slots = $request->input('slots', []);
+        $rawSlots = $request->input('slots', []);
 
-        if (empty($slots)) {
+        if (empty($rawSlots)) {
             return $response
                 ->setError()
                 ->setMessage(__('Please select at least one booking slot.'))
                 ->withInput();
+        }
+
+        $slots = [];
+        $dateFormat = HotelHelper::getDateFormat(); // e.g. "d.m.Y H:i"
+
+        foreach ($rawSlots as $slot) {
+            // Example: "05.11.2025 10:00 - 11:00"
+            if (!preg_match('/^(\d{2}\.\d{2}\.\d{4})\s+(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/', trim($slot), $matches)) {
+                return $response
+                    ->setError()
+                    ->setMessage(__('Invalid slot format: ":slot".', ['slot' => $slot]))
+                    ->withInput();
+            }
+
+            [$full, $date, $startTime, $endTime] = $matches;
+
+            try {
+                $startDate = Carbon::createFromFormat('d.m.Y H:i', "{$date} {$startTime}");
+                $endDate   = Carbon::createFromFormat('d.m.Y H:i', "{$date} {$endTime}");
+            } catch (\Exception $e) {
+                return $response
+                    ->setError()
+                    ->setMessage(__('Failed to parse date for slot ":slot".', ['slot' => $slot]))
+                    ->withInput();
+            }
+
+            $slots[] = [
+                'start_date' => $startDate,
+                'end_date'   => $endDate,
+            ];
         }
 
         $adults = $request->integer('adults', 1);
@@ -277,15 +308,8 @@ class PublicController extends Controller
         $rooms = $request->integer('rooms', 1);
 
         foreach ($slots as $index => $slot) {
-            if (empty($slot['start_date']) || empty($slot['end_date'])) {
-                return $response
-                    ->setError()
-                    ->setMessage(__('Slot #:number is missing start or end date.', ['number' => $index + 1]))
-                    ->withInput();
-            }
-
-            $startDate = HotelHelper::dateFromRequest($slot['start_date']);
-            $endDate = HotelHelper::dateFromRequest($slot['end_date']);
+            $startDate = $slot['start_date'];
+            $endDate = $slot['end_date'];
 
             if ($endDate->lessThanOrEqualTo($startDate)) {
                 return $response
@@ -294,6 +318,46 @@ class PublicController extends Controller
                     ->withInput();
             }
 
+            // --------------------------------------------------
+            // 🔹 Check if this room is attached to any course
+            // --------------------------------------------------
+            $attachedCourses = \Botble\Courses\Models\Course::query()->where('room_id', $room->id)
+                ->with('sessions')
+                ->get();
+
+            if ($attachedCourses->isNotEmpty()) {
+                foreach ($attachedCourses as $course) {
+                    foreach ($course->sessions as $session) {
+                        if (!$session->start_date || !$session->end_date) {
+                            continue;
+                        }
+
+                        // Check for overlap between booking slot and session
+                        $sessionStart = Carbon::parse($session->start_date);
+                        $sessionEnd = Carbon::parse($session->end_date);
+
+                        $overlaps =
+                            $startDate->lessThan($sessionEnd) &&
+                            $endDate->greaterThan($sessionStart);
+
+                        if ($overlaps) {
+                            return $response
+                                ->setError()
+                                ->setMessage(__('Room ":room" is unavailable from :start to :end due to a scheduled course session (":course").', [
+                                    'room'   => $room->name ?? ('#' . $room->id),
+                                    'course' => $course->name ?? ('Course #' . $course->id),
+                                    'start'  => $sessionStart->format('d.m.Y H:i'),
+                                    'end'    => $sessionEnd->format('d.m.Y H:i'),
+                                ]))
+                                ->withInput();
+                        }
+                    }
+                }
+            }
+
+            // --------------------------------------------------
+            // 🔹 Continue with normal room availability check
+            // --------------------------------------------------
             $condition = [
                 'start_date' => $startDate,
                 'end_date'   => $endDate,
@@ -305,17 +369,17 @@ class PublicController extends Controller
             if (!$room->isAvailableAt($condition)) {
                 return $response
                     ->setError()
-                    ->setMessage(__(
-                        'This room is not available for booking from :start_date to :end_date!',
-                        [
-                            'start_date' => $startDate->toDateTimeString(),
-                            'end_date'   => $endDate->toDateTimeString(),
-                        ]
-                    ))
+                    ->setMessage(__('This room is not available for booking from :start_date to :end_date!', [
+                        'start_date' => $startDate->toDateTimeString(),
+                        'end_date'   => $endDate->toDateTimeString(),
+                    ]))
                     ->withInput();
             }
         }
 
+        // --------------------------------------------------
+        // 🔹 If all checks passed, continue to booking
+        // --------------------------------------------------
         $token = md5(Str::random(40));
 
         session([
@@ -358,12 +422,25 @@ class PublicController extends Controller
         $slotSummaries = [];
 
         foreach ($slots as $slot) {
-            if (empty($slot['start_date']) || empty($slot['end_date'])) {
+            if (empty($slot)) {
                 continue;
             }
 
-            $startDate = HotelHelper::dateFromRequest($slot['start_date']);
-            $endDate = HotelHelper::dateFromRequest($slot['end_date']);
+            // 🔹 Parse slot string like "05.11.2025 10:00 - 11:00"
+            $parts = explode('-', $slot);
+            if (count($parts) < 2) {
+                continue;
+            }
+
+            $dateTimePart = trim($parts[0]); // "05.11.2025 10:00"
+            $endTimePart = trim($parts[1]);  // "11:00"
+
+            try {
+                $startDate = Carbon::createFromFormat('d.m.Y H:i', $dateTimePart);
+                $endDate = Carbon::createFromFormat('d.m.Y H:i', $startDate->format('d.m.Y') . ' ' . $endTimePart);
+            } catch (\Exception $e) {
+                continue;
+            }
 
             if ($endDate->lessThanOrEqualTo($startDate)) {
                 $endDate = $startDate->copy()->addHour();
@@ -446,6 +523,7 @@ class PublicController extends Controller
             )
         )->render();
     }
+
 
     public function postCheckout(CheckoutRequest $request, BaseHttpResponse $response)
     {

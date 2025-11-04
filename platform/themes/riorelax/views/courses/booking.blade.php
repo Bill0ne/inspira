@@ -1,5 +1,5 @@
 @if (is_plugin_active('payment'))
-    <link rel="stylesheet" href="{{ asset('vendor/core/plugins/payment/css/payment.css') }}?v=1.0.3">
+    <link rel="stylesheet" href="{{ asset('vendor/core/plugins/payment/css/payment.css') }}?v=1.0.6">
     @php
         Theme::asset()->container('header')->usePath()->add('jquery', 'plugins/jquery.min.js');
         Theme::asset()->container('header')->add('payment-js', 'vendor/core/plugins/payment/js/payment.js');
@@ -8,350 +8,289 @@
 @endif
 
 @php
-    Theme::set('pageTitle', __('Booking'));
+    Theme::set('pageTitle', '');
     Theme::asset()->container('footer')->usePath()->add('checkout-js', 'js/course-checkout.js');
-
-    // Labels im 24h-Format
     $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
     $endLabel24   = $session->end_date ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i') : null;
 @endphp
 
 <style>
-/* ===== Global ===== */
-.checkout-fw .card{ background:#fff; border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,.06); }
-.checkout-fw .card-body{ padding:16px; }
-.checkout-fw .form-card{ margin-bottom:24px; }
-.checkout-fw .form-card .card-body{ padding:20px; }
-.checkout-fw .payment-checkout-btn{ width:100%; }
-.checkout-fw .widget-content.shadow-block{ border-radius:10px; }
+:root{--mint:#578E88;--gray:#E5E7EB;}
+.header,.topbar,.page-title,.breadcrumb,.page-breadcrumb,.hero-banner{display:none!important;}
+.checkout-fw .container{max-width:980px;}
+body .pt-120{padding-top:24px!important;}
+body .pb-40{padding-bottom:24px!important;}
+section.checkout-booking-page{background:#fff;}
 
-/* ===== Ticket – kantig, minimal, farbige Bänder ===== */
-.checkout-fw :root{ --mint:#578E88; --ink:#111827; }
-
+/* ==== Ticket Header ==== */
 .ticket{
-  display:grid;
-  grid-template-columns: 1.15fr 1.35fr 1fr;  /* Bild | Details | Summen */
-  border-radius:8px;
-  overflow:hidden;
-  box-shadow:0 4px 18px rgba(0,0,0,.06);
-  margin-bottom:24px;
-  background:#fff;
+  display:grid;grid-template-columns:1.1fr 1.4fr 1fr;
+  border-radius:10px;overflow:hidden;background:#fff;
+  box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:28px;
 }
-@media (max-width: 767.98px){ .ticket{ grid-template-columns:1fr; } }
-
-.ticket__col{ padding:16px 18px; }
-
-/* Bild: edge-to-edge */
-.ticket__media{ padding:0; position:relative; background:#fff; }
-.ticket__media img{
-  width:100%; height:100%;
-  min-height:240px;
-  object-fit:cover; display:block; border-radius:0;
-}
-
-/* Mitte: Primärgrün + weiße gestrichelte Linie links */
-.ticket__details{
-  position:relative;
-  background:var(--mint);
-  color:#F3F3F3;
-}
-.ticket__details::before{
-  content:""; position:absolute; left:0; top:0; bottom:0;
-  border-left:2px dashed rgba(255,255,255,.95);
+.ticket__col{padding:20px 22px;display:flex;flex-direction:column;justify-content:center;}
+.ticket__media img{width:100%;height:100%;min-height:220px;object-fit:cover;}
+.ticket__details{background:var(--mint);color:#fff;}
+.ticket__details .title,.ticket__totals .title{font-weight:600;font-size:15px;margin-bottom:10px;}
+.ticket__details .kv,.ticket__totals .kv{display:flex;justify-content:space-between;font-size:13px;line-height:1.6;margin:5px 0;}
+.ticket__totals{background:#000;color:#fff;border-left:2px solid rgba(255,255,255,0.08);}
+.ticket__totals hr{border:none;height:1px;background:rgba(255,255,255,0.15);margin:10px 0;}
+.ticket__totals .total{font-size:16px;font-weight:700;}
+@media(max-width:768px){
+  .ticket{grid-template-columns:1fr;border-radius:12px;}
+  .ticket__media img{min-height:180px;}
+  .ticket__details,.ticket__totals{padding:18px 20px;}
+  .ticket__totals{border-left:none;border-top:1px solid rgba(255,255,255,0.15);}
 }
 
-/* Rechts: Schwarz */
-.ticket__totals{ background:#000; color:#fff; }
+/* ==== Stepper ==== */
+.stepper-wrap{text-align:center;margin-bottom:18px;}
+#stepTitle{font-size:16px;font-weight:600;color:#3b4a47;margin-bottom:14px;}
+.stepper{display:flex;align-items:center;justify-content:space-between;width:100%;}
+.stepper .line{flex:1;height:2px;background:#E5E7EB;}
+.stepper .dot{width:13px;height:13px;border-radius:50%;background:#D5D8D7;transition:all .3s ease;box-shadow:0 0 0 3px #fff inset;}
+.stepper .dot.active{background:var(--mint);box-shadow:0 0 0 4px rgba(87,142,136,0.18);}
+.stepper .line.active{background:var(--mint);}
+@media(max-width:768px){#stepTitle{font-size:15px;}}
 
-/* Typo kompakt */
-.ticket .title{ margin:0 0 10px; font-weight:600; font-size:16px; }
-.ticket .kv{
-  display:flex; justify-content:space-between; align-items:flex-start;
-  gap:12px; margin:6px 0; font-size:13px; line-height:18px;
-}
-.ticket .kv b{ font-weight:600; }
-.ticket .total{ margin-top:10px; font-size:18px; font-weight:700; }
-.ticket__totals hr{ border:0; height:1px; background:rgba(255,255,255,.12); margin:10px 0; }
+/* ==== Panels ==== */
+.step-panel{display:none;padding:30px 26px 24px;background:#fff;border:none;}
+.step-panel.active{display:block;animation:fade .2s ease-out;}
+@keyframes fade{from{opacity:.4;transform:translateY(3px);}to{opacity:1;transform:none;}}
+.form-control{height:46px;border-radius:6px;}
+textarea.form-control{min-height:100px;}
+.is-invalid{border-color:#c0392b!important;}
 
-/* ==== FARBFIX – erzwinge Mittelfarbe + helle Typo (gegen Theme-Overrides) ==== */
-.checkout-fw .ticket .ticket__details{
-  background: var(--mint, #578E88) !important;
-  background-color: var(--mint, #578E88) !important;
-  color:#F3F3F3 !important;
+/* ==== Alert Box ==== */
+.form-alert{display:none;margin:0 0 16px;padding:12px 16px;border-radius:6px;
+  background:#fff3f3;color:#b71c1c;font-size:14px;border:1px solid #f1b4b4;}
+
+/* ==== Coupon ==== */
+.coupon-wrapper{background:#F9F9F9;border:1px solid var(--gray);border-radius:8px;padding:20px;margin-bottom:24px;}
+.coupon-wrapper label{font-weight:500;}
+.coupon-wrapper .btn{background:var(--mint)!important;color:#fff!important;border:none!important;}
+
+/* ==== Payment ==== */
+.list_payment_method{border:1px solid var(--gray);border-radius:8px;margin-bottom:20px;}
+.list_payment_method li{padding:14px 16px;border-bottom:1px solid #f0f0f0;}
+.list_payment_method li:last-child{border-bottom:none;}
+
+/* ==== Buttons ==== */
+.btnrow{display:flex;justify-content:center;gap:14px;margin-top:24px;}
+.btnX{height:48px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-radius:3px;transition:all .25s ease;}
+.btn-outline-mint{width:150px;border:1px solid var(--mint);color:var(--mint);background:#fff;}
+.btn-outline-mint:hover{background:var(--mint);color:#fff;}
+.btn-mint{flex:1;max-width:82%;background:var(--mint);color:#fff;border:1px solid var(--mint);}
+.btn-mint:hover{filter:brightness(0.95);}
+@media(max-width:768px){
+  .btnrow{flex-direction:column-reverse;gap:10px;}
+  .btnX{width:100%;max-width:100%;padding:14px 0;}
+  .btn-mint{order:1;}
+  .btn-outline-mint{order:2;}
 }
-.checkout-fw .ticket .ticket__details,
-.checkout-fw .ticket .ticket__details *{
-  color:#F3F3F3 !important;
-}
-.checkout-fw .ticket .ticket__details .title{ color:#F3F3F3 !important; }
+
+/* ==== Accordion ==== */
+.cxl-accordion details{border-radius:10px;background:#fff;border:1px solid var(--gray);margin-top:20px;}
+.cxl-accordion summary{cursor:pointer;padding:14px 18px;font-weight:600;list-style:none;}
+.cxl-accordion .cxl-body{padding:0 18px 18px;}
 </style>
 
 <section class="checkout-booking-page checkout-fw">
   <div class="container pt-120 pb-40 checkout-booking">
 
-    {{-- ===== Container 1: Ticket ===== --}}
+    {{-- ░░ Ticket Header ░░ --}}
     <div class="ticket">
-      {{-- Bild --}}
       <div class="ticket__col ticket__media">
-        <img
-          src="{{ RvMedia::getImageUrl($course->thumbnail, default: RvMedia::getDefaultImage()) }}"
-          alt="{{ $course->name }}"
-        >
+        <img src="{{ RvMedia::getImageUrl($course->thumbnail, default: RvMedia::getDefaultImage()) }}" alt="{{ $course->name }}">
       </div>
-
-      {{-- Details (Mint) --}}
       <div class="ticket__col ticket__details">
-        <h5 class="title">{{ __('Ihre Reservierung') }}</h5>
+        <h5 class="title">Ihre Reservierung</h5>
         <div class="kv"><span>{{ $course->name }}</span></div>
-        <div class="kv">
-          <span>{{ __('Startdatum der Sitzung') }}</span>
-          <b class="session-start-date">{{ $startLabel24 }}</b>
-        </div>
+        <div class="kv"><span>Startdatum</span><b>{{ $startLabel24 }}</b></div>
         @if($endLabel24)
-          <div class="kv">
-            <span>{{ __('Enddatum der Sitzung') }}</span>
-            <b class="session-end-date">{{ $endLabel24 }}</b>
-          </div>
+          <div class="kv"><span>Enddatum</span><b>{{ $endLabel24 }}</b></div>
         @endif
       </div>
-
-      {{-- Summen (Schwarz) --}}
       <div class="ticket__col ticket__totals">
-        <h5 class="title">{{ __('Gesamtpreis') }}</h5>
+        <h5 class="title">Gesamtpreis</h5>
+        <div class="kv"><span>Preis</span><b>{{ format_price($amount) }}</b></div>
+        <div class="kv"><span>Rabatt (Coupon)</span><b>{{ format_price($couponAmount) }}</b></div>
+        <div class="kv"><span>Steuern</span><b>{{ format_price($taxAmount) }}</b></div>
+        <hr>
+        <div class="kv total"><span>Gesamt</span><b>{{ format_price($total) }}</b></div>
+      </div>
+    </div>
 
-        @php
-          // Base & dynamic price difference
-          $priceDifference = $basePrice - $amount;
-        @endphp
+    {{-- ░░ Stepper ░░ --}}
+    <div class="stepper-wrap">
+      <div id="stepTitle">Allgemeine Informationen</div>
+      <div class="stepper">
+        <div class="dot active" data-step-dot="1"></div>
+        <div class="line" data-step-line="1"></div>
+        <div class="dot" data-step-dot="2"></div>
+        <div class="line" data-step-line="2"></div>
+        <div class="dot" data-step-dot="3"></div>
+      </div>
+    </div>
 
-        {{-- Show configurator discount if applicable --}}
-        @if($amount < $basePrice)
-          {{-- Price decreased --}}
-          <div class="kv">
-            <span>{{ __('Originalpreis') }}</span>
-            <b class="text-muted text-decoration-line-through">{{ format_price($basePrice) }}</b>
-          </div>
-          <div class="kv">
-            <span>{{ __('Rabattierter Preis') }}</span>
-            <b class="text-success fw-bold amount-text">{{ format_price($amount) }}</b>
-          </div>
-          <div class="kv small text-success mt-1">
-            <i class="fas fa-tag me-1"></i>
-            {{ __('You save :amount', ['amount' => format_price(abs($priceDifference))]) }}
+    {{-- ░░ Formular ░░ --}}
+    <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form">
+      @csrf
+      <input type="hidden" name="token" value="{{ $token }}">
+      <input type="hidden" name="amount" value="{{ $total }}">
+      <input type="hidden" name="course_id" value="{{ $course->id }}">
+      <input type="hidden" name="session_id" value="{{ $session->id }}">
+      <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
+      <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
+
+      {{-- Step 1 --}}
+      <div class="step-panel active" data-step="1">
+        @if ($customer->id)
+          <p>Angemeldet als <b>{{ $customer->name ?? $customer->email }}</b></p>
+          <div class="btnrow">
+            <a href="{{ url()->previous() }}" class="btnX btn-outline-mint">Abbrechen</a>
+            <button type="button" class="btnX btn-mint" data-next>Weiter</button>
           </div>
         @else
-          {{-- Price same or increased --}}
-          <div class="kv">
-            <span>{{ __('Preis') }}</span>
-            <b class="amount-text">{{ format_price($amount) }}</b>
+          <p>Wie möchtest du fortfahren?</p>
+          <div class="btnrow">
+            <button type="button" class="btnX btn-mint" data-next>Als Gast buchen</button>
+            <a href="{{ route('customer.login') }}?redirect={{ urlencode(request()->fullUrl()) }}" class="btnX btn-outline-mint">Einloggen</a>
           </div>
         @endif
+      </div>
 
-        {{-- Coupon discount --}}
-        <div class="kv">
-          <span>{{ __('Rabatt (Coupon)') }}</span>
-          <b class="discount-text">{{ format_price($couponAmount) }}</b>
+      {{-- Step 2 --}}
+      <div class="step-panel" data-step="2">
+        <div id="formAlertStep2" class="form-alert"></div>
+        <p>Pflichtfelder sind mit * gekennzeichnet</p>
+        <div class="row">
+          <div class="col-md-6 mb-3"><label>Vorname *</label><input id="txt-first_name" name="first_name" class="form-control" required></div>
+          <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" required></div>
+          <div class="col-md-6 mb-3"><label>E-Mail *</label><input id="txt-email" name="email" class="form-control" type="email" required></div>
+          <div class="col-md-6 mb-3"><label>Telefon *</label><input id="txt-phone" name="phone" class="form-control" required></div>
+          <div class="col-md-6 mb-3"><label>Land</label><input id="txt-country" name="country" class="form-control"></div>
+          <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input id="txt-state" name="state" class="form-control"></div>
+          <div class="col-md-6 mb-3"><label>Stadt</label><input id="txt-city" name="city" class="form-control"></div>
+          <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control"></div>
+          <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control"></div>
         </div>
-
-        {{-- Tax --}}
-        <div class="kv">
-          <span>{{ __('Steuern') }}</span>
-          <b class="tax-text">{{ format_price($taxAmount) }}</b>
-        </div>
-
-        <hr>
-
-        {{-- Total --}}
-        <div class="kv total">
-          <span>{{ __('Gesamt') }}</span>
-          <span class="total-amount-text fw-bold">{{ format_price($total) }}</span>
+        <div class="mb-3"><label>Anfragen</label><textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas..."></textarea></div>
+        <div class="btnrow">
+          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
+          <button type="button" class="btnX btn-mint" data-next disabled>Weiter</button>
         </div>
       </div>
 
-
-
-    </div>
-
-    {{-- ===== Container 2: Formular ===== --}}
-    <div class="card form-card shadow-block">
-      <div class="card-body">
-        <form action="{{ route('public.course.booking.checkout') }}" class="booking-form-main payment-checkout-form" method="POST">
-          @csrf
-          <input type="hidden" name="token" value="{{ $token }}">
-          <input type="hidden" name="amount" value="{{ $total }}">
-          <input type="hidden" name="course_id" value="{{ $course->id }}">
-          <input type="hidden" name="session_id" value="{{ $session->id }}">
-          <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
-          <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
-          @if (is_plugin_active('paypal'))
-            <input type="hidden" name="callback_url" value="{{ route('payments.paypal.status') }}">
-          @endif
-
-          @if (! $customer->id)
-            <p>{{ __('Already have an account?') }} <a href="{{ route('customer.login') }}">{{ __(' Login') }}</a></p>
-          @endif
-
-          <h3 class="mb-20">{{ __('Your Information') }}</h3>
-
-          <div class="room-booking-form p-0">
-            <p class="mb-20">{{ __('Required fields are followed by *') }}</p>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group mb-20">
-                  <label for="txt-first-name">{{ __('First Name') }} <span class="required">*</span></label>
-                  <input type="text" name="first_name" id="txt-first-name" class="form-control" required value="{{ old('first_name', $customer) }}">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group mb-20">
-                  <label for="txt-last-name">{{ __('Last Name') }} <span class="required">*</span></label>
-                  <input type="text" name="last_name" id="txt-last-name" class="form-control" required value="{{ old('last_name', $customer) }}">
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group mb-20">
-                  <label for="txt-email">{{ __('Email') }} <span class="required">*</span></label>
-                  <input type="email" name="email" id="txt-email" class="form-control" required value="{{ old('email', $customer) }}">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group mb-20">
-                  <label for="txt-phone">{{ __('Phone') }} <span class="required">*</span></label>
-                  <input type="text" name="phone" id="txt-phone" class="form-control" required value="{{ old('phone', $customer) }}">
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group mb-20">
-                  <label for="txt-country">{{ __('Country') }}</label>
-                  <input type="text" name="country" id="txt-country" class="form-control" value="{{ old('country', $customer) }}">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group mb-20">
-                  <label for="txt-country">{{ __('State / Province') }}</label>
-                  <input type="text" name="state" id="txt-state" class="form-control" value="{{ old('state', $customer) }}">
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group mb-20">
-                  <label for="txt-city">{{ __('City') }}</label>
-                  <input type="text" name="city" id="txt-city" class="form-control" value="{{ old('city', $customer) }}">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group mb-20">
-                  <label for="txt-address">{{ __('Address') }}</label>
-                  <input type="text" name="address" id="txt-address" class="form-control" value="{{ old('address', $customer) }}">
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group mb-20">
-                  <label for="txt-zip">{{ __('Postal / Zip code') }}</label>
-                  <input type="text" name="zip" id="txt-zip" class="form-control" value="{{ old('zip', $customer) }}">
-                </div>
-              </div>
-            </div>
-
-            @if(! $customer->id)
-              <div class="create-customer">
-                <div class="row">
-                  <div class="form-group mb-20 custom-checkbox d-block">
-                    <label for="register-customer" class="w-100">
-                      <input type="checkbox" id="register-customer" name="register_customer" value="1">
-                      {{ __('Register an account with above information?') }}
-                      <span></span>
-                    </label>
-                  </div>
-                </div>
-                <div class="row form-create-customer-password">
-                  <div class="col-md-6">
-                    <div class="form-group mb-20">
-                      <label for="password">{{ __('Password') }}</label>
-                      <input type="password" name="password" id="password" class="form-control">
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group mb-20">
-                      <label for="password_confirmation">{{ __('Password confirm') }}</label>
-                      <input type="password" name="password_confirmation" id="password_confirmation" class="form-control">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            @endif
-
-            <div class="form-group mb-20">
-              <label for="requests">{{ __('Requests') }}</label>
-              <textarea name="requests" rows="3" class="form-control" id="requests" placeholder="{{ __('Write Something') }}...">{{ old('requests') }}</textarea>
-            </div>
-
-            @include('plugins/courses::coupons.partials.form')
-
-            @if (is_plugin_active('payment') && ($defaultPaymentMethod = PaymentMethods::getDefaultMethod()) && get_payment_setting('status', $defaultPaymentMethod))
-              <div class="form-group mb-20">
-                <label>{{ __('Payment method') }}</label>
-                <ul class="list-group list_payment_method">
-                  {!! apply_filters(PAYMENT_FILTER_ADDITIONAL_PAYMENT_METHODS, null, [
-                      'amount' => $total,
-                      'currency' => strtoupper(get_application_currency()->title),
-                      'name' => $course->name,
-                      'selected' => PaymentMethods::getSelectedMethod(),
-                      'default' => $defaultPaymentMethod,
-                      'selecting' => PaymentMethods::getSelectingMethod(),
-                  ]) !!}
-                  {!! PaymentMethods::render() !!}
-                </ul>
-              </div>
-            @endif
-
-            {!! apply_filters('form_extra_fields_render', null) !!}
-
-            <div class="form-group mb-20 custom-checkbox d-block">
-              <label for="terms_conditions" class="w-100">
-                <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @if (old('terms_conditions') == 1) checked @endif>
-                {{ __('Terms & conditions *') }} <span></span>
-              </label>
-            </div>
-
-            <div class="form-group mb-0">
-              <button type="submit" class="btn btn-filled payment-checkout-btn"
-                      data-processing-text="{{ __('Processing. Please wait...') }}"
-                      data-error-header="{{ __('Error') }}">{{ __('Checkout') }}</button>
-            </div>
-          </div>
-        </form>
+      {{-- Step 3 --}}
+      <div class="step-panel" data-step="3">
+        <div id="formAlertStep3" class="form-alert"></div>
+        <div class="coupon-wrapper" id="couponBox">@include('plugins/courses::coupons.partials.form')</div>
+        <label>Zahlungsmethode</label>
+        <ul class="list-group list_payment_method">
+          {!! apply_filters(PAYMENT_FILTER_ADDITIONAL_PAYMENT_METHODS, null, [
+              'amount' => $total,
+              'currency' => strtoupper(get_application_currency()->title),
+              'name' => $course->name,
+              'selected' => PaymentMethods::getSelectedMethod(),
+              'default' => PaymentMethods::getDefaultMethod(),
+              'selecting' => PaymentMethods::getSelectingMethod(),
+          ]) !!}
+          {!! PaymentMethods::render() !!}
+        </ul>
+        <label><input type="checkbox" id="terms_conditions" name="terms_conditions" value="1"> Allgemeine Geschäftsbedingungen *</label>
+        <div class="btnrow">
+          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
+          <button type="submit" class="btnX btn-mint payment-checkout-btn" data-processing-text="Wird verarbeitet..." data-error-header="Fehler">Abschließen</button>
+        </div>
       </div>
-    </div>
+    </form>
 
-    {{-- ===== Container 3: Storno ===== --}}
     @if ($cancellation = theme_option('cancellation'))
-      <div class="widget-content shadow-block">
-        <h3 class="mb-20">{{ __('Cancellation') }}</h3>
-        {!! BaseHelper::clean($cancellation) !!}
+      <div class="cxl-accordion">
+        <details>
+          <summary>Stornierungsbedingungen</summary>
+          <div class="cxl-body">{!! BaseHelper::clean($cancellation) !!}</div>
+        </details>
       </div>
     @endif
-
   </div>
 </section>
 
 @if (is_plugin_active('payment'))
   {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
-  @php
-      Theme::asset()->container('footer')
-          ->add('js-validation', 'vendor/core/core/js-validation/js/js-validation.js', ['jquery'])
-          ->writeContent('checkout-validator', JsValidator::formRequest(Botble\Hotel\Http\Requests\CheckoutRequest::class))
-  @endphp
 @endif
+
+{{-- ==== JS ==== --}}
+<script>
+(function(){
+  const form=document.getElementById('bookingForm');
+  const panels=[...document.querySelectorAll('.step-panel')];
+  const title=document.getElementById('stepTitle');
+  const dots=i=>document.querySelector('[data-step-dot="'+i+'"]');
+  const lines=i=>document.querySelector('[data-step-line="'+i+'"]');
+  const titles=['Allgemeine Informationen','Ihre Angaben','Zahlung & Abschluss'];
+  let step={{ $customer->id ? 2 : 1 }};
+  render(step);
+
+  const fieldIds={first:'txt-first_name',last:'txt-last_name',email:'txt-email',phone:'txt-phone'};
+  const val=id=>(document.getElementById(id)?.value.trim()||'');
+  const emailOk=s=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+  const phoneOk=s=>/^[0-9+\s\-()]+$/.test(s);
+  const markInvalid=(el,b)=>el&&el.classList.toggle('is-invalid',!!b);
+
+  function showAlert(stepNo,msg){
+    const box=document.getElementById(stepNo===2?'formAlertStep2':'formAlertStep3');
+    if(!box)return;
+    box.textContent=msg;
+    box.style.display=msg?'block':'none';
+    if(msg)box.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  function clearAlerts(){['formAlertStep2','formAlertStep3'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.textContent='';}});}
+
+  function validateStep(stepNo){
+    const fF=document.getElementById(fieldIds.first),fL=document.getElementById(fieldIds.last),fE=document.getElementById(fieldIds.email),fP=document.getElementById(fieldIds.phone);
+    const vF=val(fieldIds.first),vL=val(fieldIds.last),vE=val(fieldIds.email),vP=val(fieldIds.phone);
+    let errors=[];
+    if(!vF){errors.push('Vorname ist erforderlich.');markInvalid(fF,true);}else markInvalid(fF,false);
+    if(!vL){errors.push('Nachname ist erforderlich.');markInvalid(fL,true);}else markInvalid(fL,false);
+    if(!vE){errors.push('E-Mail ist erforderlich.');markInvalid(fE,true);}
+    else if(!emailOk(vE)){errors.push('Bitte geben Sie eine gültige E-Mail-Adresse ein.');markInvalid(fE,true);}
+    else markInvalid(fE,false);
+    if(!vP){errors.push('Telefon ist erforderlich.');markInvalid(fP,true);}
+    else if(!phoneOk(vP)){errors.push('Bitte geben Sie eine gültige Telefonnummer ein.');markInvalid(fP,true);}
+    else if(vP.replace(/\D/g,'').length<8){errors.push('Die Telefonnummer muss mindestens 8 Ziffern enthalten.');markInvalid(fP,true);}
+    else markInvalid(fP,false);
+    if(stepNo===3){
+      const terms=document.getElementById('terms_conditions');
+      if(!terms||!terms.checked)errors.push('Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
+    }
+    showAlert(stepNo,errors.length?('⚠️ '+errors[0]):'');
+    return errors.length===0;
+  }
+
+  form.addEventListener('input',()=>{if(step===2){const next=form.querySelector('[data-step="2"] [data-next]');if(next){const ok=validateStep(2);next.disabled=!ok;if(ok)showAlert(2,'');}}});
+
+  form.addEventListener('click',e=>{
+    const next=e.target.closest('[data-next]'),prev=e.target.closest('[data-prev]'),finish=e.target.closest('.payment-checkout-btn');
+    if(next){e.preventDefault();clearAlerts();
+      if(step===1){step=2;render(step);return;}
+      if(step===2&&!validateStep(2))return;
+      step=Math.min(step+1,3);render(step);
+      if(step===3){const terms=document.getElementById('terms_conditions');if(!terms||!terms.checked)showAlert(3,'⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');else showAlert(3,'');}}
+    if(prev){e.preventDefault();clearAlerts();step=Math.max(step-1,1);render(step);}
+    if(finish){e.preventDefault();clearAlerts();const ok2=validateStep(2),ok3=validateStep(3);if(!(ok2&&ok3)){if(!ok2&&step!==2){step=2;render(step);}else if(!ok3&&step!==3){step=3;render(step);}return;}form.submit();}
+  });
+
+  const termsBox=document.getElementById('terms_conditions');
+  if(termsBox){const submitBtn=form.querySelector('.payment-checkout-btn');
+    const toggleState=()=>{submitBtn.disabled=!termsBox.checked;if(!termsBox.checked)showAlert(3,'⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');else showAlert(3,'');};
+    toggleState();termsBox.addEventListener('change',toggleState);}
+  function render(s){
+    panels.forEach(p=>p.classList.toggle('active',p.dataset.step==s));
+    title.textContent=titles[s-1];
+    [1,2,3].forEach(i=>{const d=dots(i),l=lines(i);if(d)d.classList.toggle('active',i<=s);if(l)l.classList.toggle('active',i<s);});
+    const c=document.querySelector('#couponBox .collapse');if(c&&!c.classList.contains('show'))c.classList.add('show');
+  }
+})();
+</script>
