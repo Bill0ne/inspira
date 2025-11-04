@@ -108,16 +108,24 @@
                             @include(Theme::getThemeNamespace('views.hotel.partials.reviews'), ['model' => $room])
                         @endif
 
-                        <div class="content-box related-room">
-                            <h3>{{ __('Related Rooms') }}</h3>
-                            <div class="row">
-                                @foreach($relatedRooms as $room)
-                                    <div class="col-lg-6 mb-20">
-                                        {!! Theme::partial('rooms.item', compact('room', 'startDate', 'endDate', 'nights', 'adults')) !!}
-                                    </div>
-                                @endforeach
+                        @if($relatedRooms->isNotEmpty())
+                            <div class="content-box related-room">
+                                <h3>{{ __('Related Rooms') }}</h3>
+                                <div class="row g-4">
+                                    @foreach($relatedRooms as $relatedRoom)
+                                        <div class="col-12 col-sm-6 col-lg-3">
+                                            {!! Theme::partial('rooms.item', [
+                                                'room' => $relatedRoom,
+                                                'startDate' => $startDate,
+                                                'endDate' => $endDate,
+                                                'nights' => $nights,
+                                                'adults' => $adults,
+                                            ]) !!}
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
-                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
