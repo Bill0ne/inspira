@@ -441,8 +441,20 @@ const BookingWidget = (() => {
         bindCounter(widget)
     }
 
-    function init() {
+    function startOnceLibrariesAvailable(attempt = 0) {
+        const MAX_ATTEMPTS = 40
+        const RETRY_DELAY = 100
+
         if (typeof flatpickr === 'undefined' || typeof dayjs === 'undefined') {
+            if (attempt >= MAX_ATTEMPTS) {
+                if (typeof console !== 'undefined' && console.warn) {
+                    console.warn('Booking widget: flatpickr/dayjs libraries not found.')
+                }
+
+                return
+            }
+
+            setTimeout(() => startOnceLibrariesAvailable(attempt + 1), RETRY_DELAY)
             return
         }
 
@@ -461,6 +473,10 @@ const BookingWidget = (() => {
 
             initWidget(widget)
         })
+    }
+
+    function init() {
+        startOnceLibrariesAvailable()
     }
 
     return { init }
