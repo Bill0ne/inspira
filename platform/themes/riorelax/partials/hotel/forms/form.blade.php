@@ -1,12 +1,15 @@
 @php
-    Theme::asset()->container('header')->add('flatpickr-css', 'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css');
-    Theme::asset()->container('header')->add('flatpickr-theme-airbnb', 'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/airbnb.css', ['flatpickr-css']);
-    Theme::asset()->container('header')->usePath()->add('booking-widget-css', 'css/booking-widget.css');
+    // lokale Versionen statt CDN
+    Theme::asset()->container('header')->usePath()->add('flatpickr-css', 'css/flatpickr.min.css');
+    Theme::asset()->container('header')->usePath()->add('flatpickr-theme-airbnb', 'css/airbnb.css', ['flatpickr-css']);
+    Theme::asset()->container('header')->usePath()->add('booking-widget-css', 'css/booking-widget.css', ['flatpickr-theme-airbnb']);
 
-    Theme::asset()->container('footer')->add('flatpickr-js', 'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js');
-    Theme::asset()->container('footer')->add('flatpickr-locale-de', 'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/de.js', ['flatpickr-js']);
+    Theme::asset()->container('footer')->usePath()->add('dayjs-js', 'js/dayjs.min.js');
+    Theme::asset()->container('footer')->usePath()->add('flatpickr-js', 'js/flatpickr.min.js', ['dayjs-js']);
+    Theme::asset()->container('footer')->usePath()->add('flatpickr-locale-de', 'js/de.js', ['flatpickr-js']);
     Theme::asset()->container('footer')->usePath()->add('booking-widget-js', 'js/booking-widget.js', ['flatpickr-locale-de']);
 @endphp
+
 
 @if (is_plugin_active('hotel'))
     @php
