@@ -1,23 +1,22 @@
 @php
     /*
     |--------------------------------------------------------------------------
-    | 🧩 Inspira – Booking Widget Assets (lokal & voll funktionsfähig)
+    | 🧩 Inspira – Booking Widget Assets (statisch erreichbar)
     |--------------------------------------------------------------------------
-    | CSS & JS werden aus dem public/themes-Verzeichnis geladen,
-    | um Weiterleitungen über /themes/... zu vermeiden.
-    | Alle Pfade sind absolut, damit LiteSpeed sie korrekt ausliefert.
+    | JS & CSS werden aus public/vendor/core/themes geladen,
+    | weil Hostinger / Botble den /themes/-Pfad umleitet.
     */
 
     // === Header: Styles ===
-    Theme::asset()->container('header')->add('flatpickr-css', url('public/themes/riorelax/css/flatpickr.min.css'));
-    Theme::asset()->container('header')->add('flatpickr-theme-airbnb', url('public/themes/riorelax/css/airbnb.css'), ['flatpickr-css']);
-    Theme::asset()->container('header')->add('booking-widget-css', url('public/themes/riorelax/css/booking-widget.css'), ['flatpickr-theme-airbnb']);
+    Theme::asset()->container('header')->add('flatpickr-css', url('vendor/core/themes/riorelax/css/flatpickr.min.css'));
+    Theme::asset()->container('header')->add('flatpickr-theme-airbnb', url('vendor/core/themes/riorelax/css/airbnb.css'), ['flatpickr-css']);
+    Theme::asset()->container('header')->add('booking-widget-css', url('vendor/core/themes/riorelax/css/booking-widget.css'), ['flatpickr-theme-airbnb']);
 
     // === Footer: Scripts ===
-    Theme::asset()->container('footer')->add('dayjs-js', url('public/themes/riorelax/js/dayjs.min.js'));
-    Theme::asset()->container('footer')->add('flatpickr-js', url('public/themes/riorelax/js/flatpickr.min.js'), ['dayjs-js']);
-    Theme::asset()->container('footer')->add('flatpickr-locale-de', url('public/themes/riorelax/js/de.js'), ['flatpickr-js']);
-    Theme::asset()->container('footer')->add('booking-widget-js', url('public/themes/riorelax/js/booking-widget.js'), ['flatpickr-locale-de']);
+    Theme::asset()->container('footer')->add('dayjs-js', url('vendor/core/themes/riorelax/js/dayjs.min.js'));
+    Theme::asset()->container('footer')->add('flatpickr-js', url('vendor/core/themes/riorelax/js/flatpickr.min.js'), ['dayjs-js']);
+    Theme::asset()->container('footer')->add('flatpickr-locale-de', url('vendor/core/themes/riorelax/js/de.js'), ['flatpickr-js']);
+    Theme::asset()->container('footer')->add('booking-widget-js', url('vendor/core/themes/riorelax/js/booking-widget.js'), ['flatpickr-locale-de']);
 @endphp
 
 
