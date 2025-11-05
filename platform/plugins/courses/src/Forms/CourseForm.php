@@ -113,7 +113,23 @@ if ($course && $course->getKey()) {
                     ->wrapperAttributes(['class' => 'form-group col-md-6'])
                     ->required()
             )
-            ->add('name', TextField::class, NameFieldOption::make()->required())
+            ->when(is_plugin_active('hotel'), function ($form) {
+                $form->add('room_id', SelectField::class,
+                    SelectFieldOption::make()
+                        ->label('Room')
+                        ->emptyValue(trans('Zimmer auswählen'))
+                        ->choices(
+                            \Botble\Hotel\Models\Room::query()
+                                ->where('status', BaseStatusEnum::PUBLISHED)
+                                ->pluck('name', 'id')
+                                ->all()
+                        )
+                        ->searchable()
+                        ->wrapperAttributes(['class' => 'form-group col-md-6'])
+
+                );
+            })
+            ->add('name', TextField::class, NameFieldOption::make()->required()->wrapperAttributes(['class' => 'form-group col-md-6']))
             ->add('description', EditorField::class,
                 ContentFieldOption::make()
                     ->label(trans('core/base::forms.description'))

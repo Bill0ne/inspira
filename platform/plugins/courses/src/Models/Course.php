@@ -33,6 +33,7 @@ class Course extends BaseModel
         'recurring_interval',
         'recurring_until',
         'tax_id',
+        'room_id',
     ];
 
     protected $casts = [
@@ -136,6 +137,11 @@ class Course extends BaseModel
         }
 
         return $sessions->every(fn($session) => $session->start_date < Carbon::now());
+    }
+
+    public function room()
+    {
+        return $this->belongsTo(\Botble\Hotel\Models\Room::class, 'room_id')->withDefault();
     }
 
 }
