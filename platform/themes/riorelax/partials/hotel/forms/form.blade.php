@@ -5,9 +5,7 @@
 
     Theme::asset()->container('footer')->add('flatpickr-js', 'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js');
     Theme::asset()->container('footer')->add('flatpickr-locale-de', 'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/de.js', ['flatpickr-js']);
-    Theme::asset()->container('footer')->add('dayjs', 'https://cdn.jsdelivr.net/npm/dayjs@1.11.11/dayjs.min.js');
-    Theme::asset()->container('footer')->add('dayjs-plugin-custom-parse', 'https://cdn.jsdelivr.net/npm/dayjs@1.11.11/plugin/customParseFormat.js', ['dayjs']);
-    Theme::asset()->container('footer')->usePath()->add('booking-widget-js', 'js/booking-widget.js', ['flatpickr-js', 'dayjs-plugin-custom-parse']);
+    Theme::asset()->container('footer')->usePath()->add('booking-widget-js', 'js/booking-widget.js', ['flatpickr-locale-de']);
 @endphp
 
 @if (is_plugin_active('hotel'))

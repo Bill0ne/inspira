@@ -1,8 +1,5 @@
 const BookingWidget = (() => {
-    const DATE_FORMAT = 'DD.MM.YYYY'
     const TIME_FORMAT = 'HH:mm'
-    const DATE_TIME_FORMAT = `${DATE_FORMAT} ${TIME_FORMAT}`
-
     const selectors = {
         slotCard: '[data-slot-card]',
         slotList: '[data-slot-list]',
@@ -18,35 +15,131 @@ const BookingWidget = (() => {
         counterInput: 'input[type="number"]',
     }
 
-    function roundToIncrement(date, increment) {
-        const minutes = date.minute()
-        const remainder = minutes % increment
-
-        if (remainder === 0) {
-            return date.second(0)
-        }
-
-        return date.add(increment - remainder, 'minute').second(0)
+    function pad(value) {
+        return String(value).padStart(2, '0')
     }
 
-    function getMinStartTimeForDate(dateValue, increment) {
-        const today = dayjs()
-        const selectedDate = dayjs(dateValue, DATE_FORMAT, true)
-
-        if (!selectedDate.isValid()) {
+    function parseDate(value) {
+        if (typeof value !== 'string') {
             return null
         }
 
-        if (selectedDate.isAfter(today, 'day')) {
-            return '00:00'
+        const match = value.trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
+        if (!match) {
+            return null
         }
 
-        if (!selectedDate.isSame(today, 'day')) {
+        const day = parseInt(match[1], 10)
+        const month = parseInt(match[2], 10)
+        const year = parseInt(match[3], 10)
+
+        if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year)) {
+            return null
+        }
+
+        const date = new Date(year, month - 1, day)
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+            return null
+        }
+
+        return date
+    }
+
+    function parseTime(value) {
+        if (typeof value !== 'string') {
+            return null
+        }
+
+        const match = value.trim().match(/^(\d{1,2}):(\d{2})$/)
+        if (!match) {
+            return null
+        }
+
+        const hours = parseInt(match[1], 10)
+        const minutes = parseInt(match[2], 10)
+
+        if (
+            !Number.isFinite(hours) ||
+            !Number.isFinite(minutes) ||
+            hours < 0 ||
+            hours > 23 ||
+            minutes < 0 ||
+            minutes > 59
+        ) {
+            return null
+        }
+
+        return { hours, minutes }
+    }
+
+    function timeToMinutes(time) {
+        return time.hours * 60 + time.minutes
+    }
+
+    function minutesToTimeString(totalMinutes) {
+        const minutes = Math.max(0, totalMinutes)
+        const hours = Math.floor(minutes / 60) % 24
+        const remainder = minutes % 60
+        return `${pad(hours)}:${pad(remainder)}`
+    }
+
+    function combineDateTime(date, time) {
+        if (!date || !time) {
+            return null
+        }
+
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate(), time.hours, time.minutes, 0, 0)
+    }
+
+    function normalizeDate(date) {
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
+    }
+
+    function isSameDay(a, b) {
+        return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+    }
+
+    function roundToIncrement(date, increment) {
+        const result = new Date(date.getTime())
+
+        const hasRemainder = result.getMinutes() % increment !== 0
+        const hasPartialMinute = result.getSeconds() !== 0 || result.getMilliseconds() !== 0
+
+        result.setSeconds(0, 0)
+
+        if (!hasRemainder && hasPartialMinute) {
+            result.setMinutes(result.getMinutes() + increment)
+            return result
+        }
+
+        if (hasRemainder) {
+            const remainder = result.getMinutes() % increment
+            result.setMinutes(result.getMinutes() + (increment - remainder))
+        }
+
+        return result
+    }
+
+    function getMinStartTimeForDate(dateValue, increment) {
+        const selectedDate = parseDate(dateValue)
+        if (!selectedDate) {
+            return null
+        }
+
+        const today = new Date()
+        const todayDate = normalizeDate(today)
+        const selectedDay = normalizeDate(selectedDate)
+
+        if (!isSameDay(selectedDay, todayDate)) {
             return '00:00'
         }
 
         const rounded = roundToIncrement(today, increment)
-        return rounded.format(TIME_FORMAT)
+        if (!isSameDay(rounded, selectedDate)) {
+            return '00:00'
+        }
+
+        return minutesToTimeString(rounded.getHours() * 60 + rounded.getMinutes())
     }
 
     function assignInputIds(widget) {
@@ -133,30 +226,42 @@ const BookingWidget = (() => {
         }
 
         const parsedSlots = []
+        const now = new Date()
 
         for (let index = 0; index < cards.length; index++) {
             const card = cards[index]
-            const dateValue = card.querySelector('[data-role="slot-date"]').value.trim()
-            const startValue = card.querySelector('[data-role="slot-start"]').value.trim()
-            const endValue = card.querySelector('[data-role="slot-end"]').value.trim()
+            const dateValue = (card.querySelector('[data-role="slot-date"]').value || '').trim()
+            const startValue = (card.querySelector('[data-role="slot-start"]').value || '').trim()
+            const endValue = (card.querySelector('[data-role="slot-end"]').value || '').trim()
 
             if (!dateValue || !startValue || !endValue) {
                 return { valid: false, message: widget.dataset.errorIncomplete || 'Please complete all slot fields.' }
             }
 
-            const start = dayjs(`${dateValue} ${startValue}`, DATE_TIME_FORMAT, true)
-            const end = dayjs(`${dateValue} ${endValue}`, DATE_TIME_FORMAT, true)
+            const date = parseDate(dateValue)
+            const startTime = parseTime(startValue)
+            const endTime = parseTime(endValue)
 
-            if (!start.isValid() || !end.isValid()) {
+            if (!date || !startTime || !endTime) {
                 return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
             }
 
-            const now = dayjs()
-            if (start.isBefore(now)) {
+            const start = combineDateTime(date, startTime)
+            const end = combineDateTime(date, endTime)
+
+            if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+            }
+
+            if (end.getTime() <= start.getTime()) {
+                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+            }
+
+            if (start.getTime() < now.getTime()) {
                 return { valid: false, message: widget.dataset.errorPast || 'Slots must be in the future.' }
             }
 
-            const duration = end.diff(start, 'minute')
+            const duration = Math.round((end.getTime() - start.getTime()) / 60000)
             if (duration < minDuration) {
                 return {
                     valid: false,
@@ -164,13 +269,13 @@ const BookingWidget = (() => {
                 }
             }
 
-            parsedSlots.push({ index, start, end })
+            parsedSlots.push({ start, end })
         }
 
-        const sorted = parsedSlots.slice().sort((a, b) => a.start.valueOf() - b.start.valueOf())
+        const sorted = parsedSlots.slice().sort((a, b) => a.start.getTime() - b.start.getTime())
 
         for (let i = 1; i < sorted.length; i++) {
-            if (sorted[i].start.isBefore(sorted[i - 1].end)) {
+            if (sorted[i].start.getTime() < sorted[i - 1].end.getTime()) {
                 return { valid: false, message: widget.dataset.errorOverlap || 'Slots cannot overlap.' }
             }
         }
@@ -205,6 +310,11 @@ const BookingWidget = (() => {
         return flatpickr(input, options)
     }
 
+    function timeStringToMinutes(value) {
+        const time = parseTime(value)
+        return time ? timeToMinutes(time) : null
+    }
+
     function setupSlotCard(widget, card) {
         const minDuration = parseInt(widget.dataset.minDuration || '30', 10)
         const minuteIncrement = 30
@@ -227,7 +337,7 @@ const BookingWidget = (() => {
         const startPicker = createFlatpickrInstance(startInput, {
             enableTime: true,
             noCalendar: true,
-            dateFormat: 'H:i',
+            dateFormat: TIME_FORMAT,
             time_24hr: true,
             minuteIncrement,
             minTime: '00:00',
@@ -248,10 +358,10 @@ const BookingWidget = (() => {
         const endPicker = createFlatpickrInstance(endInput, {
             enableTime: true,
             noCalendar: true,
-            dateFormat: 'H:i',
+            dateFormat: TIME_FORMAT,
             time_24hr: true,
             minuteIncrement,
-            minTime: '00:30',
+            minTime: minutesToTimeString(minuteIncrement),
             maxTime: '23:59',
             allowInput: true,
             disableMobile: true,
@@ -263,53 +373,49 @@ const BookingWidget = (() => {
         function updateStartConstraints() {
             const minTime = getMinStartTimeForDate(dateInput?.value, minuteIncrement)
 
-            if (startPicker && minTime) {
-                startPicker.set('minTime', minTime)
+            if (startPicker) {
+                const effectiveMin = minTime || '00:00'
+                startPicker.set('minTime', effectiveMin)
 
-                if (startInput.value) {
-                    const current = dayjs(startInput.value, TIME_FORMAT, true)
-                    const minTimeValue = dayjs(minTime, TIME_FORMAT, true)
+                const current = startInput?.value ? timeStringToMinutes(startInput.value) : null
+                const minMinutes = timeStringToMinutes(effectiveMin)
 
-                    if (current.isValid() && current.isBefore(minTimeValue)) {
-                        startPicker.setDate(minTime, true, 'H:i')
-                    }
+                if (current !== null && minMinutes !== null && current < minMinutes) {
+                    startPicker.setDate(effectiveMin, true, TIME_FORMAT)
                 }
-            } else if (startPicker) {
-                startPicker.set('minTime', '00:00')
             }
 
             updateEndConstraints()
         }
 
         function updateEndConstraints() {
-            if (!startInput || !endPicker) {
+            if (!endPicker) {
                 return
             }
 
-            const startValue = startInput.value.trim()
-            if (!startValue) {
-                endPicker.set('minTime', '00:30')
+            const startValue = (startInput?.value || '').trim()
+            const startTime = parseTime(startValue)
+
+            if (!startTime) {
+                endPicker.set('minTime', minutesToTimeString(minDuration))
                 return
             }
 
-            const startTime = dayjs(startValue, TIME_FORMAT, true)
-            if (!startTime.isValid()) {
+            const minEndMinutes = timeToMinutes(startTime) + minDuration
+
+            if (minEndMinutes >= 24 * 60) {
+                endPicker.set('minTime', '23:59')
                 return
             }
 
-            const minEnd = startTime.add(minDuration, 'minute')
-            const minEndString = minEnd.format(TIME_FORMAT)
+            const minEndString = minutesToTimeString(minEndMinutes)
             endPicker.set('minTime', minEndString)
 
-            const endValue = endInput.value.trim()
-            if (!endValue) {
-                endPicker.setDate(minEndString, true, 'H:i')
-                return
-            }
+            const endValue = (endInput?.value || '').trim()
+            const endMinutes = endValue ? timeStringToMinutes(endValue) : null
 
-            const endTime = dayjs(endValue, TIME_FORMAT, true)
-            if (!endTime.isValid() || endTime.isBefore(minEnd)) {
-                endPicker.setDate(minEndString, true, 'H:i')
+            if (endMinutes === null || endMinutes < minEndMinutes) {
+                endPicker.setDate(minEndString, true, TIME_FORMAT)
             }
         }
 
@@ -359,34 +465,30 @@ const BookingWidget = (() => {
 
         counters.forEach((counter) => {
             const input = counter.querySelector(selectors.counterInput)
-            if (!input) {
-                return
-            }
+            const buttons = counter.querySelectorAll(selectors.counterButton)
 
-            counter.addEventListener('click', (event) => {
-                const button = event.target.closest(selectors.counterButton)
-                if (!button) {
-                    return
-                }
+            buttons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    if (!input) {
+                        return
+                    }
 
-                event.preventDefault()
+                    const action = button.dataset.counterAction
+                    const min = parseInt(input.min || '0', 10)
+                    const max = parseInt(input.max || '999', 10)
+                    const current = parseInt(input.value || `${min}`, 10)
 
-                const action = button.dataset.counterAction
-                const min = parseInt(input.min || '0', 10)
-                const max = parseInt(input.max || '999', 10)
-                let value = parseInt(input.value || String(min || 0), 10)
+                    if (Number.isNaN(current)) {
+                        input.value = `${min}`
+                        return
+                    }
 
-                if (Number.isNaN(value)) {
-                    value = min
-                }
-
-                if (action === 'decrement' && value > min) {
-                    input.value = String(value - 1)
-                }
-
-                if (action === 'increment' && value < max) {
-                    input.value = String(value + 1)
-                }
+                    if (action === 'increment') {
+                        input.value = `${Math.min(current + 1, max)}`
+                    } else if (action === 'decrement') {
+                        input.value = `${Math.max(current - 1, min)}`
+                    }
+                })
             })
         })
     }
@@ -445,10 +547,10 @@ const BookingWidget = (() => {
         const MAX_ATTEMPTS = 40
         const RETRY_DELAY = 100
 
-        if (typeof flatpickr === 'undefined' || typeof dayjs === 'undefined') {
+        if (typeof flatpickr === 'undefined') {
             if (attempt >= MAX_ATTEMPTS) {
                 if (typeof console !== 'undefined' && console.warn) {
-                    console.warn('Booking widget: flatpickr/dayjs libraries not found.')
+                    console.warn('Booking widget: flatpickr library not found.')
                 }
 
                 return
@@ -456,14 +558,6 @@ const BookingWidget = (() => {
 
             setTimeout(() => startOnceLibrariesAvailable(attempt + 1), RETRY_DELAY)
             return
-        }
-
-        if (window.dayjs_plugin_customParseFormat) {
-            dayjs.extend(window.dayjs_plugin_customParseFormat)
-        }
-
-        if (dayjs.locale) {
-            dayjs.locale(document.documentElement.lang || 'de')
         }
 
         document.querySelectorAll('[data-booking-widget]').forEach((widget) => {

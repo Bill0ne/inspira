@@ -9,6 +9,11 @@
     gap: 18px;
 }
 
+.booking-widget,
+.booking-widget * {
+    overflow: visible;
+}
+
 .booking-widget--fluid {
     max-width: none;
     width: 100%;
@@ -227,6 +232,10 @@
 .booking-widget__submit:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.flatpickr-calendar {
+    z-index: 10050 !important;
 }
 
 .sr-only {
