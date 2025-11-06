@@ -1,23 +1,55 @@
 @php
-    /*
-    |--------------------------------------------------------------------------
-    | 🧩 Inspira – Booking Widget Assets (statisch erreichbar)
-    |--------------------------------------------------------------------------
-    | JS & CSS werden aus public/vendor/core/themes geladen,
-    | weil Hostinger / Botble den /themes/-Pfad umleitet.
-    */
+/*
+|--------------------------------------------------------------------------
+| Inspira Booking Widget – Lokale Flatpickr Integration
+| Nutzung der Core-Bibliothek unter /vendor/core/core/base/libraries/flatpickr
+| und der Theme-eigenen Styles/Skripte via usePath()
+|--------------------------------------------------------------------------
+*/
 
-    // === Header: Styles ===
-    Theme::asset()->container('header')->add('flatpickr-css', url('vendor/core/themes/riorelax/css/flatpickr.min.css'));
-    Theme::asset()->container('header')->add('flatpickr-theme-airbnb', url('vendor/core/themes/riorelax/css/airbnb.css'), ['flatpickr-css']);
-    Theme::asset()->container('header')->add('booking-widget-css', url('vendor/core/themes/riorelax/css/booking-widget.css'), ['flatpickr-theme-airbnb']);
+    // === CSS ===
+    Theme::asset()->container('header')->add(
+        'flatpickr-css',
+        '/vendor/core/core/base/libraries/flatpickr/flatpickr.min.css'
+    );
 
-    // === Footer: Scripts ===
-    Theme::asset()->container('footer')->add('dayjs-js', url('vendor/core/themes/riorelax/js/dayjs.min.js'));
-    Theme::asset()->container('footer')->add('flatpickr-js', url('vendor/core/themes/riorelax/js/flatpickr.min.js'), ['dayjs-js']);
-    Theme::asset()->container('footer')->add('flatpickr-locale-de', url('vendor/core/themes/riorelax/js/de.js'), ['flatpickr-js']);
-    Theme::asset()->container('footer')->add('booking-widget-js', url('vendor/core/themes/riorelax/js/booking-widget.js'), ['flatpickr-locale-de']);
+    Theme::asset()->container('header')->add(
+        'flatpickr-theme-airbnb',
+        '/vendor/core/core/base/libraries/flatpickr/themes/airbnb.css',
+        ['flatpickr-css']
+    );
+
+    Theme::asset()->container('header')->usePath()->add(
+        'booking-widget-css',
+        'css/booking-widget.css',
+        ['flatpickr-theme-airbnb']
+    );
+
+    // === JS ===
+    Theme::asset()->container('footer')->usePath()->add(
+        'dayjs-js',
+        'js/dayjs.min.js'
+    );
+
+    Theme::asset()->container('footer')->add(
+        'flatpickr-js',
+        '/vendor/core/core/base/libraries/flatpickr/flatpickr.min.js',
+        ['dayjs-js']
+    );
+
+    Theme::asset()->container('footer')->add(
+        'flatpickr-locale-de',
+        '/vendor/core/core/base/libraries/flatpickr/l10n/de.js',
+        ['flatpickr-js']
+    );
+
+    Theme::asset()->container('footer')->usePath()->add(
+        'booking-widget-js',
+        'js/booking-widget.js',
+        ['flatpickr-locale-de']
+    );
 @endphp
+
 
 
 @if (is_plugin_active('hotel'))
