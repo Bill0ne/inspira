@@ -5,16 +5,68 @@
 
 
     Theme::set('pageTitle', $room->name);
-    $nights = $startDate->diffInHours($endDate);
 
-    $formattedHours = $nights;
+    $startDateForDisplay = $startDate instanceof \Carbon\Carbon
+        ? $startDate->copy()
+        : \Carbon\Carbon::parse($startDate);
+    $endDateForDisplay = $endDate instanceof \Carbon\Carbon
+        ? $endDate->copy()
+        : \Carbon\Carbon::parse($endDate);
 
-    if (is_numeric($formattedHours)) {
-        $hoursValue = (float) $formattedHours;
-        $decimals = abs($hoursValue - round($hoursValue)) < 0.01 ? 0 : 2;
-        $formattedHours = number_format($hoursValue, $decimals, ',', '.');
+    $nights = $startDateForDisplay->diffInHours($endDateForDisplay);
+
+    $hoursForPricing = max(1, (int) $nights);
+    $calculationEnd = $nights > 0
+        ? $endDateForDisplay->copy()
+        : $startDateForDisplay->copy()->addHour();
+
+    $totalPriceForDisplay = $room->getRoomTotalPrice(
+        $startDateForDisplay->toDateTimeString(),
+        $calculationEnd->toDateTimeString()
+    );
+
+    $pricePerHourValue = $hoursForPricing > 0
+        ? $totalPriceForDisplay / $hoursForPricing
+        : $room->price;
+
+    if (! $pricePerHourValue && $room->price) {
+        $pricePerHourValue = $room->price;
     }
+
+    $displayPricePerHour = format_price($pricePerHourValue);
 @endphp
+
+<style>
+    .room-price-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.9rem;
+        border-radius: 999px;
+        background-color: var(--primary-color, #578E88);
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-top: 0.75rem;
+    }
+
+    .room-price-chip i {
+        font-size: 0.9rem;
+        opacity: 0.85;
+    }
+
+    .room-price-chip-amount {
+        font-size: 1.05rem;
+        line-height: 1;
+    }
+
+    .room-price-chip-caption {
+        font-size: 0.85rem;
+        font-weight: 500;
+        opacity: 0.9;
+        line-height: 1;
+    }
+</style>
 <div class="about-area5 about-p p-relative room-details">
     <div class="container pt-60 pb-40">
         <div class="row">
@@ -59,14 +111,11 @@
             <h2>{{ $room->name }}</h2>
             {{-- Preis NUR für eingeloggte User anzeigen --}}
             @if (auth('customer')->check() || auth()->check())
-                @php
-                    $hoursForPluralization = is_numeric($nights) ? (float) $nights : 0;
-                    $translationKey = abs($hoursForPluralization - 1) < 0.01
-                        ? ':price for :hours hour'
-                        : ':price for :hours hours';
-                @endphp
-                <span>{{ __($translationKey, ['price' => format_price($room->getRoomTotalPrice($startDate, $endDate)), 'hours' => $formattedHours]) }}</span>
-                
+                <span class="room-price-chip">
+                    <i class="fal fa-clock" aria-hidden="true"></i>
+                    <span class="room-price-chip-amount">{{ $displayPricePerHour }}</span>
+                    <span class="room-price-chip-caption">{{ __('per hour') }}</span>
+                </span>
             @else
                 <span class="text-muted">{{ __('Bitte einloggen um die Preise zu sehen') }}</span>
             @endif
