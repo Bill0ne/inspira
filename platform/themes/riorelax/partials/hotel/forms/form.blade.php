@@ -1,57 +1,3 @@
-@php
-/*
-|--------------------------------------------------------------------------
-| Inspira Booking Widget – Lokale Flatpickr Integration
-| Nutzung der Core-Bibliothek unter /vendor/core/core/base/libraries/flatpickr
-| und der Theme-eigenen Styles/Skripte via usePath()
-|--------------------------------------------------------------------------
-*/
-
-    // === CSS ===
-    Theme::asset()->container('header')->add(
-        'flatpickr-css',
-        '/vendor/core/core/base/libraries/flatpickr/flatpickr.min.css'
-    );
-
-    Theme::asset()->container('header')->add(
-        'flatpickr-theme-airbnb',
-        '/vendor/core/core/base/libraries/flatpickr/themes/airbnb.css',
-        ['flatpickr-css']
-    );
-
-    Theme::asset()->container('header')->usePath()->add(
-        'booking-widget-css',
-        'css/booking-widget.css',
-        ['flatpickr-theme-airbnb']
-    );
-
-    // === JS ===
-    Theme::asset()->container('footer')->usePath()->add(
-        'dayjs-js',
-        'js/dayjs.min.js'
-    );
-
-    Theme::asset()->container('footer')->add(
-        'flatpickr-js',
-        '/vendor/core/core/base/libraries/flatpickr/flatpickr.min.js',
-        ['dayjs-js']
-    );
-
-    Theme::asset()->container('footer')->add(
-        'flatpickr-locale-de',
-        '/vendor/core/core/base/libraries/flatpickr/l10n/de.js',
-        ['flatpickr-js']
-    );
-
-    Theme::asset()->container('footer')->usePath()->add(
-        'booking-widget-js',
-        'js/booking-widget.js',
-        ['flatpickr-locale-de']
-    );
-@endphp
-
-
-
 @if (is_plugin_active('hotel'))
     @php
         $minimumNumberOfGuests = HotelHelper::getMinimumNumberOfGuests();
@@ -136,6 +82,81 @@
             'invalid' => __('Please provide a valid date and time.'),
         ];
     @endphp
+
+    {{-- === Litepicker Styles & Script === --}}
+    <link rel="stylesheet" href="/themes/riorelax/css/booking-widget.css">
+    <link rel="stylesheet" href="/themes/riorelax/css/litepicker.css">
+    <script src="/themes/riorelax/js/litepicker.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const attachPicker = (el, options) => {
+                if (!el || el.dataset.litepickerBound === 'true' || typeof Litepicker === 'undefined') {
+                    return;
+                }
+
+                el.dataset.litepickerBound = 'true';
+
+                new Litepicker({
+                    element: el,
+                    singleMode: true,
+                    autoApply: true,
+                    format: options.format,
+                    lang: 'de-DE',
+                    showTime: options.showTime || false,
+                    showSeconds: false,
+                    dropdowns: options.dropdowns || undefined,
+                    tooltipText: {
+                        one: 'Tag',
+                        other: 'Tage'
+                    }
+                });
+            };
+
+            const hydrateWidget = (widget) => {
+                if (!widget) {
+                    return;
+                }
+
+                widget.querySelectorAll('[data-role="slot-date"]').forEach((input) => {
+                    attachPicker(input, { format: 'DD.MM.YYYY' });
+                });
+
+                widget.querySelectorAll('[data-role="slot-start"], [data-role="slot-end"]').forEach((input) => {
+                    attachPicker(input, { format: 'HH:mm', showTime: true, dropdowns: { minutes: true, hours: true } });
+                });
+            };
+
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (!(node instanceof HTMLElement)) {
+                            return;
+                        }
+
+                        if (node.matches('[data-booking-widget]')) {
+                            hydrateWidget(node);
+                        }
+
+                        const ownerWidget = node.closest('[data-booking-widget]');
+                        if (ownerWidget) {
+                            hydrateWidget(ownerWidget);
+                        }
+
+                        node.querySelectorAll('[data-booking-widget]').forEach((widget) => {
+                            hydrateWidget(widget);
+                        });
+                    });
+                });
+            });
+
+            document.querySelectorAll('[data-booking-widget]').forEach((widget) => {
+                hydrateWidget(widget);
+                observer.observe(widget, { childList: true, subtree: true });
+            });
+        });
+    </script>
+    <script defer src="/themes/riorelax/js/booking-widget.js"></script>
 
     <form action="{{ $availableForBooking ? route('public.booking') : route('public.rooms') }}" method="{{ $availableForBooking ? 'POST' : 'GET' }}" class="contact-form mt-30 form-booking">
         @if ($availableForBooking)

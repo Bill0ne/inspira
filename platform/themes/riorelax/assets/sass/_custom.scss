@@ -1133,6 +1133,71 @@ button.btn-custom {
             }
         }
     }
+
+    .room-header {
+        margin-bottom: 24px;
+
+        &__title {
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+    }
+
+    .room-booking-card {
+        background-color: #fff;
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+        margin-bottom: 50px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+
+        @media (max-width: 575.98px) {
+            padding: 24px;
+        }
+    }
+
+    .room-booking-card__pricing {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        border-bottom: 1px solid #f1f1f1;
+        padding-bottom: 16px;
+    }
+
+    .room-booking-card__price {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 0;
+        line-height: 1.4;
+    }
+
+    .room-booking-card__notice {
+        margin-bottom: 0;
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+    .room-booking-card__form {
+        .booking-widget {
+            max-width: none;
+            width: 100%;
+            padding: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .booking-widget__header {
+            margin-bottom: 8px;
+        }
+
+        .booking-widget__footer {
+            margin-top: 8px;
+        }
+    }
 }
 
 select {
