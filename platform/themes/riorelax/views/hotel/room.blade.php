@@ -7,7 +7,7 @@
     Theme::set('pageTitle', $room->name);
     $nights = $startDate->diffInHours($endDate);
 @endphp
-<div class="about-area5 about-p p-relative room-details">
+<div class="about-area5 about-p p-relative room-details room-details--rooms">
     <div class="container pt-60 pb-40">
         <div class="row justify-content-center">
             <div class="col-12">
