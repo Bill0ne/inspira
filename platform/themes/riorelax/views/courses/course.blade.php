@@ -179,19 +179,21 @@
                                 auth('customer')->user() ?? null
                             );
                         }
-                        $priceDifference = $basePrice - $dynamicPrice;
+                        $displayBasePrice = $course->getPriceWithTax($basePrice);
+                        $displayDynamicPrice = $course->getPriceWithTax($dynamicPrice);
+                        $priceDifference = $displayBasePrice - $displayDynamicPrice;
                     @endphp
 
                     <div class="chip price-chip d-flex align-items-center">
                         @if($dynamicPrice < $basePrice)
                             <span class="old-price text-decoration-line-through text-muted me-2">
-                {{ format_price($basePrice) }}
+                {{ format_price($displayBasePrice) }}
             </span>
                             <span class="new-price text-success fw-bold">
-                {{ format_price($dynamicPrice) }}
+                {{ format_price($displayDynamicPrice) }}
             </span>
                         @else
-                            <span class="price fw-bold">{{ format_price($dynamicPrice) }}</span>
+                            <span class="price fw-bold">{{ format_price($displayDynamicPrice) }}</span>
                         @endif
                     </div>
 
