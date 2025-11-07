@@ -1,4 +1,3 @@
-@php
 @if (is_plugin_active('hotel'))
     @php
         $minimumNumberOfGuests = HotelHelper::getMinimumNumberOfGuests();
