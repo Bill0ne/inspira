@@ -2,7 +2,7 @@
     $widgetId = $widgetId ?? uniqid('booking-widget-');
     $slots = $slots ?? [];
     $showHint = $showHint ?? true;
-    $addSlotLabel = $addSlotLabel ?? __('Add Slot');
+    $addSlotLabel = $addSlotLabel ?? 'Slot hinzufügen';
     $minDuration = $minDuration ?? 30;
 @endphp
 
@@ -22,40 +22,40 @@
 
             <div class="slot-card" data-slot-card data-index="{{ $index }}">
                 <div class="slot-card__field">
-                    <label class="slot-card__label" for="{{ $dateId }}" data-slot-label="date">{{ __('Date') }}</label>
+                    <label class="slot-card__label" for="{{ $dateId }}" data-slot-label="date">Datum</label>
                     <input
                         type="text"
                         id="{{ $dateId }}"
                         class="slot-card__input slot-date"
                         data-role="slot-date"
                         data-slot-input="date"
-                        placeholder="{{ __('Select date') }}"
+                        placeholder="Datum wählen"
                         value="{{ $slotDate }}"
                         autocomplete="off"
                     >
                 </div>
                 <div class="slot-card__field">
-                    <label class="slot-card__label" for="{{ $startId }}" data-slot-label="start">{{ __('Start') }}</label>
+                    <label class="slot-card__label" for="{{ $startId }}" data-slot-label="start">Startzeit</label>
                     <input
                         type="text"
                         id="{{ $startId }}"
                         class="slot-card__input slot-start"
                         data-role="slot-start"
                         data-slot-input="start"
-                        placeholder="{{ __('Start time') }}"
+                        placeholder="Startzeit wählen"
                         value="{{ $slotStart }}"
                         autocomplete="off"
                     >
                 </div>
                 <div class="slot-card__field">
-                    <label class="slot-card__label" for="{{ $endId }}" data-slot-label="end">{{ __('End') }}</label>
+                    <label class="slot-card__label" for="{{ $endId }}" data-slot-label="end">Endzeit</label>
                     <input
                         type="text"
                         id="{{ $endId }}"
                         class="slot-card__input slot-end"
                         data-role="slot-end"
                         data-slot-input="end"
-                        placeholder="{{ __('End time') }}"
+                        placeholder="Endzeit wählen"
                         value="{{ $slotEnd }}"
                         autocomplete="off"
                     >
@@ -63,7 +63,7 @@
 
                 <input type="hidden" name="slots[]" value="{{ $rawValue }}" class="slot-card__value" data-slot-value>
 
-                <button type="button" class="slot-card__remove" data-remove-slot aria-label="{{ __('Remove slot') }}">
+                <button type="button" class="slot-card__remove" data-remove-slot aria-label="Slot entfernen">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -76,7 +76,7 @@
     </button>
 
     @if ($showHint)
-        <p class="booking-widget__hint">{{ __('Each slot must be at least :minutes minutes.', ['minutes' => $minDuration]) }}</p>
+        <p class="booking-widget__hint">Jeder Slot muss mindestens {{ $minDuration }} Minuten umfassen.</p>
     @endif
 
     <div class="booking-widget__error" data-error role="alert" hidden tabindex="-1"></div>
@@ -84,42 +84,42 @@
     <template data-slot-template>
         <div class="slot-card" data-slot-card>
             <div class="slot-card__field">
-                <label class="slot-card__label" data-slot-label="date">{{ __('Date') }}</label>
+                <label class="slot-card__label" data-slot-label="date">Datum</label>
                 <input
                     type="text"
                     class="slot-card__input slot-date"
                     data-role="slot-date"
                     data-slot-input="date"
-                    placeholder="{{ __('Select date') }}"
+                    placeholder="Datum wählen"
                     autocomplete="off"
                 >
             </div>
             <div class="slot-card__field">
-                <label class="slot-card__label" data-slot-label="start">{{ __('Start') }}</label>
+                <label class="slot-card__label" data-slot-label="start">Startzeit</label>
                 <input
                     type="text"
                     class="slot-card__input slot-start"
                     data-role="slot-start"
                     data-slot-input="start"
-                    placeholder="{{ __('Start time') }}"
+                    placeholder="Startzeit wählen"
                     autocomplete="off"
                 >
             </div>
             <div class="slot-card__field">
-                <label class="slot-card__label" data-slot-label="end">{{ __('End') }}</label>
+                <label class="slot-card__label" data-slot-label="end">Endzeit</label>
                 <input
                     type="text"
                     class="slot-card__input slot-end"
                     data-role="slot-end"
                     data-slot-input="end"
-                    placeholder="{{ __('End time') }}"
+                    placeholder="Endzeit wählen"
                     autocomplete="off"
                 >
             </div>
 
             <input type="hidden" name="slots[]" value="" class="slot-card__value" data-slot-value>
 
-            <button type="button" class="slot-card__remove" data-remove-slot aria-label="{{ __('Remove slot') }}">
+            <button type="button" class="slot-card__remove" data-remove-slot aria-label="Slot entfernen">
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>
