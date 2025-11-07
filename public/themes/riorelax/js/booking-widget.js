@@ -12,10 +12,18 @@ const BookingWidget = (() => {
         counter: '[data-counter]',
         counterButton: '[data-counter-action]',
         counterInput: 'input[type="number"]',
+        status: '[data-status]',
+        statusMessage: '[data-status-message]',
+        submit: '[data-submit]',
     }
 
     function pad(value) {
         return String(value).padStart(2, '0')
+    }
+
+    function parseInteger(value) {
+        const parsed = parseInt(value ?? '', 10)
+        return Number.isFinite(parsed) ? parsed : null
     }
 
     function parseDate(value) {
@@ -83,6 +91,11 @@ const BookingWidget = (() => {
         return `${pad(hours)}:${pad(remainder)}`
     }
 
+    function timeStringToMinutes(value) {
+        const time = parseTime(value)
+        return time ? timeToMinutes(time) : null
+    }
+
     function ensureTimeWithinBounds(input, { min, max, increment }) {
         if (!input) {
             return
@@ -117,6 +130,10 @@ const BookingWidget = (() => {
 
         if (maxMinutes !== null && minutes > maxMinutes) {
             minutes = maxMinutes
+        }
+
+        if (minMinutes !== null && minutes < minMinutes) {
+            minutes = minMinutes
         }
 
         input.value = minutesToTimeString(minutes)
@@ -181,6 +198,110 @@ const BookingWidget = (() => {
         return minutesToTimeString(rounded.getHours() * 60 + rounded.getMinutes())
     }
 
+    function parseDateTimeString(value) {
+        if (typeof value !== 'string') {
+            return null
+        }
+
+        const normalized = value.trim().replace(' ', 'T')
+        if (!normalized) {
+            return null
+        }
+
+        let candidate = normalized
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(candidate)) {
+            candidate = `${candidate}:00`
+        }
+
+        const date = new Date(candidate)
+        if (Number.isNaN(date.getTime())) {
+            return null
+        }
+
+        return date
+    }
+
+    function parseRangesFromDataset(value) {
+        if (!value) {
+            return []
+        }
+
+        let data
+        try {
+            data = JSON.parse(value)
+        } catch (error) {
+            return []
+        }
+
+        if (!Array.isArray(data)) {
+            return []
+        }
+
+        return data
+            .map((entry) => {
+                const start = parseDateTimeString(entry?.start || entry?.from)
+                const end = parseDateTimeString(entry?.end || entry?.to)
+
+                if (!start || !end) {
+                    return null
+                }
+
+                return {
+                    start,
+                    end,
+                    title: typeof entry?.title === 'string' ? entry.title : '',
+                }
+            })
+            .filter(Boolean)
+    }
+
+    function parseOperatingHours(value) {
+        if (!value) {
+            return { start: '09:30', end: '22:30' }
+        }
+
+        try {
+            const parsed = JSON.parse(value)
+            const start = typeof parsed?.start === 'string' ? parsed.start : '09:30'
+            const end = typeof parsed?.end === 'string' ? parsed.end : '22:30'
+            return { start, end }
+        } catch (error) {
+            return { start: '09:30', end: '22:30' }
+        }
+    }
+
+    function parseWidgetConfig(widget) {
+        if (widget._bookingConfig) {
+            return widget._bookingConfig
+        }
+
+        const config = {
+            bookings: parseRangesFromDataset(widget.dataset.bookedSlots),
+            courseSessions: parseRangesFromDataset(widget.dataset.courseSessions),
+            operatingHours: parseOperatingHours(widget.dataset.operatingHours),
+            maxAdults: parseInteger(widget.dataset.maxAdults),
+            maxParticipants: parseInteger(widget.dataset.maxParticipants),
+        }
+
+        widget._bookingConfig = config
+        return config
+    }
+
+    function findOverlapRange(ranges, start, end) {
+        if (!Array.isArray(ranges)) {
+            return null
+        }
+
+        for (let index = 0; index < ranges.length; index++) {
+            const range = ranges[index]
+            if (start.getTime() < range.end.getTime() && end.getTime() > range.start.getTime()) {
+                return range
+            }
+        }
+
+        return null
+    }
+
     function assignInputIds(widget) {
         const widgetId = widget.dataset.widgetId
         const cards = widget.querySelectorAll(selectors.slotCard)
@@ -240,6 +361,51 @@ const BookingWidget = (() => {
         widget.querySelectorAll(selectors.slotCard).forEach(updateSlotValue)
     }
 
+    function getStatusTargets(widget) {
+        const widgetId = widget.dataset.widgetId
+        if (!widgetId) {
+            return Array.from(widget.querySelectorAll(selectors.status))
+        }
+
+        return Array.from(document.querySelectorAll(`[data-status-for="${widgetId}"]`))
+    }
+
+    function updateStatus(widget, state) {
+        const targets = getStatusTargets(widget)
+        if (!targets.length) {
+            return
+        }
+
+        const level = state?.level || 'info'
+        const message = state?.message || ''
+
+        targets.forEach((target) => {
+            target.setAttribute('data-status-level', level)
+            target.classList.remove('booking-widget__status--info', 'booking-widget__status--error', 'booking-widget__status--success')
+            target.classList.add(`booking-widget__status--${level}`)
+
+            const messageEl = target.querySelector(selectors.statusMessage)
+            if (messageEl) {
+                messageEl.textContent = message
+            }
+        })
+    }
+
+    function setSubmitState(widget, isEnabled) {
+        const form = widget.closest('form')
+        const buttons = form ? form.querySelectorAll(selectors.submit) : widget.querySelectorAll(selectors.submit)
+
+        buttons.forEach((button) => {
+            if (!(button instanceof HTMLButtonElement)) {
+                return
+            }
+
+            button.disabled = !isEnabled
+            button.setAttribute('aria-disabled', isEnabled ? 'false' : 'true')
+            button.classList.toggle('is-disabled', !isEnabled)
+        })
+    }
+
     function showError(widget, message) {
         const errorEl = widget.querySelector(selectors.error)
         if (!errorEl) {
@@ -257,15 +423,27 @@ const BookingWidget = (() => {
         errorEl.focus()
     }
 
-    function validateSlots(widget, minDuration) {
+    function validateSlots(widget, minDuration, config) {
         const cards = Array.from(widget.querySelectorAll(selectors.slotCard))
 
         if (!cards.length) {
-            return { valid: false, message: widget.dataset.errorIncomplete || 'Please add at least one slot.' }
+            return {
+                valid: false,
+                message: widget.dataset.statusInitial || widget.dataset.errorIncomplete || 'Bitte fügen Sie mindestens einen Slot hinzu.',
+                level: 'info',
+            }
         }
 
         const parsedSlots = []
         const now = new Date()
+        const allowedStart = timeStringToMinutes(config?.operatingHours?.start || '09:30')
+        const allowedEnd = timeStringToMinutes(config?.operatingHours?.end || '22:30')
+
+        const form = widget.closest('form')
+        const adultsInput = form ? form.querySelector('input[name="adults"]') : widget.querySelector('input[name="adults"]')
+        const childrenInput = form ? form.querySelector('input[name="children"]') : widget.querySelector('input[name="children"]')
+        const adultsValue = adultsInput ? parseInteger(adultsInput.value) : null
+        const childrenValue = childrenInput ? parseInteger(childrenInput.value) : 0
 
         for (let index = 0; index < cards.length; index++) {
             const card = cards[index]
@@ -274,7 +452,11 @@ const BookingWidget = (() => {
             const endValue = (card.querySelector('[data-role="slot-end"]').value || '').trim()
 
             if (!dateValue || !startValue || !endValue) {
-                return { valid: false, message: widget.dataset.errorIncomplete || 'Please complete all slot fields.' }
+                return {
+                    valid: false,
+                    message: widget.dataset.errorIncomplete || widget.dataset.statusInitial || 'Bitte füllen Sie alle Slot-Felder aus.',
+                    level: 'info',
+                }
             }
 
             const date = parseDate(dateValue)
@@ -282,29 +464,78 @@ const BookingWidget = (() => {
             const endTime = parseTime(endValue)
 
             if (!date || !startTime || !endTime) {
-                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+                return {
+                    valid: false,
+                    message: widget.dataset.errorInvalid || 'Bitte geben Sie ein gültiges Datum und eine gültige Uhrzeit ein.',
+                    level: 'error',
+                }
             }
 
             const start = combineDateTime(date, startTime)
             const end = combineDateTime(date, endTime)
 
-            if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
-            }
-
-            if (end.getTime() <= start.getTime()) {
-                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+            if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end.getTime() <= start.getTime()) {
+                return {
+                    valid: false,
+                    message: widget.dataset.errorInvalid || 'Bitte geben Sie ein gültiges Datum und eine gültige Uhrzeit ein.',
+                    level: 'error',
+                }
             }
 
             if (start.getTime() < now.getTime()) {
-                return { valid: false, message: widget.dataset.errorPast || 'Slots must be in the future.' }
+                return {
+                    valid: false,
+                    message: widget.dataset.errorPast || 'Slots müssen in der Zukunft liegen.',
+                    level: 'error',
+                }
+            }
+
+            const startMinutes = timeStringToMinutes(startValue)
+            const endMinutes = timeStringToMinutes(endValue)
+
+            if (allowedStart !== null && startMinutes !== null && startMinutes < allowedStart) {
+                return {
+                    valid: false,
+                    message: widget.dataset.errorHours || 'Buchungen sind nur zwischen den erlaubten Zeiten möglich.',
+                    level: 'error',
+                }
+            }
+
+            if (allowedEnd !== null && endMinutes !== null && endMinutes > allowedEnd) {
+                return {
+                    valid: false,
+                    message: widget.dataset.errorHours || 'Buchungen sind nur zwischen den erlaubten Zeiten möglich.',
+                    level: 'error',
+                }
             }
 
             const duration = Math.round((end.getTime() - start.getTime()) / 60000)
             if (duration < minDuration) {
                 return {
                     valid: false,
-                    message: widget.dataset.errorDuration || `Slots must be at least ${minDuration} minutes.`,
+                    message: widget.dataset.errorDuration || `Slots müssen mindestens ${minDuration} Minuten umfassen.`,
+                    level: 'error',
+                }
+            }
+
+            const bookingConflict = findOverlapRange(config?.bookings, start, end)
+            if (bookingConflict) {
+                return {
+                    valid: false,
+                    message: widget.dataset.errorBooked || 'Der Raum ist im ausgewählten Zeitraum bereits reserviert.',
+                    level: 'error',
+                }
+            }
+
+            const courseConflict = findOverlapRange(config?.courseSessions, start, end)
+            if (courseConflict) {
+                const baseMessage = widget.dataset.errorCourse || 'In diesem Zeitraum findet bereits ein Kurs statt.'
+                const name = courseConflict.title ? ` (${courseConflict.title})` : ''
+
+                return {
+                    valid: false,
+                    message: `${baseMessage}${name}`,
+                    level: 'error',
                 }
             }
 
@@ -315,11 +546,38 @@ const BookingWidget = (() => {
 
         for (let i = 1; i < sorted.length; i++) {
             if (sorted[i].start.getTime() < sorted[i - 1].end.getTime()) {
-                return { valid: false, message: widget.dataset.errorOverlap || 'Slots cannot overlap.' }
+                return {
+                    valid: false,
+                    message: widget.dataset.errorOverlap || 'Slots dürfen sich nicht überschneiden.',
+                    level: 'error',
+                }
             }
         }
 
-        return { valid: true, message: '' }
+        if (config?.maxAdults !== null && adultsValue !== null && adultsValue > config.maxAdults) {
+            return {
+                valid: false,
+                message: widget.dataset.errorCapacity || 'Die Anzahl der Erwachsenen überschreitet die maximale Kapazität.',
+                level: 'error',
+            }
+        }
+
+        if (config?.maxParticipants !== null && adultsValue !== null) {
+            const totalParticipants = adultsValue + (Number.isFinite(childrenValue) ? childrenValue : 0)
+            if (totalParticipants > config.maxParticipants) {
+                return {
+                    valid: false,
+                    message: widget.dataset.errorParticipants || widget.dataset.errorCapacity || 'Die Gesamtzahl der Teilnehmenden überschreitet die maximale Kapazität.',
+                    level: 'error',
+                }
+            }
+        }
+
+        return {
+            valid: true,
+            message: widget.dataset.statusReady || 'Alle Angaben sehen gut aus.',
+            level: 'success',
+        }
     }
 
     function updateRemoveButtons(widget) {
@@ -337,45 +595,55 @@ const BookingWidget = (() => {
         })
     }
 
-    function timeStringToMinutes(value) {
-        const time = parseTime(value)
-        return time ? timeToMinutes(time) : null
-    }
-
-    function setupSlotCard(widget, card) {
+    function setupSlotCard(widget, card, config) {
         const minDuration = parseInt(widget.dataset.minDuration || '30', 10)
         const minuteIncrement = 30
         const dateInput = card.querySelector('[data-role="slot-date"]')
         const startInput = card.querySelector('[data-role="slot-start"]')
         const endInput = card.querySelector('[data-role="slot-end"]')
-
-        function updateStartConstraints() {
-            const minTime = getMinStartTimeForDate(dateInput?.value, minuteIncrement) || '00:00'
-            ensureTimeWithinBounds(startInput, { min: minTime, max: '23:30', increment: minuteIncrement })
-            updateEndConstraints()
-        }
+        const operatingStart = config?.operatingHours?.start || '09:30'
+        const operatingEnd = config?.operatingHours?.end || '22:30'
+        const operatingStartMinutes = timeStringToMinutes(operatingStart) ?? 0
+        const operatingEndMinutes = timeStringToMinutes(operatingEnd) ?? 23 * 60 + 59
 
         function updateEndConstraints() {
             const startValue = (startInput?.value || '').trim()
             const startMinutes = startValue ? timeStringToMinutes(startValue) : null
 
-            if (startMinutes === null) {
-                const fallback = minutesToTimeString(minDuration)
-                ensureTimeWithinBounds(endInput, { min: fallback, max: '23:59', increment: minuteIncrement })
-                updateSlotValue(card)
-                return
+            let minEndMinutes = operatingStartMinutes + minDuration
+            if (startMinutes !== null) {
+                minEndMinutes = Math.max(startMinutes + minDuration, minEndMinutes)
             }
 
-            const minEndMinutes = Math.min(startMinutes + minDuration, 23 * 60 + 59)
-            const minEndString = minutesToTimeString(minEndMinutes)
-            ensureTimeWithinBounds(endInput, { min: minEndString, max: '23:59', increment: minuteIncrement })
+            const boundedMinEnd = Math.min(minEndMinutes, operatingEndMinutes)
+            const minEndString = minutesToTimeString(boundedMinEnd)
+
+            ensureTimeWithinBounds(endInput, { min: minEndString, max: operatingEnd, increment: minuteIncrement })
             updateSlotValue(card)
+        }
+
+        function updateStartConstraints() {
+            const minTime = getMinStartTimeForDate(dateInput?.value, minuteIncrement)
+            const minTimeMinutes = minTime ? timeStringToMinutes(minTime) : null
+            const maxMinutes = operatingEndMinutes - minDuration
+            let minMinutes = operatingStartMinutes
+
+            if (minTimeMinutes !== null) {
+                minMinutes = Math.max(minMinutes, minTimeMinutes)
+            }
+
+            const boundedMin = Math.min(minMinutes, maxMinutes)
+            const minString = minutesToTimeString(boundedMin)
+
+            ensureTimeWithinBounds(startInput, { min: minString, max: operatingEnd, increment: minuteIncrement })
+            updateEndConstraints()
         }
 
         if (dateInput) {
             dateInput.addEventListener('change', () => {
                 updateStartConstraints()
                 updateSlotValue(card)
+                refreshWidgetState(widget)
             })
         }
 
@@ -383,6 +651,7 @@ const BookingWidget = (() => {
             const syncStart = () => {
                 updateStartConstraints()
                 updateSlotValue(card)
+                refreshWidgetState(widget)
             }
 
             startInput.addEventListener('change', syncStart)
@@ -393,6 +662,7 @@ const BookingWidget = (() => {
             const syncEnd = () => {
                 updateEndConstraints()
                 updateSlotValue(card)
+                refreshWidgetState(widget)
             }
 
             endInput.addEventListener('change', syncEnd)
@@ -415,8 +685,9 @@ const BookingWidget = (() => {
         slotList.appendChild(card)
 
         assignInputIds(widget)
-        setupSlotCard(widget, card)
+        setupSlotCard(widget, card, parseWidgetConfig(widget))
         updateRemoveButtons(widget)
+        refreshWidgetState(widget)
 
         const dateInput = card.querySelector('[data-role="slot-date"]')
         if (dateInput) {
@@ -438,6 +709,7 @@ const BookingWidget = (() => {
         assignInputIds(widget)
         updateRemoveButtons(widget)
         syncAllSlots(widget)
+        refreshWidgetState(widget)
     }
 
     function bindCounter(widget) {
@@ -460,6 +732,7 @@ const BookingWidget = (() => {
 
                     if (Number.isNaN(current)) {
                         input.value = `${min}`
+                        refreshWidgetState(widget)
                         return
                     }
 
@@ -468,9 +741,35 @@ const BookingWidget = (() => {
                     } else if (action === 'decrement') {
                         input.value = `${Math.max(current - 1, min)}`
                     }
+
+                    refreshWidgetState(widget)
                 })
             })
+
+            if (input) {
+                input.addEventListener('change', () => refreshWidgetState(widget))
+                input.addEventListener('input', () => refreshWidgetState(widget))
+            }
         })
+    }
+
+    function refreshWidgetState(widget) {
+        if (!widget) {
+            return { valid: false, message: '', level: 'info' }
+        }
+
+        syncAllSlots(widget)
+        const minDuration = parseInt(widget.dataset.minDuration || '30', 10)
+        const validation = validateSlots(widget, minDuration, parseWidgetConfig(widget))
+        const initialMessage = widget.dataset.statusInitial || ''
+        const message = validation.message || (validation.valid ? widget.dataset.statusReady || initialMessage : initialMessage)
+        const level = validation.level || (validation.valid ? 'success' : 'info')
+
+        updateStatus(widget, { level, message })
+        showError(widget, validation.level === 'error' ? validation.message : '')
+        setSubmitState(widget, validation.valid)
+
+        return validation
     }
 
     function initWidget(widget) {
@@ -479,10 +778,11 @@ const BookingWidget = (() => {
             return
         }
 
+        parseWidgetConfig(widget)
         assignInputIds(widget)
 
         slotList.querySelectorAll(selectors.slotCard).forEach((card) => {
-            setupSlotCard(widget, card)
+            setupSlotCard(widget, card, parseWidgetConfig(widget))
         })
 
         updateRemoveButtons(widget)
@@ -505,14 +805,10 @@ const BookingWidget = (() => {
         const form = widget.closest('form')
         if (form) {
             form.addEventListener('submit', (event) => {
-                syncAllSlots(widget)
-
-                const minDuration = parseInt(widget.dataset.minDuration || '30', 10)
-                const validation = validateSlots(widget, minDuration)
+                const validation = refreshWidgetState(widget)
 
                 if (!validation.valid) {
                     event.preventDefault()
-                    showError(widget, validation.message)
                     return
                 }
 
@@ -521,6 +817,7 @@ const BookingWidget = (() => {
         }
 
         bindCounter(widget)
+        refreshWidgetState(widget)
     }
 
     function startOnceLibrariesAvailable(attempt = 0) {
@@ -530,7 +827,7 @@ const BookingWidget = (() => {
         if (typeof window !== 'undefined' && typeof window.Litepicker === 'undefined') {
             if (attempt >= MAX_ATTEMPTS) {
                 if (typeof console !== 'undefined' && console.warn) {
-                    console.warn('Booking widget: Litepicker library not found.')
+                    console.warn('Buchungs-Widget: Litepicker-Bibliothek nicht gefunden.')
                 }
 
                 return
