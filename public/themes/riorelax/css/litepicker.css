@@ -1,0 +1,164 @@
+.litepicker {
+    position: absolute;
+    min-width: 260px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+    padding: 16px;
+    font-family: "Poppins", "Helvetica Neue", Arial, sans-serif;
+    color: #0f172a;
+    z-index: 9999;
+}
+
+.litepicker.is-time-picker {
+    min-width: 200px;
+}
+
+.litepicker__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.litepicker__nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.litepicker__nav button {
+    background: none;
+    border: 0;
+    color: inherit;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.litepicker__nav button:hover,
+.litepicker__nav button:focus {
+    background-color: rgba(15, 23, 42, 0.08);
+    outline: none;
+}
+
+.litepicker__month {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.litepicker__weekdays,
+.litepicker__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.litepicker__weekday {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.5);
+}
+
+.litepicker__day {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.litepicker__day.is-outside {
+    color: rgba(15, 23, 42, 0.35);
+}
+
+.litepicker__day:hover,
+.litepicker__day:focus {
+    background-color: rgba(59, 130, 246, 0.16);
+    color: #1d4ed8;
+    outline: none;
+}
+
+.litepicker__day.is-selected {
+    background: linear-gradient(135deg, #2563eb, #9333ea);
+    color: #fff;
+    font-weight: 600;
+}
+
+.litepicker__footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.litepicker__close {
+    background: linear-gradient(135deg, #2563eb, #9333ea);
+    border: none;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
+}
+
+.litepicker__close:hover,
+.litepicker__close:focus {
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+    outline: none;
+}
+
+.litepicker__time {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+}
+
+.litepicker__select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid rgba(15, 23, 42, 0.15);
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #f8fafc;
+    color: #0f172a;
+    appearance: none;
+}
+
+.litepicker__select:focus {
+    border-color: #6366f1;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.litepicker__label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(15, 23, 42, 0.5);
+    margin-bottom: 6px;
+}
+
+.litepicker__column {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+}
+
+.litepicker__backdrop {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    z-index: 9998;
+}
+
