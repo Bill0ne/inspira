@@ -124,5 +124,19 @@
     "You save :amount": "Sie sparen :amount",
     "Your Information": "Ihre Angaben",
     "Your Reservation": "Ihre Reservierung",
-    "Your personal data will be used to support your experience throughout this website, to manage access to your account, and for other purposes described in our privacy policy.": "Ihre personenbezogenen Daten werden verwendet, um Ihre Erfahrung auf dieser Website zu unterstützen, den Zugriff auf Ihr Konto zu verwalten und für andere Zwecke, die in unserer Datenschutzrichtlinie beschrieben sind."
+    "Your personal data will be used to support your experience throughout this website, to manage access to your account, and for other purposes described in our privacy policy.": "Ihre personenbezogenen Daten werden verwendet, um Ihre Erfahrung auf dieser Website zu unterstützen, den Zugriff auf Ihr Konto zu verwalten und für andere Zwecke, die in unserer Datenschutzrichtlinie beschrieben sind.",
+    "Add New": "Neuen Zeitraum hinzufügen",
+    "Adults": "Erwachsene",
+    "Book Now": "Jetzt buchen",
+    "Book now": "Jetzt buchen",
+    "Check Availability": "Verfügbarkeit prüfen",
+    "Check In Date": "Check-in-Datum",
+    "Check Out Date": "Check-out-Datum",
+    "Children": "Kinder",
+    "Date & Time": "Datum & Uhrzeit",
+    "Guest": "Gast",
+    "Guests": "Gäste",
+    "Guests and Rooms": "Gäste & Zimmer",
+    "Room(s)": "Zimmer",
+    "Rooms": "Zimmer"
 }

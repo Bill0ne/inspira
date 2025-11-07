@@ -6,6 +6,14 @@
 
     Theme::set('pageTitle', $room->name);
     $nights = $startDate->diffInHours($endDate);
+
+    $formattedHours = $nights;
+
+    if (is_numeric($formattedHours)) {
+        $hoursValue = (float) $formattedHours;
+        $decimals = abs($hoursValue - round($hoursValue)) < 0.01 ? 0 : 2;
+        $formattedHours = number_format($hoursValue, $decimals, ',', '.');
+    }
 @endphp
 <div class="about-area5 about-p p-relative room-details">
     <div class="container pt-60 pb-40">
@@ -51,12 +59,14 @@
             <h2>{{ $room->name }}</h2>
             {{-- Preis NUR für eingeloggte User anzeigen --}}
             @if (auth('customer')->check() || auth()->check())
-                @if ($nights > 1)
-                    <span>{{ __(':price for :hours hours', ['price' => format_price($room->getRoomTotalPrice($startDate, $endDate)), 'hours' => $nights]) }}</span>
-                @else
-                    <span>{{ __(':price for :hours hour', ['price' => format_price($room->getRoomTotalPrice($startDate, $endDate)), 'hours' => $nights]) }}</span>
-                @endif
-
+                @php
+                    $hoursForPluralization = is_numeric($nights) ? (float) $nights : 0;
+                    $translationKey = abs($hoursForPluralization - 1) < 0.01
+                        ? ':price for :hours hour'
+                        : ':price for :hours hours';
+                @endphp
+                <span>{{ __($translationKey, ['price' => format_price($room->getRoomTotalPrice($startDate, $endDate)), 'hours' => $formattedHours]) }}</span>
+                
             @else
                 <span class="text-muted">{{ __('Bitte einloggen um die Preise zu sehen') }}</span>
             @endif

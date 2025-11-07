@@ -59,7 +59,10 @@ $image = $thumbnail
           <i class="fal fa-calendar-alt"></i>{{ $dateLabel }}
         </span>
         @if ($course->price)
-          <span class="mtxt">{{ format_price($course->price) }}</span>
+          @php
+            $displayPrice = $course->getPriceWithTax();
+          @endphp
+          <span class="mtxt">{{ format_price($displayPrice) }}</span>
         @endif
       </div>
     </div>
