@@ -59,7 +59,11 @@ $image = $thumbnail
           <i class="fal fa-calendar-alt"></i>{{ $dateLabel }}
         </span>
         @if ($course->price)
-          <span class="mtxt">{{ format_price($course->price) }}</span>
+          @php
+            $taxPercentage = $course->tax->percentage ?? 0;
+            $grossPrice = $course->price + ($course->price * $taxPercentage / 100);
+          @endphp
+          <span class="mtxt">{{ format_price($grossPrice) }}</span>
         @endif
       </div>
     </div>
