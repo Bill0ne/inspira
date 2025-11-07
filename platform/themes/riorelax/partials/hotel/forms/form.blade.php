@@ -37,8 +37,7 @@
                         $startCarbon = Carbon\Carbon::parse($startDateValue);
                         $date = $date ?: $startCarbon->format('d.m.Y');
                         $start = $start ?: $startCarbon->format('H:i');
-                    } catch (\Throwable $exception) {
-                    }
+                    } catch (\Throwable $exception) {}
                 }
 
                 if ($endDateValue) {
@@ -46,8 +45,7 @@
                         $endCarbon = Carbon\Carbon::parse($endDateValue);
                         $date = $date ?: $endCarbon->format('d.m.Y');
                         $end = $end ?: $endCarbon->format('H:i');
-                    } catch (\Throwable $exception) {
-                    }
+                    } catch (\Throwable $exception) {}
                 }
 
                 if ($date && $start && $end) {
@@ -75,25 +73,28 @@
         $minSlotDuration = 30;
         $widgetId = uniqid('booking-widget-');
         $widgetMessages = [
-            'incomplete' => __('Please complete all slot fields before continuing.'),
-            'duration' => __('Each slot must be at least :minutes minutes long.', ['minutes' => $minSlotDuration]),
-            'overlap' => __('Slots cannot overlap.'),
-            'past' => __('Slots must be scheduled in the future.'),
-            'invalid' => __('Please provide a valid date and time.'),
+            'incomplete' => __('Bitte alle Felder ausfüllen.'),
+            'duration' => __('Jeder Slot muss mindestens :minutes Minuten dauern.', ['minutes' => $minSlotDuration]),
+            'overlap' => __('Slots dürfen sich nicht überschneiden.'),
+            'past' => __('Slots müssen in der Zukunft liegen.'),
+            'invalid' => __('Bitte gültiges Datum und Zeit auswählen.'),
         ];
     @endphp
 
-    {{-- === Litepicker Styles & Script === --}}
+    {{-- === Assets === --}}
     <link rel="stylesheet" href="/themes/riorelax/css/booking-widget.css">
     <link rel="stylesheet" href="/themes/riorelax/css/litepicker.css">
-    <script src="/themes/riorelax/js/litepicker.js"></script>
+    <link rel="stylesheet" href="/themes/riorelax/css/booking-widget-info.css">
 
+    <script src="/themes/riorelax/js/litepicker.js"></script>
+    <script defer src="/themes/riorelax/js/booking-widget.js"></script>
+    <script defer src="/themes/riorelax/js/booking-widget-info.js"></script>
+
+    {{-- === Date + Time Picker Init === --}}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const attachPicker = (el, options) => {
-                if (!el || el.dataset.litepickerBound === 'true' || typeof Litepicker === 'undefined') {
-                    return;
-                }
+                if (!el || el.dataset.litepickerBound === 'true' || typeof Litepicker === 'undefined') return;
 
                 el.dataset.litepickerBound = 'true';
 
@@ -106,46 +107,26 @@
                     showTime: options.showTime || false,
                     showSeconds: false,
                     dropdowns: options.dropdowns || undefined,
-                    tooltipText: {
-                        one: 'Tag',
-                        other: 'Tage'
-                    }
+                    tooltipText: { one: 'Tag', other: 'Tage' }
                 });
             };
 
             const hydrateWidget = (widget) => {
-                if (!widget) {
-                    return;
-                }
-
-                widget.querySelectorAll('[data-role="slot-date"]').forEach((input) => {
-                    attachPicker(input, { format: 'DD.MM.YYYY' });
-                });
-
-                widget.querySelectorAll('[data-role="slot-start"], [data-role="slot-end"]').forEach((input) => {
-                    attachPicker(input, { format: 'HH:mm', showTime: true, dropdowns: { minutes: true, hours: true } });
-                });
+                if (!widget) return;
+                widget.querySelectorAll('[data-role="slot-date"]').forEach((input) => attachPicker(input, { format: 'DD.MM.YYYY' }));
+                widget.querySelectorAll('[data-role="slot-start"], [data-role="slot-end"]').forEach((input) =>
+                    attachPicker(input, { format: 'HH:mm', showTime: true, dropdowns: { minutes: true, hours: true } })
+                );
             };
 
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     mutation.addedNodes.forEach((node) => {
-                        if (!(node instanceof HTMLElement)) {
-                            return;
-                        }
-
-                        if (node.matches('[data-booking-widget]')) {
-                            hydrateWidget(node);
-                        }
-
+                        if (!(node instanceof HTMLElement)) return;
+                        if (node.matches('[data-booking-widget]')) hydrateWidget(node);
                         const ownerWidget = node.closest('[data-booking-widget]');
-                        if (ownerWidget) {
-                            hydrateWidget(ownerWidget);
-                        }
-
-                        node.querySelectorAll('[data-booking-widget]').forEach((widget) => {
-                            hydrateWidget(widget);
-                        });
+                        if (ownerWidget) hydrateWidget(ownerWidget);
+                        node.querySelectorAll('[data-booking-widget]').forEach((widget) => hydrateWidget(widget));
                     });
                 });
             });
@@ -156,151 +137,59 @@
             });
         });
     </script>
-    <script defer src="/themes/riorelax/js/booking-widget.js"></script>
 
-    <form action="{{ $availableForBooking ? route('public.booking') : route('public.rooms') }}" method="{{ $availableForBooking ? 'POST' : 'GET' }}" class="contact-form mt-30 form-booking">
+    {{-- === FORMULAR === --}}
+    <form action="{{ $availableForBooking ? route('public.booking') : route('public.rooms') }}"
+          method="{{ $availableForBooking ? 'POST' : 'GET' }}"
+          class="contact-form mt-30 form-booking">
+
         @if ($availableForBooking)
             @csrf
             <input type="hidden" name="room_id" value="{{ $room->id }}">
         @endif
 
-        @switch($style)
-            @case(2)
-                <div class="row align-items-start g-4 booking-form booking-form--style-2">
-                    @if (! empty($title))
-                        <div class="col-lg-12">
-                            <div class="section-title center-align mb-3">
-                                <h2>{!! BaseHelper::clean($title) !!}</h2>
-                            </div>
-                        </div>
-                    @endif
+        <div class="booking-widget" 
+             data-booking-widget
+             data-widget-id="{{ $widgetId }}"
+             data-min-duration="{{ $minSlotDuration }}"
+             data-error-incomplete="{{ $widgetMessages['incomplete'] }}"
+             data-error-duration="{{ $widgetMessages['duration'] }}"
+             data-error-overlap="{{ $widgetMessages['overlap'] }}"
+             data-error-past="{{ $widgetMessages['past'] }}"
+             data-error-invalid="{{ $widgetMessages['invalid'] }}"
+        >
+            <div class="booking-widget__header">
+                <h4 class="booking-widget__title">Wähle deinen Zeitraum</h4>
+            </div>
 
-                    <div class="col-lg-5 col-md-6">
-                        <div
-                            class="booking-widget booking-widget--fluid"
-                            data-booking-widget
-                            data-widget-id="{{ $widgetId }}"
-                            data-min-duration="{{ $minSlotDuration }}"
-                            data-error-incomplete="{{ $widgetMessages['incomplete'] }}"
-                            data-error-duration="{{ $widgetMessages['duration'] }}"
-                            data-error-overlap="{{ $widgetMessages['overlap'] }}"
-                            data-error-past="{{ $widgetMessages['past'] }}"
-                            data-error-invalid="{{ $widgetMessages['invalid'] }}"
-                        >
-                            <div class="booking-widget__header">
-                                <h4 class="booking-widget__title">{{ __('Choose your slot') }}</h4>
-                            </div>
+            @include(Theme::getThemeNamespace('partials.hotel.forms.booking-slots'), [
+                'slots' => $processedSlots,
+                'widgetId' => $widgetId,
+                'minDuration' => $minSlotDuration,
+            ])
 
-                            @include(Theme::getThemeNamespace('partials.hotel.forms.booking-slots'), [
-                                'slots' => $processedSlots,
-                                'widgetId' => $widgetId,
-                                'minDuration' => $minSlotDuration,
-                            ])
-                        </div>
+            <div class="booking-widget__footer">
+                <div class="booking-counter" data-counter>
+                    <div class="booking-counter__label">
+                        <i class="fal fa-users" aria-hidden="true"></i>
+                        <span>Erwachsene</span>
                     </div>
-
-                    <div class="col-lg-4 col-md-6 mb-3">
-                        <div class="contact-field p-relative c-name form-guests-and-rooms-wrapper">
-                            <label for="adults"><i class="fal fa-users"></i>{{ __('Guests and Rooms') }}</label>
-                            <button data-bb-toggle="toggle-guests-and-rooms" class="text-truncate" type="button" data-target="#toggle-guests-and-rooms">
-                                <span data-bb-toggle="filter-adults-count" class="me-1">{{ BaseHelper::stringify($adults) }}</span> {{ __('Adult(s)') }} ,
-                                <span data-bb-toggle="filter-children-count" class="ms-1 me-1">{{ BaseHelper::stringify($children) }}</span> {{ __('Child(ren)') }},
-                                <span data-bb-toggle="filter-rooms-count" class="me-1 ms-1">{{ BaseHelper::stringify($roomsCount) }}</span> {{ __('Room(s)') }}
-                            </button>
-
-                            <div class="custom-dropdown dropdown-menu p-3" id="toggle-guests-and-rooms">
-                                <div class="inputs-filed">
-                                    <label for="adults">{{ __('Adults') }}</label>
-                                    <div class="input-quantity">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="decrement-room">-</button>
-                                        <input type="number" id="adults" name="adults" readonly value="{{ BaseHelper::stringify($adults) }}" min="{{ $minimumNumberOfGuests }}" max="{{ $maximumNumberOfGuests }}">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="increment-room">+</button>
-                                    </div>
-                                </div>
-                                <div class="inputs-filed mt-30">
-                                    <label for="children">{{ __('Children') }}</label>
-                                    <div class="input-quantity">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="decrement-room">-</button>
-                                        <input type="number" id="children" name="children" readonly value="{{ BaseHelper::stringify($children) }}" min="0" max="{{ $maximumNumberOfGuests }}">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="increment-room">+</button>
-                                    </div>
-                                </div>
-                                <div class="inputs-filed mt-30">
-                                    <label for="rooms">{{ __('Rooms') }}</label>
-                                    <div class="input-quantity">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="decrement-room">-</button>
-                                        <input type="number" id="rooms" name="rooms" readonly value="{{ BaseHelper::stringify($roomsCount) }}" min="1" max="10">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="increment-room">+</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-3 col-md-6">
-                        <div class="slider-btn">
-                            <button type="submit" class="btn ss-btn" data-animation="fadeInRight" data-delay=".8s">
-                                {{ $availableForBooking ? __('Book Now') : __('Check Availability') }}
-                            </button>
-                        </div>
+                    <div class="booking-counter__controls">
+                        <button type="button" class="booking-counter__btn" data-counter-action="decrement" aria-label="Weniger Erwachsene">−</button>
+                        <input type="number"
+                               class="booking-counter__input"
+                               id="booking-adults"
+                               name="adults"
+                               value="{{ BaseHelper::stringify($adults) }}"
+                               min="{{ $minimumNumberOfGuests }}"
+                               max="{{ $maximumNumberOfGuests }}">
+                        <button type="button" class="booking-counter__btn" data-counter-action="increment" aria-label="Mehr Erwachsene">+</button>
                     </div>
                 </div>
-                @break
 
-            @default
-                <div
-                    class="booking-widget"
-                    data-booking-widget
-                    data-widget-id="{{ $widgetId }}"
-                    data-min-duration="{{ $minSlotDuration }}"
-                    data-error-incomplete="{{ $widgetMessages['incomplete'] }}"
-                    data-error-duration="{{ $widgetMessages['duration'] }}"
-                    data-error-overlap="{{ $widgetMessages['overlap'] }}"
-                    data-error-past="{{ $widgetMessages['past'] }}"
-                    data-error-invalid="{{ $widgetMessages['invalid'] }}"
-                >
-                    @if (! empty($title))
-                        <div class="booking-widget__header">
-                            <h4 class="booking-widget__title">{!! BaseHelper::clean($title) !!}</h4>
-                        </div>
-                    @else
-                        <div class="booking-widget__header">
-                            <h4 class="booking-widget__title">{{ __('Choose your slot') }}</h4>
-                        </div>
-                    @endif
-
-                    @include(Theme::getThemeNamespace('partials.hotel.forms.booking-slots'), [
-                        'slots' => $processedSlots,
-                        'widgetId' => $widgetId,
-                        'minDuration' => $minSlotDuration,
-                    ])
-
-                    <div class="booking-widget__footer">
-                        <div class="booking-counter" data-counter>
-                            <div class="booking-counter__label">
-                                <i class="fal fa-users" aria-hidden="true"></i>
-                                <span>{{ __('Adults') }}</span>
-                            </div>
-                            <div class="booking-counter__controls">
-                                <button type="button" class="booking-counter__btn" data-counter-action="decrement" aria-label="{{ __('Decrease adults') }}">−</button>
-                                <input
-                                    type="number"
-                                    class="booking-counter__input"
-                                    id="booking-adults"
-                                    name="adults"
-                                    value="{{ BaseHelper::stringify($adults) }}"
-                                    min="{{ $minimumNumberOfGuests }}"
-                                    max="{{ $maximumNumberOfGuests }}"
-                                >
-                                <button type="button" class="booking-counter__btn" data-counter-action="increment" aria-label="{{ __('Increase adults') }}">+</button>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="booking-widget__submit">
-                            {{ $availableForBooking ? __('Book Now') : __('Check Availability') }}
-                        </button>
-                    </div>
-                </div>
-        @endswitch
+                {{-- Info-Box wird automatisch per JS vor dem Button eingefügt --}}
+                <button type="submit" class="booking-widget__submit">Jetzt buchen</button>
+            </div>
+        </div>
     </form>
 @endif
