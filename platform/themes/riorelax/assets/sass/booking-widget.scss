@@ -7,6 +7,7 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
+    font-family: inherit;
 }
 
 .booking-widget,
@@ -26,7 +27,7 @@
 }
 
 .booking-widget__title {
-    font-family: 'Poppins', sans-serif;
+    font-family: inherit;
     font-size: 18px;
     font-weight: 600;
     color: #333;
@@ -69,7 +70,7 @@
 }
 
 .slot-card__label {
-    font-family: 'Poppins', sans-serif;
+    font-family: inherit;
     font-size: 13px;
     font-weight: 500;
     color: #555;
@@ -80,7 +81,7 @@
     border-radius: 6px;
     padding: 8px 10px;
     font-size: 14px;
-    font-family: 'Poppins', sans-serif;
+    font-family: inherit;
     color: #333;
     background: #fff;
     width: 100%;
@@ -141,7 +142,7 @@
     margin: 0;
     font-size: 12px;
     font-weight: 500;
-    font-family: 'Poppins', sans-serif;
+    font-family: inherit;
     color: #666;
 }
 
@@ -152,13 +153,23 @@
     padding: 10px 12px;
     font-size: 12px;
     font-weight: 500;
-    font-family: 'Poppins', sans-serif;
+    font-family: inherit;
 }
 
 .booking-widget__footer {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.litepicker {
+    font-family: inherit;
+    z-index: 9999;
+}
+
+.litepicker .litepicker__day,
+.litepicker .litepicker__select {
+    border-radius: 6px;
 }
 
 .booking-counter {
@@ -172,7 +183,7 @@
 }
 
 .booking-counter__label {
-    font-family: 'Poppins', sans-serif;
+    font-family: inherit;
     font-size: 13px;
     font-weight: 500;
     color: #555;
@@ -209,7 +220,7 @@
     border-radius: 6px;
     height: 36px;
     font-size: 14px;
-    font-family: 'Poppins', sans-serif;
+    font-family: inherit;
 }
 
 .booking-widget__submit {
@@ -221,7 +232,7 @@
     color: #fff;
     font-size: 15px;
     font-weight: 600;
-    font-family: 'Poppins', sans-serif;
+    font-family: inherit;
     transition: background 0.2s ease;
 }
 
