@@ -68,13 +68,23 @@ textarea.form-control{min-height:100px;}
 /* ==== Coupon ==== */
 .coupon-wrapper{background:#F9F9F9;border:1px solid var(--gray);border-radius:8px;padding:20px;margin-bottom:24px;}
 .coupon-wrapper label{font-weight:500;}
-.coupon-wrapper .input-group{flex-wrap:wrap;gap:12px;}
-.coupon-wrapper .input-group>.form-control{flex:1 1 220px;min-width:0;}
-.coupon-wrapper .input-group>.btn{flex:0 0 auto;padding:12px 22px;}
-.coupon-wrapper .btn{background:var(--mint)!important;color:#fff!important;border:none!important;}
+.coupon-wrapper .coupon-box{display:flex;flex-direction:column;gap:14px;}
+.coupon-wrapper .coupon-form{margin:0;}
+.coupon-wrapper .coupon-feedback{border-radius:8px;padding:16px 18px;}
+.coupon-wrapper .coupon-feedback .btn{color:#17463f;font-weight:600;}
+.coupon-wrapper .coupon-input-group{display:flex;align-items:stretch;gap:12px;}
+.coupon-wrapper .coupon-input-group>.form-control{flex:1 1 auto;min-width:200px;border-radius:6px;}
+.coupon-wrapper .coupon-input-group>.btn{flex:0 0 auto;padding:12px 22px;font-weight:600;border-radius:6px;}
+.coupon-wrapper .apply-coupon-code{background:var(--mint)!important;color:#fff!important;border:none!important;}
+.coupon-wrapper .remove-coupon-code{color:#17463f;font-weight:600;}
+@media(max-width:768px){
+  .coupon-wrapper{padding:18px;}
+}
 @media(max-width:575px){
-  .coupon-wrapper .input-group{flex-direction:column;align-items:stretch;}
-  .coupon-wrapper .input-group>.btn{width:100%;padding:12px 0;}
+  .coupon-wrapper .coupon-input-group{flex-direction:column;gap:10px;}
+  .coupon-wrapper .coupon-input-group>.form-control{min-width:0;width:100%;}
+  .coupon-wrapper .coupon-input-group>.btn{width:100%;padding:12px;font-size:14px;}
+  .coupon-wrapper .toggle-coupon-form{font-size:14px;}
 }
 
 /* ==== Payment ==== */
