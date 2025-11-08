@@ -1,5 +1,5 @@
 @php
-    $type = $filterType ?? null;
+    $type = $filterType ?? ($filter_type ?? null);
     if (! in_array($type, ['courses', 'rooms'], true)) {
         $type = request()->query('filter_type');
     }
@@ -165,103 +165,118 @@
 
 {{-- 🧠 Auto-Submit --}}
 <script>
-(function(){
-  const f = document.getElementById('mainFilterForm');
-  if(!f) return;
-  const toggle = document.getElementById('filterToggle');
-  const bar = document.getElementById('filterBar');
-  if(toggle && bar){
-    toggle.addEventListener('click', function(){
-      const isOpen = bar.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      const textEl = toggle.querySelector('span');
-      if(textEl){
-        textEl.textContent = isOpen ? 'Filter ausblenden' : 'Filter anzeigen';
-      }
-    });
-  }
-  const searchField = f.querySelector('input[name="search"]');
-
-  const navigateWithFilters = () => {
-    if (searchField) {
-      const trimmed = searchField.value.trim();
-      if (trimmed !== searchField.value) {
-        searchField.value = trimmed;
-      }
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('mainFilterForm');
+    if (!form) {
+        return;
     }
 
-    const formData = new FormData(f);
-    const params = new URLSearchParams();
+    const toggle = document.getElementById('filterToggle');
+    const bar = document.getElementById('filterBar');
+    if (toggle && bar) {
+        toggle.addEventListener('click', () => {
+            const isOpen = bar.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            const textEl = toggle.querySelector('span');
+            if (textEl) {
+                textEl.textContent = isOpen ? 'Filter ausblenden' : 'Filter anzeigen';
+            }
+        });
+    }
 
-    formData.forEach((value, key) => {
-      if (key === 'page') {
-        return;
-      }
+    const searchField = form.querySelector('input[name="search"]');
 
-      if (typeof value === 'string' && key === 'search') {
-        value = value.trim();
-      }
+    const navigateWithFilters = () => {
+        if (searchField) {
+            const trimmed = searchField.value.trim();
+            if (trimmed !== searchField.value) {
+                searchField.value = trimmed;
+            }
+        }
 
-      if ((value === '' || value === null) && key !== 'filter_type') {
-        return;
-      }
+        const pageField = form.querySelector('[name="page"]');
+        if (pageField) {
+            pageField.remove();
+        }
 
-      params.set(key, value);
-    });
+        const params = new URLSearchParams();
+        const formData = new FormData(form);
 
-    const action = f.getAttribute('action') || window.location.pathname;
-    const url = new URL(action, window.location.origin);
-    const query = params.toString();
+        for (const [key, rawValue] of formData.entries()) {
+            if (key === 'page') {
+                continue;
+            }
 
-    url.search = query ? `?${query}` : '';
+            let value = rawValue;
 
-    window.location.assign(url.toString());
-  };
+            if (typeof value === 'string') {
+                value = value.trim();
+            }
 
-  f.addEventListener('submit', (event) => {
-    event.preventDefault();
-    navigateWithFilters();
-  });
+            if (!value && key !== 'filter_type') {
+                continue;
+            }
 
-  f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', navigateWithFilters);
-  });
+            params.set(key, value);
+        }
 
-  if (searchField) {
-    searchField.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
+        const action = form.getAttribute('action') || window.location.pathname;
+        const query = params.toString();
+        const url = query ? `${action}?${query}` : action;
+
+        window.location.href = url;
+    };
+
+    form.addEventListener('submit', (event) => {
         event.preventDefault();
         navigateWithFilters();
-      }
     });
-  }
 
-  f.addEventListener('submit', (event) => {
-    event.preventDefault();
-    applyFilters();
-  });
+    form.querySelectorAll('select').forEach((element) => {
+        element.addEventListener('change', navigateWithFilters);
+    });
 
-  document.addEventListener('click', (event) => {
-    const chip = event.target.closest('.filter-chip');
-    if(!chip) return;
-    event.preventDefault();
-    const key = chip.getAttribute('data-key');
-    if(!key) return;
-    const field = f.querySelector(`[name="${key}"]`);
-    if(field){
-      if(field.tagName === 'SELECT') {
-        field.selectedIndex = 0;
-      } else {
-        field.value = '';
-      }
+    if (searchField) {
+        searchField.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                navigateWithFilters();
+            }
+        });
     }
-    if(key === 'sort'){
-      const sortField = f.querySelector('#filter-sort');
-      if(sortField) sortField.selectedIndex = 0;
-    }
-    navigateWithFilters();
-  });
-})();
+
+    document.addEventListener('click', (event) => {
+        const chip = event.target.closest('.filter-chip');
+        if (!chip) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const key = chip.getAttribute('data-key');
+        if (!key) {
+            return;
+        }
+
+        const field = form.querySelector(`[name="${key}"]`);
+        if (field) {
+            if (field.tagName === 'SELECT') {
+                field.selectedIndex = 0;
+            } else {
+                field.value = '';
+            }
+        }
+
+        if (key === 'sort') {
+            const sortField = form.querySelector('#filter-sort');
+            if (sortField) {
+                sortField.selectedIndex = 0;
+            }
+        }
+
+        navigateWithFilters();
+    });
+});
 </script>
 
 <style>
