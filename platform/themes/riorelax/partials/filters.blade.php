@@ -194,6 +194,8 @@
     } else {
       f.submit();
     }
+
+    window.location.href = url;
   };
 
   f.querySelectorAll('select').forEach((el) => {
@@ -205,10 +207,15 @@
     searchField.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        triggerSubmit();
+        applyFilters();
       }
     });
   }
+
+  f.addEventListener('submit', (event) => {
+    event.preventDefault();
+    applyFilters();
+  });
 
   document.addEventListener('click', (event) => {
     const chip = event.target.closest('.filter-chip');
@@ -228,7 +235,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    triggerSubmit();
+    applyFilters();
   });
 })();
 </script>
