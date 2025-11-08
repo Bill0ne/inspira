@@ -65,6 +65,23 @@ class Course extends BaseModel
         return $price;
     }
 
+    public function getPriceWithTax(?float $price = null): float
+    {
+        $price = (float) ($price ?? $this->price);
+
+        if ($price <= 0) {
+            return $price;
+        }
+
+        $taxPercentage = (float) ($this->tax->percentage ?? 0);
+
+        if ($taxPercentage <= 0) {
+            return $price;
+        }
+
+        return $price * (1 + $taxPercentage / 100);
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(CourseReview::class, 'course_id');
