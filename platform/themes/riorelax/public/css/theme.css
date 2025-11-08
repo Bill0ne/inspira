@@ -10,11 +10,14 @@ body{color:#777;font-family:var(--primary-font),sans-serif;font-size:15px;font-s
 .room-details .room-booking-card{background-color:#fff;border-radius:16px;padding:32px;box-shadow:0 15px 40px rgba(0,0,0,0.08);margin-bottom:50px;display:flex;flex-direction:column;gap:24px;}
 @media (max-width:575.98px){.room-details .room-booking-card{padding:24px;}}
 .room-details .room-booking-card__pricing{display:flex;flex-direction:column;gap:12px;border-bottom:1px solid #f1f1f1;padding-bottom:16px;}
-.room-details .room-booking-card__price{font-size:28px;font-weight:600;color:var(--primary-color);margin-bottom:0;line-height:1.4;}
+.room-details .room-booking-card__price-chip{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background-color:#f5f7f6;color:#2f5f58;font-size:20px;font-weight:600;line-height:1.4;align-self:flex-start;}
 .room-details .room-booking-card__notice{margin-bottom:0;font-size:16px;line-height:1.5;}
 .room-details .room-booking-card__form .booking-widget{max-width:none;width:100%;padding:0;background:transparent;box-shadow:none;}
 .room-details .room-booking-card__form .booking-widget__header{margin-bottom:8px;}
 .room-details .room-booking-card__form .booking-widget__footer{margin-top:8px;}
+.room-details .room-booking-card__form .room-booking-card__cta{display:flex;flex-direction:column;gap:12px;}
+.room-details .room-booking-card__form .room-booking-card__cta-btn{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:12px 16px;border-radius:6px;background:var(--primary-color);color:#fff;font-size:16px;font-weight:500;text-decoration:none;transition:background-color .2s ease;}
+.room-details .room-booking-card__form .room-booking-card__cta-btn:hover{background:#4B7C75;color:#fff;}
 
 /* Custom layout for room detail gallery */
 .room-details--rooms .thumb{display:flex;align-items:flex-start;gap:24px;}
