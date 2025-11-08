@@ -261,7 +261,7 @@ const BookingWidget = (() => {
         const cards = Array.from(widget.querySelectorAll(selectors.slotCard))
 
         if (!cards.length) {
-            return { valid: false, message: widget.dataset.errorIncomplete || 'Please add at least one slot.' }
+            return { valid: false, message: widget.dataset.errorIncomplete || 'Bitte füge mindestens einen Slot hinzu.' }
         }
 
         const parsedSlots = []
@@ -274,7 +274,7 @@ const BookingWidget = (() => {
             const endValue = (card.querySelector('[data-role="slot-end"]').value || '').trim()
 
             if (!dateValue || !startValue || !endValue) {
-                return { valid: false, message: widget.dataset.errorIncomplete || 'Please complete all slot fields.' }
+                return { valid: false, message: widget.dataset.errorIncomplete || 'Bitte alle Slot-Felder ausfüllen.' }
             }
 
             const date = parseDate(dateValue)
@@ -282,29 +282,29 @@ const BookingWidget = (() => {
             const endTime = parseTime(endValue)
 
             if (!date || !startTime || !endTime) {
-                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+                return { valid: false, message: widget.dataset.errorInvalid || 'Bitte gültiges Datum und gültige Uhrzeit eingeben.' }
             }
 
             const start = combineDateTime(date, startTime)
             const end = combineDateTime(date, endTime)
 
             if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+                return { valid: false, message: widget.dataset.errorInvalid || 'Bitte gültiges Datum und gültige Uhrzeit eingeben.' }
             }
 
             if (end.getTime() <= start.getTime()) {
-                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+                return { valid: false, message: widget.dataset.errorInvalid || 'Bitte gültiges Datum und gültige Uhrzeit eingeben.' }
             }
 
             if (start.getTime() < now.getTime()) {
-                return { valid: false, message: widget.dataset.errorPast || 'Slots must be in the future.' }
+                return { valid: false, message: widget.dataset.errorPast || 'Slots müssen in der Zukunft liegen.' }
             }
 
             const duration = Math.round((end.getTime() - start.getTime()) / 60000)
             if (duration < minDuration) {
                 return {
                     valid: false,
-                    message: widget.dataset.errorDuration || `Slots must be at least ${minDuration} minutes.`,
+                    message: widget.dataset.errorDuration || `Slots müssen mindestens ${minDuration} Minuten dauern.`,
                 }
             }
 
@@ -315,7 +315,7 @@ const BookingWidget = (() => {
 
         for (let i = 1; i < sorted.length; i++) {
             if (sorted[i].start.getTime() < sorted[i - 1].end.getTime()) {
-                return { valid: false, message: widget.dataset.errorOverlap || 'Slots cannot overlap.' }
+                return { valid: false, message: widget.dataset.errorOverlap || 'Slots dürfen sich nicht überschneiden.' }
             }
         }
 
@@ -530,7 +530,7 @@ const BookingWidget = (() => {
         if (typeof window !== 'undefined' && typeof window.Litepicker === 'undefined') {
             if (attempt >= MAX_ATTEMPTS) {
                 if (typeof console !== 'undefined' && console.warn) {
-                    console.warn('Booking widget: Litepicker library not found.')
+                    console.warn('Buchungs-Widget: Litepicker-Bibliothek nicht gefunden.')
                 }
 
                 return

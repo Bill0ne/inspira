@@ -195,6 +195,7 @@
       pageField.remove();
     }
 
+  const navigateWithFilters = () => {
     if (searchField) {
       const trimmed = searchField.value.trim();
       if (trimmed !== searchField.value) {
@@ -216,6 +217,11 @@
       }
     });
   }
+
+  f.addEventListener('submit', (event) => {
+    event.preventDefault();
+    applyFilters();
+  });
 
   document.addEventListener('click', (event) => {
     const chip = event.target.closest('.filter-chip');
