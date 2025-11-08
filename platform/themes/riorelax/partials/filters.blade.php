@@ -180,47 +180,26 @@
       }
     });
   }
-  const buildUrl = () => {
-    const params = new URLSearchParams();
-    const elements = Array.from(f.elements);
-    const action = f.getAttribute('action') || window.location.pathname;
-
-    elements.forEach((el) => {
-      if (!el.name || el.disabled) {
-        return;
+  const triggerSubmit = () => {
+    const searchInput = f.querySelector('input[name="search"]');
+    if (searchInput) {
+      const trimmed = searchInput.value.trim();
+      if (trimmed !== searchInput.value) {
+        searchInput.value = trimmed;
       }
+    }
 
-      let value = el.value;
-
-      if (el.name === 'search') {
-        value = value.trim();
-        el.value = value;
-      }
-
-      if (!value && el.name !== 'filter_type') {
-        return;
-      }
-
-      params.set(el.name, value);
-    });
-
-    const query = params.toString();
-    return query ? `${action}?${query}` : action;
-  };
-
-  const applyFilters = () => {
-    const url = buildUrl();
-
-    if (window.location.href === url) {
-      window.location.reload();
-      return;
+    if (typeof f.requestSubmit === 'function') {
+      f.requestSubmit();
+    } else {
+      f.submit();
     }
 
     window.location.href = url;
   };
 
   f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', applyFilters);
+    el.addEventListener('change', triggerSubmit);
   });
 
   const searchField = f.querySelector('input[name="search"]');
