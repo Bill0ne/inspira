@@ -180,77 +180,47 @@
       }
     });
   }
-  const disableTemporarily = (el, restoreQueue) => {
-    const wasDisabled = el.disabled;
-    if (!wasDisabled) {
-      el.disabled = true;
-    }
-    restoreQueue.push(() => {
-      if (!wasDisabled) {
-        el.disabled = false;
-      }
-    });
-  };
+  const buildUrl = () => {
+    const params = new URLSearchParams();
+    const elements = Array.from(f.elements);
+    const action = f.getAttribute('action') || window.location.pathname;
 
-  const prepareSubmission = () => {
-    const restoreQueue = [];
-    const searchField = f.querySelector('input[name="search"]');
-
-    if (searchField) {
-      const trimmed = searchField.value.trim();
-      if (trimmed !== searchField.value) {
-        searchField.value = trimmed;
-      }
-      if (searchField.value === '') {
-        disableTemporarily(searchField, restoreQueue);
-      }
-    }
-
-    Array.from(f.elements).forEach((el) => {
-      if (!el.name || el === searchField || el.name === 'filter_type') {
+    elements.forEach((el) => {
+      if (!el.name || el.disabled) {
         return;
       }
 
-      const tag = el.tagName;
-      const type = el.type;
+      let value = el.value;
 
-      if ((tag === 'SELECT' || type === 'text' || type === 'search') && !el.value) {
-        disableTemporarily(el, restoreQueue);
+      if (el.name === 'search') {
+        value = value.trim();
+        el.value = value;
       }
+
+      if (!value && el.name !== 'filter_type') {
+        return;
+      }
+
+      params.set(el.name, value);
     });
 
-    return () => {
-      restoreQueue.forEach((restore) => restore());
-    };
+    const query = params.toString();
+    return query ? `${action}?${query}` : action;
   };
 
-  let restoreTimer = null;
-  f.addEventListener('submit', (event) => {
-    if (restoreTimer) {
-      clearTimeout(restoreTimer);
-      restoreTimer = null;
+  const applyFilters = () => {
+    const url = buildUrl();
+
+    if (window.location.href === url) {
+      window.location.reload();
+      return;
     }
 
-    const restore = prepareSubmission();
-
-    restoreTimer = setTimeout(() => {
-      restore();
-      restoreTimer = null;
-    }, 400);
-  });
-
-  const triggerSubmit = () => {
-    if (typeof f.requestSubmit === 'function') {
-      f.requestSubmit();
-    } else {
-      f.submit();
-    }
+    window.location.href = url;
   };
 
   f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', () => {
-      triggerSubmit();
-    });
+    el.addEventListener('change', applyFilters);
   });
 
   const searchField = f.querySelector('input[name="search"]');
@@ -258,10 +228,15 @@
     searchField.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        triggerSubmit();
+        applyFilters();
       }
     });
   }
+
+  f.addEventListener('submit', (event) => {
+    event.preventDefault();
+    applyFilters();
+  });
 
   document.addEventListener('click', (event) => {
     const chip = event.target.closest('.filter-chip');
@@ -281,7 +256,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    triggerSubmit();
+    applyFilters();
   });
 })();
 </script>
