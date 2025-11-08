@@ -6,8 +6,8 @@ use Botble\Base\Http\Controllers\BaseController;
 use Botble\Base\Http\Responses\BaseHttpResponse;
 use Botble\Hotel\Facades\HotelHelper;
 use Botble\Hotel\Services\CouponService;
-use Closure;
 use Illuminate\Http\Request;
+use Closure;
 
 class CouponController extends BaseController
 {
@@ -15,7 +15,6 @@ class CouponController extends BaseController
     {
         $this->middleware(function (Request $request, Closure $next) {
             abort_unless($request->ajax(), 404);
-
             return $next($request);
         });
     }
@@ -27,7 +26,6 @@ class CouponController extends BaseController
         ]);
 
         $couponCode = $request->input('coupon_code');
-
         $coupon = $couponService->getCouponByCode($couponCode);
 
         if ($coupon === null) {
@@ -54,13 +52,34 @@ class CouponController extends BaseController
                 ->setMessage(__('This coupon is not used yet!'));
         }
 
+        // Aktuelle Checkout-Daten abrufen
+        $checkoutData = HotelHelper::getCheckoutData();
+
+        // Coupon-Werte löschen
         HotelHelper::saveCheckoutData([
             'coupon_code' => null,
             'coupon_amount' => 0,
         ]);
 
+        // Nach Entfernen neu berechnen: ursprünglicher Preis + Steuer bleiben
+        $price = $checkoutData['amount'] ?? ($checkoutData['price'] ?? 0);
+        $tax   = $checkoutData['tax_amount'] ?? 0;
+
+        // Gesamtpreis ist jetzt einfach Preis + Steuer (ohne Rabatt)
+        $total = $price + $tax;
+
+        // Neues HTML für Coupon-Box rendern
+        $html = view('plugins/courses::coupons.partials.form')->render();
+
         return $this->response
-            ->setMessage(__('Removed coupon :code successfully!', ['code' => $couponCode]));
+            ->setMessage(__('Removed coupon :code successfully!', ['code' => $couponCode]))
+            ->setData([
+                'price'    => $price,
+                'discount' => 0,
+                'tax'      => $tax,
+                'total'    => $total,
+                'html'     => $html,
+            ]);
     }
 
     public function refresh(): BaseHttpResponse
