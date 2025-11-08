@@ -181,6 +181,19 @@
     });
   }
   const searchField = f.querySelector('input[name="search"]');
+  const submitForm = () => {
+    if (typeof f.requestSubmit === 'function') {
+      f.requestSubmit();
+    } else {
+      f.submit();
+    }
+  };
+
+  f.addEventListener('submit', () => {
+    const pageField = f.querySelector('[name="page"]');
+    if (pageField) {
+      pageField.remove();
+    }
 
   const navigateWithFilters = () => {
     if (searchField) {
@@ -189,49 +202,18 @@
         searchField.value = trimmed;
       }
     }
-
-    const formData = new FormData(f);
-    const params = new URLSearchParams();
-
-    formData.forEach((value, key) => {
-      if (key === 'page') {
-        return;
-      }
-
-      if (typeof value === 'string' && key === 'search') {
-        value = value.trim();
-      }
-
-      if ((value === '' || value === null) && key !== 'filter_type') {
-        return;
-      }
-
-      params.set(key, value);
-    });
-
-    const action = f.getAttribute('action') || window.location.pathname;
-    const url = new URL(action, window.location.origin);
-    const query = params.toString();
-
-    url.search = query ? `?${query}` : '';
-
-    window.location.assign(url.toString());
-  };
-
-  f.addEventListener('submit', (event) => {
-    event.preventDefault();
-    navigateWithFilters();
   });
 
   f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', navigateWithFilters);
+    el.addEventListener('change', submitForm);
   });
 
   if (searchField) {
+    searchField.addEventListener('change', submitForm);
     searchField.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        navigateWithFilters();
+        submitForm();
       }
     });
   }
@@ -259,7 +241,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    navigateWithFilters();
+    submitForm();
   });
 })();
 </script>
