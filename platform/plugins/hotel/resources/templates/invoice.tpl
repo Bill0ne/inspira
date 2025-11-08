@@ -8,164 +8,104 @@
         <link href="https://fonts.googleapis.com/css2?family={{ settings.custom_font_family | urlencode }}:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     {% endif %}
     <style>
-        @page {
-            margin: 35px 35px 90px;
-        }
-
         body {
-            font-size: 14px;
+            font-size: 15px;
             font-family: '{{ settings.font_family }}', Arial, sans-serif !important;
-            color: #1f1f1f;
-        }
-
-        h1 {
-            font-size: 26px;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
         table {
             border-collapse: collapse;
-            width: 100%;
+            width: 100%
         }
 
-        th,
-        td {
-            padding: 6px 4px;
-            vertical-align: top;
+        table tr td {
+            padding: 0
         }
 
-        th {
-            text-align: left;
-        }
-
-        .text-right {
-            text-align: right;
+        table tr td:last-child {
+            text-align: right
         }
 
         .bold, strong, b, .total, .stamp {
-            font-weight: 700;
+            font-weight: 700
         }
 
-        .section-divider {
-            border-bottom: 1px solid #dcdcdc;
-            margin: 15px 0;
+        .right {
+            text-align: right
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            gap: 40px;
-            margin-bottom: 20px;
+        .large {
+            font-size: 1.75em
         }
 
-        .header .logo img {
-            max-height: 60px;
+        .total {
+            color: #fb7578;
         }
 
-        .company-info,
-        .customer-info {
-            line-height: 1.5;
-            font-size: 13px;
+        .logo-container {
+            margin: 20px 0 50px
         }
 
-        .meta-table {
-            margin-top: 10px;
-            font-size: 13px;
+        .invoice-info-container {
+            font-size: .875em
         }
 
-        .meta-table th {
-            color: #555;
-            font-weight: 600;
-            width: 140px;
+        .invoice-info-container td {
+            padding: 4px 0
         }
 
-        .items-table {
-            width: 100%;
-            margin-top: 25px;
-            font-size: 13px;
+        .line-items-container {
+            font-size: .875em;
+            margin: 70px 0
         }
 
-        .items-table thead th {
-            border-bottom: 2px solid #222;
-            text-transform: uppercase;
-            font-size: 12px;
-            padding: 10px 4px;
-            color: #111;
-        }
-
-        .items-table tbody td {
-            padding: 10px 4px;
-            border-bottom: 1px solid #e6e6e6;
-        }
-
-        .items-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .items-table .description {
-            width: 45%;
-        }
-
-        .summary {
-            margin-top: 15px;
-            width: 40%;
-            margin-left: auto;
-            font-size: 13px;
-        }
-
-        .summary tr th {
+        .line-items-container th {
+            border-bottom: 2px solid #ddd;
+            color: #999;
+            font-size: .75em;
+            padding: 10px 0 15px;
             text-align: left;
-            font-weight: 600;
-            padding-right: 10px;
+            text-transform: uppercase
         }
 
-        .summary tr td {
+        .line-items-container th:last-child {
+            text-align: right
+        }
+
+        .line-items-container td {
+            padding: 10px 0
+        }
+
+        .line-items-container tbody tr:first-child td {
+            padding-top: 25px
+        }
+
+        .line-items-container.has-bottom-border tbody tr:last-child td {
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 25px
+        }
+
+        .line-items-container th.heading-quantity {
+            width: 50px
+        }
+
+        .line-items-container th.heading-price {
             text-align: right;
+            width: 100px
         }
 
-        .summary tr.total-row th,
-        .summary tr.total-row td {
-            font-size: 15px;
-            border-top: 2px solid #222;
-            padding-top: 10px;
+        .line-items-container th.heading-subtotal {
+            width: 100px
         }
 
-        .payment-terms {
-            margin-top: 30px;
-            font-size: 13px;
+        .payment-info {
+            font-size: .875em;
+            line-height: 1.5;
+            width: 38%
         }
 
-        footer {
-            position: fixed;
-            bottom: 25px;
-            left: 35px;
-            right: 35px;
-            font-size: 12px;
-            color: #555;
-        }
-
-        .footer-divider {
-            border-top: 1px solid #dcdcdc;
-            margin-bottom: 8px;
-            padding-top: 8px;
-        }
-
-        .footer-columns {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .page-number {
-            margin-top: 6px;
-            text-align: right;
-        }
-
-        .page-number span::after {
-            content: counter(page) " / " counter(pages);
+        small {
+            font-size: 80%
         }
 
         .stamp {
@@ -180,17 +120,17 @@
             position: fixed;
             text-transform: uppercase;
             top: 40%;
-            transform: rotate(-14deg);
+            transform: rotate(-14deg)
         }
 
         .is-failed {
             border-color: #d23;
-            color: #d23;
+            color: #d23
         }
 
         .is-completed {
             border-color: #0a9928;
-            color: #0a9928;
+            color: #0a9928
         }
     </style>
 
@@ -209,150 +149,148 @@
     {% endif %}
 {% endif %}
 
-<div class="header">
-    <div class="logo">
-        <img src="{{ logo_full_path }}" alt="{{ settings.company_name_for_invoicing }}">
-    </div>
-    <div class="company-info">
-        <strong>{{ settings.company_name_for_invoicing }}</strong><br>
-        {% if settings.company_address_for_invoicing %}
-            {{ settings.company_address_for_invoicing|nl2br|raw }}<br>
-        {% endif %}
-        {% if settings.company_email_for_invoicing %}
-            {{ settings.company_email_for_invoicing }}<br>
-        {% endif %}
-        {% if settings.company_phone_for_invoicing %}
-            {{ settings.company_phone_for_invoicing }}
-        {% endif %}
-    </div>
-    <div class="customer-info">
-        <strong>{{ invoice.customer_name }}</strong><br>
-        {% if invoice.customer_address %}
-            {{ invoice.customer_address|nl2br|raw }}<br>
-        {% endif %}
-        {% if invoice.customer_email %}
-            {{ invoice.customer_email }}<br>
-        {% endif %}
-        {% if invoice.customer_phone %}
-            {{ invoice.customer_phone }}
-        {% endif %}
-    </div>
-</div>
+<table class="invoice-info-container">
+    <tr>
+        <td>
+            <p>
+                <strong>{{ 'plugins/hotel::invoice.heading'|trans }}</strong>: #{{ invoice.code }}
+            </p>
+            <div class="logo-container">
+                <img src="{{ logo_full_path }}" style="max-height: 40px;" alt="{{ settings.company_name_for_invoicing }}">
+            </div>
+        </td>
+        <td>
+            <p>
+                <strong>{{ invoice.created_at|date('F d, Y') }}</strong>
+            </p>
+            <div class="logo-container">
+                <img src="{{ customer.avatar_url }}" style="max-height: 40px;" alt="{{ invoice.customer_name }}">
+            </div>
+        </td>
+    </tr>
+</table>
 
-<div class="section-divider"></div>
+<table class="invoice-info-container">
+    <tr>
+        <td>
+            <p>{{ settings.company_name_for_invoicing }}</p>
+            <p>{{ settings.company_address_for_invoicing }}</p>
+            <p>{{ settings.company_email_for_invoicing }}</p>
+            <p>{{ settings.company_phone_for_invoicing }}</p>
+        </td>
+        <td>
+            <p>{{ invoice.customer_name }}</p>
+            <p>{{ invoice.customer_email }}</p>
+            <p>{{ invoice.customer_phone }}</p>
+        </td>
+    </tr>
+</table>
 
-<div class="invoice-meta">
-    <h1>{{ 'plugins/hotel::invoice.heading'|trans }} {{ invoice.code }}</h1>
-
-    <table class="meta-table">
-        <tr>
-            <th>{{ 'plugins/hotel::invoice.meta.invoice_number'|trans }}</th>
-            <td>{{ invoice.code }}</td>
-        </tr>
-        {% if invoice.customer_id %}
-        <tr>
-            <th>{{ 'plugins/hotel::invoice.meta.customer_number'|trans }}</th>
-            <td>{{ invoice.customer_id }}</td>
-        </tr>
-        {% endif %}
-        <tr>
-            <th>{{ 'plugins/hotel::invoice.meta.invoice_date'|trans }}</th>
-            <td>{{ invoice.created_at|date('d.m.Y') }}</td>
-        </tr>
-        <tr>
-            <th>{{ 'plugins/hotel::invoice.meta.service_date'|trans }}</th>
-            <td>{{ invoice.created_at|date('d.m.Y') }}</td>
-        </tr>
-    </table>
-</div>
-
-<table class="items-table">
+<table class="line-items-container">
     <thead>
-        <tr>
-            <th style="width: 50px;">{{ 'plugins/hotel::invoice.item.position'|trans }}</th>
-            <th class="description">{{ 'plugins/hotel::invoice.item.description'|trans }}</th>
-            <th class="text-right" style="width: 80px;">{{ 'plugins/hotel::invoice.item.qty'|trans }}</th>
-            <th style="width: 80px;">{{ 'plugins/hotel::invoice.item.unit'|trans }}</th>
-            <th class="text-right" style="width: 110px;">{{ 'plugins/hotel::invoice.item.unit_price'|trans }}</th>
-            <th class="text-right" style="width: 120px;">{{ 'plugins/hotel::invoice.item.total_price'|trans }}</th>
-        </tr>
+    <tr>
+        <th class="heading-description">{{ 'plugins/hotel::invoice.item.description'|trans }}</th>
+        <th class="heading-quantity">{{ 'plugins/hotel::invoice.item.qty'|trans }}</th>
+        <th class="heading-price">{{ 'plugins/hotel::invoice.amount'|trans }}</th>
+        <th class="heading-subtotal">{{ 'plugins/hotel::invoice.total_amount'|trans }}</th>
+    </tr>
     </thead>
     <tbody>
-        {% for item in invoice.items %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>
-                    <strong>{{ item.name }}</strong>
-                    {% if item.description %}<br><small>{{ item.description }}</small>{% endif %}
-                </td>
-                <td class="text-right">{{ item.qty }}</td>
-                <td>{{ 'plugins/hotel::invoice.item.unit_value'|trans }}</td>
-                <td class="text-right">{{ item.sub_total|price_format }}</td>
-                <td class="text-right">{{ (item.sub_total * item.qty)|price_format }}</td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="6">{{ 'plugins/hotel::invoice.item.empty'|trans }}</td>
-            </tr>
-        {% endfor %}
+    {% for item in invoice.items %}
+        <tr>
+            <td>
+                <p>{{ item.name }}</p>
+                {% if item.description %}
+                <small>{{ item.description }}</small>
+                {% endif %}
+            </td>
+            <td>{{ item.qty }}</td>
+            <td class="right">{{ item.sub_total|price_format }}</td>
+            <td>{{ (item.amount * item.qty)|price_format }}</td>
+        </tr>
+    {% endfor %}
+
+    {% if (invoice.amount != invoice.sub_total) %}
+        <tr>
+            <td colspan="3" class="right">
+                {{ 'plugins/hotel::invoice.sub_total'|trans }}
+            </td>
+            <td class="bold">
+                {{ invoice.sub_total|price_format }}
+            </td>
+        </tr>
+    {% endif %}
+
+    {% if invoice.discount_amount %}
+    <tr>
+        <td colspan="3" class="right">
+            {{ 'plugins/hotel::invoice.discount_amount'|trans }}
+        </td>
+        <td class="bold">
+            {{ invoice.discount_amount|price_format }}
+        </td>
+    </tr>
+    {% endif %}
+
+    {% if invoice.tax_amount %}
+        <tr>
+            <td colspan="3" class="right">
+                {{ 'plugins/hotel::invoice.tax'|trans }}
+            </td>
+            <td class="bold">
+                {{ invoice.tax_amount|price_format }}
+            </td>
+        </tr>
+    {% endif %}
+
+    {% if invoice.shipping_amount %}
+        <tr>
+            <td colspan="3" class="right">
+                {{ 'plugins/hotel::invoice.shipping_fee'|trans }}
+            </td>
+            <td class="bold">
+                {{ invoice.shipping_amount|price_format }}
+            </td>
+        </tr>
+    {% endif %}
+
+    <tr>
+        <td colspan="3" class="right">
+            {{ 'plugins/hotel::invoice.total_amount'|trans }}
+        </td>
+        <td class="bold">
+            {{ invoice.amount|price_format }}
+        </td>
+    </tr>
     </tbody>
 </table>
 
-<table class="summary">
+<table class="line-items-container">
+    <thead>
     <tr>
-        <th>{{ 'plugins/hotel::invoice.sub_total_net'|trans }}</th>
-        <td>{{ invoice.sub_total|price_format }}</td>
-    </tr>
-    {% if invoice.discount_amount %}
-        <tr>
-            <th>{{ 'plugins/hotel::invoice.discount_amount'|trans }}</th>
-            <td>-{{ invoice.discount_amount|price_format }}</td>
-        </tr>
-    {% endif %}
-    {% if invoice.tax_amount %}
-        <tr>
-            <th>{{ 'plugins/hotel::invoice.tax_label'|trans }}</th>
-            <td>{{ invoice.tax_amount|price_format }}</td>
-        </tr>
-    {% endif %}
-    {% if invoice.shipping_amount %}
-        <tr>
-            <th>{{ 'plugins/hotel::invoice.shipping_fee'|trans }}</th>
-            <td>{{ invoice.shipping_amount|price_format }}</td>
-        </tr>
-    {% endif %}
-    <tr class="total-row">
+        <th>{{ 'plugins/hotel::invoice.payment_info'|trans }}</th>
         <th>{{ 'plugins/hotel::invoice.total_amount'|trans }}</th>
-        <td>{{ invoice.amount|price_format }}</td>
     </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td class="payment-info">
+            <div>
+                {{ 'plugins/hotel::invoice.payment_method'|trans }}: <strong>{{ payment_method }}</strong>
+            </div>
+            <div>
+                {{ 'plugins/hotel::invoice.payment_status'|trans }}: <strong>{{ payment_status }}</strong>
+            </div>
+            {% if payment_description %}
+            <div>
+                {{ 'plugins/hotel::invoice.payment_info'|trans }}: <strong>{{ payment_description|raw }}</strong>
+            </div>
+            {% endif %}
+        </td>
+        <td class="large total">{{ invoice.amount|price_format }}</td>
+    </tr>
+    </tbody>
 </table>
-
-<div class="payment-terms">
-    <p>{{ 'plugins/hotel::invoice.payment_terms'|trans }}</p>
-    <p>{{ 'plugins/hotel::invoice.thank_you'|trans }}</p>
-</div>
-
 {{ hotel_invoice_footer | raw }}
-
-<footer>
-    <div class="footer-divider"></div>
-    <div class="footer-columns">
-        <div>
-            <strong>{{ settings.company_name_for_invoicing }}</strong><br>
-            {% if settings.company_address_for_invoicing %}
-                {{ settings.company_address_for_invoicing|nl2br|raw }}
-            {% endif %}
-        </div>
-        <div>
-            {% if settings.company_email_for_invoicing %}
-                {{ settings.company_email_for_invoicing }}<br>
-            {% endif %}
-            {% if settings.company_phone_for_invoicing %}
-                {{ settings.company_phone_for_invoicing }}
-            {% endif %}
-        </div>
-    </div>
-    <div class="page-number">{{ 'plugins/hotel::invoice.page'|trans }} <span></span></div>
-</footer>
 </body>
 </html>
