@@ -2,15 +2,18 @@
     $couponCode = \Botble\Hotel\Facades\HotelHelper::getCheckoutData('coupon_code');
  $couponAmount = \Botble\Hotel\Facades\HotelHelper::getCheckoutData('coupon_amount');
 @endphp
-<div class="order-detail-box http://botble.hotelbooking.com/de/coupon/refresh?coupon_code=00000mb-20" data-refresh-url="{{ route('coupon.course.refresh') }}">
+<div class="order-detail-box" data-refresh-url="{{ route('coupon.course.refresh') }}">
     <button class="btn-link ps-0 text-decoration-none toggle-coupon-form" type="button">{{ trans('plugins/hotel::coupon.toggle_coupon_form_text') }}</button>
 
     <div class="card coupon-form mt-3" @style(['display: none' => ! ($couponCode && $couponAmount)])>
         <div class="card-body">
             @if ($couponCode && $couponAmount)
-                <div class="d-flex align-items-center justify-content-between alert alert-success mb-0 w-100">
-                    <span>{{ __('Coupon code: :code', ['code' => $couponCode]) }}</span>
-                    <input name="coupon_hidden" type="hidden" value="{{ ! empty($couponCode) }}" />
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 alert alert-success mb-0 w-100">
+                    <div class="d-flex flex-column">
+                        <span class="fw-semibold">{{ __('Coupon erfolgreich angewendet') }}</span>
+                        <span>{{ __('Coupon code: :code', ['code' => $couponCode]) }}</span>
+                    </div>
+                    <input name="coupon_hidden" type="hidden" value="{{ $couponCode }}" />
 
                     <button class="btn btn-link text-decoration-none remove-coupon-code" data-url="{{ route('coupon.course.remove') }}" type="button">
                         <x-core::icon name="ti ti-trash" />
@@ -18,7 +21,7 @@
                     </button>
                 </div>
             @else
-                <div class="form-group">
+                <div class="form-group mb-0">
                     <label for="coupon_code" class="form-label">{{ trans('plugins/hotel::coupon.coupon_code') }}</label>
                     <div class="input-group">
                         <input type="text" id="coupon_code" name="coupon_code" class="form-control" placeholder="{{ trans('plugins/hotel::coupon.coupon_code_placeholder') }}" value="{{ BaseHelper::clean(old('coupon_code')) }}">
