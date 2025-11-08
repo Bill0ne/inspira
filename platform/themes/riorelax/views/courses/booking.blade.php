@@ -68,7 +68,24 @@ textarea.form-control{min-height:100px;}
 /* ==== Coupon ==== */
 .coupon-wrapper{background:#F9F9F9;border:1px solid var(--gray);border-radius:8px;padding:20px;margin-bottom:24px;}
 .coupon-wrapper label{font-weight:500;}
-.coupon-wrapper .btn{background:var(--mint)!important;color:#fff!important;border:none!important;}
+.coupon-wrapper .coupon-box{display:flex;flex-direction:column;gap:14px;}
+.coupon-wrapper .coupon-form{margin:0;}
+.coupon-wrapper .coupon-feedback{border-radius:8px;padding:16px 18px;}
+.coupon-wrapper .coupon-feedback .btn{color:#17463f;font-weight:600;}
+.coupon-wrapper .coupon-input-group{display:flex;align-items:stretch;gap:12px;}
+.coupon-wrapper .coupon-input-group>.form-control{flex:1 1 auto;min-width:200px;border-radius:6px;}
+.coupon-wrapper .coupon-input-group>.btn{flex:0 0 auto;padding:12px 22px;font-weight:600;border-radius:6px;}
+.coupon-wrapper .apply-coupon-code{background:var(--mint)!important;color:#fff!important;border:none!important;}
+.coupon-wrapper .remove-coupon-code{color:#17463f;font-weight:600;}
+@media(max-width:768px){
+  .coupon-wrapper{padding:18px;}
+}
+@media(max-width:575px){
+  .coupon-wrapper .coupon-input-group{flex-direction:column;gap:10px;}
+  .coupon-wrapper .coupon-input-group>.form-control{min-width:0;width:100%;}
+  .coupon-wrapper .coupon-input-group>.btn{width:100%;padding:12px;font-size:14px;}
+  .coupon-wrapper .toggle-coupon-form{font-size:14px;}
+}
 
 /* ==== Payment ==== */
 .list_payment_method{border:1px solid var(--gray);border-radius:8px;margin-bottom:20px;}
@@ -113,11 +130,11 @@ textarea.form-control{min-height:100px;}
       </div>
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis</span><b>{{ format_price($amount) }}</b></div>
-        <div class="kv"><span>Rabatt (Coupon)</span><b>{{ format_price($couponAmount) }}</b></div>
-        <div class="kv"><span>Steuern</span><b>{{ format_price($taxAmount) }}</b></div>
+        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amount) }}</b></div>
+        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
+        <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
         <hr>
-        <div class="kv total"><span>Gesamt</span><b>{{ format_price($total) }}</b></div>
+        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
       </div>
     </div>
 
@@ -178,7 +195,7 @@ textarea.form-control{min-height:100px;}
         <div class="mb-3"><label>Anfragen</label><textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas..."></textarea></div>
         <div class="btnrow">
           <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
-          <button type="button" class="btnX btn-mint" data-next disabled>Weiter</button>
+          <button type="button" class="btnX btn-mint" data-next>Weiter</button>
         </div>
       </div>
 
@@ -238,6 +255,8 @@ textarea.form-control{min-height:100px;}
   const emailOk=s=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
   const phoneOk=s=>/^[0-9+\s\-()]+$/.test(s);
   const markInvalid=(el,b)=>el&&el.classList.toggle('is-invalid',!!b);
+  let step2ValidationActive=false;
+  let step3Attempted=false;
 
   function showAlert(stepNo,msg){
     const box=document.getElementById(stepNo===2?'formAlertStep2':'formAlertStep3');
@@ -248,44 +267,48 @@ textarea.form-control{min-height:100px;}
   }
   function clearAlerts(){['formAlertStep2','formAlertStep3'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.textContent='';}});}
 
-  function validateStep(stepNo){
+  function validateStep(stepNo,{activate=false}={}){
     const fF=document.getElementById(fieldIds.first),fL=document.getElementById(fieldIds.last),fE=document.getElementById(fieldIds.email),fP=document.getElementById(fieldIds.phone);
     const vF=val(fieldIds.first),vL=val(fieldIds.last),vE=val(fieldIds.email),vP=val(fieldIds.phone);
     let errors=[];
-    if(!vF){errors.push('Vorname ist erforderlich.');markInvalid(fF,true);}else markInvalid(fF,false);
-    if(!vL){errors.push('Nachname ist erforderlich.');markInvalid(fL,true);}else markInvalid(fL,false);
-    if(!vE){errors.push('E-Mail ist erforderlich.');markInvalid(fE,true);}
-    else if(!emailOk(vE)){errors.push('Bitte geben Sie eine gültige E-Mail-Adresse ein.');markInvalid(fE,true);}
-    else markInvalid(fE,false);
-    if(!vP){errors.push('Telefon ist erforderlich.');markInvalid(fP,true);}
-    else if(!phoneOk(vP)){errors.push('Bitte geben Sie eine gültige Telefonnummer ein.');markInvalid(fP,true);}
-    else if(vP.replace(/\D/g,'').length<8){errors.push('Die Telefonnummer muss mindestens 8 Ziffern enthalten.');markInvalid(fP,true);}
-    else markInvalid(fP,false);
+    if(stepNo===2&&activate)step2ValidationActive=true;
+    const shouldMark=stepNo!==2||step2ValidationActive;
+    if(!vF){errors.push('Vorname ist erforderlich.');if(shouldMark)markInvalid(fF,true);}else if(shouldMark)markInvalid(fF,false);
+    if(!vL){errors.push('Nachname ist erforderlich.');if(shouldMark)markInvalid(fL,true);}else if(shouldMark)markInvalid(fL,false);
+    if(!vE){errors.push('E-Mail ist erforderlich.');if(shouldMark)markInvalid(fE,true);}
+    else if(!emailOk(vE)){errors.push('Bitte geben Sie eine gültige E-Mail-Adresse ein.');if(shouldMark)markInvalid(fE,true);}
+    else if(shouldMark)markInvalid(fE,false);
+    if(!vP){errors.push('Telefon ist erforderlich.');if(shouldMark)markInvalid(fP,true);}
+    else if(!phoneOk(vP)){errors.push('Bitte geben Sie eine gültige Telefonnummer ein.');if(shouldMark)markInvalid(fP,true);}
+    else if(vP.replace(/\D/g,'').length<8){errors.push('Die Telefonnummer muss mindestens 8 Ziffern enthalten.');if(shouldMark)markInvalid(fP,true);}
+    else if(shouldMark)markInvalid(fP,false);
     if(stepNo===3){
       const terms=document.getElementById('terms_conditions');
       if(!terms||!terms.checked)errors.push('Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
     }
-    showAlert(stepNo,errors.length?('⚠️ '+errors[0]):'');
+    const shouldShowAlert=stepNo===2?step2ValidationActive:(stepNo===3?(activate||step3Attempted):true);
+    if(shouldShowAlert)showAlert(stepNo,errors.length?('⚠️ '+errors[0]):'');
+    else if(stepNo===2)showAlert(stepNo,'');
     return errors.length===0;
   }
 
-  form.addEventListener('input',()=>{if(step===2){const next=form.querySelector('[data-step="2"] [data-next]');if(next){const ok=validateStep(2);next.disabled=!ok;if(ok)showAlert(2,'');}}});
+  form.addEventListener('input',()=>{if(step===2&&step2ValidationActive){validateStep(2);}});
 
   form.addEventListener('click',e=>{
     const next=e.target.closest('[data-next]'),prev=e.target.closest('[data-prev]'),finish=e.target.closest('.payment-checkout-btn');
     if(next){e.preventDefault();clearAlerts();
       if(step===1){step=2;render(step);return;}
-      if(step===2&&!validateStep(2))return;
+      if(step===2&&!validateStep(2,{activate:true}))return;
       step=Math.min(step+1,3);render(step);
-      if(step===3){const terms=document.getElementById('terms_conditions');if(!terms||!terms.checked)showAlert(3,'⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');else showAlert(3,'');}}
+      if(step===3){const terms=document.getElementById('terms_conditions');if(terms&&terms.checked)showAlert(3,'');}}
     if(prev){e.preventDefault();clearAlerts();step=Math.max(step-1,1);render(step);}
-    if(finish){e.preventDefault();clearAlerts();const ok2=validateStep(2),ok3=validateStep(3);if(!(ok2&&ok3)){if(!ok2&&step!==2){step=2;render(step);}else if(!ok3&&step!==3){step=3;render(step);}return;}form.submit();}
+    if(finish){e.preventDefault();clearAlerts();step3Attempted=true;const ok2=validateStep(2,{activate:true}),ok3=validateStep(3,{activate:true});if(!(ok2&&ok3)){if(!ok2&&step!==2){step=2;render(step);}else if(!ok3&&step!==3){step=3;render(step);}return;}form.submit();}
   });
 
   const termsBox=document.getElementById('terms_conditions');
   if(termsBox){const submitBtn=form.querySelector('.payment-checkout-btn');
-    const toggleState=()=>{submitBtn.disabled=!termsBox.checked;if(!termsBox.checked)showAlert(3,'⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');else showAlert(3,'');};
-    toggleState();termsBox.addEventListener('change',toggleState);}
+    const toggleState=()=>{submitBtn.disabled=!termsBox.checked;if(termsBox.checked&&step3Attempted)showAlert(3,'');};
+    toggleState();termsBox.addEventListener('change',()=>{toggleState();if(step3Attempted)validateStep(3,{activate:true});});}
   function render(s){
     panels.forEach(p=>p.classList.toggle('active',p.dataset.step==s));
     title.textContent=titles[s-1];

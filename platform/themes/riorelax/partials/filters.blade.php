@@ -236,6 +236,11 @@
     });
   }
 
+  f.addEventListener('submit', (event) => {
+    event.preventDefault();
+    applyFilters();
+  });
+
   document.addEventListener('click', (event) => {
     const chip = event.target.closest('.filter-chip');
     if(!chip) return;

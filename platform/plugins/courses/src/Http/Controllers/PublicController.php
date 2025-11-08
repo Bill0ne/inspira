@@ -463,6 +463,24 @@ class PublicController extends Controller
     ) {
         $course = Course::query()->findOrFail($request->input('course_id'));
 
+        if ($request->filled('token')) {
+            session(['checkout_token' => $request->input('token')]);
+        }
+
+        if ($request->has('coupon_code')) {
+            $couponCode = trim((string) $request->input('coupon_code'));
+
+            $sessionPayload = [
+                'coupon_code' => $couponCode ?: null,
+            ];
+
+            if ($couponCode === '' || $couponCode === null) {
+                $sessionPayload['coupon_amount'] = 0;
+            }
+
+            HotelHelper::saveCheckoutData($sessionPayload);
+        }
+
         [$amount, $discountAmount] = $this->calculateBookingAmount($course);
 
         $customer = Auth::guard('customer')->user();
