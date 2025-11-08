@@ -180,34 +180,58 @@
       }
     });
   }
-  const triggerSubmit = () => {
-    const searchInput = f.querySelector('input[name="search"]');
-    if (searchInput) {
-      const trimmed = searchInput.value.trim();
-      if (trimmed !== searchInput.value) {
-        searchInput.value = trimmed;
+  const searchField = f.querySelector('input[name="search"]');
+
+  const navigateWithFilters = () => {
+    if (searchField) {
+      const trimmed = searchField.value.trim();
+      if (trimmed !== searchField.value) {
+        searchField.value = trimmed;
       }
     }
 
-    if (typeof f.requestSubmit === 'function') {
-      f.requestSubmit();
-    } else {
-      f.submit();
-    }
+    const formData = new FormData(f);
+    const params = new URLSearchParams();
 
-    window.location.href = url;
+    formData.forEach((value, key) => {
+      if (key === 'page') {
+        return;
+      }
+
+      if (typeof value === 'string' && key === 'search') {
+        value = value.trim();
+      }
+
+      if ((value === '' || value === null) && key !== 'filter_type') {
+        return;
+      }
+
+      params.set(key, value);
+    });
+
+    const action = f.getAttribute('action') || window.location.pathname;
+    const url = new URL(action, window.location.origin);
+    const query = params.toString();
+
+    url.search = query ? `?${query}` : '';
+
+    window.location.assign(url.toString());
   };
 
-  f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', triggerSubmit);
+  f.addEventListener('submit', (event) => {
+    event.preventDefault();
+    navigateWithFilters();
   });
 
-  const searchField = f.querySelector('input[name="search"]');
+  f.querySelectorAll('select').forEach((el) => {
+    el.addEventListener('change', navigateWithFilters);
+  });
+
   if (searchField) {
     searchField.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        applyFilters();
+        navigateWithFilters();
       }
     });
   }
@@ -235,7 +259,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    applyFilters();
+    navigateWithFilters();
   });
 })();
 </script>
