@@ -1,247 +1,195 @@
-@php
-    Theme::asset()->container('footer')->usePath()->add('date-css', 'css/date.css');
-        Theme::asset()->container('footer')->add('popper', 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.1/umd/popper.min.js', ['jquery']);
-        Theme::asset()->container('footer')->add('bootstrap-js', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js', ['jquery', 'popper']);
-      Theme::asset()->container('footer')->usePath()->add('moment-js', 'vendors/moment.min.js');
-      Theme::asset()->container('footer')->usePath()->add('date-picker', 'vendors/date-picker.min.js');
-        Theme::asset()->container('footer')->usePath()->add('datetime-js', 'js/datetime.js');
-
-@endphp
-
-<style>
-    .booking-slots-wrapper .slot-item {
-        position: relative;
-        margin-bottom: 10px;
-        transition: background 0.2s ease;
-    }
-
-    .booking-slots-wrapper .slot-item.new-slot {
-        border: 1px solid #e5e7eb;
-        padding: 10px;
-        background: #f9fafb;
-        border-radius: 8px;
-    }
-
-    .booking-slots-wrapper .slot-item .remove-slot-btn {
-        position: absolute;
-        top: 8px;
-        right: 10px;
-        width: 22px;
-        height: 22px;
-        border: 1px solid #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        cursor: pointer;
-        background: #fff;
-        border-radius: 3px;
-        color: #000;
-        font-size: 14px;
-        line-height: 1;
-        transition: 0.2s ease;
-    }
-
-    .booking-slots-wrapper .slot-item .remove-slot-btn:hover {
-        background: #000;
-        color: #fff;
-    }
-</style>
-
 @if (is_plugin_active('hotel'))
     @php
         $minimumNumberOfGuests = HotelHelper::getMinimumNumberOfGuests();
         $maximumNumberOfGuests = HotelHelper::getMaximumNumberOfGuests();
-        $startDate = request()->query('start_date', Carbon\Carbon::now()->format(HotelHelper::getDateFormat()));
-        $endDate = request()->query('end_date', Carbon\Carbon::now()->addDay()->format(HotelHelper::getDateFormat()));
-        $adults = request()->query('adults', $minimumNumberOfGuests);
+
+        $adults = old('adults', request()->integer('adults', $minimumNumberOfGuests));
+        $children = old('children', request()->integer('children', 0));
+        $roomsCount = old('rooms', request()->integer('rooms', 1));
+
+        $rawSlotsInput = old('slots', (array) request()->input('slots', []));
+        $processedSlots = [];
+
+        foreach ($rawSlotsInput as $value) {
+            $raw = '';
+            $date = '';
+            $start = '';
+            $end = '';
+
+            if (is_string($value)) {
+                $raw = trim($value);
+
+                if (preg_match('/^(\d{2}\.\d{2}\.\d{4})\s+(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/', $raw, $matches)) {
+                    $date = $matches[1];
+                    $start = $matches[2];
+                    $end = $matches[3];
+                }
+            } elseif (is_array($value)) {
+                $date = trim((string) ($value['date'] ?? ''));
+                $start = trim((string) ($value['start'] ?? ($value['start_time'] ?? '')));
+                $end = trim((string) ($value['end'] ?? ($value['end_time'] ?? '')));
+
+                $startDateValue = $value['start_date'] ?? null;
+                $endDateValue = $value['end_date'] ?? null;
+
+                if ($startDateValue) {
+                    try {
+                        $startCarbon = Carbon\Carbon::parse($startDateValue);
+                        $date = $date ?: $startCarbon->format('d.m.Y');
+                        $start = $start ?: $startCarbon->format('H:i');
+                    } catch (\Throwable $exception) {}
+                }
+
+                if ($endDateValue) {
+                    try {
+                        $endCarbon = Carbon\Carbon::parse($endDateValue);
+                        $date = $date ?: $endCarbon->format('d.m.Y');
+                        $end = $end ?: $endCarbon->format('H:i');
+                    } catch (\Throwable $exception) {}
+                }
+
+                if ($date && $start && $end) {
+                    $raw = sprintf('%s %s - %s', $date, $start, $end);
+                }
+            }
+
+            $processedSlots[] = [
+                'date' => $date,
+                'start' => $start,
+                'end' => $end,
+                'raw' => $raw,
+            ];
+        }
+
+        if (empty($processedSlots)) {
+            $processedSlots[] = [
+                'date' => '',
+                'start' => '',
+                'end' => '',
+                'raw' => '',
+            ];
+        }
+
+        $minSlotDuration = 30;
+        $widgetId = uniqid('booking-widget-');
+        $widgetMessages = [
+            'incomplete' => __('Bitte alle Felder ausfüllen.'),
+            'duration' => __('Jeder Slot muss mindestens :minutes Minuten dauern.', ['minutes' => $minSlotDuration]),
+            'overlap' => __('Slots dürfen sich nicht überschneiden.'),
+            'past' => __('Slots müssen in der Zukunft liegen.'),
+            'invalid' => __('Bitte gültiges Datum und Zeit auswählen.'),
+        ];
     @endphp
 
-    <form action="{{ $availableForBooking ? route('public.booking') : route('public.rooms') }}" method="{{ $availableForBooking ? 'POST' : 'GET' }}" class="contact-form mt-30 form-booking">
+    {{-- === Assets === --}}
+    <link rel="stylesheet" href="/themes/riorelax/css/booking-widget.css">
+    <link rel="stylesheet" href="/themes/riorelax/css/litepicker.css">
+    <link rel="stylesheet" href="/themes/riorelax/css/booking-widget-info.css">
+
+    <script src="/themes/riorelax/js/litepicker.js"></script>
+    <script defer src="/themes/riorelax/js/booking-widget.js"></script>
+    <script defer src="/themes/riorelax/js/booking-widget-info.js"></script>
+
+    {{-- === Date + Time Picker Init === --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const attachPicker = (el, options) => {
+                if (!el || el.dataset.litepickerBound === 'true' || typeof Litepicker === 'undefined') return;
+
+                el.dataset.litepickerBound = 'true';
+
+                new Litepicker({
+                    element: el,
+                    singleMode: true,
+                    autoApply: true,
+                    format: options.format,
+                    lang: 'de-DE',
+                    showTime: options.showTime || false,
+                    showSeconds: false,
+                    dropdowns: options.dropdowns || undefined,
+                    tooltipText: { one: 'Tag', other: 'Tage' }
+                });
+            };
+
+            const hydrateWidget = (widget) => {
+                if (!widget) return;
+                widget.querySelectorAll('[data-role="slot-date"]').forEach((input) => attachPicker(input, { format: 'DD.MM.YYYY' }));
+                widget.querySelectorAll('[data-role="slot-start"], [data-role="slot-end"]').forEach((input) =>
+                    attachPicker(input, { format: 'HH:mm', showTime: true, dropdowns: { minutes: true, hours: true } })
+                );
+            };
+
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (!(node instanceof HTMLElement)) return;
+                        if (node.matches('[data-booking-widget]')) hydrateWidget(node);
+                        const ownerWidget = node.closest('[data-booking-widget]');
+                        if (ownerWidget) hydrateWidget(ownerWidget);
+                        node.querySelectorAll('[data-booking-widget]').forEach((widget) => hydrateWidget(widget));
+                    });
+                });
+            });
+
+            document.querySelectorAll('[data-booking-widget]').forEach((widget) => {
+                hydrateWidget(widget);
+                observer.observe(widget, { childList: true, subtree: true });
+            });
+        });
+    </script>
+
+    {{-- === FORMULAR === --}}
+    <form action="{{ $availableForBooking ? route('public.booking') : route('public.rooms') }}"
+          method="{{ $availableForBooking ? 'POST' : 'GET' }}"
+          class="contact-form mt-30 form-booking">
+
         @if ($availableForBooking)
             @csrf
             <input type="hidden" name="room_id" value="{{ $room->id }}">
         @endif
 
-        @switch($style)
-            @case(2)
-                <div class="row align-items-center">
-                    @if (! empty($title))
-                        <div class="col-lg-12">
-                            <div class="section-title center-align mb-30">
-                                <h2>{!! BaseHelper::clean($title) !!}</h2>
-                            </div>
-                        </div>
-                    @endif
-                        <div id="booking-slots" class="booking-slots-wrapper">
-                            <div class="slot-item0 slot-item">
-                                <div class="row">
-                    {{-- Check In (ID FIXED: StartDateTimePicker) --}}
-                    <div class="col-lg-2 col-md-6 mb-30">
-                        <div class="contact-field p-relative c-name">
-                            <label for="availability-form-start-date"><i class="fal fa-badge-check"></i>{{ __('Check In Date') }}</label>
-                            <div class="input-group date" id="StartDateTimePicker" data-target-input="nearest">
-                                <input
-                                    id="availability-form-start-date"
-                                    autocomplete="off"
-                                    type="text"
-                                    class="theme-date-input-start"
-                                    data-target="#StartDateTimePicker"
-                                    data-date-format="{{ HotelHelper::getBookingFormDateFormat() }}"
-                                    placeholder="DD.MM.YYYY HH:mm"
-                                    data-locale="{{ App::getLocale() }}"
-                                    value="{{ BaseHelper::stringify($availableForBooking ? old('start_date', $startDate) : $startDate) }}"
-                                    name="slots[0][start_date]"
-                                >
-                                <span class="input-group-text" data-target="#StartDateTimePicker" data-toggle="datetimepicker">
-                                    <i class="fal fa-calendar-alt"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+        <div class="booking-widget" 
+             data-booking-widget
+             data-widget-id="{{ $widgetId }}"
+             data-min-duration="{{ $minSlotDuration }}"
+             data-error-incomplete="{{ $widgetMessages['incomplete'] }}"
+             data-error-duration="{{ $widgetMessages['duration'] }}"
+             data-error-overlap="{{ $widgetMessages['overlap'] }}"
+             data-error-past="{{ $widgetMessages['past'] }}"
+             data-error-invalid="{{ $widgetMessages['invalid'] }}"
+        >
+            <div class="booking-widget__header">
+                <h4 class="booking-widget__title">Wähle deinen Zeitraum</h4>
+            </div>
 
-                    {{-- Check Out (ID FIXED: EndDateTimePicker) --}}
-                    <div class="col-lg-2 col-md-6 mb-30">
-                        <div class="contact-field p-relative c-name">
-                            <label for="availability-form-end-date"><i class="fal fa-times-octagon"></i>{{ __('Check Out Date') }}</label>
-                            <div class="input-group date" id="EndDateTimePicker" data-target-input="nearest">
-                                <input
-                                    type="text"
-                                    id="availability-form-end-date"
-                                    autocomplete="off"
-                                    class="theme-date-input-start"
-                                    data-target="#EndDateTimePicker"
-                                    data-date-format="{{ HotelHelper::getBookingFormDateFormat() }}"
-                                    placeholder="DD.MM.YYYY HH:mm"
-                                    data-locale="{{ App::getLocale() }}"
-                                    value="{{ BaseHelper::clean($availableForBooking ? old('end_date', $endDate) : $endDate) }}"
-                                    name="slots[0][end_date]"
-                                >
-                                <span class="input-group-text" data-target="#EndDateTimePicker" data-toggle="datetimepicker">
-                                    <i class="fal fa-calendar-alt"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <button type="button" id="add-slot" class="btn btn-add-slot">
-                                + {{ __('Add New') }}
-                            </button>
-                        </div>
-                    {{-- Guests / Rooms (dein Block) --}}
-                    <div class="col-lg-5 col-md-6 mb-30">
-                        <div class="contact-field p-relative c-name form-guests-and-rooms-wrapper">
-                            <label for="adults"><i class="fal fa-users"></i>{{ __('Guests and Rooms') }}</label>
-                            <button data-bb-toggle="toggle-guests-and-rooms" class="text-truncate" type="button" data-target="#toggle-guests-and-rooms">
-                                <span data-bb-toggle="filter-adults-count" class="me-1">1</span> {{ __('Adult(s)') }} ,
-                                <span data-bb-toggle="filter-children-count" class="ms-1 me-1">0</span> {{ __('Child(ren)') }},
-                                <span data-bb-toggle="filter-rooms-count" class="me-1 ms-1">1</span> {{ __('Room(s)') }}
-                            </button>
+            @include(Theme::getThemeNamespace('partials.hotel.forms.booking-slots'), [
+                'slots' => $processedSlots,
+                'widgetId' => $widgetId,
+                'minDuration' => $minSlotDuration,
+            ])
 
-                            <div class="custom-dropdown dropdown-menu p-3" id="toggle-guests-and-rooms">
-                                <div class="inputs-filed">
-                                    <label for="adults">{{ __('Adults') }}</label>
-                                    <div class="input-quantity">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="decrement-room">-</button>
-                                        <input type="number" id="adults" name="adults" readonly value="1" min="{{ HotelHelper::getMinimumNumberOfGuests() }}" max="{{ HotelHelper::getMaximumNumberOfGuests() }}">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="increment-room">+</button>
-                                    </div>
-                                </div>
-                                <div class="inputs-filed mt-30">
-                                    <label for="children">{{ __('Children') }}</label>
-                                    <div class="input-quantity">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="decrement-room">-</button>
-                                        <input type="number" id="children" name="children" readonly value="0" min="0" max="{{ HotelHelper::getMaximumNumberOfGuests() }}">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="increment-room">+</button>
-                                    </div>
-                                </div>
-                                <div class="inputs-filed mt-30">
-                                    <label for="rooms">{{ __('Rooms') }}</label>
-                                    <div class="input-quantity">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="decrement-room">-</button>
-                                        <input type="number" id="rooms" name="rooms" readonly value="1" min="1" max="10">
-                                        <button type="button" class="main-btn btn" data-bb-toggle="increment-room">+</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <div class="booking-widget__footer">
+                <div class="booking-counter" data-counter>
+                    <div class="booking-counter__label">
+                        <i class="fal fa-users" aria-hidden="true"></i>
+                        <span>Erwachsene</span>
                     </div>
-
-                    {{-- CTA --}}
-                    <div class="col-lg-3 col-md-6">
-                        <div class="slider-btn">
-                            <button type="submit" class="btn ss-btn" data-animation="fadeInRight" data-delay=".8s">
-                                {{ $availableForBooking ? __('Book Now') : __('Check Availability') }}
-                            </button>
-                        </div>
+                    <div class="booking-counter__controls">
+                        <button type="button" class="booking-counter__btn" data-counter-action="decrement" aria-label="Weniger Erwachsene">−</button>
+                        <input type="number"
+                               class="booking-counter__input"
+                               id="booking-adults"
+                               name="adults"
+                               value="{{ BaseHelper::stringify($adults) }}"
+                               min="{{ $minimumNumberOfGuests }}"
+                               max="{{ $maximumNumberOfGuests }}">
+                        <button type="button" class="booking-counter__btn" data-counter-action="increment" aria-label="Mehr Erwachsene">+</button>
                     </div>
                 </div>
-                @break
 
-            @default
-                <div class="row booking-area">
-                    @if (! empty($title))
-                        <div class="col-lg-12">
-                            <div class="section-title center-align mb-30">
-                                <h2>{!! BaseHelper::clean($title) !!}</h2>
-                            </div>
-                        </div>
-                    @endif
-
-                        <div id="booking-slots" class="booking-slots-wrapper">
-                            <div class="slot-item0 slot-item">
-                                <div class="row">
-                                    <div class="contact-field col-lg-12">
-                                        <label><i class="fal fa-badge-check"></i> {{ __('Date & Time') }}</label>
-                                        <div class="input-group date time-range-picker" id="booking-slot" data-target-input="nearest">
-                                            <input
-                                                    type="text"
-                                                    name="slots[]"
-                                                    id="booking_range"
-                                                    class="datetime-range-input input-group-append"
-                                                    data-target="#booking-slot" data-toggle="datetimepicker"
-                                                    placeholder="DD.MM.YYYY HH:mm - HH:mm"
-                                                    autocomplete="off"
-                                            />
-                                            <div class="input-group-append" data-target="#booking-slot" data-toggle="datetimepicker">
-                                                <div style="display: none" class="input-group-text"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <button type="button" id="add-slot" class="btn btn-add-slot">
-                                + {{ __('Add New') }}
-                            </button>
-                        </div>
-
-                        {{-- Adults --}}
-                    <div class="col-lg-12">
-                        <div class="contact-field p-relative c-subject input-group input-group-two left-icon mb-20">
-                            <label for="adults"><i class="fal fa-users"></i>{{ __('Adults') }}</label>
-                            <div class="input-quantity">
-                                <button type="button" class="main-btn btn" data-bb-toggle="decrement-room">-</button>
-                                <input type="number" id="adults" name="adults" readonly value="{{ BaseHelper::stringify(request()->integer('adults', 1)) }}" min="{{ HotelHelper::getMinimumNumberOfGuests() }}" max="{{ HotelHelper::getMaximumNumberOfGuests() }}">
-                                <button type="button" class="main-btn btn" data-bb-toggle="increment-room">+</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- CTA --}}
-                    <div class="col-lg-12">
-                        <div class="slider-btn mt-15">
-                            <button type="submit" class="btn ss-btn" data-animation="fadeInRight" data-delay=".8s">
-                                <span>{{ $availableForBooking ? __('Book Now') : __('Check Availability') }}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-        @endswitch
+                {{-- Info-Box wird automatisch per JS vor dem Button eingefügt --}}
+                <button type="submit" class="booking-widget__submit">Jetzt buchen</button>
+            </div>
+        </div>
     </form>
 @endif

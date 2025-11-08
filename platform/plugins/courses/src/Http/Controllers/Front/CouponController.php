@@ -6,8 +6,8 @@ use Botble\Base\Http\Controllers\BaseController;
 use Botble\Base\Http\Responses\BaseHttpResponse;
 use Botble\Hotel\Facades\HotelHelper;
 use Botble\Hotel\Services\CouponService;
-use Closure;
 use Illuminate\Http\Request;
+use Closure;
 
 class CouponController extends BaseController
 {
@@ -15,7 +15,6 @@ class CouponController extends BaseController
     {
         $this->middleware(function (Request $request, Closure $next) {
             abort_unless($request->ajax(), 404);
-
             return $next($request);
         });
     }
@@ -27,7 +26,6 @@ class CouponController extends BaseController
         ]);
 
         $couponCode = $request->input('coupon_code');
-
         $coupon = $couponService->getCouponByCode($couponCode);
 
         if ($coupon === null) {
@@ -54,13 +52,29 @@ class CouponController extends BaseController
                 ->setMessage(__('This coupon is not used yet!'));
         }
 
+        // Coupon entfernen
         HotelHelper::saveCheckoutData([
             'coupon_code' => null,
             'coupon_amount' => 0,
         ]);
 
+        // ✅ Werte aus Checkout-Daten holen (statt getCartAmount)
+        $price = HotelHelper::getCheckoutData('amount') ?? 0;
+        $tax   = HotelHelper::getCheckoutData('tax_amount') ?? 0;
+        $total = HotelHelper::getCheckoutData('total') ?? ($price + $tax);
+
+        // Coupon-Box zurücksetzen
+        $html = view('plugins/courses::coupons.partials.form')->render();
+
         return $this->response
-            ->setMessage(__('Removed coupon :code successfully!', ['code' => $couponCode]));
+            ->setMessage(__('Removed coupon :code successfully!', ['code' => $couponCode]))
+            ->setData([
+                'price'    => $price,
+                'discount' => 0,
+                'tax'      => $tax,
+                'total'    => $total,
+                'html'     => $html,
+            ]);
     }
 
     public function refresh(): BaseHttpResponse

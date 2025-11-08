@@ -5,90 +5,24 @@
 
 
     Theme::set('pageTitle', $room->name);
+    $nights = max(1, $startDate->diffInHours($endDate));
+    $isCustomerLoggedIn = auth('customer')->check() || auth()->check();
 
-    $startDateForDisplay = $startDate instanceof \Carbon\Carbon
-        ? $startDate->copy()
-        : \Carbon\Carbon::parse($startDate);
-    $endDateForDisplay = $endDate instanceof \Carbon\Carbon
-        ? $endDate->copy()
-        : \Carbon\Carbon::parse($endDate);
+    $contactSlug = ltrim('nimm-kontakt-mit-uns-auf', '/');
+    $contactUrl = url($contactSlug);
 
-    $nights = $startDateForDisplay->diffInHours($endDateForDisplay);
+    if (function_exists('is_plugin_active') && is_plugin_active('language')) {
+        $currentLocale = Language::getCurrentLocale();
 
-    $hoursForPricing = max(1, (int) $nights);
-    $calculationEnd = $nights > 0
-        ? $endDateForDisplay->copy()
-        : $startDateForDisplay->copy()->addHour();
-
-    $totalPriceForDisplay = $room->getRoomTotalPrice(
-        $startDateForDisplay->toDateTimeString(),
-        $calculationEnd->toDateTimeString()
-    );
-
-    $pricePerHourValue = $hoursForPricing > 0
-        ? $totalPriceForDisplay / $hoursForPricing
-        : $room->price;
-
-    if (! $pricePerHourValue && $room->price) {
-        $pricePerHourValue = $room->price;
+        if ($currentLocale) {
+            $contactUrl = url(trim($currentLocale . '/' . $contactSlug, '/'));
+        }
     }
-
-    $displayPricePerHour = format_price($pricePerHourValue);
 @endphp
-
-<style>
-    .room-price-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.45rem 0.9rem;
-        border-radius: 999px;
-        background-color: var(--primary-color, #578E88);
-        color: #fff;
-        font-weight: 600;
-        font-size: 0.95rem;
-        margin-top: 0.75rem;
-    }
-
-    .room-price-chip i {
-        font-size: 0.9rem;
-        opacity: 0.85;
-    }
-
-    .room-price-chip-amount {
-        font-size: 1.05rem;
-        line-height: 1;
-    }
-
-    .room-price-chip-caption {
-        font-size: 0.85rem;
-        font-weight: 500;
-        opacity: 0.9;
-        line-height: 1;
-    }
-</style>
-<div class="about-area5 about-p p-relative room-details">
+<div class="about-area5 about-p p-relative room-details room-details--rooms">
     <div class="container pt-60 pb-40">
-        <div class="row">
-            <div class="col-sm-12 col-md-12 col-lg-4 order-2">
-                <aside class="sidebar services-sidebar">
-                    @if (HotelHelper::isBookingEnabled())
-                        <div class="sidebar-widget categories" style="padding: 30px !important;">
-                            <div class="widget-content">
-                                <h2 class="widget-title"> {{ __('Booking form') }} </h2>
-                                <div class="booking">
-                                    <div class="contact-bg">
-                                        {!! Theme::partial('hotel.forms.form', ['availableForBooking' => true, 'style' => 1, 'room' => $room]) !!}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-                    {!! dynamic_sidebar('room_sidebar') !!}
-                </aside>
-            </div>
-
-            <div class="col-lg-8 col-md-12 col-sm-12 order-1">
+        <div class="row justify-content-center">
+            <div class="col-12">
                 <div class="service-detail">
                     <div class="thumb">
                         <div class="room-details-slider">
@@ -105,23 +39,42 @@
                         </div>
                     </div>
                     <div class="content-box">
-<div class="row align-items-center mb-50">
-    <div class="col-12">
-        <div class="price">
-            <h2>{{ $room->name }}</h2>
-            {{-- Preis NUR für eingeloggte User anzeigen --}}
-            @if (auth('customer')->check() || auth()->check())
-                <span class="room-price-chip">
-                    <i class="fal fa-clock" aria-hidden="true"></i>
-                    <span class="room-price-chip-amount">{{ $displayPricePerHour }}</span>
-                    <span class="room-price-chip-caption">{{ __('per hour') }}</span>
-                </span>
-            @else
-                <span class="text-muted">{{ __('Bitte einloggen um die Preise zu sehen') }}</span>
-            @endif
-        </div>
-    </div>
-</div>
+                        <div class="room-header">
+                            <h2 class="room-header__title">{{ $room->name }}</h2>
+                        </div>
+
+                        <div class="room-booking-card shadow-block">
+                            <div class="room-booking-card__pricing">
+                                {{-- Preis NUR für eingeloggte User anzeigen --}}
+                                @if ($isCustomerLoggedIn)
+                                    <div class="room-booking-card__price-chip">
+                                        {{ __(':price / :unit', ['price' => format_price($room->price), 'unit' => __('hour_lowercase')]) }}
+                                    </div>
+                                @else
+                                    <p class="room-booking-card__notice text-muted">
+                                        {{ __('Bitte einloggen um die Preise zu sehen') }}
+                                    </p>
+                                @endif
+                            </div>
+
+                            @if (HotelHelper::isBookingEnabled())
+                                <div class="room-booking-card__form">
+                                    @if ($isCustomerLoggedIn)
+                                        {!! Theme::partial('hotel.forms.form', ['availableForBooking' => true, 'style' => 1, 'room' => $room]) !!}
+                                    @else
+                                        <div class="room-booking-card__cta">
+                                            <a class="room-booking-card__cta-btn" href="{{ $contactUrl }}">
+                                                {{ __('Request now') }}
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            @else
+                                <p class="room-booking-card__notice text-muted mb-0">
+                                    {{ __('Booking is currently unavailable.') }}
+                                </p>
+                            @endif
+                        </div>
 
                         {!! BaseHelper::clean($room->content) !!}
 
