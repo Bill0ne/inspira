@@ -180,85 +180,58 @@
       }
     });
   }
-  const disableTemporarily = (el, restoreQueue) => {
-    const wasDisabled = el.disabled;
-    if (!wasDisabled) {
-      el.disabled = true;
-    }
-    restoreQueue.push(() => {
-      if (!wasDisabled) {
-        el.disabled = false;
-      }
-    });
-  };
+  const searchField = f.querySelector('input[name="search"]');
 
-  const prepareSubmission = () => {
-    const restoreQueue = [];
-    const searchField = f.querySelector('input[name="search"]');
-
+  const navigateWithFilters = () => {
     if (searchField) {
       const trimmed = searchField.value.trim();
       if (trimmed !== searchField.value) {
         searchField.value = trimmed;
       }
-      if (searchField.value === '') {
-        disableTemporarily(searchField, restoreQueue);
-      }
     }
 
-    Array.from(f.elements).forEach((el) => {
-      if (!el.name || el === searchField || el.name === 'filter_type') {
+    const formData = new FormData(f);
+    const params = new URLSearchParams();
+
+    formData.forEach((value, key) => {
+      if (key === 'page') {
         return;
       }
 
-      const tag = el.tagName;
-      const type = el.type;
-
-      if ((tag === 'SELECT' || type === 'text' || type === 'search') && !el.value) {
-        disableTemporarily(el, restoreQueue);
+      if (typeof value === 'string' && key === 'search') {
+        value = value.trim();
       }
+
+      if ((value === '' || value === null) && key !== 'filter_type') {
+        return;
+      }
+
+      params.set(key, value);
     });
 
-    return () => {
-      restoreQueue.forEach((restore) => restore());
-    };
+    const action = f.getAttribute('action') || window.location.pathname;
+    const url = new URL(action, window.location.origin);
+    const query = params.toString();
+
+    url.search = query ? `?${query}` : '';
+
+    window.location.assign(url.toString());
   };
 
-  let restoreTimer = null;
   f.addEventListener('submit', (event) => {
-    if (restoreTimer) {
-      clearTimeout(restoreTimer);
-      restoreTimer = null;
-    }
-
-    const restore = prepareSubmission();
-
-    restoreTimer = setTimeout(() => {
-      restore();
-      restoreTimer = null;
-    }, 400);
+    event.preventDefault();
+    navigateWithFilters();
   });
-
-  const triggerSubmit = () => {
-    if (typeof f.requestSubmit === 'function') {
-      f.requestSubmit();
-    } else {
-      f.submit();
-    }
-  };
 
   f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', () => {
-      triggerSubmit();
-    });
+    el.addEventListener('change', navigateWithFilters);
   });
 
-  const searchField = f.querySelector('input[name="search"]');
   if (searchField) {
     searchField.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
-        triggerSubmit();
+        navigateWithFilters();
       }
     });
   }
@@ -281,7 +254,7 @@
       const sortField = f.querySelector('#filter-sort');
       if(sortField) sortField.selectedIndex = 0;
     }
-    triggerSubmit();
+    navigateWithFilters();
   });
 })();
 </script>
