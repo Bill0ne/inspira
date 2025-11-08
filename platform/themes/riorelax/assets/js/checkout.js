@@ -23,7 +23,7 @@ $(document).ready(function () {
         })
 
         $('body').css('cursor', 'progress')
-        $('.custom-checkbox label').css('cursor', 'progress')
+        $('.custom-checkbox, .custom-checkbox label').css('cursor', 'progress')
 
         let $checkoutButton = $(document).find('.payment-checkout-btn')
         $checkoutButton.prop('disabled', true)
@@ -49,7 +49,7 @@ $(document).ready(function () {
                 }
 
                 $('body').css('cursor', 'default')
-                $('.custom-checkbox label').css('cursor', 'pointer')
+                $('.custom-checkbox, .custom-checkbox label').css('cursor', 'pointer')
 
                 $('.payment-checkout-form .list_payment_method').load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function() {
                     $checkoutButton.prop('disabled', false)
@@ -58,7 +58,7 @@ $(document).ready(function () {
             },
             error: () => {
                 $('body').css('cursor', 'default')
-                $('.custom-checkbox label').css('cursor', 'pointer')
+                $('.custom-checkbox, .custom-checkbox label').css('cursor', 'pointer')
                 $checkoutButton.prop('disabled', false)
             },
         })
@@ -85,7 +85,7 @@ $(document).ready(function () {
         })
 
         $('body').css('cursor', 'progress')
-        $('.custom-checkbox label').css('cursor', 'progress')
+        $('.custom-checkbox, .custom-checkbox label').css('cursor', 'progress')
 
         let $checkoutButton = $(document).find('.payment-checkout-btn')
         $checkoutButton.prop('disabled', true)
@@ -111,7 +111,7 @@ $(document).ready(function () {
                 }
 
                 $('body').css('cursor', 'default')
-                $('.custom-checkbox label').css('cursor', 'pointer')
+                $('.custom-checkbox, .custom-checkbox label').css('cursor', 'pointer')
 
                 $('.payment-checkout-form .list_payment_method').load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function() {
                     $checkoutButton.prop('disabled', false)
@@ -120,7 +120,7 @@ $(document).ready(function () {
             },
             error: () => {
                 $('body').css('cursor', 'default')
-                $('.custom-checkbox label').css('cursor', 'pointer')
+                $('.custom-checkbox, .custom-checkbox label').css('cursor', 'pointer')
                 $checkoutButton.prop('disabled', false)
             },
         })
