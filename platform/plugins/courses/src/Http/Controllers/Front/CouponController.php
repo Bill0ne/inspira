@@ -52,23 +52,18 @@ class CouponController extends BaseController
                 ->setMessage(__('This coupon is not used yet!'));
         }
 
-        // Aktuelle Checkout-Daten abrufen
-        $checkoutData = HotelHelper::getCheckoutData();
-
-        // Coupon-Werte löschen
+        // Coupon löschen
         HotelHelper::saveCheckoutData([
             'coupon_code' => null,
             'coupon_amount' => 0,
         ]);
 
-        // Nach Entfernen neu berechnen: ursprünglicher Preis + Steuer bleiben
-        $price = $checkoutData['amount'] ?? ($checkoutData['price'] ?? 0);
-        $tax   = $checkoutData['tax_amount'] ?? 0;
+        // 🔹 aktuelle Beträge neu berechnen
+        $price = HotelHelper::getCartAmount(true); // netto
+        $tax   = HotelHelper::getTaxAmount();      // steuer
+        $total = $price + $tax;                    // brutto
 
-        // Gesamtpreis ist jetzt einfach Preis + Steuer (ohne Rabatt)
-        $total = $price + $tax;
-
-        // Neues HTML für Coupon-Box rendern
+        // Neues HTML-Formular rendern
         $html = view('plugins/courses::coupons.partials.form')->render();
 
         return $this->response
