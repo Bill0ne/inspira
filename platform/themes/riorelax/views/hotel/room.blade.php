@@ -6,6 +6,18 @@
 
     Theme::set('pageTitle', $room->name);
     $nights = $startDate->diffInHours($endDate);
+    $isCustomerLoggedIn = auth('customer')->check() || auth()->check();
+
+    $contactSlug = ltrim('nimm-kontakt-mit-uns-auf', '/');
+    $contactUrl = url($contactSlug);
+
+    if (function_exists('is_plugin_active') && is_plugin_active('language')) {
+        $currentLocale = Language::getCurrentLocale();
+
+        if ($currentLocale) {
+            $contactUrl = url(trim($currentLocale . '/' . $contactSlug, '/'));
+        }
+    }
 @endphp
 <div class="about-area5 about-p p-relative room-details room-details--rooms">
     <div class="container pt-60 pb-40">
@@ -34,7 +46,7 @@
                         <div class="room-booking-card shadow-block">
                             <div class="room-booking-card__pricing">
                                 {{-- Preis NUR für eingeloggte User anzeigen --}}
-                                @if (auth('customer')->check() || auth()->check())
+                                @if ($isCustomerLoggedIn)
                                     @if ($nights > 1)
                                         <p class="room-booking-card__price">
                                             {{ __(':price for :hours hours', ['price' => format_price($room->getRoomTotalPrice($startDate, $endDate)), 'hours' => $nights]) }}
@@ -53,7 +65,15 @@
 
                             @if (HotelHelper::isBookingEnabled())
                                 <div class="room-booking-card__form">
-                                    {!! Theme::partial('hotel.forms.form', ['availableForBooking' => true, 'style' => 1, 'room' => $room]) !!}
+                                    @if ($isCustomerLoggedIn)
+                                        {!! Theme::partial('hotel.forms.form', ['availableForBooking' => true, 'style' => 1, 'room' => $room]) !!}
+                                    @else
+                                        <div class="room-booking-card__cta">
+                                            <a class="room-booking-card__cta-btn" href="{{ $contactUrl }}">
+                                                {{ __('Request now') }}
+                                            </a>
+                                        </div>
+                                    @endif
                                 </div>
                             @else
                                 <p class="room-booking-card__notice text-muted mb-0">
