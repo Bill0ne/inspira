@@ -180,66 +180,15 @@
       }
     });
   }
-  const disableTemporarily = (el, restoreQueue) => {
-    const wasDisabled = el.disabled;
-    if (!wasDisabled) {
-      el.disabled = true;
-    }
-    restoreQueue.push(() => {
-      if (!wasDisabled) {
-        el.disabled = false;
-      }
-    });
-  };
-
-  const prepareSubmission = () => {
-    const restoreQueue = [];
-    const searchField = f.querySelector('input[name="search"]');
-
-    if (searchField) {
-      const trimmed = searchField.value.trim();
-      if (trimmed !== searchField.value) {
-        searchField.value = trimmed;
-      }
-      if (searchField.value === '') {
-        disableTemporarily(searchField, restoreQueue);
-      }
-    }
-
-    Array.from(f.elements).forEach((el) => {
-      if (!el.name || el === searchField || el.name === 'filter_type') {
-        return;
-      }
-
-      const tag = el.tagName;
-      const type = el.type;
-
-      if ((tag === 'SELECT' || type === 'text' || type === 'search') && !el.value) {
-        disableTemporarily(el, restoreQueue);
-      }
-    });
-
-    return () => {
-      restoreQueue.forEach((restore) => restore());
-    };
-  };
-
-  let restoreTimer = null;
-  f.addEventListener('submit', (event) => {
-    if (restoreTimer) {
-      clearTimeout(restoreTimer);
-      restoreTimer = null;
-    }
-
-    const restore = prepareSubmission();
-
-    restoreTimer = setTimeout(() => {
-      restore();
-      restoreTimer = null;
-    }, 400);
-  });
-
   const triggerSubmit = () => {
+    const searchInput = f.querySelector('input[name="search"]');
+    if (searchInput) {
+      const trimmed = searchInput.value.trim();
+      if (trimmed !== searchInput.value) {
+        searchInput.value = trimmed;
+      }
+    }
+
     if (typeof f.requestSubmit === 'function') {
       f.requestSubmit();
     } else {
@@ -248,9 +197,7 @@
   };
 
   f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', () => {
-      triggerSubmit();
-    });
+    el.addEventListener('change', triggerSubmit);
   });
 
   const searchField = f.querySelector('input[name="search"]');
