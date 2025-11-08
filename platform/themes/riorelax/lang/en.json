@@ -667,5 +667,6 @@
     "here": "here",
     "million": "million",
     "| (pipe)": "| (pipe)",
-    "© :year Your Company. All right reserved.": "© :year Your Company. All right reserved."
+    "© :year Your Company. All right reserved.": "© :year Your Company. All right reserved.",
+    "hour_lowercase": "hour"
 }

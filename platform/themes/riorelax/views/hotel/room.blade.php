@@ -5,7 +5,7 @@
 
 
     Theme::set('pageTitle', $room->name);
-    $nights = $startDate->diffInHours($endDate);
+    $nights = max(1, $startDate->diffInHours($endDate));
     $isCustomerLoggedIn = auth('customer')->check() || auth()->check();
 
     $contactSlug = ltrim('nimm-kontakt-mit-uns-auf', '/');
@@ -47,15 +47,9 @@
                             <div class="room-booking-card__pricing">
                                 {{-- Preis NUR für eingeloggte User anzeigen --}}
                                 @if ($isCustomerLoggedIn)
-                                    @if ($nights > 1)
-                                        <p class="room-booking-card__price">
-                                            {{ __(':price for :hours hours', ['price' => format_price($room->getRoomTotalPrice($startDate, $endDate)), 'hours' => $nights]) }}
-                                        </p>
-                                    @else
-                                        <p class="room-booking-card__price">
-                                            {{ __(':price for :hours hour', ['price' => format_price($room->getRoomTotalPrice($startDate, $endDate)), 'hours' => $nights]) }}
-                                        </p>
-                                    @endif
+                                    <div class="room-booking-card__price-chip">
+                                        {{ __(':price / :unit', ['price' => format_price($room->price), 'unit' => __('hour_lowercase')]) }}
+                                    </div>
                                 @else
                                     <p class="room-booking-card__notice text-muted">
                                         {{ __('Bitte einloggen um die Preise zu sehen') }}

@@ -1167,12 +1167,18 @@ button.btn-custom {
         padding-bottom: 16px;
     }
 
-    .room-booking-card__price {
-        font-size: 28px;
+    .room-booking-card__price-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        background-color: #f5f7f6;
+        color: #2f5f58;
+        font-size: 20px;
         font-weight: 600;
-        color: var(--primary-color);
-        margin-bottom: 0;
         line-height: 1.4;
+        align-self: flex-start;
     }
 
     .room-booking-card__notice {
