@@ -308,6 +308,25 @@ return [
         'parent_flag' => 'coupons.index',
     ],
     [
+        'name' => 'Customer cards',
+        'flag' => 'customer-cards.index',
+    ],
+    [
+        'name' => 'Create',
+        'flag' => 'customer-cards.create',
+        'parent_flag' => 'customer-cards.index',
+    ],
+    [
+        'name' => 'Edit',
+        'flag' => 'customer-cards.edit',
+        'parent_flag' => 'customer-cards.index',
+    ],
+    [
+        'name' => 'Delete',
+        'flag' => 'customer-cards.destroy',
+        'parent_flag' => 'customer-cards.index',
+    ],
+    [
         'name' => 'Hotel Settings',
         'flag' => 'hotel.settings',
     ],
