@@ -29,3 +29,49 @@ body{color:#777;font-family:var(--primary-font),sans-serif;font-size:15px;font-s
 .room-details--rooms .room-details-slider-nav .slick-slide:last-child{margin-bottom:0;}
 .room-details--rooms .room-details-slider-nav img{width:100% !important;margin:0;}
 @media (max-width:991.98px){.room-details--rooms .room-details-slider-nav{width:100%;margin-top:12px;}.room-details--rooms .room-details-slider-nav .slick-slide{margin:0 8px 0 0;}.room-details--rooms .room-details-slider-nav .slick-slide:last-child{margin-right:0;}}
+/* Mobile UX improvements */
+.mobile-utility-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:rgba(16,16,16,.92);color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
+.mobile-utility-bar__links{display:flex;align-items:center;gap:14px}
+.mobile-utility-bar__link,.mobile-utility-bar__cta{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:inherit}
+.mobile-utility-bar__link i,.mobile-utility-bar__cta i{font-size:16px}
+.mobile-utility-bar__link:hover,.mobile-utility-bar__link:focus,.mobile-utility-bar__cta:hover,.mobile-utility-bar__cta:focus{color:var(--secondary-color)}
+.mobile-utility-bar__cta{font-size:13px}
+.menu-mobile{position:fixed;inset-inline:0;top:var(--menu-mobile-offset,72px);width:100%;height:calc(100vh - var(--menu-mobile-offset,72px));z-index:1060;background:rgba(0,0,0,.45);opacity:0;visibility:hidden;transition:opacity .3s ease,visibility .3s ease}
+.menu-mobile .navbar-collapse{margin:0 auto;background:#fff;width:min(100% - 32px,420px);border-radius:12px;padding:18px 0;box-shadow:0 20px 45px rgba(12,29,53,.18);height:calc(100% - 32px);overflow-y:auto;transform:translateY(-12px);transition:transform .3s ease}
+.menu-mobile .navbar-collapse ul{padding:0}
+.menu-mobile .navbar-collapse ul li a{width:100%;color:#232d3b;display:block;margin:0;padding:12px 22px;text-align:left;text-decoration:none;font-size:15px;font-weight:500;line-height:22px}
+.menu-mobile .navbar-collapse ul li:not(:last-child) a{border-bottom:1px solid rgba(0,0,0,.06)}
+.menu-mobile__overlay{position:absolute;inset:0;display:none;background:transparent;cursor:pointer}
+.menu-mobile.menu-mobile--open{opacity:1;visibility:visible}
+.menu-mobile.menu-mobile--open .navbar-collapse{transform:translateY(0)}
+.menu-mobile.menu-mobile--open .menu-mobile__overlay{display:block}
+.btn:not(.btn-sm),.top-btn,.theme-btn,button[type=submit],button[type=button]{min-height:48px;display:inline-flex;align-items:center;justify-content:center;padding-inline:clamp(18px,5vw,28px);font-weight:600}
+#menu-mobile-nav{box-shadow:none}
+#menu-mobile-nav .menu{padding:0 10px 10px}
+#menu-mobile-nav .menu .menu-title{margin-bottom:10px;margin-inline-start:10px}
+#menu-mobile-nav .menu .menu-title span{font-size:20px;font-weight:500;color:var(--primary-color);padding-bottom:5px;padding-left:4px;border-bottom:3px var(--primary-color) solid}
+body.menu-mobile-open{overflow:hidden;touch-action:none}
+.room-card{background:#fff;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,.06);overflow:hidden;transition:transform .25s ease,box-shadow .25s ease;display:flex;flex-direction:column;height:100%;cursor:pointer}
+.room-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.room-thumb{padding:12px}
+.room-thumb img{width:100%;border-radius:14px;display:block;object-fit:cover;aspect-ratio:16/9;background-color:#f2f2f2}
+.room-body{padding:10px 16px 12px;display:flex;flex-direction:column;gap:6px}
+.room-title{font-size:18px;line-height:1.35;font-weight:600;color:#414141;margin:0 0 2px}
+.room-desc{font-size:14px;line-height:1.6;color:#4c4c4c;font-weight:400;margin:0 0 8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis}
+.room-icons{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.room-icons img{width:20px;height:20px;object-fit:contain;opacity:.9}
+.room-footer{display:flex;flex-direction:column;gap:8px;margin-top:auto;padding:0 16px 16px}
+.btn-room-cart{background:#578e88;color:#fff;padding:12px 0;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;width:100%;font-size:15px;font-weight:600;gap:8px;min-height:48px;transition:background .2s ease}
+.btn-room-cart:hover,.btn-room-cart:focus{background:#4b7c75;color:#fff}
+.more-link{font-size:14px;font-weight:500;color:#578e88;text-decoration:underline;text-underline-offset:2px;text-align:center}
+.more-link:hover,.more-link:focus{color:#4b7c75;text-underline-offset:3px}
+.slider-content h2{font-size:clamp(42px,8vw,90px);letter-spacing:1px;line-height:1.1;margin-bottom:clamp(24px,5vw,40px);color:#fff;max-width:min(100%,12ch)}
+@media (max-width:991.98px){.slider-content>span{font-size:14px;letter-spacing:4px}.slider-content p{font-size:16px;line-height:1.6}}
+@media (max-width:767.98px){.mobile-utility-bar{flex-direction:column;align-items:flex-start;gap:10px}.mobile-utility-bar__links{width:100%;justify-content:space-between}.mobile-utility-bar__cta{font-size:14px}.pt-90{padding-top:3.5rem!important}.pb-90{padding-bottom:3.5rem!important}.pt-120{padding-top:4rem!important}.pb-120{padding-bottom:4rem!important}.mb-50{margin-bottom:2.5rem!important}.section-title h2{font-size:clamp(26px,7vw,36px);line-height:1.2}.section-title p{font-size:16px;line-height:1.7}.room-title{font-size:17px}.room-desc{font-size:15px}.slider-content{text-align:left;padding-inline:12px}.slider-content>span{margin-bottom:12px;letter-spacing:3px}.slider-content h2{font-size:clamp(32px,9vw,54px);margin-bottom:20px}.slider-content h5{font-size:18px;line-height:1.4}}
+@media (max-width:600px){.menu-mobile .navbar-collapse{width:calc(100% - 24px);height:calc(100% - 24px)}}
+@media (max-width:575.98px){.mobile-utility-bar{padding-inline:14px}.room-thumb{padding:12px 12px 0}.room-footer{padding:0 16px 14px}.slider-content{padding-inline:0}.slider-content p{font-size:15px}}
+
+.sticky-menu .menu-mobile{--menu-mobile-offset:66px;}
+.show-admin-bar .menu-mobile{--menu-mobile-offset:104px;}
+.show-admin-bar .sticky-menu .menu-mobile{--menu-mobile-offset:98px;}
+.show-admin-bar .side-menu .menu-mobile{--menu-mobile-offset:122px;}
