@@ -4,6 +4,10 @@ namespace Botble\Hotel\Supports;
 
 use Botble\Hotel\Enums\ReviewStatusEnum;
 use Botble\Hotel\Facades\HotelHelper;
+use Botble\Hotel\Models\Customer;
+use Botble\Hotel\Models\Room;
+use Botble\PriceConfigurator\Enums\TargetTypeEnum;
+use Botble\PriceConfigurator\Services\PriceConfiguratorService;
 use Botble\Theme\Facades\Theme;
 use Carbon\Carbon;
 use Exception;
@@ -365,6 +369,34 @@ class HotelSupport
     public function isEnableFoodOrder(): bool
     {
         return (bool) $this->getSetting('hotel_booking_enabled_food_order', false);
+    }
+
+    public function getRoomConfiguredPrice(Room $room, ?Customer $customer = null, int $quantity = 1): float
+    {
+        $basePrice = (float) $room->price;
+
+        if (! function_exists('is_plugin_active') || ! is_plugin_active('price-configurator')) {
+            return $basePrice;
+        }
+
+        if (! $room->getKey()) {
+            return $basePrice;
+        }
+
+        $customer ??= $this->getCurrentCustomer();
+        $quantity = max($quantity, 1);
+
+        try {
+            return app(PriceConfiguratorService::class)->calculatePrice(
+                $basePrice,
+                TargetTypeEnum::ROOM,
+                (int) $room->getKey(),
+                $customer,
+                $quantity
+            );
+        } catch (Throwable) {
+            return $basePrice;
+        }
     }
 
     public function getCurrentCustomer(): ?\Botble\Hotel\Models\Customer
