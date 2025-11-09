@@ -31,10 +31,13 @@ use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Services\Gateways\BankTransferPaymentService;
 use Botble\Payment\Services\Gateways\CodPaymentService;
 use Botble\Payment\Supports\PaymentHelper;
+use Botble\PriceConfigurator\Enums\TargetTypeEnum;
+use Botble\PriceConfigurator\Services\PriceConfiguratorService;
 use Botble\SeoHelper\Facades\SeoHelper;
 use Botble\SeoHelper\SeoOpenGraph;
 use Botble\Slug\Facades\SlugHelper;
 use Botble\Theme\Facades\Theme;
+use DateTimeInterface;
 use Throwable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -414,76 +417,20 @@ class PublicController extends Controller
             ->with(['currency', 'category'])
             ->findOrFail(Arr::get($sessionData, 'room_id'));
 
-        // ----------------------------------------
-        // 🔹 Calculate totals and gather slot info
-        // ----------------------------------------
-        $totalBasePrice = 0;
-        $totalHours = 0;
-        $slotSummaries = [];
+        $pricing = $this->calculateRoomPricing($room, $slots, (int) $rooms, $customer);
 
-        foreach ($slots as $slot) {
-            if (empty($slot)) {
-                continue;
-            }
-
-            // 🔹 Parse slot string like "05.11.2025 10:00 - 11:00"
-            $parts = explode('-', $slot);
-            if (count($parts) < 2) {
-                continue;
-            }
-
-            $dateTimePart = trim($parts[0]); // "05.11.2025 10:00"
-            $endTimePart = trim($parts[1]);  // "11:00"
-
-            try {
-                $startDate = Carbon::createFromFormat('d.m.Y H:i', $dateTimePart);
-                $endDate = Carbon::createFromFormat('d.m.Y H:i', $startDate->format('d.m.Y') . ' ' . $endTimePart);
-            } catch (\Exception $e) {
-                continue;
-            }
-
-            if ($endDate->lessThanOrEqualTo($startDate)) {
-                $endDate = $startDate->copy()->addHour();
-            }
-
-            $bookedHours = max($endDate->diffInHours($startDate), 1);
-            $totalHours += $bookedHours;
-
-            $basePrice = $room->getRoomTotalPrice($startDate, $endDate, $rooms);
-            $totalBasePrice += $basePrice;
-
-            $slotSummaries[] = [
-                'start_date'  => $startDate,
-                'end_date'    => $endDate,
-                'base_price'  => $basePrice,
-                'final_price' => $basePrice, // placeholder, will calculate below
-                'hours'       => $bookedHours,
-            ];
-        }
-
-        // ----------------------------------------
-        // 🔹 Apply price rule discount once per booking
-        // ----------------------------------------
-        if (is_plugin_active('price-configurator')) {
-            $totalAmount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-                ->calculatePrice(
-                    $totalBasePrice,
-                    \Botble\PriceConfigurator\Enums\TargetTypeEnum::ROOM,
-                    $room->id,
-                    $customer,
-                    $totalHours // use total hours across all slots
-                );
-        } else {
-            $totalAmount = $totalBasePrice;
-        }
-
-        $discountAmount = max($totalBasePrice - $totalAmount, 0);
+        $slotSummaries = $pricing['slots'];
+        $totalBasePrice = $pricing['total_base_price'];
+        $totalConfiguredPrice = $pricing['total_configured_price'];
+        $totalHours = $pricing['total_hours'];
+        $discountAmount = $pricing['rule_discount'];
 
         $serviceAmount = Arr::get($sessionData, 'service_amount', 0);
+        $foodAmount = Arr::get($sessionData, 'food_amount', 0);
         $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
         $couponCode   = Arr::get($sessionData, 'coupon_code');
 
-        $totalAmount += $serviceAmount;
+        $totalAmount = $totalConfiguredPrice + $serviceAmount + $foodAmount;
         $taxAmount = $room->tax->percentage * $totalAmount / 100;
         $total = $totalAmount + $taxAmount - $couponAmount;
 
@@ -564,43 +511,20 @@ class PublicController extends Controller
         $slots = $request->input('slots', []);
         abort_if(empty($slots), 404);
 
-        $totalBasePrice = 0;
-        $totalHours = 0;
-        $allStartDates = [];
-        $allEndDates = [];
-
-        // 🟢 Loop through all slots to sum base prices and hours
-        foreach ($slots as $slot) {
-            $startDate = HotelHelper::dateFromRequest($slot['start_date']);
-            $endDate   = HotelHelper::dateFromRequest($slot['end_date']);
-            $numberOfRooms = $request->input('rooms', 1);
-
-            $bookedHours = $endDate->diffInHours($startDate);
-            $totalHours += $bookedHours;
-
-            $basePrice = $room->getRoomTotalPrice($startDate, $endDate, $numberOfRooms);
-            $totalBasePrice += $basePrice;
-
-            $allStartDates[] = $startDate;
-            $allEndDates[] = $endDate;
-        }
-
-        // 🟢 Apply price rule once per booking using total hours
-        if (is_plugin_active('price-configurator')) {
-        $priceConfigurator = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class);
-        $totalConfiguredPrice = $priceConfigurator->calculatePrice(
-            $totalBasePrice,
-            'room',
-            $room->id,
-            Auth::guard('customer')->user() ?? null,
-            $totalHours
+        $numberOfRooms = (int) $request->input('rooms', 1);
+        $pricing = $this->calculateRoomPricing(
+            $room,
+            $slots,
+            $numberOfRooms,
+            Auth::guard('customer')->user() ?? null
         );
-        }else {
-            $totalConfiguredPrice = $totalBasePrice;
-        }
 
-        // 🟢 Calculate rule discount
-        $discountAmount = abs($totalBasePrice - $totalConfiguredPrice);
+        $slotSummaries = $pricing['slots'];
+        abort_if(empty($slotSummaries), 404);
+
+        $totalBasePrice = $pricing['total_base_price'];
+        $totalConfiguredPrice = $pricing['total_configured_price'];
+        $discountAmount = $pricing['rule_discount'];
 
         // 🟢 Add service and food amounts
         $serviceIds = $request->input('services', []);
@@ -608,14 +532,14 @@ class PublicController extends Controller
 
         $serviceAmount = 0;
         if ($serviceIds) {
-            $serviceAmount = \Botble\Hotel\Models\Service::query()
+            $serviceAmount = Service::query()
                 ->whereIn('id', $serviceIds)
                 ->sum('price');
         }
 
         $foodAmount = 0;
         if ($foodIds) {
-            $foodAmount = \Botble\Hotel\Models\Food::query()
+            $foodAmount = Food::query()
                 ->whereIn('id', $foodIds)
                 ->sum('price');
         }
@@ -626,13 +550,14 @@ class PublicController extends Controller
         $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
         $couponCode = Arr::get($sessionData, 'coupon_code');
 
-        $taxAmount = $room->tax->percentage * ($totalAmount - $couponAmount) / 100;
-        $grandTotal = ($totalAmount - $couponAmount) + $taxAmount;
+        $taxableAmount = $totalAmount - $couponAmount;
+        $taxAmount = $room->tax->percentage * $taxableAmount / 100;
+        $grandTotal = $taxableAmount + $taxAmount;
 
         // 🟢 Create booking record
         $booking = new Booking();
-        $booking->fill($request->input());
-        $booking->number_of_children = $request->integer('number_of_children');
+        $booking->fill($request->except(['number_of_children']));
+        $booking->number_of_children = 0;
         $booking->amount = $grandTotal;
         $booking->sub_total = $totalBasePrice + $serviceAmount + $foodAmount;
         $booking->tax_amount = $taxAmount;
@@ -648,30 +573,18 @@ class PublicController extends Controller
 
         $booking->save();
 
-        // 🟢 Save all slot records in booking_rooms using totalConfiguredPrice per slot proportionally
-        foreach ($slots as $slot) {
-            $startDate = HotelHelper::dateFromRequest($slot['start_date']);
-            $endDate   = HotelHelper::dateFromRequest($slot['end_date']);
-            $numberOfRooms = $request->input('rooms', 1);
-
-            $bookedHours = $endDate->diffInHours($startDate);
-            $basePrice   = $room->getRoomTotalPrice($startDate, $endDate, $numberOfRooms);
-
-            // 🟢 Price proportionally based on slot hours
-            $slotPrice = $totalConfiguredPrice * ($bookedHours / $totalHours);
-
-            $room->total_price = $basePrice;
-
+        // 🟢 Save all slot records in booking_rooms with configured pricing per slot
+        foreach ($slotSummaries as $slot) {
             BookingRoom::query()->create([
                 'room_id' => $room->getKey(),
                 'room_name' => $room->name,
                 'room_image' => Arr::first($room->images),
                 'booking_id' => $booking->getKey(),
-                'price' => $room->total_price,
+                'price' => $slot['final_price'],
                 'currency_id' => $room->currency_id,
                 'number_of_rooms' => $numberOfRooms,
-                'start_date' => $startDate->format('Y-m-d H:i'),
-                'end_date' => $endDate->format('Y-m-d H:i'),
+                'start_date' => $slot['start_date']->format('Y-m-d H:i'),
+                'end_date' => $slot['end_date']->format('Y-m-d H:i'),
             ]);
         }
 
@@ -784,55 +697,21 @@ class PublicController extends Controller
                 abort(400, 'Invalid booking dates.');
             }
 
+            $dateFormat = HotelHelper::getDateFormat();
             $slots = [[
-                'start_date' => $startDate->format('Y-m-d H:i'),
-                'end_date' => $endDate->format('Y-m-d H:i'),
+                'start_date' => $startDate->format($dateFormat),
+                'end_date' => $endDate->format($dateFormat),
             ]];
         }
 
-        $numberOfRooms = $request->input('rooms', 1);
+        $numberOfRooms = (int) $request->input('rooms', 1);
         $customer = Auth::guard('customer')->user() ?? null;
 
-        $totalBasePrice = 0;
-        $totalHours = 0;
+        $pricing = $this->calculateRoomPricing($room, $slots, $numberOfRooms, $customer);
 
-        // ✅ Step 1: sum base prices and total hours for all slots
-        foreach ($slots as $slot) {
-            if (empty($slot['start_date']) || empty($slot['end_date'])) {
-                continue;
-            }
-
-            $startDate = HotelHelper::dateFromRequest($slot['start_date']);
-            $endDate = HotelHelper::dateFromRequest($slot['end_date']);
-
-            if ($endDate->lessThanOrEqualTo($startDate)) {
-                continue;
-            }
-
-            $bookedHours = $endDate->diffInHours($startDate);
-            $totalHours += $bookedHours;
-
-            $basePrice = $room->getRoomTotalPrice($startDate, $endDate, $numberOfRooms);
-            $totalBasePrice += $basePrice;
-        }
-
-        // ✅ Step 2: Apply price rule once per booking using total hours
-        $totalConfiguredPrice = $totalBasePrice;
-
-        if (is_plugin_active('price-configurator')) {
-            $priceConfigurator = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class);
-            $totalConfiguredPrice = $priceConfigurator->calculatePrice(
-                $totalBasePrice,
-                \Botble\PriceConfigurator\Enums\TargetTypeEnum::ROOM,
-                $room->id,
-                $customer,
-                $totalHours // total hours across all slots
-            );
-        }
-
-
-        // ✅ Step 3: Rule discount (base - configured)
-        $ruleDiscount = max($totalBasePrice - $totalConfiguredPrice, 0);
+        $totalBasePrice = $pricing['total_base_price'];
+        $totalConfiguredPrice = $pricing['total_configured_price'];
+        $ruleDiscount = $pricing['rule_discount'];
 
         [$amount, $discountAmount] = $this->calculateBookingAmount(
             $room,
@@ -934,6 +813,171 @@ class PublicController extends Controller
         Theme::breadcrumb()->add($food->name, $food->url);
 
         return Theme::scope('hotel.food', compact('food'))->render();
+    }
+
+    protected function calculateRoomPricing(
+        Room $room,
+        array $slots,
+        int $numberOfRooms = 1,
+        ?Customer $customer = null
+    ): array {
+        $dateFormat = HotelHelper::getDateFormat();
+
+        $normalizedSlots = [];
+
+        foreach ($slots as $slot) {
+            $normalized = $this->normalizeSlotForPricing($slot);
+
+            if (! $normalized) {
+                continue;
+            }
+
+            $basePrice = $room->getRoomTotalPrice(
+                $normalized['start_date']->format($dateFormat),
+                $normalized['end_date']->format($dateFormat),
+                $numberOfRooms
+            );
+
+            $normalizedSlots[] = [
+                'start_date' => $normalized['start_date'],
+                'end_date' => $normalized['end_date'],
+                'hours' => $normalized['hours'],
+                'base_price' => $basePrice,
+            ];
+        }
+
+        $totalBasePrice = array_sum(array_column($normalizedSlots, 'base_price'));
+        $totalHours = array_sum(array_column($normalizedSlots, 'hours'));
+
+        $totalConfiguredPrice = $totalBasePrice;
+
+        if ($totalBasePrice > 0 && is_plugin_active('price-configurator')) {
+            $totalConfiguredPrice = app(PriceConfiguratorService::class)->calculatePrice(
+                $totalBasePrice,
+                TargetTypeEnum::ROOM,
+                $room->id,
+                $customer,
+                max($totalHours, 1)
+            );
+        }
+
+        $ruleDiscount = max($totalBasePrice - $totalConfiguredPrice, 0);
+
+        if ($totalBasePrice > 0) {
+            foreach ($normalizedSlots as &$slot) {
+                $share = $slot['base_price'] / $totalBasePrice;
+                $slot['final_price'] = max($slot['base_price'] - ($ruleDiscount * $share), 0);
+            }
+            unset($slot);
+        } else {
+            foreach ($normalizedSlots as &$slot) {
+                $slot['final_price'] = 0;
+            }
+            unset($slot);
+        }
+
+        return [
+            'slots' => $normalizedSlots,
+            'total_base_price' => $totalBasePrice,
+            'total_configured_price' => $totalConfiguredPrice,
+            'total_hours' => $totalHours,
+            'rule_discount' => $ruleDiscount,
+        ];
+    }
+
+    protected function normalizeSlotForPricing(mixed $slot): ?array
+    {
+        if (is_string($slot)) {
+            $slot = trim($slot);
+
+            if ($slot === '') {
+                return null;
+            }
+
+            if (preg_match('/^(\d{2}\.\d{2}\.\d{4})\s+(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/', $slot, $matches)) {
+                try {
+                    $startDate = Carbon::createFromFormat('d.m.Y H:i', "{$matches[1]} {$matches[2]}");
+                    $endDate = Carbon::createFromFormat('d.m.Y H:i', "{$matches[1]} {$matches[3]}");
+                } catch (Throwable) {
+                    return null;
+                }
+            } else {
+                try {
+                    $startDate = HotelHelper::dateFromRequest($slot);
+                } catch (Throwable) {
+                    return null;
+                }
+
+                $endDate = $startDate->copy()->addHour();
+            }
+        } elseif (is_array($slot)) {
+            $startDate = $this->parseSlotDateValue($slot['start_date'] ?? $slot['start'] ?? null);
+            $endDate = $this->parseSlotDateValue($slot['end_date'] ?? $slot['end'] ?? null, $startDate);
+        } else {
+            return null;
+        }
+
+        if (! $startDate || ! $endDate) {
+            return null;
+        }
+
+        if ($endDate->lessThanOrEqualTo($startDate)) {
+            $endDate = $startDate->copy()->addHour();
+        }
+
+        return [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'hours' => max(1, $endDate->diffInHours($startDate)),
+        ];
+    }
+
+    protected function parseSlotDateValue(mixed $value, ?Carbon $reference = null): ?Carbon
+    {
+        if ($value instanceof Carbon) {
+            return $value->copy();
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return Carbon::instance($value);
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+
+            if ($value === '') {
+                return null;
+            }
+
+            try {
+                return HotelHelper::dateFromRequest($value);
+            } catch (Throwable) {
+                // Continue to alternative parsing strategies
+            }
+
+            foreach (['Y-m-d H:i', 'd.m.Y H:i'] as $format) {
+                try {
+                    return Carbon::createFromFormat($format, $value);
+                } catch (Throwable) {
+                    continue;
+                }
+            }
+
+            if ($reference && preg_match('/^\d{1,2}:\d{2}$/', $value)) {
+                foreach (['d.m.Y', 'Y-m-d'] as $dateFormat) {
+                    try {
+                        return Carbon::createFromFormat(
+                            $dateFormat . ' H:i',
+                            $reference->format($dateFormat) . ' ' . $value
+                        );
+                    } catch (Throwable) {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     protected function calculateBookingAmount(Room $room, array $servicesIds = [], $nights = 1, int $numberOfRooms = 1, array $foods = [], float $baseAmount = 0): array
