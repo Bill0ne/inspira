@@ -54,7 +54,7 @@ class CustomerCardController extends BaseController
             })
             ->all();
         $types = collect(CustomerCardTypeEnum::values())
-            ->mapWithKeys(fn ($value) => [$value => CustomerCardTypeEnum::make($value)->label()])
+            ->mapWithKeys(fn (CustomerCardTypeEnum $enum) => [$enum->getValue() => $enum->label()])
             ->all();
 
         return view('plugins/hotel::customer-cards.create', compact('jsValidator', 'card', 'users', 'types'));
@@ -103,7 +103,7 @@ class CustomerCardController extends BaseController
             })
             ->all();
         $types = collect(CustomerCardTypeEnum::values())
-            ->mapWithKeys(fn ($value) => [$value => CustomerCardTypeEnum::make($value)->label()])
+            ->mapWithKeys(fn (CustomerCardTypeEnum $enum) => [$enum->getValue() => $enum->label()])
             ->all();
 
         return view('plugins/hotel::customer-cards.edit', [
