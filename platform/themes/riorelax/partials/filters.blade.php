@@ -1,5 +1,5 @@
 @php
-    $type = $filterType ?? null;
+    $type = $filterType ?? ($filter_type ?? null);
     if (! in_array($type, ['courses', 'rooms'], true)) {
         $type = request()->query('filter_type');
     }
@@ -165,125 +165,118 @@
 
 {{-- 🧠 Auto-Submit --}}
 <script>
-(function(){
-  const f = document.getElementById('mainFilterForm');
-  if(!f) return;
-  const toggle = document.getElementById('filterToggle');
-  const bar = document.getElementById('filterBar');
-  if(toggle && bar){
-    toggle.addEventListener('click', function(){
-      const isOpen = bar.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      const textEl = toggle.querySelector('span');
-      if(textEl){
-        textEl.textContent = isOpen ? 'Filter ausblenden' : 'Filter anzeigen';
-      }
-    });
-  }
-  const disableTemporarily = (el, restoreQueue) => {
-    const wasDisabled = el.disabled;
-    if (!wasDisabled) {
-      el.disabled = true;
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('mainFilterForm');
+    if (!form) {
+        return;
     }
-    restoreQueue.push(() => {
-      if (!wasDisabled) {
-        el.disabled = false;
-      }
-    });
-  };
 
-  const prepareSubmission = () => {
-    const restoreQueue = [];
-    const searchField = f.querySelector('input[name="search"]');
+    const toggle = document.getElementById('filterToggle');
+    const bar = document.getElementById('filterBar');
+    if (toggle && bar) {
+        toggle.addEventListener('click', () => {
+            const isOpen = bar.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            const textEl = toggle.querySelector('span');
+            if (textEl) {
+                textEl.textContent = isOpen ? 'Filter ausblenden' : 'Filter anzeigen';
+            }
+        });
+    }
+
+    const searchField = form.querySelector('input[name="search"]');
+
+    const navigateWithFilters = () => {
+        if (searchField) {
+            const trimmed = searchField.value.trim();
+            if (trimmed !== searchField.value) {
+                searchField.value = trimmed;
+            }
+        }
+
+        const pageField = form.querySelector('[name="page"]');
+        if (pageField) {
+            pageField.remove();
+        }
+
+        const params = new URLSearchParams();
+        const formData = new FormData(form);
+
+        for (const [key, rawValue] of formData.entries()) {
+            if (key === 'page') {
+                continue;
+            }
+
+            let value = rawValue;
+
+            if (typeof value === 'string') {
+                value = value.trim();
+            }
+
+            if (!value && key !== 'filter_type') {
+                continue;
+            }
+
+            params.set(key, value);
+        }
+
+        const action = form.getAttribute('action') || window.location.pathname;
+        const query = params.toString();
+        const url = query ? `${action}?${query}` : action;
+
+        window.location.href = url;
+    };
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        navigateWithFilters();
+    });
+
+    form.querySelectorAll('select').forEach((element) => {
+        element.addEventListener('change', navigateWithFilters);
+    });
 
     if (searchField) {
-      const trimmed = searchField.value.trim();
-      if (trimmed !== searchField.value) {
-        searchField.value = trimmed;
-      }
-      if (searchField.value === '') {
-        disableTemporarily(searchField, restoreQueue);
-      }
+        searchField.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                navigateWithFilters();
+            }
+        });
     }
 
-    Array.from(f.elements).forEach((el) => {
-      if (!el.name || el === searchField || el.name === 'filter_type') {
-        return;
-      }
+    document.addEventListener('click', (event) => {
+        const chip = event.target.closest('.filter-chip');
+        if (!chip) {
+            return;
+        }
 
-      const tag = el.tagName;
-      const type = el.type;
-
-      if ((tag === 'SELECT' || type === 'text' || type === 'search') && !el.value) {
-        disableTemporarily(el, restoreQueue);
-      }
-    });
-
-    return () => {
-      restoreQueue.forEach((restore) => restore());
-    };
-  };
-
-  let restoreTimer = null;
-  f.addEventListener('submit', (event) => {
-    if (restoreTimer) {
-      clearTimeout(restoreTimer);
-      restoreTimer = null;
-    }
-
-    const restore = prepareSubmission();
-
-    restoreTimer = setTimeout(() => {
-      restore();
-      restoreTimer = null;
-    }, 400);
-  });
-
-  const triggerSubmit = () => {
-    if (typeof f.requestSubmit === 'function') {
-      f.requestSubmit();
-    } else {
-      f.submit();
-    }
-  };
-
-  f.querySelectorAll('select').forEach((el) => {
-    el.addEventListener('change', () => {
-      triggerSubmit();
-    });
-  });
-
-  const searchField = f.querySelector('input[name="search"]');
-  if (searchField) {
-    searchField.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
         event.preventDefault();
-        triggerSubmit();
-      }
-    });
-  }
 
-  document.addEventListener('click', (event) => {
-    const chip = event.target.closest('.filter-chip');
-    if(!chip) return;
-    event.preventDefault();
-    const key = chip.getAttribute('data-key');
-    if(!key) return;
-    const field = f.querySelector(`[name="${key}"]`);
-    if(field){
-      if(field.tagName === 'SELECT') {
-        field.selectedIndex = 0;
-      } else {
-        field.value = '';
-      }
-    }
-    if(key === 'sort'){
-      const sortField = f.querySelector('#filter-sort');
-      if(sortField) sortField.selectedIndex = 0;
-    }
-    triggerSubmit();
-  });
-})();
+        const key = chip.getAttribute('data-key');
+        if (!key) {
+            return;
+        }
+
+        const field = form.querySelector(`[name="${key}"]`);
+        if (field) {
+            if (field.tagName === 'SELECT') {
+                field.selectedIndex = 0;
+            } else {
+                field.value = '';
+            }
+        }
+
+        if (key === 'sort') {
+            const sortField = form.querySelector('#filter-sort');
+            if (sortField) {
+                sortField.selectedIndex = 0;
+            }
+        }
+
+        navigateWithFilters();
+    });
+});
 </script>
 
 <style>
