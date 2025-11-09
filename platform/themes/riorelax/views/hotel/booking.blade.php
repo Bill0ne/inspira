@@ -473,6 +473,23 @@ textarea.form-control{min-height:100px;}
 
   form.addEventListener('input',()=>{if(step===2&&step2ValidationActive){validateStep(2);}});
 
+  function attemptFinalization({checkStep3=false}={}){
+    clearAlerts();
+    const ok2=validateStep(2,{activate:true});
+    let ok3=true;
+    if(checkStep3){
+      step3Attempted=true;
+      ok3=validateStep(3,{activate:true});
+    }
+    if(!ok2){
+      if(step!==2){step=2;render(step);}return false;
+    }
+    if(checkStep3&&!ok3){
+      if(step!==3){step=3;render(step);}return false;
+    }
+    return true;
+  }
+
   form.addEventListener('click',e=>{
     const next=e.target.closest('[data-next]'),prev=e.target.closest('[data-prev]'),finish=e.target.closest('.payment-checkout-btn');
     if(next){e.preventDefault();clearAlerts();
@@ -481,7 +498,15 @@ textarea.form-control{min-height:100px;}
       step=Math.min(step+1,3);render(step);
       if(step===3){const terms=document.getElementById('terms_conditions');if(terms&&terms.checked)showAlert(3,'');}}
     if(prev){e.preventDefault();clearAlerts();step=Math.max(step-1,1);render(step);}
-    if(finish){e.preventDefault();clearAlerts();step3Attempted=true;const ok2=validateStep(2,{activate:true}),ok3=validateStep(3,{activate:true});if(!(ok2&&ok3)){if(!ok2&&step!==2){step=2;render(step);}else if(!ok3&&step!==3){step=3;render(step);}return;}form.submit();}
+    if(finish&&!attemptFinalization({checkStep3:true})){
+      e.preventDefault();
+    }
+  });
+
+  form.addEventListener('submit',e=>{
+    const submitter=e.submitter;
+    const shouldCheckStep3=step>=3||(submitter&&submitter.classList.contains('payment-checkout-btn'));
+    if(!attemptFinalization({checkStep3:shouldCheckStep3}))e.preventDefault();
   });
 
   const termsBox=document.getElementById('terms_conditions');
