@@ -260,11 +260,11 @@
 {{--                    {{ format_price($booking->rule_discount) }}--}}
 {{--                </x-core::datagrid.item>--}}
 {{--            @endif--}}
+            <x-core::datagrid.item :title="__('Room price')">
+                {{ format_price($booking->rooms->sum('price')) }}
+            </x-core::datagrid.item>
             <x-core::datagrid.item :title="__('Sub Total')">
                 {{ format_price($booking->sub_total) }}
-            </x-core::datagrid.item>
-            <x-core::datagrid.item :title="__('Rule Price')">
-                {{ format_price($booking->rule_discount) }}
             </x-core::datagrid.item>
             <x-core::datagrid.item :title="__('Discount Amount')">
                 {{ format_price($booking->coupon_amount) }}

@@ -420,17 +420,16 @@ class PublicController extends Controller
         $pricing = $this->calculateRoomPricing($room, $slots, (int) $rooms, $customer);
 
         $slotSummaries = $pricing['slots'];
-        $totalBasePrice = $pricing['total_base_price'];
         $totalConfiguredPrice = $pricing['total_configured_price'];
-        $totalHours = $pricing['total_hours'];
-        $discountAmount = $pricing['rule_discount'];
 
         $serviceAmount = Arr::get($sessionData, 'service_amount', 0);
         $foodAmount = Arr::get($sessionData, 'food_amount', 0);
         $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
         $couponCode   = Arr::get($sessionData, 'coupon_code');
 
-        $totalAmount = $totalConfiguredPrice + $serviceAmount + $foodAmount;
+        $totalRoomPrice = $totalConfiguredPrice;
+        $extrasAmount = $serviceAmount + $foodAmount;
+        $totalAmount = $totalRoomPrice + $extrasAmount;
         $taxAmount = $room->tax->percentage * $totalAmount / 100;
         $total = $totalAmount + $taxAmount - $couponAmount;
 
@@ -462,8 +461,8 @@ class PublicController extends Controller
                 'selectedServices',
                 'selectedFoods',
                 'foods',
-                'totalBasePrice',
-                'discountAmount',
+                'totalRoomPrice',
+                'extrasAmount',
                 'token',
                 'displayStart',
                 'displayEnd'
@@ -544,7 +543,9 @@ class PublicController extends Controller
                 ->sum('price');
         }
 
-        $totalAmount = $totalConfiguredPrice + $serviceAmount + $foodAmount;
+        $totalRoomPrice = $totalConfiguredPrice;
+        $extrasAmount = $serviceAmount + $foodAmount;
+        $totalAmount = $totalRoomPrice + $extrasAmount;
 
         $sessionData = HotelHelper::getCheckoutData();
         $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
@@ -559,7 +560,7 @@ class PublicController extends Controller
         $booking->fill($request->except(['number_of_children']));
         $booking->number_of_children = 0;
         $booking->amount = $grandTotal;
-        $booking->sub_total = $totalBasePrice + $serviceAmount + $foodAmount;
+        $booking->sub_total = $totalAmount;
         $booking->tax_amount = $taxAmount;
         $booking->rule_discount = $discountAmount;
         $booking->coupon_code = $couponCode;
@@ -866,7 +867,7 @@ class PublicController extends Controller
         if ($totalBasePrice > 0) {
             foreach ($normalizedSlots as &$slot) {
                 $share = $slot['base_price'] / $totalBasePrice;
-                $slot['final_price'] = max($slot['base_price'] - ($ruleDiscount * $share), 0);
+                $slot['final_price'] = max($totalConfiguredPrice * $share, 0);
             }
             unset($slot);
         } else {

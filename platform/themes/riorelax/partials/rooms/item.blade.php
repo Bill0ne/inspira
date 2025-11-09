@@ -2,7 +2,6 @@
     $margin = $margin ?? false;
     $isLoggedIn = auth('customer')->check() || auth()->check();
     $configuredPrice = $isLoggedIn ? HotelHelper::getRoomConfiguredPrice($room) : null;
-    $displayPriceDiffers = $isLoggedIn && $configuredPrice !== null && abs($configuredPrice - (float) $room->price) > 0.01;
 
     /* === Fallback-Bild === */
     $image = $room->images && count($room->images) > 0
@@ -103,13 +102,6 @@
   font-size: 16px !important;
 }
 
-.room-price__original {
-  font-size: 12px !important;
-  color: #8AA29F !important;
-  text-decoration: line-through !important;
-  font-weight: 400 !important;
-}
-
 .room-price--placeholder {
   font-size: 13px !important;
   font-weight: 500 !important;
@@ -181,9 +173,6 @@
     @if ($isLoggedIn)
       <div class="room-price">
         <span class="room-price__value">{{ __(':price / :unit', ['price' => format_price($configuredPrice), 'unit' => __('hour_lowercase')]) }}</span>
-        @if ($displayPriceDiffers)
-          <span class="room-price__original">{{ format_price($room->price) }}</span>
-        @endif
       </div>
     @else
       <div class="room-price room-price--placeholder">{{ __('Preis nach Login') }}</div>
