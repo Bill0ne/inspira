@@ -52,29 +52,13 @@ class CouponController extends BaseController
                 ->setMessage(__('This coupon is not used yet!'));
         }
 
-        // Coupon entfernen
         HotelHelper::saveCheckoutData([
             'coupon_code' => null,
             'coupon_amount' => 0,
         ]);
 
-        // ✅ Werte aus Checkout-Daten holen (statt getCartAmount)
-        $price = HotelHelper::getCheckoutData('amount') ?? 0;
-        $tax   = HotelHelper::getCheckoutData('tax_amount') ?? 0;
-        $total = HotelHelper::getCheckoutData('total') ?? ($price + $tax);
-
-        // Coupon-Box zurücksetzen
-        $html = view('plugins/courses::coupons.partials.form')->render();
-
         return $this->response
-            ->setMessage(__('Removed coupon :code successfully!', ['code' => $couponCode]))
-            ->setData([
-                'price'    => $price,
-                'discount' => 0,
-                'tax'      => $tax,
-                'total'    => $total,
-                'html'     => $html,
-            ]);
+            ->setMessage(__('Removed coupon :code successfully!', ['code' => $couponCode]));
     }
 
     public function refresh(): BaseHttpResponse

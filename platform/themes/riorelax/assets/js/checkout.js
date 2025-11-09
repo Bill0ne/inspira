@@ -1,5 +1,3 @@
-'use strict'
-
 
 $(document).ready(function () {
     $('.service-item').on('change', function () {

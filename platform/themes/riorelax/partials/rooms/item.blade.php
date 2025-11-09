@@ -1,6 +1,7 @@
 @php
     $margin = $margin ?? false;
     $isLoggedIn = auth('customer')->check() || auth()->check();
+    $configuredPrice = $isLoggedIn ? HotelHelper::getRoomConfiguredPrice($room) : null;
 
     /* === Fallback-Bild === */
     $image = $room->images && count($room->images) > 0
@@ -88,6 +89,25 @@
   padding: 0 16px 12px 16px !important;
 }
 
+.room-price {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+  font-weight: 600 !important;
+  color: #578E88 !important;
+  font-size: 16px !important;
+}
+
+.room-price__value {
+  font-size: 16px !important;
+}
+
+.room-price--placeholder {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #6C6C6C !important;
+}
+
 /* CTA */
 .btn-room-cart {
   background: #578E88 !important;
@@ -150,10 +170,18 @@
 
   {{-- === Footer === --}}
   <div class="room-footer">
+    @if ($isLoggedIn)
+      <div class="room-price">
+        <span class="room-price__value">{{ __(':price / :unit', ['price' => format_price($configuredPrice), 'unit' => __('hour_lowercase')]) }}</span>
+      </div>
+    @else
+      <div class="room-price room-price--placeholder">{{ __('Preis nach Login') }}</div>
+    @endif
+
     @if (HotelHelper::isBookingEnabled())
-      <a 
-        href="{{ $isLoggedIn 
-            ? $room->url . '?start_date=' . BaseHelper::stringify(request()->query('start_date', $startDate)) . '&end_date=' . BaseHelper::stringify(request()->query('end_date', $endDate)) 
+      <a
+        href="{{ $isLoggedIn
+            ? $room->url . '?start_date=' . BaseHelper::stringify(request()->query('start_date', $startDate)) . '&end_date=' . BaseHelper::stringify(request()->query('end_date', $endDate))
             : 'https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf' }}"
         class="btn-room-cart"
         onclick="event.stopPropagation()"

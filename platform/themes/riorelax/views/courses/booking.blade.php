@@ -321,57 +321,57 @@ document.addEventListener('DOMContentLoaded', function() {
   const couponBox = document.getElementById('couponBox');
   if (!couponBox) return;
 
-  couponBox.addEventListener('click', function(e) {
-    const btn = e.target.closest('.remove-coupon-code');
-    if (!btn) return;
-    e.preventDefault();
+  {{--couponBox.addEventListener('click', function(e) {--}}
+  {{--  const btn = e.target.closest('.remove-coupon-code');--}}
+  {{--  if (!btn) return;--}}
+  {{--  e.preventDefault();--}}
 
-    const url = btn.getAttribute('data-url') || btn.getAttribute('href');
-    if (!url) {
-      toastr.error('Keine gültige URL zum Entfernen gefunden.');
-      return;
-    }
+  {{--  const url = btn.getAttribute('data-url') || btn.getAttribute('href');--}}
+  {{--  if (!url) {--}}
+  {{--    toastr.error('Keine gültige URL zum Entfernen gefunden.');--}}
+  {{--    return;--}}
+  {{--  }--}}
 
-    btn.disabled = true;
+  {{--  btn.disabled = true;--}}
 
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-      .then(r => r.json())
-      .then(data => {
-        btn.disabled = false;
+  {{--  fetch(url, {--}}
+  {{--    method: 'POST',--}}
+  {{--    headers: {--}}
+  {{--      'X-CSRF-TOKEN': '{{ csrf_token() }}',--}}
+  {{--      'X-Requested-With': 'XMLHttpRequest'--}}
+  {{--    }--}}
+  {{--  })--}}
+  {{--    .then(r => r.json())--}}
+  {{--    .then(data => {--}}
+  {{--      btn.disabled = false;--}}
 
-        if (data.error) {
-          toastr.error(data.message || 'Fehler beim Entfernen des Gutscheins.');
-          return;
-        }
+  {{--      if (data.error) {--}}
+  {{--        toastr.error(data.message || 'Fehler beim Entfernen des Gutscheins.');--}}
+  {{--        return;--}}
+  {{--      }--}}
 
-        // Wenn der Server neue Coupon-HTML liefert
-        if (data.data && data.data.html) {
-          couponBox.innerHTML = data.data.html;
-        }
+  {{--      // Wenn der Server neue Coupon-HTML liefert--}}
+  {{--      if (data.data && data.data.html) {--}}
+  {{--        couponBox.innerHTML = data.data.html;--}}
+  {{--      }--}}
 
-        // Wenn Preis-/Summenwerte im Response enthalten sind
-        if (data.data) {
-          const d = data.data;
-          const fmt = v => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
+  {{--      // Wenn Preis-/Summenwerte im Response enthalten sind--}}
+  {{--      if (data.data) {--}}
+  {{--        const d = data.data;--}}
+  {{--        const fmt = v => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));--}}
 
-          document.querySelector('.amount-text').textContent = fmt(d.price || 0);
-          document.querySelector('.discount-text').textContent = fmt(d.discount || 0);
-          document.querySelector('.tax-text').textContent = fmt(d.tax || 0);
-          document.querySelector('.total-amount-text').textContent = fmt(d.total || 0);
-        }
+  {{--        document.querySelector('.amount-text').textContent = fmt(d.price || 0);--}}
+  {{--        document.querySelector('.discount-text').textContent = fmt(d.discount || 0);--}}
+  {{--        document.querySelector('.tax-text').textContent = fmt(d.tax || 0);--}}
+  {{--        document.querySelector('.total-amount-text').textContent = fmt(d.total || 0);--}}
+  {{--      }--}}
 
-        toastr.success(data.message || 'Gutschein erfolgreich entfernt!');
-      })
-      .catch(() => {
-        btn.disabled = false;
-        toastr.error('Verbindung fehlgeschlagen.');
-      });
-  });
+  {{--      toastr.success(data.message || 'Gutschein erfolgreich entfernt!');--}}
+  {{--    })--}}
+  {{--    .catch(() => {--}}
+  {{--      btn.disabled = false;--}}
+  {{--      toastr.error('Verbindung fehlgeschlagen.');--}}
+  {{--    });--}}
+  {{--});--}}
 });
 </script>

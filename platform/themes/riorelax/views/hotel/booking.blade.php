@@ -15,8 +15,8 @@
     $endLabel24 = $displayEnd ? BaseHelper::formatDate($displayEnd, 'd.m.Y H:i') : null;
     $isLoggedIn = auth('customer')->check() || auth()->check();
 
-    $configuredBase = $totalBasePrice - ($discountAmount ?? 0);
-    $serviceAmountDisplay = max($totalAmount - $configuredBase, 0);
+    $roomPriceDisplay = $totalRoomPrice ?? 0;
+    $extrasAmountDisplay = $extrasAmount ?? 0;
 @endphp
 
 <style>
@@ -166,16 +166,12 @@ textarea.form-control{min-height:100px;}
         @endif
         <div class="kv"><span>Zimmer</span><b>{{ $rooms }}</b></div>
         <div class="kv"><span>Erwachsene</span><b>{{ $adults }}</b></div>
-        <div class="kv"><span>Kinder</span><b>{{ $children }}</b></div>
       </div>
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($totalAmount) }}</b></div>
-        @if(($discountAmount ?? 0) > 0)
-          <div class="kv"><span>Rabatt (Konfigurator)</span><b>{{ format_price($discountAmount) }}</b></div>
-        @endif
-        @if($serviceAmountDisplay > 0)
-          <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($serviceAmountDisplay) }}</b></div>
+        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($roomPriceDisplay) }}</b></div>
+        @if($extrasAmountDisplay > 0)
+          <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($extrasAmountDisplay) }}</b></div>
         @endif
         <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
         <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
@@ -207,7 +203,6 @@ textarea.form-control{min-height:100px;}
         <input type="hidden" name="slots[{{ $i }}][end_date]" value="{{ $s['end_date']->format(HotelHelper::getDateFormat()) }}">
       @endforeach
       <input type="hidden" name="adults" value="{{ $adults }}">
-      <input type="hidden" name="number_of_children" value="{{ $children }}">
       <input type="hidden" name="rooms" value="{{ $rooms }}">
       <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
       <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
@@ -363,7 +358,6 @@ textarea.form-control{min-height:100px;}
           @endif
           <div><span>Zimmer</span>{{ $rooms }}</div>
           <div><span>Erwachsene</span>{{ $adults }}</div>
-          <div><span>Kinder</span>{{ $children }}</div>
         </div>
 
         <div class="coupon-wrapper" id="couponBox">@include('plugins/hotel::coupons.partials.form')</div>
