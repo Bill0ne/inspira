@@ -1,54 +1,7 @@
-@php
-    $fullWidth = $fullWidth ?? false;
-    $mobileHotline = theme_option('hotline');
-    $mobileCtaLabel = theme_option('header_button_label');
-    $mobileCtaUrl = theme_option('header_button_url');
-@endphp
+@php($fullWidth = $fullWidth ?? false)
 
 <div @if(theme_option('header_sticky_enabled', 'yes') == 'yes') id="header-sticky" @endif class="menu-area">
     <div @class(['container' => ! $fullWidth, 'container-fluid' => $fullWidth])>
-        @if ($mobileHotline || (is_plugin_active('hotel') && Route::has('customer.login')) || ($mobileCtaLabel && $mobileCtaUrl))
-            <div class="mobile-utility-bar d-lg-none">
-                <div class="mobile-utility-bar__links">
-                    @if ($mobileHotline)
-                        <a class="mobile-utility-bar__link" href="tel:{{ $mobileHotline }}">
-                            <i class="far fa-phone"></i>
-                            <span>{{ $mobileHotline }}</span>
-                        </a>
-                    @endif
-
-                    @if (is_plugin_active('language') && ($supportedLocales = Language::getSupportedLocales()) && count($supportedLocales) > 1)
-                        <a class="mobile-utility-bar__link" href="#menu-mobile-nav" role="button" data-bs-toggle="collapse"
-                           data-bs-target="#menu-mobile-nav" aria-controls="menu-mobile-nav" aria-expanded="false">
-                            <i class="far fa-globe"></i>
-                            <span>{{ Language::getCurrentLocaleName() ?? \Illuminate\Support\Str::upper(Language::getCurrentLocaleCode()) }}</span>
-                        </a>
-                    @endif
-
-                    @if (is_plugin_active('hotel') && Route::has('customer.login'))
-                        @auth('customer')
-                            <a class="mobile-utility-bar__link" href="{{ route('customer.overview') }}">
-                                <i class="far fa-user"></i>
-                                <span>{{ __('Account') }}</span>
-                            </a>
-                        @else
-                            <a class="mobile-utility-bar__link" href="{{ route('customer.login') }}">
-                                <i class="far fa-sign-in-alt"></i>
-                                <span>{{ __('Login') }}</span>
-                            </a>
-                        @endauth
-                    @endif
-                </div>
-
-                @if ($mobileCtaLabel && $mobileCtaUrl)
-                    <a class="mobile-utility-bar__cta" href="{{ $mobileCtaUrl }}">
-                        <i class="far fa-calendar-check"></i>
-                        <span>{!! BaseHelper::clean($mobileCtaLabel) !!}</span>
-                    </a>
-                @endif
-            </div>
-        @endif
-
         <div class="second-menu">
             <div class="row align-items-center">
                 <div class="col-8 col-md-4 col-lg-2 col-xl-2">
@@ -67,11 +20,8 @@
                             ]) !!}
                         </nav>
                     </div>
-                    <button class="navbar-toggler text-white float-end d-lg-none btn btn-toggle-menu-mobile" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#menu-mobile-nav" aria-controls="menu-mobile-nav"
-                            aria-expanded="false" aria-haspopup="true" aria-label="{{ __('Toggle navigation') }}">
-                        <i class="fa fa-list" aria-hidden="true"></i>
-                        <span class="visually-hidden">{{ __('Open navigation menu') }}</span>
+                    <button class="navbar-toggler text-white float-end d-lg-none btn btn-toggle-menu-mobile" type="button" data-bs-toggle="collapse" data-bs-target="#menu-mobile-nav" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+                        <i class="fa fa-list"></i>
                     </button>
                 </div>
 
