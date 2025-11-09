@@ -75,3 +75,7 @@ if (! defined('REVIEW_MODULE_SCREEN_NAME')) {
 if (! defined('COUPON_MODULE_SCREEN_NAME')) {
     define('COUPON_MODULE_SCREEN_NAME', 'coupon');
 }
+
+if (! defined('CUSTOMER_CARD_MODULE_SCREEN_NAME')) {
+    define('CUSTOMER_CARD_MODULE_SCREEN_NAME', 'customer-card');
+}
