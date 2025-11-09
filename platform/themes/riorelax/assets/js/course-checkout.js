@@ -3,64 +3,86 @@
 $(document).ready(function () {
 
     // Function to refresh booking amounts and coupon box
-    const refreshCourseCoupon = () => {
+    const refreshCourseCoupon = (overrideCode) => {
         const $checkoutButton = $('.payment-checkout-btn');
         $checkoutButton.prop('disabled', true);
 
+        const enableCheckout = () => $checkoutButton.prop('disabled', false);
+
         const $selectedPaymentMethod = $('.payment-checkout-form .list_payment_method input[name="payment_method"]:checked').val();
 
-        // Get coupon code from hidden input or user input
-        const couponCode = $('input[name=coupon_hidden]').val() || $('input[name=coupon_code]').val();
+        const orderToken = $('input[name=token]').val();
+        let couponCode = '';
 
-        // Calculate booking amount via AJAX
+        if (typeof overrideCode !== 'undefined') {
+            couponCode = overrideCode;
+        } else {
+            couponCode = $('input[name=coupon_hidden]').val() || $('input[name=coupon_code]').val() || '';
+        }
+
         $.ajax({
             url: '/course/ajax/calculate-amount',
             type: 'GET',
             data: {
                 course_id: $('input[name=course_id]').val(),
                 coupon_code: couponCode,
+                token: orderToken,
             },
             success: ({ error, message, data }) => {
                 if (error) {
+                    enableCheckout();
                     RiorelaxTheme.showError(message);
                     return;
                 }
 
-                // Update sidebar totals
                 $('.total-amount-text').text(data.total_amount);
                 $('input[name=amount]').val(data.amount_raw);
                 $('.amount-text').text(data.sub_total);
                 $('.discount-text').text(data.discount_amount);
                 $('.tax-text').text(data.tax_amount);
 
-                // Reload payment methods (preserve selection)
-                $('.payment-checkout-form .list_payment_method').load(
-                    window.location.href + ' .payment-checkout-form .list_payment_method > *',
-                    function () {
-                        $checkoutButton.prop('disabled', false);
+                const $paymentMethods = $('.payment-checkout-form .list_payment_method');
+                $paymentMethods.load(
+                    `${window.location.href} .payment-checkout-form .list_payment_method > *`,
+                    function (response, status) {
+                        enableCheckout();
+
+                        if (status !== 'success') {
+                            return;
+                        }
+
                         $('.payment-checkout-form .list_payment_method input[value="' + $selectedPaymentMethod + '"]')
                             .prop('checked', true)
                             .trigger('change');
                     }
                 );
 
-                // Refresh order detail box (coupon info)
-                const refreshUrl = $('.order-detail-box').data('refresh-url');
+                const $orderBox = $('.order-detail-box').first();
+                const refreshUrl = $orderBox.data('refresh-url');
+
+                if (!refreshUrl) {
+                    return;
+                }
+
                 $.ajax({
                     url: refreshUrl,
                     type: 'GET',
                     data: { coupon_code: couponCode },
-                    success: ({ error, message, data }) => {
-                        if (!error) {
-                            $('.order-detail-box').html(data);
-                        } else {
+                    success: ({ error, message, data: html }) => {
+                        if (!error && html) {
+                            $orderBox.replaceWith(html);
+                        } else if (error) {
                             RiorelaxTheme.showError(message);
                         }
                     },
                     error: (err) => RiorelaxTheme.handleError(err),
                 });
             },
-            error: (err) => RiorelaxTheme.handleError(err),
+            error: (err) => {
+                enableCheckout();
+
+                return RiorelaxTheme.handleError(err);
+            },
         });
     };
 
@@ -72,12 +94,14 @@ $(document).ready(function () {
         .on('click', '.apply-coupon-code', (e) => {
             e.preventDefault();
             const $button = $(e.currentTarget);
-            const couponCode = $('input[name=coupon_code]').val();
+            const couponCode = ($('input[name=coupon_code]').val() || '').trim();
 
             if (!couponCode) {
                 RiorelaxTheme.showError('Please enter a coupon code.');
                 return;
             }
+
+            $('input[name=coupon_code]').val(couponCode);
 
             $.ajax({
                 url: $button.data('url'),
@@ -91,7 +115,7 @@ $(document).ready(function () {
                         return;
                     }
                     RiorelaxTheme.showSuccess(message);
-                    refreshCourseCoupon();
+                    refreshCourseCoupon(couponCode);
                 },
                 error: (err) => RiorelaxTheme.handleError(err),
                 complete: () => $button.removeClass('button-loading'),
@@ -114,7 +138,8 @@ $(document).ready(function () {
                         return;
                     }
                     RiorelaxTheme.showSuccess(message);
-                    refreshCourseCoupon();
+                    $('input[name=coupon_code]').val('');
+                    refreshCourseCoupon('');
                 },
                 error: (err) => RiorelaxTheme.handleError(err),
                 complete: () => $button.removeClass('button-loading'),

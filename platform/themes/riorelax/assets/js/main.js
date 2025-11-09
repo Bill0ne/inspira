@@ -507,6 +507,13 @@ $(document).ready(function () {
         let roomDetailsSlider = $('.room-details-slider');
         if (roomDetailsSlider.length) {
             let roomDetailsSliderNav = $('.room-details-slider-nav');
+            let roomDetailsWrapper = roomDetailsSliderNav.closest('.room-details--rooms');
+            let roomDetailsNavItems = roomDetailsSliderNav.find('img').length || 1;
+            let useVerticalNav = roomDetailsWrapper.length > 0;
+            let defaultSlidesToShow = useVerticalNav
+                ? Math.min(roomDetailsNavItems, 4)
+                : Math.min(roomDetailsNavItems, 6);
+            let responsiveSettings = [];
 
             roomDetailsSlider.slick({
                 rtl: RiorelaxTheme.isRtl(),
@@ -529,16 +536,44 @@ $(document).ready(function () {
                 actualSize: false,
             });
 
-            roomDetailsSliderNav.slick({
-                rtl: RiorelaxTheme.isRtl(),
-                slidesToShow: 6,
-                slidesToScroll: 1,
-                asNavFor: '.room-details-slider',
-                dots: false,
-                arrows: false,
-                centerMode: false,
-                focusOnSelect: true,
-                responsive: [
+            if (useVerticalNav) {
+                let slidesForMedium = Math.min(roomDetailsNavItems, 4) || 1;
+                let slidesForTablet = Math.min(roomDetailsNavItems, 3) || 1;
+
+                responsiveSettings = [
+                    {
+                        breakpoint: 1200,
+                        settings: {
+                            slidesToShow: slidesForMedium,
+                        },
+                    },
+                    {
+                        breakpoint: 992,
+                        settings: {
+                            slidesToShow: slidesForMedium,
+                            vertical: false,
+                            verticalSwiping: false,
+                        },
+                    },
+                    {
+                        breakpoint: 768,
+                        settings: {
+                            slidesToShow: slidesForTablet,
+                            vertical: false,
+                            verticalSwiping: false,
+                        },
+                    },
+                    {
+                        breakpoint: 576,
+                        settings: {
+                            slidesToShow: 1,
+                            vertical: false,
+                            verticalSwiping: false,
+                        },
+                    },
+                ];
+            } else {
+                responsiveSettings = [
                     {
                         breakpoint: 1400,
                         settings: {
@@ -557,7 +592,21 @@ $(document).ready(function () {
                             slidesToShow: 1,
                         },
                     },
-                ],
+                ];
+            }
+
+            roomDetailsSliderNav.slick({
+                rtl: RiorelaxTheme.isRtl(),
+                slidesToShow: defaultSlidesToShow || 1,
+                slidesToScroll: 1,
+                asNavFor: '.room-details-slider',
+                dots: false,
+                arrows: false,
+                centerMode: false,
+                focusOnSelect: true,
+                vertical: useVerticalNav,
+                verticalSwiping: useVerticalNav,
+                responsive: responsiveSettings,
             });
         }
     }
