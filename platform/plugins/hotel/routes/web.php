@@ -3,6 +3,7 @@
 use Botble\Base\Facades\BaseHelper;
 use Botble\Hotel\Facades\HotelHelper;
 use Botble\Hotel\Http\Controllers\CouponController;
+use Botble\Hotel\Http\Controllers\CustomerCardController;
 use Botble\Hotel\Http\Controllers\Front\CouponController as CouponControllerFront;
 use Botble\Hotel\Http\Controllers\InvoiceController;
 use Botble\Hotel\Http\Controllers\Settings\CurrencySettingController;
@@ -267,6 +268,17 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
                 'as' => 'deletes',
                 'uses' => 'CouponController@deletes',
                 'permission' => 'coupons.destroy',
+            ]);
+        });
+
+        Route::group(['prefix' => 'customer-cards', 'as' => 'customer-cards.'], function (): void {
+            Route::resource('', CustomerCardController::class)
+                ->parameters(['' => 'customer_card']);
+
+            Route::delete('deletes', [
+                'as' => 'deletes',
+                'uses' => 'CustomerCardController@deletes',
+                'permission' => 'customer-cards.destroy',
             ]);
         });
     });
