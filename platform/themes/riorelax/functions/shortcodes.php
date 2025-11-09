@@ -365,7 +365,7 @@ app()->booted(function (): void {
         });
 
 Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): ?string {
-    $request = request();
+    $request = request()->duplicate($_GET);
 
     // ===============================
     // 🌿 ROOMS: Filter & Sortierung
@@ -394,7 +394,7 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
 
 
 Shortcode::register('all-courses', __('All Courses'), __('Display all available courses'), function (): ?string {
-    $request = request();
+    $request = request()->duplicate($_GET);
 
     $query = \Botble\Courses\Models\Course::query()
         ->wherePublished()

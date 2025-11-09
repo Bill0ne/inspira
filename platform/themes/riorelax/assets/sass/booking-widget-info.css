@@ -1,0 +1,34 @@
+/* === Booking Info Box – Dezente, elegante Version === */
+
+.booking-widget__info {
+  background: #f8f8f8;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: #666;
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.5;
+  margin-top: 10px;
+  transition: all 0.25s ease;
+  min-height: 30px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.booking-widget__info.error {
+  border-color: #f2dede;
+  background: #fdf9f9;
+  color: #b44;
+}
+
+.booking-widget__info.success {
+  border-color: #dfe9e6;
+  background: #f6f9f8;
+  color: #3a5;
+}
+
+.booking-widget__submit[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transition: opacity 0.3s ease;
+}

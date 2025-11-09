@@ -467,6 +467,7 @@
     "Remove": "Remove",
     "Remove image": "Remove image",
     "Removed coupon :code successfully!": "Removed coupon :code successfully!",
+    "Request now": "Request now",
     "Requests": "Requests",
     "Required fields are followed by *": "Required fields are followed by *",
     "Reset Password": "Reset Password",
@@ -666,5 +667,6 @@
     "here": "here",
     "million": "million",
     "| (pipe)": "| (pipe)",
-    "© :year Your Company. All right reserved.": "© :year Your Company. All right reserved."
+    "© :year Your Company. All right reserved.": "© :year Your Company. All right reserved.",
+    "hour_lowercase": "hour"
 }
