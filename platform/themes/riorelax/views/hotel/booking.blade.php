@@ -166,7 +166,6 @@ textarea.form-control{min-height:100px;}
         @endif
         <div class="kv"><span>Zimmer</span><b>{{ $rooms }}</b></div>
         <div class="kv"><span>Erwachsene</span><b>{{ $adults }}</b></div>
-        <div class="kv"><span>Kinder</span><b>{{ $children }}</b></div>
       </div>
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
@@ -207,7 +206,6 @@ textarea.form-control{min-height:100px;}
         <input type="hidden" name="slots[{{ $i }}][end_date]" value="{{ $s['end_date']->format(HotelHelper::getDateFormat()) }}">
       @endforeach
       <input type="hidden" name="adults" value="{{ $adults }}">
-      <input type="hidden" name="number_of_children" value="{{ $children }}">
       <input type="hidden" name="rooms" value="{{ $rooms }}">
       <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
       <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
@@ -363,7 +361,6 @@ textarea.form-control{min-height:100px;}
           @endif
           <div><span>Zimmer</span>{{ $rooms }}</div>
           <div><span>Erwachsene</span>{{ $adults }}</div>
-          <div><span>Kinder</span>{{ $children }}</div>
         </div>
 
         <div class="coupon-wrapper" id="couponBox">@include('plugins/hotel::coupons.partials.form')</div>
