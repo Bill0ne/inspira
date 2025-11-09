@@ -41,7 +41,18 @@ class CustomerCardController extends BaseController
 
         $jsValidator = JsValidator::formRequest(CustomerCardRequest::class);
         $card = new CustomerCard();
-        $users = User::query()->pluck('name', 'id')->all();
+        $users = User::query()
+            ->get()
+            ->mapWithKeys(function (User $user) {
+                $label = trim($user->name);
+
+                if (! $label) {
+                    $label = $user->username ?: $user->email;
+                }
+
+                return [$user->getKey() => $label];
+            })
+            ->all();
         $types = collect(CustomerCardTypeEnum::values())
             ->mapWithKeys(fn ($value) => [$value => CustomerCardTypeEnum::make($value)->label()])
             ->all();
@@ -79,7 +90,18 @@ class CustomerCardController extends BaseController
             ->addScriptsDirectly('vendor/core/plugins/hotel/js/customer-card.js');
 
         $jsValidator = JsValidator::formRequest(CustomerCardRequest::class);
-        $users = User::query()->pluck('name', 'id')->all();
+        $users = User::query()
+            ->get()
+            ->mapWithKeys(function (User $user) {
+                $label = trim($user->name);
+
+                if (! $label) {
+                    $label = $user->username ?: $user->email;
+                }
+
+                return [$user->getKey() => $label];
+            })
+            ->all();
         $types = collect(CustomerCardTypeEnum::values())
             ->mapWithKeys(fn ($value) => [$value => CustomerCardTypeEnum::make($value)->label()])
             ->all();
