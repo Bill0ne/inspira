@@ -1,5 +1,4 @@
 const BookingWidget = (() => {
-    const TIME_FORMAT = 'HH:mm'
     const selectors = {
         slotCard: '[data-slot-card]',
         slotList: '[data-slot-list]',
@@ -77,10 +76,50 @@ const BookingWidget = (() => {
     }
 
     function minutesToTimeString(totalMinutes) {
-        const minutes = Math.max(0, totalMinutes)
-        const hours = Math.floor(minutes / 60) % 24
+        const maxMinutes = 23 * 60 + 59
+        const minutes = Math.min(Math.max(0, totalMinutes), maxMinutes)
+        const hours = Math.floor(minutes / 60)
         const remainder = minutes % 60
         return `${pad(hours)}:${pad(remainder)}`
+    }
+
+    function ensureTimeWithinBounds(input, { min, max, increment }) {
+        if (!input) {
+            return
+        }
+
+        const step = Math.max(1, increment || 1)
+        const minMinutes = typeof min === 'string' ? timeStringToMinutes(min) : null
+        const maxMinutes = typeof max === 'string' ? timeStringToMinutes(max) : null
+        let minutes = timeStringToMinutes((input.value || '').trim())
+
+        if (minutes === null) {
+            if (minMinutes !== null) {
+                minutes = minMinutes
+            } else {
+                input.value = ''
+                return
+            }
+        }
+
+        if (minMinutes !== null && minutes < minMinutes) {
+            minutes = minMinutes
+        }
+
+        if (maxMinutes !== null && minutes > maxMinutes) {
+            minutes = maxMinutes
+        }
+
+        const remainder = minutes % step
+        if (remainder !== 0) {
+            minutes += step - remainder
+        }
+
+        if (maxMinutes !== null && minutes > maxMinutes) {
+            minutes = maxMinutes
+        }
+
+        input.value = minutesToTimeString(minutes)
     }
 
     function combineDateTime(date, time) {
@@ -222,7 +261,7 @@ const BookingWidget = (() => {
         const cards = Array.from(widget.querySelectorAll(selectors.slotCard))
 
         if (!cards.length) {
-            return { valid: false, message: widget.dataset.errorIncomplete || 'Please add at least one slot.' }
+            return { valid: false, message: widget.dataset.errorIncomplete || 'Bitte füge mindestens einen Slot hinzu.' }
         }
 
         const parsedSlots = []
@@ -235,7 +274,7 @@ const BookingWidget = (() => {
             const endValue = (card.querySelector('[data-role="slot-end"]').value || '').trim()
 
             if (!dateValue || !startValue || !endValue) {
-                return { valid: false, message: widget.dataset.errorIncomplete || 'Please complete all slot fields.' }
+                return { valid: false, message: widget.dataset.errorIncomplete || 'Bitte alle Slot-Felder ausfüllen.' }
             }
 
             const date = parseDate(dateValue)
@@ -243,29 +282,29 @@ const BookingWidget = (() => {
             const endTime = parseTime(endValue)
 
             if (!date || !startTime || !endTime) {
-                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+                return { valid: false, message: widget.dataset.errorInvalid || 'Bitte gültiges Datum und gültige Uhrzeit eingeben.' }
             }
 
             const start = combineDateTime(date, startTime)
             const end = combineDateTime(date, endTime)
 
             if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+                return { valid: false, message: widget.dataset.errorInvalid || 'Bitte gültiges Datum und gültige Uhrzeit eingeben.' }
             }
 
             if (end.getTime() <= start.getTime()) {
-                return { valid: false, message: widget.dataset.errorInvalid || 'Please enter a valid date and time.' }
+                return { valid: false, message: widget.dataset.errorInvalid || 'Bitte gültiges Datum und gültige Uhrzeit eingeben.' }
             }
 
             if (start.getTime() < now.getTime()) {
-                return { valid: false, message: widget.dataset.errorPast || 'Slots must be in the future.' }
+                return { valid: false, message: widget.dataset.errorPast || 'Slots müssen in der Zukunft liegen.' }
             }
 
             const duration = Math.round((end.getTime() - start.getTime()) / 60000)
             if (duration < minDuration) {
                 return {
                     valid: false,
-                    message: widget.dataset.errorDuration || `Slots must be at least ${minDuration} minutes.`,
+                    message: widget.dataset.errorDuration || `Slots müssen mindestens ${minDuration} Minuten dauern.`,
                 }
             }
 
@@ -276,7 +315,7 @@ const BookingWidget = (() => {
 
         for (let i = 1; i < sorted.length; i++) {
             if (sorted[i].start.getTime() < sorted[i - 1].end.getTime()) {
-                return { valid: false, message: widget.dataset.errorOverlap || 'Slots cannot overlap.' }
+                return { valid: false, message: widget.dataset.errorOverlap || 'Slots dürfen sich nicht überschneiden.' }
             }
         }
 
@@ -298,18 +337,6 @@ const BookingWidget = (() => {
         })
     }
 
-    function createFlatpickrInstance(input, options) {
-        if (!input) {
-            return null
-        }
-
-        if (input._flatpickr) {
-            input._flatpickr.destroy()
-        }
-
-        return flatpickr(input, options)
-    }
-
     function timeStringToMinutes(value) {
         const time = parseTime(value)
         return time ? timeToMinutes(time) : null
@@ -322,101 +349,54 @@ const BookingWidget = (() => {
         const startInput = card.querySelector('[data-role="slot-start"]')
         const endInput = card.querySelector('[data-role="slot-end"]')
 
-        createFlatpickrInstance(dateInput, {
-            dateFormat: 'd.m.Y',
-            minDate: 'today',
-            locale: flatpickr.l10ns?.de ?? 'de',
-            disableMobile: true,
-            allowInput: true,
-            onChange: () => {
-                updateStartConstraints()
-                updateSlotValue(card)
-            },
-        })
-
-        const startPicker = createFlatpickrInstance(startInput, {
-            enableTime: true,
-            noCalendar: true,
-            dateFormat: TIME_FORMAT,
-            time_24hr: true,
-            minuteIncrement,
-            minTime: '00:00',
-            maxTime: '23:30',
-            allowInput: true,
-            disableMobile: true,
-            locale: flatpickr.l10ns?.de ?? 'de',
-            onValueUpdate: () => {
-                updateEndConstraints()
-                updateSlotValue(card)
-            },
-            onClose: () => {
-                updateEndConstraints()
-                updateSlotValue(card)
-            },
-        })
-
-        const endPicker = createFlatpickrInstance(endInput, {
-            enableTime: true,
-            noCalendar: true,
-            dateFormat: TIME_FORMAT,
-            time_24hr: true,
-            minuteIncrement,
-            minTime: minutesToTimeString(minuteIncrement),
-            maxTime: '23:59',
-            allowInput: true,
-            disableMobile: true,
-            locale: flatpickr.l10ns?.de ?? 'de',
-            onValueUpdate: () => updateSlotValue(card),
-            onClose: () => updateSlotValue(card),
-        })
-
         function updateStartConstraints() {
-            const minTime = getMinStartTimeForDate(dateInput?.value, minuteIncrement)
-
-            if (startPicker) {
-                const effectiveMin = minTime || '00:00'
-                startPicker.set('minTime', effectiveMin)
-
-                const current = startInput?.value ? timeStringToMinutes(startInput.value) : null
-                const minMinutes = timeStringToMinutes(effectiveMin)
-
-                if (current !== null && minMinutes !== null && current < minMinutes) {
-                    startPicker.setDate(effectiveMin, true, TIME_FORMAT)
-                }
-            }
-
+            const minTime = getMinStartTimeForDate(dateInput?.value, minuteIncrement) || '00:00'
+            ensureTimeWithinBounds(startInput, { min: minTime, max: '23:30', increment: minuteIncrement })
             updateEndConstraints()
         }
 
         function updateEndConstraints() {
-            if (!endPicker) {
-                return
-            }
-
             const startValue = (startInput?.value || '').trim()
-            const startTime = parseTime(startValue)
+            const startMinutes = startValue ? timeStringToMinutes(startValue) : null
 
-            if (!startTime) {
-                endPicker.set('minTime', minutesToTimeString(minDuration))
+            if (startMinutes === null) {
+                const fallback = minutesToTimeString(minDuration)
+                ensureTimeWithinBounds(endInput, { min: fallback, max: '23:59', increment: minuteIncrement })
+                updateSlotValue(card)
                 return
             }
 
-            const minEndMinutes = timeToMinutes(startTime) + minDuration
-
-            if (minEndMinutes >= 24 * 60) {
-                endPicker.set('minTime', '23:59')
-                return
-            }
-
+            const minEndMinutes = Math.min(startMinutes + minDuration, 23 * 60 + 59)
             const minEndString = minutesToTimeString(minEndMinutes)
-            endPicker.set('minTime', minEndString)
+            ensureTimeWithinBounds(endInput, { min: minEndString, max: '23:59', increment: minuteIncrement })
+            updateSlotValue(card)
+        }
 
-            const endValue = (endInput?.value || '').trim()
-            const endMinutes = endValue ? timeStringToMinutes(endValue) : null
+        if (dateInput) {
+            dateInput.addEventListener('change', () => {
+                updateStartConstraints()
+                updateSlotValue(card)
+            })
+        }
 
-            if (endMinutes === null || endMinutes < minEndMinutes) {
-                endPicker.setDate(minEndString, true, TIME_FORMAT)
+        if (startInput) {
+            const syncStart = () => {
+                updateStartConstraints()
+                updateSlotValue(card)
             }
+
+            startInput.addEventListener('change', syncStart)
+            startInput.addEventListener('input', syncStart)
+        }
+
+        if (endInput) {
+            const syncEnd = () => {
+                updateEndConstraints()
+                updateSlotValue(card)
+            }
+
+            endInput.addEventListener('change', syncEnd)
+            endInput.addEventListener('input', syncEnd)
         }
 
         updateStartConstraints()
@@ -547,10 +527,10 @@ const BookingWidget = (() => {
         const MAX_ATTEMPTS = 40
         const RETRY_DELAY = 100
 
-        if (typeof flatpickr === 'undefined') {
+        if (typeof window !== 'undefined' && typeof window.Litepicker === 'undefined') {
             if (attempt >= MAX_ATTEMPTS) {
                 if (typeof console !== 'undefined' && console.warn) {
-                    console.warn('Booking widget: flatpickr library not found.')
+                    console.warn('Buchungs-Widget: Litepicker-Bibliothek nicht gefunden.')
                 }
 
                 return

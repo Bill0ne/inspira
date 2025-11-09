@@ -167,11 +167,12 @@
 }
 
 .slider-content h2 {
-    font-size: 90px;
+    font-size: clamp(42px, 8vw, 90px);
     letter-spacing: 1.0px;
-    line-height: 1.2;
-    margin-bottom: 40px;
+    line-height: 1.1;
+    margin-bottom: clamp(24px, 5vw, 40px);
     color: #fff;
+    max-width: min(100%, 12ch);
 }
 
 .slider-content h2 span {
@@ -200,6 +201,50 @@
     color: #fff;
     font-size: 18px;
     margin-bottom: 0;
+}
+
+@media (max-width: 991.98px) {
+    .slider-content > span {
+        font-size: 14px;
+        letter-spacing: 4px;
+    }
+
+    .slider-content p {
+        font-size: 16px;
+        line-height: 1.6;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .slider-content {
+        text-align: left;
+        padding-inline: 12px;
+    }
+
+    .slider-content > span {
+        margin-bottom: 12px;
+        letter-spacing: 3px;
+    }
+
+    .slider-content h2 {
+        font-size: clamp(32px, 9vw, 54px);
+        margin-bottom: 20px;
+    }
+
+    .slider-content h5 {
+        font-size: 18px;
+        line-height: 1.4;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .slider-content {
+        padding-inline: 0;
+    }
+
+    .slider-content p {
+        font-size: 15px;
+    }
 }
 
 .p-relative {

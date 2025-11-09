@@ -2,6 +2,7 @@
 
 namespace Theme\Riorelax\Helpers;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -56,8 +57,24 @@ class FilterHelper
                 else $query->orderBy('created_at', 'desc');
                 break;
             case 'newest':
-            default:
                 $query->orderBy('created_at', 'desc');
+                break;
+            default:
+                if ($type === 'courses') {
+                    $table = $query->getModel()->getTable();
+                    $now = Carbon::now();
+
+                    $query->orderByRaw('coalesce((
+                        select min(cs.start_date)
+                        from course_sessions as cs
+                        where cs.course_id = ' . $table . '.id
+                          and cs.start_date >= ?
+                    ), ?) asc', [$now, $now->copy()->addYears(25)]);
+
+                    $query->orderBy('created_at', 'desc');
+                } else {
+                    $query->orderBy('created_at', 'desc');
+                }
                 break;
         }
 
