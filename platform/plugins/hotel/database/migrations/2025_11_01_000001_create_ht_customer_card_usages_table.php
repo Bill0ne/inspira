@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('ht_customer_card_usages')) {
+            return;
+        }
+
         Schema::create('ht_customer_card_usages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('card_id')->constrained('ht_customer_cards')->cascadeOnDelete();
