@@ -5,30 +5,24 @@
 
 
     Theme::set('pageTitle', $room->name);
-    $nights = $startDate->diffInHours($endDate);
-@endphp
-<div class="about-area5 about-p p-relative room-details">
-    <div class="container pt-60 pb-40">
-        <div class="row">
-            <div class="col-sm-12 col-md-12 col-lg-4 order-2">
-                <aside class="sidebar services-sidebar">
-                    @if (HotelHelper::isBookingEnabled())
-                        <div class="sidebar-widget categories" style="padding: 30px !important;">
-                            <div class="widget-content">
-                                <h2 class="widget-title"> {{ __('Booking form') }} </h2>
-                                <div class="booking">
-                                    <div class="contact-bg">
-                                        {!! Theme::partial('hotel.forms.form', ['availableForBooking' => true, 'style' => 1, 'room' => $room]) !!}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-                    {!! dynamic_sidebar('room_sidebar') !!}
-                </aside>
-            </div>
+    $nights = max(1, $startDate->diffInHours($endDate));
+    $isCustomerLoggedIn = auth('customer')->check() || auth()->check();
 
-            <div class="col-lg-8 col-md-12 col-sm-12 order-1">
+    $contactSlug = ltrim('nimm-kontakt-mit-uns-auf', '/');
+    $contactUrl = url($contactSlug);
+
+    if (function_exists('is_plugin_active') && is_plugin_active('language')) {
+        $currentLocale = Language::getCurrentLocale();
+
+        if ($currentLocale) {
+            $contactUrl = url(trim($currentLocale . '/' . $contactSlug, '/'));
+        }
+    }
+@endphp
+<div class="about-area5 about-p p-relative room-details room-details--rooms">
+    <div class="container pt-60 pb-40">
+        <div class="row justify-content-center">
+            <div class="col-12">
                 <div class="service-detail">
                     <div class="thumb">
                         <div class="room-details-slider">
@@ -45,24 +39,42 @@
                         </div>
                     </div>
                     <div class="content-box">
-<div class="row align-items-center mb-50">
-    <div class="col-12">
-        <div class="price">
-            <h2>{{ $room->name }}</h2>
-            {{-- Preis NUR für eingeloggte User anzeigen --}}
-            @if (auth('customer')->check() || auth()->check())
-                @if ($nights > 1)
-                    <span>{{ __(':price for :hours hours', ['price' => format_price($room->getRoomTotalPrice($startDate, $endDate)), 'hours' => $nights]) }}</span>
-                @else
-                    <span>{{ __(':price for :hours hour', ['price' => format_price($room->getRoomTotalPrice($startDate, $endDate)), 'hours' => $nights]) }}</span>
-                @endif
+                        <div class="room-header">
+                            <h2 class="room-header__title">{{ $room->name }}</h2>
+                        </div>
 
-            @else
-                <span class="text-muted">{{ __('Bitte einloggen um die Preise zu sehen') }}</span>
-            @endif
-        </div>
-    </div>
-</div>
+                        <div class="room-booking-card shadow-block">
+                            <div class="room-booking-card__pricing">
+                                {{-- Preis NUR für eingeloggte User anzeigen --}}
+                                @if ($isCustomerLoggedIn)
+                                    <div class="room-booking-card__price-chip">
+                                        {{ __(':price / :unit', ['price' => format_price($room->price), 'unit' => __('hour_lowercase')]) }}
+                                    </div>
+                                @else
+                                    <p class="room-booking-card__notice text-muted">
+                                        {{ __('Bitte einloggen um die Preise zu sehen') }}
+                                    </p>
+                                @endif
+                            </div>
+
+                            @if (HotelHelper::isBookingEnabled())
+                                <div class="room-booking-card__form">
+                                    @if ($isCustomerLoggedIn)
+                                        {!! Theme::partial('hotel.forms.form', ['availableForBooking' => true, 'style' => 1, 'room' => $room]) !!}
+                                    @else
+                                        <div class="room-booking-card__cta">
+                                            <a class="room-booking-card__cta-btn" href="{{ $contactUrl }}">
+                                                {{ __('Request now') }}
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            @else
+                                <p class="room-booking-card__notice text-muted mb-0">
+                                    {{ __('Booking is currently unavailable.') }}
+                                </p>
+                            @endif
+                        </div>
 
                         {!! BaseHelper::clean($room->content) !!}
 
@@ -108,16 +120,24 @@
                             @include(Theme::getThemeNamespace('views.hotel.partials.reviews'), ['model' => $room])
                         @endif
 
-                        <div class="content-box related-room">
-                            <h3>{{ __('Related Rooms') }}</h3>
-                            <div class="row">
-                                @foreach($relatedRooms as $room)
-                                    <div class="col-lg-6 mb-20">
-                                        {!! Theme::partial('rooms.item', compact('room', 'startDate', 'endDate', 'nights', 'adults')) !!}
-                                    </div>
-                                @endforeach
+                        @if($relatedRooms->isNotEmpty())
+                            <div class="content-box related-room">
+                                <h3>{{ __('Related Rooms') }}</h3>
+                                <div class="row g-4">
+                                    @foreach($relatedRooms as $relatedRoom)
+                                        <div class="col-12 col-sm-6 col-lg-3">
+                                            {!! Theme::partial('rooms.item', [
+                                                'room' => $relatedRoom,
+                                                'startDate' => $startDate,
+                                                'endDate' => $endDate,
+                                                'nights' => $nights,
+                                                'adults' => $adults,
+                                            ]) !!}
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
-                        </div>
+                        @endif
                     </div>
                 </div>
             </div>

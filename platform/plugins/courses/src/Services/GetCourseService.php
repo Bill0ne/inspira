@@ -5,9 +5,11 @@ namespace Botble\Courses\Services;
 use Botble\Courses\DataTransferObjects\CourseSearchParams;
 use Botble\Courses\Models\Course;
 use Botble\Courses\Models\CourseSession;
+use Botble\Hotel\Enums\BookingStatusEnum;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 
 class GetCourseService
 {
@@ -78,9 +80,58 @@ class GetCourseService
 
     public function getRelatedCourses(int $courseId, int $limit = 2, array $params = []): Collection
     {
+        $now = now();
+        $requireAvailableSeats = (bool) Arr::get($params, 'require_available_seats', false);
+        $activeBookingStatuses = [
+            BookingStatusEnum::PENDING,
+            BookingStatusEnum::PROCESSING,
+            BookingStatusEnum::COMPLETED,
+        ];
+
         $query = Course::query()
             ->wherePublished()
-            ->where('id', '!=', $courseId);
+            ->where('id', '!=', $courseId)
+            ->addSelect([
+                'next_session_start_date' => CourseSession::query()
+                    ->selectRaw('MIN(start_date)')
+                    ->whereColumn('course_sessions.course_id', 'courses.id')
+                    ->where('start_date', '>=', $now)
+                    ->when($requireAvailableSeats, function ($builder) use ($activeBookingStatuses) {
+                        $builder->where(function ($availableQuery) use ($activeBookingStatuses) {
+                            $availableQuery
+                                ->whereNull('course_sessions.available_seats')
+                                ->orWhereRaw(
+                                    'course_sessions.available_seats > (
+                                        select count(*) from course_bookings
+                                        where course_bookings.course_session_id = course_sessions.id
+                                        and course_bookings.status in (?, ?, ?)
+                                    )',
+                                    $activeBookingStatuses
+                                );
+                        });
+                    }),
+            ])
+            ->whereExists(function ($subquery) use ($now, $requireAvailableSeats, $activeBookingStatuses) {
+                $subquery
+                    ->selectRaw('1')
+                    ->from('course_sessions')
+                    ->whereColumn('course_sessions.course_id', 'courses.id')
+                    ->where('course_sessions.start_date', '>=', $now)
+                    ->when($requireAvailableSeats, function ($builder) use ($activeBookingStatuses) {
+                        $builder->where(function ($availableQuery) use ($activeBookingStatuses) {
+                            $availableQuery
+                                ->whereNull('course_sessions.available_seats')
+                                ->orWhereRaw(
+                                    'course_sessions.available_seats > (
+                                        select count(*) from course_bookings
+                                        where course_bookings.course_session_id = course_sessions.id
+                                        and course_bookings.status in (?, ?, ?)
+                                    )',
+                                    $activeBookingStatuses
+                                );
+                        });
+                    });
+            });
 
         $course = Course::query()->find($courseId);
         if ($course && $course->category_id) {
@@ -90,6 +141,8 @@ class GetCourseService
         if (! empty($params['with'])) {
             $query->with($params['with']);
         }
+
+        $this->orderByUpcomingSession($query);
 
         return $query->limit($limit)->get();
     }

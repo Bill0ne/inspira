@@ -12,6 +12,9 @@
         Require all granted
     </Files>
 
+    # --- ALLOW THEME ASSETS DIRECT ACCESS ---
+    RewriteCond %{REQUEST_URI} ^themes/[^/]+/(css|js|fonts|images)/ - [L]
+
     # --- Laravel Routing ---
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

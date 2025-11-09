@@ -134,7 +134,7 @@ class PublicController extends Controller
 
         $relatedRooms = $this->getRoomService->getRelatedRooms(
             $room->getKey(),
-            (int) theme_option('number_of_related_rooms', 2),
+            (int) theme_option('number_of_related_rooms', 4),
             [
                 'with' => [
                     'amenities',

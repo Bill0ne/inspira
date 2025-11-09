@@ -60,10 +60,9 @@ $image = $thumbnail
         </span>
         @if ($course->price)
           @php
-            $taxPercentage = $course->tax->percentage ?? 0;
-            $grossPrice = $course->price + ($course->price * $taxPercentage / 100);
+            $displayPrice = $course->getPriceWithTax();
           @endphp
-          <span class="mtxt">{{ format_price($grossPrice) }}</span>
+          <span class="mtxt">{{ format_price($displayPrice) }}</span>
         @endif
       </div>
     </div>

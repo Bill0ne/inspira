@@ -102,7 +102,7 @@ class PublicController extends Controller
 
         $relatedCourses = $this->getCourseService->getRelatedCourses(
             $course->getKey(),
-            (int) theme_option('number_of_related_courses', 2),
+            (int) theme_option('number_of_related_courses', 4),
             ['with' => ['instructor', 'category']]
         );
 
@@ -462,6 +462,24 @@ class PublicController extends Controller
         BaseHttpResponse $response
     ) {
         $course = Course::query()->findOrFail($request->input('course_id'));
+
+        if ($request->filled('token')) {
+            session(['checkout_token' => $request->input('token')]);
+        }
+
+        if ($request->has('coupon_code')) {
+            $couponCode = trim((string) $request->input('coupon_code'));
+
+            $sessionPayload = [
+                'coupon_code' => $couponCode ?: null,
+            ];
+
+            if ($couponCode === '' || $couponCode === null) {
+                $sessionPayload['coupon_amount'] = 0;
+            }
+
+            HotelHelper::saveCheckoutData($sessionPayload);
+        }
 
         [$amount, $discountAmount] = $this->calculateBookingAmount($course);
 

@@ -179,22 +179,21 @@
                                 auth('customer')->user() ?? null
                             );
                         }
-                        $taxPercentage = $course->tax->percentage ?? 0;
-                        $basePriceWithTax = $basePrice + ($basePrice * $taxPercentage / 100);
-                        $dynamicPriceWithTax = $dynamicPrice + ($dynamicPrice * $taxPercentage / 100);
-                        $priceDifference = $basePriceWithTax - $dynamicPriceWithTax;
+                        $displayBasePrice = $course->getPriceWithTax($basePrice);
+                        $displayDynamicPrice = $course->getPriceWithTax($dynamicPrice);
+                        $priceDifference = $displayBasePrice - $displayDynamicPrice;
                     @endphp
 
                     <div class="chip price-chip d-flex align-items-center">
                         @if($dynamicPrice < $basePrice)
                             <span class="old-price text-decoration-line-through text-muted me-2">
-                {{ format_price($basePriceWithTax) }}
+                {{ format_price($displayBasePrice) }}
             </span>
                             <span class="new-price text-success fw-bold">
-                {{ format_price($dynamicPriceWithTax) }}
+                {{ format_price($displayDynamicPrice) }}
             </span>
                         @else
-                            <span class="price fw-bold">{{ format_price($dynamicPriceWithTax) }}</span>
+                            <span class="price fw-bold">{{ format_price($displayDynamicPrice) }}</span>
                         @endif
                     </div>
 
@@ -303,9 +302,9 @@
     @if($relatedCourses->isNotEmpty())
       <div class="related-courses mt-5">
         <h3 class="mb-4">{{ __('Related Courses') }}</h3>
-        <div class="row">
+        <div class="row g-4">
           @foreach($relatedCourses as $related)
-            <div class="col-md-6 mb-3">
+            <div class="col-12 col-sm-6 col-lg-3">
               {!! Theme::partial('courses.item', ['course' => $related]) !!}
             </div>
           @endforeach

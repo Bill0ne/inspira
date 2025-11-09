@@ -7,10 +7,10 @@
   overflow: hidden !important;
   transition: transform 0.25s ease, box-shadow 0.25s ease !important;
   cursor: pointer !important;
-  display: flex !important;
-  flex-direction: column !important;
+  display: flex;
+  flex-direction: column;
   justify-content: space-between !important;
-  min-height: 420px !important; /* Einheitliche Kartenhöhe */
+  min-height: 420px !important;
 }
 
 .course-card:hover {
@@ -39,7 +39,7 @@
   display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
-  flex-grow: 1 !important;
+  flex: 1 1 auto !important;
 }
 
 /* Titel (max. 3 Zeilen, feste Höhe) */
@@ -49,13 +49,12 @@
   font-weight: 600 !important;
   color: #414141 !important;
   margin: 0 0 2px 0 !important;
-
   display: -webkit-box !important;
   -webkit-line-clamp: 3 !important;
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  min-height: calc(3 * 20px) !important; /* Platz für 3 Zeilen */
+  min-height: calc(3 * 20px) !important;
 }
 
 /* Untertitel */
@@ -73,13 +72,13 @@
   line-height: 18px !important;
   color: #666 !important;
   font-weight: 400 !important;
-  margin: 0 0 14px 0 !important; /* zusätzlicher Abstand nach unten */
+  margin: 0 0 12px 0 !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  min-height: calc(2 * 18px) !important; /* feste Höhe für 2 Zeilen */
+  min-height: calc(2 * 18px) !important;
 }
 
 /* Standardisierte Textfarben (keine Fettelemente) */
