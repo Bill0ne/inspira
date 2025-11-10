@@ -22,6 +22,7 @@ body .pt-120{padding-top:24px!important;}
 body .pb-40{padding-bottom:24px!important;}
 section.checkout-booking-page{background:#fff;}
 
+/* ==== Ticket Header ==== */
 .ticket{
   display:grid;grid-template-columns:1.1fr 1.4fr 1fr;
   border-radius:10px;overflow:hidden;background:#fff;
@@ -203,6 +204,7 @@ textarea.form-control{min-height:100px;}
         </div>
       </div>
 
+      {{-- Step 3 --}}
       <div class="step-panel" data-step="3">
         <div id="formAlertStep3" class="form-alert"></div>
         <div class="coupon-wrapper" id="couponBox">@include('plugins/courses::coupons.partials.form')</div>
@@ -295,6 +297,7 @@ textarea.form-control{min-height:100px;}
     return errors;
   }
 
+  // Buttons
   form.addEventListener('click',e=>{
     const next=e.target.closest('[data-next]');
     const prev=e.target.closest('[data-prev]');
@@ -321,7 +324,7 @@ textarea.form-control{min-height:100px;}
     }
   });
 
-
+  // Checkbox ändert Verhalten live
   const termsBox=document.getElementById('terms_conditions');
   if(termsBox){
     termsBox.addEventListener('change',()=>{
