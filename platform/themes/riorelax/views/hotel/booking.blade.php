@@ -15,8 +15,8 @@
     $endLabel24 = $displayEnd ? BaseHelper::formatDate($displayEnd, 'd.m.Y H:i') : null;
     $isLoggedIn = auth('customer')->check() || auth()->check();
 
-    $configuredBase = $totalBasePrice - ($discountAmount ?? 0);
-    $serviceAmountDisplay = max($totalAmount - $configuredBase, 0);
+    $roomPriceDisplay = $totalRoomPrice ?? 0;
+    $extrasAmountDisplay = $extrasAmount ?? 0;
 @endphp
 
 <style>
@@ -169,12 +169,9 @@ textarea.form-control{min-height:100px;}
       </div>
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($totalAmount) }}</b></div>
-        @if(($discountAmount ?? 0) > 0)
-          <div class="kv"><span>Rabatt (Konfigurator)</span><b>{{ format_price($discountAmount) }}</b></div>
-        @endif
-        @if($serviceAmountDisplay > 0)
-          <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($serviceAmountDisplay) }}</b></div>
+        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($roomPriceDisplay) }}</b></div>
+        @if($extrasAmountDisplay > 0)
+          <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($extrasAmountDisplay) }}</b></div>
         @endif
         <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
         <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>

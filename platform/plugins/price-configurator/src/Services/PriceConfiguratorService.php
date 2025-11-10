@@ -33,7 +33,6 @@ class PriceConfiguratorService
         $price = $basePrice;
 
         if ($rules->isEmpty()) {
-            $price = $this->applyRounding($price, RoundingModeEnum::NEAREST, 1);
             return $price;
         }
 
