@@ -548,10 +548,33 @@ class PublicController extends Controller
         $totalAmount = $totalRoomPrice + $extrasAmount;
 
         $sessionData = HotelHelper::getCheckoutData();
-        $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
+        $couponAmount = (float) Arr::get($sessionData, 'coupon_amount', 0);
         $couponCode = Arr::get($sessionData, 'coupon_code');
+        $coupon = null;
 
-        $taxableAmount = $totalAmount - $couponAmount;
+        if ($couponCode) {
+            $couponService = new CouponService();
+            $coupon = $couponService->getCouponByCode($couponCode);
+
+            if ($coupon !== null) {
+                $couponAmount = $couponService->getDiscountAmount(
+                    $coupon->type->getValue(),
+                    $coupon->value,
+                    $totalAmount
+                );
+                $couponAmount = min($couponAmount, $totalAmount);
+            } else {
+                $couponAmount = 0;
+                $couponCode = null;
+            }
+
+            HotelHelper::saveCheckoutData([
+                'coupon_amount' => $couponAmount,
+                'coupon_code' => $couponCode,
+            ]);
+        }
+
+        $taxableAmount = max($totalAmount - $couponAmount, 0);
         $taxAmount = $room->tax->percentage * $taxableAmount / 100;
         $grandTotal = $taxableAmount + $taxAmount;
 
@@ -573,6 +596,10 @@ class PublicController extends Controller
         }
 
         $booking->save();
+
+        if ($coupon) {
+            $coupon->increment('total_used');
+        }
 
         // 🟢 Save all slot records in booking_rooms with configured pricing per slot
         foreach ($slotSummaries as $slot) {
