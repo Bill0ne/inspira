@@ -308,22 +308,25 @@ textarea.form-control{min-height:100px;}
     });
   });
 
-  // === SUBMIT ===
-  form.addEventListener('submit',e=>{
-    e.preventDefault();
-    step3Attempted = true;
-    clearAlerts();
-    const valid = attemptFinalization();
-    if(!valid){
-      // zeige Warnung, bleibe auf Schritt 3
-      const terms=document.getElementById('terms_conditions');
-      if(!terms.checked){
-        showAlert(3,'⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
-      }
-      return false;
+// === SUBMIT ===
+form.addEventListener('submit', e => {
+  step3Attempted = true;
+  clearAlerts();
+
+  const valid = attemptFinalization();
+
+  if (!valid) {
+    e.preventDefault(); // ❗ verhindert den echten Submit
+    const terms = document.getElementById('terms_conditions');
+    if (!terms.checked) {
+      showAlert(3, '⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
     }
-    form.submit();
-  });
+    return;
+  }
+
+  // ✅ Kein form.submit() hier – Browser führt den Submit automatisch aus
+});
+
 
   // === AUTO-VALIDATE ON INPUT ===
   form.addEventListener('input',()=>{
