@@ -1,30 +1,28 @@
-name: 🎨 Deploy to Inspira Design Env
+name: 🚀 Deploy to Inspira Stage
 
 on:
-  # 🔹 Automatischer Trigger bei Push auf design-desk
+  # 🔹 Trigger nur bei Commits oder Pushes auf stage-desk
   push:
     branches:
-      - design-desk
+      - stage-desk
     paths-ignore:
       - README.md
       - .github/**
       - docs/**
       - "*.md"
 
-  # 🔹 Manueller Start (Actions → "Run workflow")
+  # 🔹 Optional: manuell starten (über Actions → "Run workflow")
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy to Design Server
+    name: Deploy to Stage Server
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Repository auschecken (immer design-desk, egal ob Push oder Manuell)
+      # 1️⃣ Repository auschecken
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: design-desk
 
       # 2️⃣ SSH vorbereiten
       - name: 🔐 Setup SSH Access
@@ -34,47 +32,49 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           echo "145.223.35.233 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
 
-      # 3️⃣ Rsync Deployment (mit Exclude-Liste)
-      - name: 📦 Sync code to Inspira Design Env
+      # 3️⃣ Rsync Deployment (Safe Mode mit Exclude-Datei)
+      - name: 📦 Sync code to Inspira Stage
         uses: burnett01/rsync-deployments@5.2
         with:
           switches: -avzr --delete --exclude-from='deploy-exclude.txt'
-          path: ./                # alles aus Repo-Root
-          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/design-env/
+          path: ./
+          remote_path: /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env/
           remote_host: 145.223.35.233
           remote_port: 65002
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Laravel Setup & Cache Optimierung auf Server
-      - name: ⚙️ Run Laravel + Build setup on Design Env
+      # 4️⃣ Laravel, Build & Cache Optimierung
+      - name: ⚙️ Run Laravel + Build setup on Stage server
         run: |
           ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@145.223.35.233 <<'EOF'
-          cd /home/u296731902/domains/inspira-zentrum.de/public_html/design-env
+            cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env
 
-          echo "📦 Installing composer dependencies..."
-          composer install --no-dev --optimize-autoloader --quiet
+            echo "📦 Installing composer dependencies..."
+            composer install --no-dev --optimize-autoloader --quiet
 
-          echo "🧱 Installing Node modules & building assets..."
-          if [ -f package.json ]; then
-            yarn install --frozen-lockfile --silent || npm install --silent
-            yarn build || npm run build
-          fi
+            echo "🧱 Installing Node modules & building assets..."
+            if [ -f package.json ]; then
+              yarn install --frozen-lockfile --silent || npm install --silent
+              yarn build || npm run build
+            fi
 
-          echo "🧹 Clearing & optimizing Laravel caches..."
-          php artisan optimize:clear
-          php artisan config:cache
-          php artisan view:clear
-          php artisan view:cache
-          php artisan optimize
+            echo "🧹 Clearing & optimizing Laravel caches..."
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan view:clear
+            php artisan view:cache
+            php artisan optimize
 
-          echo "🧩 Rebuilding plugin & theme cache..."
-          rm -f bootstrap/cache/plugins.php
-          php artisan cms:theme:assets:publish
+            echo "🧩 Rebuilding plugin & theme cache..."
+            php artisan cms:cache:clear
+            php artisan route:clear
+            rm -f bootstrap/cache/plugins.php
+            php artisan cms:theme:assets:publish
 
-          echo "✅ Inspira DESIGN deployment completed successfully!"
+            echo "✅ Inspira STAGE deployment completed successfully!"
           EOF
 
       # 5️⃣ Erfolgsmeldung
       - name: 📨 Notify success
-        run: echo "✅ Inspira Design Env deployed from commit ${{ github.sha }} at $(date)"
+        run: echo "✅ Inspira Stage deployed from commit ${{ github.sha }} at $(date)"
