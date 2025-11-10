@@ -8,6 +8,7 @@
     $nights = max(1, $startDate->diffInHours($endDate));
     $isCustomerLoggedIn = auth('customer')->check() || auth()->check();
     $configuredPrice = HotelHelper::getRoomConfiguredPrice($room);
+    $displayPriceDiffers = false;
     $priceUnitLabel = __('hour_lowercase');
 
     $contactSlug = ltrim('nimm-kontakt-mit-uns-auf', '/');
