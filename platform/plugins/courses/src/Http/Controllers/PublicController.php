@@ -193,24 +193,20 @@ class PublicController extends Controller
         $course = Course::query()->findOrFail(Arr::get($sessionData, 'course_id'));
         $session = CourseSession::query()->findOrFail(Arr::get($sessionData, 'session_id'));
 
-        $basePrice = $course->getCourseTotalPrice();
-        $amount = $basePrice;
-        if (is_plugin_active('price-configurator')) {
-            $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-                ->calculatePrice(
-                    $basePrice,
-                    \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                    $course->id,
-                    $customer
-                );
-        }
-        $discountAmount = $basePrice - $amount;
+        $pricing = $course->resolvePricing($customer);
+        $amountNet = $pricing['calculated_net'];
+        $amount = $pricing['calculated_gross'];
+        $basePrice = $pricing['base_net'];
+        $discountAmount = $pricing['discount_gross'];
 
-        $taxAmount = $course->tax->percentage * $amount / 100;
-        $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
+        $couponAmountNet = (float) Arr::get($sessionData, 'coupon_amount', 0);
+        $couponAmountNet = min($couponAmountNet, $amountNet);
         $couponCode = Arr::get($sessionData, 'coupon_code');
 
-        $total = $amount + $taxAmount - $couponAmount;
+        $netSubtotal = max($amountNet - $couponAmountNet, 0);
+        $taxAmount = $course->getTaxAmount($netSubtotal);
+        $total = $netSubtotal + $taxAmount;
+        $couponAmount = $course->getPriceWithTax($couponAmountNet);
 
         return Theme::scope(
             'courses.booking',
@@ -219,9 +215,11 @@ class PublicController extends Controller
                 'token',
                 'customer',
                 'amount',
+                'amountNet',
                 'total',
                 'taxAmount',
                 'couponAmount',
+                'couponAmountNet',
                 'couponCode',
                 'session',
                 'basePrice',
@@ -288,28 +286,21 @@ class PublicController extends Controller
             $booking = new CourseBooking();
             $booking->fill($request->input());
 
-            $basePrice = $course->getCourseTotalPrice();
-            $amount = $basePrice;
-            if (is_plugin_active('price-configurator')) {
-                $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-                    ->calculatePrice(
-                        $basePrice,
-                        \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                        $course->id,
-                        Auth::guard('customer')->user() ?? null
-                    );
-            }
-
-            $discountAmount = abs($basePrice - $amount);
+            $pricing = $course->resolvePricing(Auth::guard('customer')->user());
+            $basePrice = $pricing['base_net'];
+            $amount = $pricing['calculated_net'];
+            $discountAmount = max(0, $pricing['discount_net']);
 
             $sessionData = HotelHelper::getCheckoutData();
-            $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
+            $couponAmount = (float) Arr::get($sessionData, 'coupon_amount', 0);
             $couponCode = Arr::get($sessionData, 'coupon_code');
+            $couponAmount = min($couponAmount, $amount);
 
-            $taxAmount = $course->tax->percentage * ($amount - $couponAmount) / 100;
+            $netSubtotal = max($amount - $couponAmount, 0);
+            $taxAmount = $course->getTaxAmount($netSubtotal);
 
             $booking->course_session_id = $request->input('session_id');
-            $booking->amount = ($amount - $couponAmount) + $taxAmount;
+            $booking->amount = $netSubtotal + $taxAmount;
             $booking->sub_total = $amount;
             $booking->status = BookingStatusEnum::AWAITING_PAYMENT;
             $booking->coupon_amount = $couponAmount;
@@ -463,40 +454,38 @@ class PublicController extends Controller
     ) {
         $course = Course::query()->findOrFail($request->input('course_id'));
 
-        [$amount, $discountAmount] = $this->calculateBookingAmount($course);
+        [$amountNet, $couponAmountNet] = $this->calculateBookingAmount($course, $request->input('coupon_code'));
 
-        $customer = Auth::guard('customer')->user();
-        $basePrice = $course->getCourseTotalPrice();
-        $amount = $basePrice;
-        if (is_plugin_active('price-configurator')) {
-            $amount = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-                ->calculatePrice(
-                    $basePrice,
-                    \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                    $course->id,
-                    $customer
-                );
-        }
+        $couponAmountNet = min($couponAmountNet, $amountNet);
+        $netSubtotal = max($amountNet - $couponAmountNet, 0);
+        $taxAmount = $course->getTaxAmount($netSubtotal);
+        $totalAmount = $netSubtotal + $taxAmount;
 
-        $taxAmount = $course->tax->percentage * ($amount - $discountAmount) / 100;
-        $totalAmount = ($amount - $discountAmount) + $taxAmount;
+        $subTotalDisplay = $course->getPriceWithTax($amountNet);
+        $couponDisplay = $course->getPriceWithTax($couponAmountNet);
+        $discountDisplay = $couponAmountNet > 0
+            ? '-' . format_price($couponDisplay)
+            : format_price(0);
 
         return $response->setData([
             'total_amount'      => format_price($totalAmount),
             'amount_raw'        => $totalAmount,
-            'sub_total'         => format_price($amount),
+            'sub_total'         => format_price($subTotalDisplay),
             'tax_amount'        => format_price($taxAmount),
-            'discount_amount'   => format_price($discountAmount),
+            'discount_amount'   => $discountDisplay,
         ]);
     }
 
-    protected function calculateBookingAmount(Course $course): array
+    protected function calculateBookingAmount(Course $course, ?string $couponCode = null): array
     {
-        $amount = $course->getCourseTotalPrice();
+        $pricing = $course->resolvePricing(Auth::guard('customer')->user());
+        $amount = $pricing['calculated_net'];
 
         $sessionData = HotelHelper::getCheckoutData();
 
-        $couponCode = Arr::get($sessionData, 'coupon_code');
+        if (! $couponCode) {
+            $couponCode = Arr::get($sessionData, 'coupon_code');
+        }
         $discountAmount = 0;
 
         if ($couponCode) {
@@ -509,10 +498,13 @@ class PublicController extends Controller
                     $coupon->value,
                     $amount
                 );
+                $discountAmount = min($discountAmount, $amount);
             }
 
             $sessionData['coupon_amount'] = $discountAmount;
             $sessionData['coupon_code'] = $couponCode;
+        } else {
+            unset($sessionData['coupon_amount'], $sessionData['coupon_code']);
         }
 
         HotelHelper::saveCheckoutData($sessionData);

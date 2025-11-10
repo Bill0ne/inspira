@@ -128,13 +128,18 @@ textarea.form-control{min-height:100px;}
           <div class="kv"><span>Enddatum</span><b>{{ $endLabel24 }}</b></div>
         @endif
       </div>
+      @php
+        $discountDisplay = $couponAmountNet > 0
+          ? '-' . format_price($couponAmount)
+          : format_price(0);
+      @endphp
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amount) }}</b></div>
-        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
-        <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
+        <div class="kv"><span>Preis (inkl. MwSt.)</span><b class="amount-text">{{ format_price($amount) }}</b></div>
+        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $discountDisplay }}</b></div>
         <hr>
         <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
+        <div class="kv text-muted small mt-1"><span>Enthaltene MwSt.</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
       </div>
     </div>
 
@@ -255,6 +260,7 @@ textarea.form-control{min-height:100px;}
   const emailOk=s=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
   const phoneOk=s=>/^[0-9+\s\-()]+$/.test(s);
   const markInvalid=(el,b)=>el&&el.classList.toggle('is-invalid',!!b);
+  let step3Attempted=false;
 
   function showAlert(stepNo,msg){
     const box=document.getElementById(stepNo===2?'formAlertStep2':'formAlertStep3');
@@ -266,8 +272,14 @@ textarea.form-control{min-height:100px;}
   function clearAlerts(){['formAlertStep2','formAlertStep3'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.textContent='';}});}
 
   function validateStep(stepNo){
-    const fF=document.getElementById(fieldIds.first),fL=document.getElementById(fieldIds.last),fE=document.getElementById(fieldIds.email),fP=document.getElementById(fieldIds.phone);
-    const vF=val(fieldIds.first),vL=val(fieldIds.last),vE=val(fieldIds.email),vP=val(fieldIds.phone);
+    const fF=document.getElementById(fieldIds.first),
+          fL=document.getElementById(fieldIds.last),
+          fE=document.getElementById(fieldIds.email),
+          fP=document.getElementById(fieldIds.phone);
+    const vF=val(fieldIds.first),
+          vL=val(fieldIds.last),
+          vE=val(fieldIds.email),
+          vP=val(fieldIds.phone);
     let errors=[];
     if(!vF){errors.push('Vorname ist erforderlich.');markInvalid(fF,true);}else markInvalid(fF,false);
     if(!vL){errors.push('Nachname ist erforderlich.');markInvalid(fL,true);}else markInvalid(fL,false);
@@ -282,60 +294,42 @@ textarea.form-control{min-height:100px;}
       const terms=document.getElementById('terms_conditions');
       if(!terms||!terms.checked)errors.push('Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
     }
-    showAlert(stepNo,errors.length?('⚠️ '+errors[0]):'');
-    return errors.length===0;
+    return errors;
   }
 
-  form.addEventListener('input',()=>{
-    if(step===2){
-      const next=form.querySelector('[data-step="2"] [data-next]');
-      if(next){
-        const ok=validateStep(2);
-        next.disabled=!ok;
-      }
-    }
-  });
-
+  // Buttons
   form.addEventListener('click',e=>{
     const next=e.target.closest('[data-next]');
     const prev=e.target.closest('[data-prev]');
     const finish=e.target.closest('.payment-checkout-btn');
 
     if(next){
-      e.preventDefault(); clearAlerts();
+      e.preventDefault();clearAlerts();
       if(step===1){step=2;render(step);return;}
-      if(step===2&&!validateStep(2))return;
+      const errs=validateStep(2);
+      if(errs.length){showAlert(2,'⚠️ '+errs[0]);return;}
       step=Math.min(step+1,3);render(step);
-      if(step===3){
-        const terms=document.getElementById('terms_conditions');
-        if(!terms.checked)showAlert(3,'⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
-      }
     }
 
     if(prev){e.preventDefault();clearAlerts();step=Math.max(step-1,1);render(step);}
 
     if(finish){
-      e.preventDefault();
-      clearAlerts();
-      const ok2=validateStep(2);
-      const ok3=validateStep(3);
-      if(!(ok2&&ok3)){
-        if(!ok2&&step!==2){step=2;render(step);}
-        else if(!ok3&&step!==3){step=3;render(step);}
-        return;
-      }
+      e.preventDefault();clearAlerts();
+      step3Attempted=true;
+      const errs2=validateStep(2);
+      if(errs2.length){step=2;render(step);showAlert(2,'⚠️ '+errs2[0]);return;}
+      const errs3=validateStep(3);
+      if(errs3.length){showAlert(3,'⚠️ '+errs3[0]);return;}
       form.submit();
     }
   });
 
-  // AGB live prüfen – keine Disabled-Logik
+  // Checkbox ändert Verhalten live
   const termsBox=document.getElementById('terms_conditions');
   if(termsBox){
     termsBox.addEventListener('change',()=>{
-      if(termsBox.checked){
+      if(termsBox.checked && step3Attempted){
         showAlert(3,'');
-      }else if(step===3){
-        showAlert(3,'⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
       }
     });
   }
