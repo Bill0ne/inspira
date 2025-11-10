@@ -109,6 +109,7 @@ textarea.form-control{min-height:100px;}
       </div>
     </div>
 
+   
     {{-- ░░ Formular ░░ --}}
     <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form">
       @csrf
@@ -145,9 +146,15 @@ textarea.form-control{min-height:100px;}
           <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" required></div>
           <div class="col-md-6 mb-3"><label>E-Mail *</label><input id="txt-email" name="email" class="form-control" type="email" required></div>
           <div class="col-md-6 mb-3"><label>Telefon *</label><input id="txt-phone" name="phone" class="form-control" required></div>
+          <div class="col-md-6 mb-3"><label>Land</label><input id="txt-country" name="country" class="form-control"></div>
+          <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input id="txt-state" name="state" class="form-control"></div>
+          <div class="col-md-6 mb-3"><label>Stadt</label><input id="txt-city" name="city" class="form-control"></div>
+          <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control"></div>
+          <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control"></div>
         </div>
+        <div class="mb-3"><label>Anfragen</label><textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas..."></textarea></div>
         <div class="btnrow">
-          <button type="button" class="btnX btn-outline-mint" data-prev>Zurück</button>
+          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
           <button type="button" class="btnX btn-mint" data-next>Weiter</button>
         </div>
       </div>
@@ -170,8 +177,8 @@ textarea.form-control{min-height:100px;}
         </ul>
         <label><input type="checkbox" id="terms_conditions" name="terms_conditions" value="1"> Allgemeine Geschäftsbedingungen *</label>
         <div class="btnrow">
-          <button type="button" class="btnX btn-outline-mint" data-prev>Zurück</button>
-          <button type="submit" class="btnX btn-mint payment-checkout-btn">Abschließen</button>
+          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
+          <button type="submit" class="btnX btn-mint payment-checkout-btn" data-processing-text="Wird verarbeitet..." data-error-header="Fehler">Abschließen</button>
         </div>
       </div>
     </form>
