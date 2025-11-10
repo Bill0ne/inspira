@@ -74,7 +74,6 @@ jobs:
             echo "⚙️ Rebuilding optimized caches..."
             php artisan config:cache
             php artisan view:cache
-            php artisan route:cache
 
             echo "✅ Inspira STAGE deployment completed successfully!"
           EOF
