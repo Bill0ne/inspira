@@ -22,7 +22,6 @@ body .pt-120{padding-top:24px!important;}
 body .pb-40{padding-bottom:24px!important;}
 section.checkout-booking-page{background:#fff;}
 
-/* ==== Ticket Header ==== */
 .ticket{
   display:grid;grid-template-columns:1.1fr 1.4fr 1fr;
   border-radius:10px;overflow:hidden;background:#fff;
