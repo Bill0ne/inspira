@@ -207,6 +207,7 @@ class HotelSupport
 
         if (! $checkoutToken) {
             $checkoutToken = Str::upper(Str::random(32));
+            session()->put('checkout_token', $checkoutToken);
         }
 
         $sessionData = [];
@@ -224,6 +225,11 @@ class HotelSupport
     public function saveCheckoutData(array $data): void
     {
         $checkoutToken = session('checkout_token');
+
+        if (! $checkoutToken) {
+            $checkoutToken = Str::upper(Str::random(32));
+            session()->put('checkout_token', $checkoutToken);
+        }
 
         $sessionData = $this->getCheckoutData();
 
