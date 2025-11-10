@@ -178,11 +178,11 @@ class HotelSupport
                 $endDate = $this->dateFromRequest($request->input('end_date'));
             } else {
                 $startDate = Carbon::now();
-                $endDate = Carbon::now();
+                $endDate = (clone $startDate)->addDay();
             }
         } catch (Throwable) {
             $startDate = Carbon::now();
-            $endDate = Carbon::now();
+            $endDate = (clone $startDate)->addDay();
         }
 
         $adults = $request->input('adults', $this->getMinimumNumberOfGuests());
