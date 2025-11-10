@@ -1,4 +1,4 @@
-name: 🚀 Deploy to Inspira Stage
+name: 🚀 Deploy to Inspira Live
 
 on:
   # 🔹 Trigger deployment on pushes to stage-desk branch
