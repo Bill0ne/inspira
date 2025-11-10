@@ -1,7 +1,7 @@
 name: 🚀 Deploy to Inspira Stage
 
 on:
-  # 🔹 Trigger deployment on pushes to stage-desk branch
+  # Trigger on push to stage-desk branch
   push:
     branches:
       - stage-desk
@@ -11,7 +11,7 @@ on:
       - docs/**
       - "*.md"
 
-  # 🔹 Allow manual trigger via GitHub Actions UI
+  # Allow manual trigger via GitHub Actions UI
   workflow_dispatch:
 
 jobs:
@@ -20,11 +20,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repository
+      # 1️⃣ Checkout repository
       - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Prepare SSH access
+      # 2️⃣ Setup SSH access
       - name: 🔐 Setup SSH Access
         run: |
           mkdir -p ~/.ssh
@@ -32,7 +32,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           echo "145.223.35.233 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBk..." >> ~/.ssh/known_hosts
 
-      # 3️⃣ Deploy files via rsync (excluding unnecessary ones)
+      # 3️⃣ Sync files to stage server
       - name: 📦 Sync code to Inspira Stage
         uses: burnett01/rsync-deployments@5.2
         with:
@@ -44,8 +44,8 @@ jobs:
           remote_user: u296731902
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Run Laravel & Botble build + cache optimization remotely
-      - name: ⚙️ Run Laravel + Build setup on Stage server
+      # 4️⃣ Run Laravel + Botble setup remotely
+      - name: ⚙️ Run Laravel + Botble build on Stage
         run: |
           ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@145.223.35.233 <<'EOF'
             cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env
@@ -59,21 +59,16 @@ jobs:
               yarn build || npm run build
             fi
 
-            echo "🧹 Clearing all Laravel caches..."
-            php artisan optimize:clear
-            php artisan view:clear
-            php artisan config:clear
-            php artisan route:clear
-            php artisan cache:clear
-
-            echo "🧩 Rebuilding Botble plugin & theme caches..."
-            rm -f bootstrap/cache/plugins.php
+            echo "🧹 Clearing Botble caches..."
             php artisan cms:cache:clear
             php artisan cms:theme:assets:publish
 
-            echo "⚙️ Rebuilding optimized caches..."
-            php artisan config:cache
-            php artisan view:cache
+            echo "🧹 Optional: clearing Laravel view & config caches..."
+            php artisan view:clear
+            php artisan config:clear
+
+            # ✅ DO NOT run route:cache — keeps AJAX coupon working
+            # php artisan route:clear  # optional if needed
 
             echo "✅ Inspira STAGE deployment completed successfully!"
           EOF
