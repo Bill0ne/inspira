@@ -5,6 +5,7 @@ namespace Botble\Courses\Models;
 use Botble\Base\Casts\SafeContent;
 use Botble\Base\Enums\BaseStatusEnum;
 use Botble\Base\Models\BaseModel;
+use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\Tax;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -80,6 +81,49 @@ class Course extends BaseModel
         }
 
         return $price * (1 + $taxPercentage / 100);
+    }
+
+    public function getTaxAmount(float $price): float
+    {
+        if ($price <= 0) {
+            return 0;
+        }
+
+        $taxPercentage = (float) ($this->tax->percentage ?? 0);
+
+        if ($taxPercentage <= 0) {
+            return 0;
+        }
+
+        return $price * $taxPercentage / 100;
+    }
+
+    public function resolvePricing(?Customer $customer = null): array
+    {
+        $basePrice = $this->getCourseTotalPrice();
+        $calculatedPrice = $basePrice;
+
+        if (function_exists('is_plugin_active') && is_plugin_active('price-configurator')) {
+            $calculatedPrice = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
+                ->calculatePrice(
+                    $basePrice,
+                    \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
+                    $this->getKey(),
+                    $customer
+                );
+        }
+
+        $baseWithTax = $this->getPriceWithTax($basePrice);
+        $calculatedWithTax = $this->getPriceWithTax($calculatedPrice);
+
+        return [
+            'base_net' => $basePrice,
+            'base_gross' => $baseWithTax,
+            'calculated_net' => $calculatedPrice,
+            'calculated_gross' => $calculatedWithTax,
+            'discount_net' => $basePrice - $calculatedPrice,
+            'discount_gross' => $baseWithTax - $calculatedWithTax,
+        ];
     }
 
     public function reviews(): HasMany
