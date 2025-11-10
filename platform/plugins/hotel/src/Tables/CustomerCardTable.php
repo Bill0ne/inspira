@@ -8,9 +8,9 @@ use Botble\Table\Abstracts\TableAbstract;
 use Botble\Table\Actions\DeleteAction;
 use Botble\Table\Actions\EditAction;
 use Botble\Table\BulkActions\DeleteBulkAction;
-use Botble\Table\Columns\BooleanColumn;
 use Botble\Table\Columns\Column;
 use Botble\Table\Columns\IdColumn;
+use Botble\Table\Columns\YesNoColumn;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -75,7 +75,7 @@ class CustomerCardTable extends TableAbstract
             Column::make('discount_percent')->title(trans('plugins/hotel::customer-card.table.discount'))->alignLeft(),
             Column::make('units_remaining')->title(trans('plugins/hotel::customer-card.table.units_remaining'))->alignLeft(),
             Column::make('valid_until')->title(trans('plugins/hotel::customer-card.table.valid_until'))->alignLeft(),
-            BooleanColumn::make('is_active')->title(trans('plugins/hotel::customer-card.table.is_active')),
+            YesNoColumn::make('is_active')->title(trans('plugins/hotel::customer-card.table.is_active')),
         ];
     }
 
