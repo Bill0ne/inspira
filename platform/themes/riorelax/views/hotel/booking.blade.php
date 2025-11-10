@@ -500,7 +500,9 @@ textarea.form-control{min-height:100px;}
     if(prev){e.preventDefault();clearAlerts();step=Math.max(step-1,1);render(step);}
   });
 
-  form.querySelectorAll('.payment-checkout-btn').forEach(btn=>{
+  const submitButtons=[...form.querySelectorAll('.payment-checkout-btn')];
+
+  submitButtons.forEach(btn=>{
     btn.addEventListener('click',e=>{
       if(!attemptFinalization({checkStep3:true})){
         e.preventDefault();
@@ -513,13 +515,26 @@ textarea.form-control{min-height:100px;}
   form.addEventListener('submit',e=>{
     const submitter=e.submitter;
     const shouldCheckStep3=step>=3||(submitter&&submitter.classList.contains('payment-checkout-btn'));
-    if(!attemptFinalization({checkStep3:shouldCheckStep3}))e.preventDefault();
-  });
+    if(!attemptFinalization({checkStep3:shouldCheckStep3})){
+      e.preventDefault();
+      if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
+      e.stopPropagation();
+      return false;
+    }
+  }, true);
 
   const termsBox=document.getElementById('terms_conditions');
-  if(termsBox){const submitBtn=form.querySelector('.payment-checkout-btn');
-    const toggleState=()=>{if(submitBtn){submitBtn.disabled=!termsBox.checked;}if(termsBox.checked&&step3Attempted)showAlert(3,'');};
-    toggleState();termsBox.addEventListener('change',()=>{toggleState();if(step3Attempted)validateStep(3,{activate:true});});}
+  if(termsBox){
+    const toggleState=()=>{
+      submitButtons.forEach(btn=>{btn.disabled=!termsBox.checked;});
+      if(termsBox.checked&&step3Attempted)showAlert(3,'');
+    };
+    toggleState();
+    termsBox.addEventListener('change',()=>{
+      toggleState();
+      if(step3Attempted)validateStep(3,{activate:true});
+    });
+  }
 
   function render(s){
     panels.forEach(p=>p.classList.toggle('active',p.dataset.step==s));
