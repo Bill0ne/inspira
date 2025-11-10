@@ -591,7 +591,6 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
                 );
 
         });
-    }
 
     if (is_plugin_active('testimonial')) {
         Shortcode::register(
