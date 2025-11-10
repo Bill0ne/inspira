@@ -295,7 +295,6 @@ textarea.form-control{min-height:100px;}
     return errors;
   }
 
-  // Buttons
   form.addEventListener('click',e=>{
     const next=e.target.closest('[data-next]');
     const prev=e.target.closest('[data-prev]');
