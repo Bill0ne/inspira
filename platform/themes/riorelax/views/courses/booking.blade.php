@@ -21,13 +21,7 @@
 body .pt-120{padding-top:24px!important;}
 body .pb-40{padding-bottom:24px!important;}
 section.checkout-booking-page{background:#fff;}
-
-/* ==== Ticket Header ==== */
-.ticket{
-  display:grid;grid-template-columns:1.1fr 1.4fr 1fr;
-  border-radius:10px;overflow:hidden;background:#fff;
-  box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:28px;
-}
+.ticket{display:grid;grid-template-columns:1.1fr 1.4fr 1fr;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:28px;}
 .ticket__col{padding:20px 22px;display:flex;flex-direction:column;justify-content:center;}
 .ticket__media img{width:100%;height:100%;min-height:220px;object-fit:cover;}
 .ticket__details{background:var(--mint);color:#fff;}
@@ -42,8 +36,6 @@ section.checkout-booking-page{background:#fff;}
   .ticket__details,.ticket__totals{padding:18px 20px;}
   .ticket__totals{border-left:none;border-top:1px solid rgba(255,255,255,0.15);}
 }
-
-/* ==== Stepper ==== */
 .stepper-wrap{text-align:center;margin-bottom:18px;}
 #stepTitle{font-size:16px;font-weight:600;color:#3b4a47;margin-bottom:14px;}
 .stepper{display:flex;align-items:center;justify-content:space-between;width:100%;}
@@ -51,48 +43,17 @@ section.checkout-booking-page{background:#fff;}
 .stepper .dot{width:13px;height:13px;border-radius:50%;background:#D5D8D7;transition:all .3s ease;box-shadow:0 0 0 3px #fff inset;}
 .stepper .dot.active{background:var(--mint);box-shadow:0 0 0 4px rgba(87,142,136,0.18);}
 .stepper .line.active{background:var(--mint);}
-@media(max-width:768px){#stepTitle{font-size:15px;}}
-
-/* ==== Panels ==== */
 .step-panel{display:none;padding:30px 26px 24px;background:#fff;border:none;}
 .step-panel.active{display:block;animation:fade .2s ease-out;}
 @keyframes fade{from{opacity:.4;transform:translateY(3px);}to{opacity:1;transform:none;}}
 .form-control{height:46px;border-radius:6px;}
 textarea.form-control{min-height:100px;}
 .is-invalid{border-color:#c0392b!important;}
-
-/* ==== Alert Box ==== */
-.form-alert{display:none;margin:0 0 16px;padding:12px 16px;border-radius:6px;
-  background:#fff3f3;color:#b71c1c;font-size:14px;border:1px solid #f1b4b4;}
-
-/* ==== Coupon ==== */
+.form-alert{display:none;margin:0 0 16px;padding:12px 16px;border-radius:6px;background:#fff3f3;color:#b71c1c;font-size:14px;border:1px solid #f1b4b4;}
 .coupon-wrapper{background:#F9F9F9;border:1px solid var(--gray);border-radius:8px;padding:20px;margin-bottom:24px;}
-.coupon-wrapper label{font-weight:500;}
-.coupon-wrapper .coupon-box{display:flex;flex-direction:column;gap:14px;}
-.coupon-wrapper .coupon-form{margin:0;}
-.coupon-wrapper .coupon-feedback{border-radius:8px;padding:16px 18px;}
-.coupon-wrapper .coupon-feedback .btn{color:#17463f;font-weight:600;}
-.coupon-wrapper .coupon-input-group{display:flex;align-items:stretch;gap:12px;}
-.coupon-wrapper .coupon-input-group>.form-control{flex:1 1 auto;min-width:200px;border-radius:6px;}
-.coupon-wrapper .coupon-input-group>.btn{flex:0 0 auto;padding:12px 22px;font-weight:600;border-radius:6px;}
-.coupon-wrapper .apply-coupon-code{background:var(--mint)!important;color:#fff!important;border:none!important;}
-.coupon-wrapper .remove-coupon-code{color:#17463f;font-weight:600;}
-@media(max-width:768px){
-  .coupon-wrapper{padding:18px;}
-}
-@media(max-width:575px){
-  .coupon-wrapper .coupon-input-group{flex-direction:column;gap:10px;}
-  .coupon-wrapper .coupon-input-group>.form-control{min-width:0;width:100%;}
-  .coupon-wrapper .coupon-input-group>.btn{width:100%;padding:12px;font-size:14px;}
-  .coupon-wrapper .toggle-coupon-form{font-size:14px;}
-}
-
-/* ==== Payment ==== */
 .list_payment_method{border:1px solid var(--gray);border-radius:8px;margin-bottom:20px;}
 .list_payment_method li{padding:14px 16px;border-bottom:1px solid #f0f0f0;}
 .list_payment_method li:last-child{border-bottom:none;}
-
-/* ==== Buttons ==== */
 .btnrow{display:flex;justify-content:center;gap:14px;margin-top:24px;}
 .btnX{height:48px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-radius:3px;transition:all .25s ease;}
 .btn-outline-mint{width:150px;border:1px solid var(--mint);color:var(--mint);background:#fff;}
@@ -105,8 +66,6 @@ textarea.form-control{min-height:100px;}
   .btn-mint{order:1;}
   .btn-outline-mint{order:2;}
 }
-
-/* ==== Accordion ==== */
 .cxl-accordion details{border-radius:10px;background:#fff;border:1px solid var(--gray);margin-top:20px;}
 .cxl-accordion summary{cursor:pointer;padding:14px 18px;font-weight:600;list-style:none;}
 .cxl-accordion .cxl-body{padding:0 18px 18px;}
@@ -128,18 +87,13 @@ textarea.form-control{min-height:100px;}
           <div class="kv"><span>Enddatum</span><b>{{ $endLabel24 }}</b></div>
         @endif
       </div>
-      @php
-        $discountDisplay = $couponAmountNet > 0
-          ? '-' . format_price($couponAmount)
-          : format_price(0);
-      @endphp
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis (inkl. MwSt.)</span><b class="amount-text">{{ format_price($amount) }}</b></div>
-        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $discountDisplay }}</b></div>
+        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amount) }}</b></div>
+        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
+        <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
         <hr>
         <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
-        <div class="kv text-muted small mt-1"><span>Enthaltene MwSt.</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
       </div>
     </div>
 
@@ -191,15 +145,9 @@ textarea.form-control{min-height:100px;}
           <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" required></div>
           <div class="col-md-6 mb-3"><label>E-Mail *</label><input id="txt-email" name="email" class="form-control" type="email" required></div>
           <div class="col-md-6 mb-3"><label>Telefon *</label><input id="txt-phone" name="phone" class="form-control" required></div>
-          <div class="col-md-6 mb-3"><label>Land</label><input id="txt-country" name="country" class="form-control"></div>
-          <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input id="txt-state" name="state" class="form-control"></div>
-          <div class="col-md-6 mb-3"><label>Stadt</label><input id="txt-city" name="city" class="form-control"></div>
-          <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control"></div>
-          <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control"></div>
         </div>
-        <div class="mb-3"><label>Anfragen</label><textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas..."></textarea></div>
         <div class="btnrow">
-          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
+          <button type="button" class="btnX btn-outline-mint" data-prev>Zurück</button>
           <button type="button" class="btnX btn-mint" data-next>Weiter</button>
         </div>
       </div>
@@ -222,8 +170,8 @@ textarea.form-control{min-height:100px;}
         </ul>
         <label><input type="checkbox" id="terms_conditions" name="terms_conditions" value="1"> Allgemeine Geschäftsbedingungen *</label>
         <div class="btnrow">
-          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
-          <button type="submit" class="btnX btn-mint payment-checkout-btn" data-processing-text="Wird verarbeitet..." data-error-header="Fehler">Abschließen</button>
+          <button type="button" class="btnX btn-outline-mint" data-prev>Zurück</button>
+          <button type="submit" class="btnX btn-mint payment-checkout-btn">Abschließen</button>
         </div>
       </div>
     </form>
@@ -246,21 +194,22 @@ textarea.form-control{min-height:100px;}
 {{-- ==== JS ==== --}}
 <script>
 (function(){
-  const form=document.getElementById('bookingForm');
-  const panels=[...document.querySelectorAll('.step-panel')];
-  const title=document.getElementById('stepTitle');
-  const dots=i=>document.querySelector('[data-step-dot="'+i+'"]');
-  const lines=i=>document.querySelector('[data-step-line="'+i+'"]');
-  const titles=['Allgemeine Informationen','Ihre Angaben','Zahlung & Abschluss'];
-  let step={{ $customer->id ? 2 : 1 }};
+  const form = document.getElementById('bookingForm');
+  const panels = [...document.querySelectorAll('.step-panel')];
+  const title = document.getElementById('stepTitle');
+  const dots = i => document.querySelector('[data-step-dot="'+i+'"]');
+  const lines = i => document.querySelector('[data-step-line="'+i+'"]');
+  const titles = ['Allgemeine Informationen','Ihre Angaben','Zahlung & Abschluss'];
+  let step = {{ $customer->id ? 2 : 1 }};
   render(step);
 
-  const fieldIds={first:'txt-first_name',last:'txt-last_name',email:'txt-email',phone:'txt-phone'};
-  const val=id=>(document.getElementById(id)?.value.trim()||'');
-  const emailOk=s=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-  const phoneOk=s=>/^[0-9+\s\-()]+$/.test(s);
-  const markInvalid=(el,b)=>el&&el.classList.toggle('is-invalid',!!b);
-  let step3Attempted=false;
+  const fieldIds = { first:'txt-first_name', last:'txt-last_name', email:'txt-email', phone:'txt-phone' };
+  const val = id => (document.getElementById(id)?.value.trim() || '');
+  const emailOk = s => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(s);
+  const phoneOk = s => /^[0-9+\\s\\-()]+$/.test(s);
+  const markInvalid = (el,b) => el && el.classList.toggle('is-invalid',!!b);
+  let step2ValidationActive = false;
+  let step3Attempted = false;
 
   function showAlert(stepNo,msg){
     const box=document.getElementById(stepNo===2?'formAlertStep2':'formAlertStep3');
@@ -269,81 +218,59 @@ textarea.form-control{min-height:100px;}
     box.style.display=msg?'block':'none';
     if(msg)box.scrollIntoView({behavior:'smooth',block:'center'});
   }
-  function clearAlerts(){['formAlertStep2','formAlertStep3'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.textContent='';}});}
 
-  function validateStep(stepNo){
-    const fF=document.getElementById(fieldIds.first),
-          fL=document.getElementById(fieldIds.last),
-          fE=document.getElementById(fieldIds.email),
-          fP=document.getElementById(fieldIds.phone);
-    const vF=val(fieldIds.first),
-          vL=val(fieldIds.last),
-          vE=val(fieldIds.email),
-          vP=val(fieldIds.phone);
+  function validateStep(stepNo,{activate=false}={}){
+    const fF=document.getElementById(fieldIds.first),fL=document.getElementById(fieldIds.last),fE=document.getElementById(fieldIds.email),fP=document.getElementById(fieldIds.phone);
+    const vF=val(fieldIds.first),vL=val(fieldIds.last),vE=val(fieldIds.email),vP=val(fieldIds.phone);
     let errors=[];
-    if(!vF){errors.push('Vorname ist erforderlich.');markInvalid(fF,true);}else markInvalid(fF,false);
-    if(!vL){errors.push('Nachname ist erforderlich.');markInvalid(fL,true);}else markInvalid(fL,false);
-    if(!vE){errors.push('E-Mail ist erforderlich.');markInvalid(fE,true);}
-    else if(!emailOk(vE)){errors.push('Bitte geben Sie eine gültige E-Mail-Adresse ein.');markInvalid(fE,true);}
-    else markInvalid(fE,false);
-    if(!vP){errors.push('Telefon ist erforderlich.');markInvalid(fP,true);}
-    else if(!phoneOk(vP)){errors.push('Bitte geben Sie eine gültige Telefonnummer ein.');markInvalid(fP,true);}
-    else if(vP.replace(/\D/g,'').length<8){errors.push('Die Telefonnummer muss mindestens 8 Ziffern enthalten.');markInvalid(fP,true);}
-    else markInvalid(fP,false);
+    if(stepNo===2&&activate)step2ValidationActive=true;
+    const shouldMark=stepNo!==2||step2ValidationActive;
+    if(!vF){errors.push('Vorname ist erforderlich.');if(shouldMark)markInvalid(fF,true);}else if(shouldMark)markInvalid(fF,false);
+    if(!vL){errors.push('Nachname ist erforderlich.');if(shouldMark)markInvalid(fL,true);}else if(shouldMark)markInvalid(fL,false);
+    if(!vE){errors.push('E-Mail ist erforderlich.');if(shouldMark)markInvalid(fE,true);}
+    else if(!emailOk(vE)){errors.push('Bitte gültige E-Mail-Adresse angeben.');if(shouldMark)markInvalid(fE,true);}
+    else if(shouldMark)markInvalid(fE,false);
+    if(!vP){errors.push('Telefon ist erforderlich.');if(shouldMark)markInvalid(fP,true);}
+    else if(!phoneOk(vP)){errors.push('Bitte gültige Telefonnummer angeben.');if(shouldMark)markInvalid(fP,true);}
+    else if(vP.replace(/\\D/g,'').length<8){errors.push('Telefonnummer muss min. 8 Ziffern enthalten.');if(shouldMark)markInvalid(fP,true);}
+    else if(shouldMark)markInvalid(fP,false);
     if(stepNo===3){
       const terms=document.getElementById('terms_conditions');
-      if(!terms||!terms.checked)errors.push('Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
+      if(!terms||!terms.checked)errors.push('Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen.');
     }
-    return errors;
+    showAlert(stepNo,errors.length?('⚠️ '+errors[0]):'');
+    return errors.length===0;
   }
 
-  // Buttons
+  function attemptFinalization(){
+    const ok2=validateStep(2,{activate:true});
+    const ok3=validateStep(3,{activate:true});
+    return ok2&&ok3;
+  }
+
+  // Step navigation
   form.addEventListener('click',e=>{
     const next=e.target.closest('[data-next]');
     const prev=e.target.closest('[data-prev]');
-    const finish=e.target.closest('.payment-checkout-btn');
-
     if(next){
-      e.preventDefault();clearAlerts();
+      e.preventDefault();
       if(step===1){step=2;render(step);return;}
-      const errs=validateStep(2);
-      if(errs.length){showAlert(2,'⚠️ '+errs[0]);return;}
+      if(step===2&&!validateStep(2,{activate:true}))return;
       step=Math.min(step+1,3);render(step);
     }
-
-    if(prev){e.preventDefault();clearAlerts();step=Math.max(step-1,1);render(step);}
-
-    if(finish){
-      e.preventDefault();clearAlerts();
-      step3Attempted=true;
-      const errs2=validateStep(2);
-      if(errs2.length){step=2;render(step);showAlert(2,'⚠️ '+errs2[0]);return;}
-      const errs3=validateStep(3);
-      if(errs3.length){showAlert(3,'⚠️ '+errs3[0]);return;}
-      form.submit();
-    }
+    if(prev){e.preventDefault();step=Math.max(step-1,1);render(step);}
   });
 
-  // Checkbox ändert Verhalten live
-  const termsBox=document.getElementById('terms_conditions');
-  if(termsBox){
-    termsBox.addEventListener('change',()=>{
-      if(termsBox.checked && step3Attempted){
-        showAlert(3,'');
-      }
-    });
-  }
+  // Submit validation
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    if(attemptFinalization()) form.submit();
+  });
 
   function render(s){
     panels.forEach(p=>p.classList.toggle('active',p.dataset.step==s));
     title.textContent=titles[s-1];
-    [1,2,3].forEach(i=>{
-      const d=dots(i),l=lines(i);
-      if(d)d.classList.toggle('active',i<=s);
-      if(l)l.classList.toggle('active',i<s);
-    });
-    const c=document.querySelector('#couponBox .collapse');
-    if(c&&!c.classList.contains('show'))c.classList.add('show');
+    [1,2,3].forEach(i=>{const d=dots(i),l=lines(i);if(d)d.classList.toggle('active',i<=s);if(l)l.classList.toggle('active',i<s);});
   }
 })();
 </script>
