@@ -9,7 +9,8 @@ use Botble\PriceConfigurator\Enums\{
     TargetTypeEnum,
     CalculationTypeEnum,
     RoundingModeEnum,
-    RuleDirectionEnum
+    RuleDirectionEnum,
+    ConditionTypeEnum
 };
 use Botble\PriceConfigurator\Models\{
     Rule,
@@ -189,6 +190,7 @@ class PriceConfiguratorService
 
         $discount = QuantityDiscount::query()
             ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
+            ->where('condition_type', ConditionTypeEnum::QUANTITY)
             ->where(function ($query) use ($hours) {
                 $query->where('range_min', '<=', $hours)
                     ->where(function ($q) use ($hours) {
@@ -203,11 +205,19 @@ class PriceConfiguratorService
             return $price;
         }
 
-        return match ($discount->discount_type) {
-            CalculationTypeEnum::PERCENT => $price - ($price * ($discount->discount_value / 100)),
-            CalculationTypeEnum::ABSOLUTE => $price - $discount->discount_value,
+        $discountType = $discount->discount_type instanceof CalculationTypeEnum
+            ? $discount->discount_type->getValue()
+            : $discount->discount_type;
+
+        $discountValue = (float) $discount->discount_value;
+
+        $discountedPrice = match ($discountType) {
+            CalculationTypeEnum::PERCENT => $price - ($price * ($discountValue / 100)),
+            CalculationTypeEnum::ABSOLUTE => $price - $discountValue,
             default => $price,
         };
+
+        return max($discountedPrice, 0);
     }
 
 }
