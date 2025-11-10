@@ -203,7 +203,6 @@ textarea.form-control{min-height:100px;}
         </div>
       </div>
 
-      {{-- Step 3 --}}
       <div class="step-panel" data-step="3">
         <div id="formAlertStep3" class="form-alert"></div>
         <div class="coupon-wrapper" id="couponBox">@include('plugins/courses::coupons.partials.form')</div>
