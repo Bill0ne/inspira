@@ -203,152 +203,146 @@ textarea.form-control{min-height:100px;}
   const form = document.getElementById('bookingForm');
   if (!form) return;
 
-  // --- State & UI ---
-  const panels = Array.from(document.querySelectorAll('.step-panel'));
+  // === STEP & UI ===
+  const panels = [...document.querySelectorAll('.step-panel')];
   const title  = document.getElementById('stepTitle');
   const dots   = i => document.querySelector('[data-step-dot="'+ i +'"]');
   const lines  = i => document.querySelector('[data-step-line="'+ i +'"]');
   const titles = ['Allgemeine Informationen','Ihre Angaben','Zahlung & Abschluss'];
-  let step = {{ $customer->id ? 2 : 1 }};
+  let step     = {{ $customer->id ? 2 : 1 }};
+  render(step);
 
-  // Felder & Helpers
+  // === FIELDS ===
   const fieldIds = { first:'txt-first_name', last:'txt-last_name', email:'txt-email', phone:'txt-phone' };
   const val      = id => (document.getElementById(id)?.value.trim() || '');
   const emailOk  = s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
   const phoneOk  = s => /^[0-9+\s\-()]+$/.test(s);
-  const markInvalid = (el, bad) => el && el.classList.toggle('is-invalid', !!bad);
+  const markInvalid = (el,b) => el && el.classList.toggle('is-invalid',!!b);
   let step2ValidationActive = false;
+  let step3Attempted        = false;
 
-  function showAlert(stepNo, msg) {
-    const id  = stepNo === 2 ? 'formAlertStep2' : 'formAlertStep3';
+  // === ALERTS ===
+  function showAlert(stepNo,msg){
+    const id  = stepNo===2?'formAlertStep2':'formAlertStep3';
     const box = document.getElementById(id);
-    if (!box) return;
-    box.textContent   = msg || '';
+    if(!box)return;
+    box.textContent = msg || '';
     box.style.display = msg ? 'block' : 'none';
-    if (msg) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if(msg) box.scrollIntoView({behavior:'smooth',block:'center'});
   }
-
-  function clearAlerts() {
+  function clearAlerts(){
     ['formAlertStep2','formAlertStep3'].forEach(id=>{
-      const el = document.getElementById(id);
-      if (el) { el.style.display='none'; el.textContent=''; }
+      const el=document.getElementById(id);
+      if(el){el.style.display='none';el.textContent='';}
     });
   }
 
-  function validateStep(stepNo, { activate=false } = {}) {
+  // === VALIDATION ===
+  function validateStep(stepNo,{activate=false}={}) {
     const fF=document.getElementById(fieldIds.first),
           fL=document.getElementById(fieldIds.last),
           fE=document.getElementById(fieldIds.email),
           fP=document.getElementById(fieldIds.phone);
-
     const vF=val(fieldIds.first),
           vL=val(fieldIds.last),
           vE=val(fieldIds.email),
           vP=val(fieldIds.phone);
+    const errors=[];
+    if(stepNo===2&&activate) step2ValidationActive=true;
+    const mark = stepNo!==2||step2ValidationActive;
 
-    const errors = [];
-    if (stepNo === 2 && activate) step2ValidationActive = true;
-    const shouldMark = stepNo !== 2 || step2ValidationActive;
+    if(!vF){errors.push('Vorname ist erforderlich.');if(mark)markInvalid(fF,true);}else if(mark)markInvalid(fF,false);
+    if(!vL){errors.push('Nachname ist erforderlich.');if(mark)markInvalid(fL,true);}else if(mark)markInvalid(fL,false);
+    if(!vE){errors.push('E-Mail ist erforderlich.');if(mark)markInvalid(fE,true);}
+    else if(!emailOk(vE)){errors.push('Bitte gültige E-Mail-Adresse angeben.');if(mark)markInvalid(fE,true);}else if(mark)markInvalid(fE,false);
+    if(!vP){errors.push('Telefon ist erforderlich.');if(mark)markInvalid(fP,true);}
+    else if(!phoneOk(vP)){errors.push('Bitte gültige Telefonnummer angeben.');if(mark)markInvalid(fP,true);}
+    else if(vP.replace(/\D/g,'').length<8){errors.push('Telefonnummer muss min. 8 Ziffern enthalten.');if(mark)markInvalid(fP,true);}else if(mark)markInvalid(fP,false);
 
-    if (!vF) { errors.push('Vorname ist erforderlich.'); if (shouldMark) markInvalid(fF, true); } else if (shouldMark) markInvalid(fF, false);
-    if (!vL) { errors.push('Nachname ist erforderlich.'); if (shouldMark) markInvalid(fL, true); } else if (shouldMark) markInvalid(fL, false);
-    if (!vE) { errors.push('E-Mail ist erforderlich.'); if (shouldMark) markInvalid(fE, true); }
-    else if (!emailOk(vE)) { errors.push('Bitte gültige E-Mail-Adresse angeben.'); if (shouldMark) markInvalid(fE, true); }
-    else if (shouldMark) markInvalid(fE, false);
-    if (!vP) { errors.push('Telefon ist erforderlich.'); if (shouldMark) markInvalid(fP, true); }
-    else if (!phoneOk(vP)) { errors.push('Bitte gültige Telefonnummer angeben.'); if (shouldMark) markInvalid(fP, true); }
-    else if (vP.replace(/\D/g, '').length < 8) { errors.push('Telefonnummer muss min. 8 Ziffern enthalten.'); if (shouldMark) markInvalid(fP, true); }
-    else if (shouldMark) markInvalid(fP, false);
-
-    if (stepNo === 3) {
-      const terms = document.getElementById('terms_conditions');
-      if (!terms || !terms.checked) errors.push('Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen.');
+    if(stepNo===3){
+      const terms=document.getElementById('terms_conditions');
+      if(!terms||!terms.checked)errors.push('Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen.');
     }
 
-    showAlert(stepNo, errors.length ? ('⚠️ ' + errors[0]) : '');
-    return errors.length === 0;
+    showAlert(stepNo,errors.length?('⚠️ '+errors[0]):'');
+    return errors.length===0;
   }
 
-  function render(s) {
-    panels.forEach(p => p.classList.toggle('active', p.dataset.step == s));
-    if (title) title.textContent = titles[s - 1];
-    [1,2,3].forEach(i=>{
-      const d = dots(i), l = lines(i);
-      if (d) d.classList.toggle('active', i <= s);
-      if (l) l.classList.toggle('active', i <  s);
-    });
-    // Coupon-Box offen halten (falls vorhanden)
-    const c = document.querySelector('#couponBox .collapse');
-    if (c && !c.classList.contains('show')) c.classList.add('show');
+  function attemptFinalization(){
+    const ok2 = validateStep(2,{activate:true});
+    const ok3 = validateStep(3,{activate:true});
+    return ok2 && ok3;
   }
 
-  // --- Direkte Button-Listener, keine Delegation ---
-  function attachNavHandlers() {
-    const nextButtons = Array.from(form.querySelectorAll('[data-next]'));
-    const prevButtons = Array.from(form.querySelectorAll('[data-prev]'));
+  // === NAVIGATION ===
+  const nextButtons = form.querySelectorAll('[data-next]');
+  const prevButtons = form.querySelectorAll('[data-prev]');
 
-    nextButtons.forEach(btn => {
-      btn.type = 'button';
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        clearAlerts();
-
-        if (step === 1) {
-          step = 2;
-          render(step);
-          return;
-        }
-        if (step === 2) {
-          const ok2 = validateStep(2, { activate: true });
-          if (!ok2) return;
-          step = 3;
-          render(step);
-          return;
-        }
-      }, { passive: false });
-    });
-
-    prevButtons.forEach(btn => {
-      btn.type = 'button';
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        clearAlerts();
-        step = Math.max(1, step - 1);
+  nextButtons.forEach(btn=>{
+    btn.type='button';
+    btn.addEventListener('click',e=>{
+      e.preventDefault();
+      clearAlerts();
+      if(step===1){
+        step=2;
         render(step);
-      }, { passive: false });
+        return;
+      }
+      if(step===2){
+        const ok2=validateStep(2,{activate:true});
+        if(!ok2)return;
+        step=3;
+        render(step);
+        return;
+      }
     });
-  }
-
-  // --- Finale Prüfung nur im Submit ---
-  function handleSubmit(e) {
-    e.preventDefault();
-    const ok2 = validateStep(2, { activate: true });
-    const ok3 = validateStep(3, { activate: true });
-    if (ok2 && ok3) {
-      // Schutz: Submit-Listener entfernen, damit kein Doppel-Submit
-      form.removeEventListener('submit', handleSubmit);
-      form.submit();
-    }
-  }
-
-  // Live-Validierung in Step 2 erst nach Aktivierung
-  form.addEventListener('input', () => {
-    if (step === 2 && step2ValidationActive) validateStep(2);
   });
 
-  // Terms toggeln Button-Status (optional, robust)
-  const termsBox = document.getElementById('terms_conditions');
-  if (termsBox) {
-    const submitBtn = form.querySelector('.payment-checkout-btn');
-    const sync = () => { if (submitBtn) submitBtn.disabled = !termsBox.checked; };
-    sync();
-    termsBox.addEventListener('change', sync);
-  }
+  prevButtons.forEach(btn=>{
+    btn.type='button';
+    btn.addEventListener('click',e=>{
+      e.preventDefault();
+      clearAlerts();
+      step=Math.max(1,step-1);
+      render(step);
+    });
+  });
 
-  // Init
-  render(step);
-  attachNavHandlers();
-  form.addEventListener('submit', handleSubmit);
+  // === SUBMIT ===
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    step3Attempted = true;
+    clearAlerts();
+    const valid = attemptFinalization();
+    if(!valid){
+      // zeige Warnung, bleibe auf Schritt 3
+      const terms=document.getElementById('terms_conditions');
+      if(!terms.checked){
+        showAlert(3,'⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
+      }
+      return false;
+    }
+    form.submit();
+  });
+
+  // === AUTO-VALIDATE ON INPUT ===
+  form.addEventListener('input',()=>{
+    if(step===2&&step2ValidationActive) validateStep(2);
+  });
+
+  // === RENDER ===
+  function render(s){
+    panels.forEach(p=>p.classList.toggle('active',p.dataset.step==s));
+    if(title) title.textContent=titles[s-1];
+    [1,2,3].forEach(i=>{
+      const d=dots(i),l=lines(i);
+      if(d)d.classList.toggle('active',i<=s);
+      if(l)l.classList.toggle('active',i<s);
+    });
+    const c=document.querySelector('#couponBox .collapse');
+    if(c&&!c.classList.contains('show')) c.classList.add('show');
+  }
 })();
 </script>
+
 
