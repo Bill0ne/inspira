@@ -8,7 +8,6 @@ use Botble\Base\Http\Responses\BaseHttpResponse;
 use Botble\Hotel\DataTransferObjects\RoomSearchParams;
 use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Hotel\Enums\ReviewStatusEnum;
-use Botble\Hotel\Enums\ServicePriceTypeEnum;
 use Botble\Hotel\Facades\HotelHelper;
 use Botble\Hotel\Http\Requests\CalculateBookingAmountRequest;
 use Botble\Hotel\Http\Requests\CheckoutRequest;
@@ -23,7 +22,7 @@ use Botble\Hotel\Models\Place;
 use Botble\Hotel\Models\Room;
 use Botble\Hotel\Models\RoomCategory;
 use Botble\Hotel\Models\Service;
-use Botble\Hotel\Services\CouponService;
+use Botble\Hotel\Services\CheckoutPricingService;
 use Botble\Hotel\Services\GetRoomService;
 use Botble\Media\Facades\RvMedia;
 use Botble\Optimize\Facades\OptimizerHelper;
@@ -31,14 +30,10 @@ use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Services\Gateways\BankTransferPaymentService;
 use Botble\Payment\Services\Gateways\CodPaymentService;
 use Botble\Payment\Supports\PaymentHelper;
-use Botble\PriceConfigurator\Enums\TargetTypeEnum;
-use Botble\PriceConfigurator\Services\PriceConfiguratorService;
 use Botble\SeoHelper\Facades\SeoHelper;
 use Botble\SeoHelper\SeoOpenGraph;
 use Botble\Slug\Facades\SlugHelper;
 use Botble\Theme\Facades\Theme;
-use DateTimeInterface;
-use Throwable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -51,7 +46,8 @@ use Carbon\Carbon;
 class PublicController extends Controller
 {
     public function __construct(
-        protected GetRoomService $getRoomService
+        protected GetRoomService $getRoomService,
+        protected CheckoutPricingService $checkoutPricingService
     ) {
     }
 
@@ -417,7 +413,7 @@ class PublicController extends Controller
             ->with(['currency', 'category'])
             ->findOrFail(Arr::get($sessionData, 'room_id'));
 
-        $pricing = $this->calculateRoomPricing($room, $slots, (int) $rooms, $customer);
+        $pricing = $this->checkoutPricingService->calculateRoomPricing($room, $slots, (int) $rooms, $customer);
 
         $slotSummaries = $pricing['slots'];
         $totalConfiguredPrice = $pricing['total_configured_price'];
@@ -511,72 +507,48 @@ class PublicController extends Controller
         abort_if(empty($slots), 404);
 
         $numberOfRooms = (int) $request->input('rooms', 1);
-        $pricing = $this->calculateRoomPricing(
-            $room,
-            $slots,
-            $numberOfRooms,
-            Auth::guard('customer')->user() ?? null
-        );
 
-        $slotSummaries = $pricing['slots'];
-        abort_if(empty($slotSummaries), 404);
+        $sessionData = HotelHelper::getCheckoutData();
+        $couponCode = Arr::get($sessionData, 'coupon_code');
 
-        $totalBasePrice = $pricing['total_base_price'];
-        $totalConfiguredPrice = $pricing['total_configured_price'];
-        $discountAmount = $pricing['rule_discount'];
-
-        // 🟢 Add service and food amounts
         $serviceIds = $request->input('services', []);
         $foodIds = HotelHelper::isEnableFoodOrder() ? $request->input('foods', []) : [];
 
-        $serviceAmount = 0;
-        if ($serviceIds) {
-            $serviceAmount = Service::query()
-                ->whereIn('id', $serviceIds)
-                ->sum('price');
+        $totals = $this->checkoutPricingService->calculateTotals(
+            $room,
+            $slots,
+            $serviceIds,
+            $foodIds,
+            $numberOfRooms,
+            Auth::guard('customer')->user(),
+            $couponCode
+        );
+
+        $slotSummaries = $totals['slots'];
+        abort_if(empty($slotSummaries), 404);
+
+        $discountAmount = $totals['rule_discount'];
+        $serviceAmount = $totals['service_amount'];
+        $foodAmount = $totals['food_amount'];
+        $totalAmount = $totals['amount'];
+        $couponAmount = $totals['coupon_amount'];
+        $taxAmount = $totals['tax_amount'];
+        $grandTotal = $totals['total_amount'];
+        $coupon = $totals['coupon'];
+
+        if (! $coupon) {
+            $couponCode = null;
+            $couponAmount = 0;
         }
 
-        $foodAmount = 0;
-        if ($foodIds) {
-            $foodAmount = Food::query()
-                ->whereIn('id', $foodIds)
-                ->sum('price');
-        }
-
-        $totalRoomPrice = $totalConfiguredPrice;
-        $extrasAmount = $serviceAmount + $foodAmount;
-        $totalAmount = $totalRoomPrice + $extrasAmount;
-
-        $sessionData = HotelHelper::getCheckoutData();
-        $couponAmount = (float) Arr::get($sessionData, 'coupon_amount', 0);
-        $couponCode = Arr::get($sessionData, 'coupon_code');
-        $coupon = null;
-
-        if ($couponCode) {
-            $couponService = new CouponService();
-            $coupon = $couponService->getCouponByCode($couponCode);
-
-            if ($coupon !== null) {
-                $couponAmount = $couponService->getDiscountAmount(
-                    $coupon->type->getValue(),
-                    $coupon->value,
-                    $totalAmount
-                );
-                $couponAmount = min($couponAmount, $totalAmount);
-            } else {
-                $couponAmount = 0;
-                $couponCode = null;
-            }
-
-            HotelHelper::saveCheckoutData([
-                'coupon_amount' => $couponAmount,
-                'coupon_code' => $couponCode,
-            ]);
-        }
-
-        $taxableAmount = max($totalAmount - $couponAmount, 0);
-        $taxAmount = $room->tax->percentage * $taxableAmount / 100;
-        $grandTotal = $taxableAmount + $taxAmount;
+        HotelHelper::saveCheckoutData([
+            'service_amount' => $serviceAmount,
+            'selected_services' => $totals['selected_services'],
+            'food_amount' => $foodAmount,
+            'selected_foods' => $totals['selected_foods'],
+            'coupon_amount' => $couponAmount,
+            'coupon_code' => $couponCode,
+        ]);
 
         // 🟢 Create booking record
         $booking = new Booking();
@@ -733,32 +705,41 @@ class PublicController extends Controller
         }
 
         $numberOfRooms = (int) $request->input('rooms', 1);
-        $customer = Auth::guard('customer')->user() ?? null;
+        $customer = Auth::guard('customer')->user();
 
-        $pricing = $this->calculateRoomPricing($room, $slots, $numberOfRooms, $customer);
+        $sessionData = HotelHelper::getCheckoutData();
+        $couponCode = Arr::get($sessionData, 'coupon_code');
 
-        $totalBasePrice = $pricing['total_base_price'];
-        $totalConfiguredPrice = $pricing['total_configured_price'];
-        $ruleDiscount = $pricing['rule_discount'];
+        $services = $request->input('services', []);
+        $foods = HotelHelper::isEnableFoodOrder() ? $request->input('foods', []) : [];
 
-        [$amount, $discountAmount] = $this->calculateBookingAmount(
+        $totals = $this->checkoutPricingService->calculateTotals(
             $room,
-            $request->input('services', []),
-            1,
+            $slots,
+            $services,
+            $foods,
             $numberOfRooms,
-            $request->input('foods', []),
-            $totalConfiguredPrice
+            $customer,
+            $couponCode
         );
 
-        $taxAmount = $room->tax->percentage * ($amount - $discountAmount) / 100;
-        $totalAmount = ($amount - $discountAmount) + $taxAmount;
+        $coupon = $totals['coupon'];
+
+        HotelHelper::saveCheckoutData([
+            'service_amount' => $totals['service_amount'],
+            'selected_services' => $totals['selected_services'],
+            'food_amount' => $totals['food_amount'],
+            'selected_foods' => $totals['selected_foods'],
+            'coupon_amount' => $totals['coupon_amount'],
+            'coupon_code' => $coupon ? $couponCode : null,
+        ]);
 
         return $response->setData([
-            'total_amount'    => format_price($totalAmount),
-            'amount_raw'      => $totalAmount,
-            'sub_total'       => format_price($amount),
-            'tax_amount'      => format_price($taxAmount),
-            'discount_amount' => format_price($discountAmount),
+            'total_amount'    => format_price($totals['total_amount']),
+            'amount_raw'      => $totals['total_amount'],
+            'sub_total'       => format_price($totals['amount']),
+            'tax_amount'      => format_price($totals['tax_amount']),
+            'discount_amount' => format_price($totals['discount_amount']),
         ]);
     }
 
@@ -843,275 +824,4 @@ class PublicController extends Controller
         return Theme::scope('hotel.food', compact('food'))->render();
     }
 
-    protected function calculateRoomPricing(
-        Room $room,
-        array $slots,
-        int $numberOfRooms = 1,
-        ?Customer $customer = null
-    ): array {
-        $dateFormat = HotelHelper::getDateFormat();
-
-        $normalizedSlots = [];
-
-        foreach ($slots as $slot) {
-            $normalized = $this->normalizeSlotForPricing($slot);
-
-            if (! $normalized) {
-                continue;
-            }
-
-            $basePrice = $room->getRoomTotalPrice(
-                $normalized['start_date']->format($dateFormat),
-                $normalized['end_date']->format($dateFormat),
-                $numberOfRooms
-            );
-
-            $normalizedSlots[] = [
-                'start_date' => $normalized['start_date'],
-                'end_date' => $normalized['end_date'],
-                'hours' => $normalized['hours'],
-                'base_price' => $basePrice,
-            ];
-        }
-
-        $totalBasePrice = array_sum(array_column($normalizedSlots, 'base_price'));
-        $totalHours = array_sum(array_column($normalizedSlots, 'hours'));
-
-        $totalConfiguredPrice = $totalBasePrice;
-
-        if ($totalBasePrice > 0 && is_plugin_active('price-configurator')) {
-            $totalConfiguredPrice = app(PriceConfiguratorService::class)->calculatePrice(
-                $totalBasePrice,
-                TargetTypeEnum::ROOM,
-                $room->id,
-                $customer,
-                max($totalHours, 1)
-            );
-        }
-
-        $ruleDiscount = max($totalBasePrice - $totalConfiguredPrice, 0);
-
-        if ($totalBasePrice > 0) {
-            foreach ($normalizedSlots as &$slot) {
-                $share = $slot['base_price'] / $totalBasePrice;
-                $slot['final_price'] = max($totalConfiguredPrice * $share, 0);
-            }
-            unset($slot);
-        } else {
-            foreach ($normalizedSlots as &$slot) {
-                $slot['final_price'] = 0;
-            }
-            unset($slot);
-        }
-
-        return [
-            'slots' => $normalizedSlots,
-            'total_base_price' => $totalBasePrice,
-            'total_configured_price' => $totalConfiguredPrice,
-            'total_hours' => $totalHours,
-            'rule_discount' => $ruleDiscount,
-        ];
-    }
-
-    protected function normalizeSlotForPricing(mixed $slot): ?array
-    {
-        if (is_string($slot)) {
-            $slot = trim($slot);
-
-            if ($slot === '') {
-                return null;
-            }
-
-            if (preg_match('/^(\d{2}\.\d{2}\.\d{4})\s+(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/', $slot, $matches)) {
-                try {
-                    $startDate = Carbon::createFromFormat('d.m.Y H:i', "{$matches[1]} {$matches[2]}");
-                    $endDate = Carbon::createFromFormat('d.m.Y H:i', "{$matches[1]} {$matches[3]}");
-                } catch (Throwable) {
-                    return null;
-                }
-            } else {
-                try {
-                    $startDate = HotelHelper::dateFromRequest($slot);
-                } catch (Throwable) {
-                    return null;
-                }
-
-                $endDate = $startDate->copy()->addHour();
-            }
-        } elseif (is_array($slot)) {
-            $startDate = $this->parseSlotDateValue($slot['start_date'] ?? $slot['start'] ?? null);
-            $endDate = $this->parseSlotDateValue($slot['end_date'] ?? $slot['end'] ?? null, $startDate);
-        } else {
-            return null;
-        }
-
-        if (! $startDate || ! $endDate) {
-            return null;
-        }
-
-        if ($endDate->lessThanOrEqualTo($startDate)) {
-            $endDate = $startDate->copy()->addHour();
-        }
-
-        return [
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'hours' => max(1, $endDate->diffInHours($startDate)),
-        ];
-    }
-
-    protected function parseSlotDateValue(mixed $value, ?Carbon $reference = null): ?Carbon
-    {
-        if ($value instanceof Carbon) {
-            return $value->copy();
-        }
-
-        if ($value instanceof DateTimeInterface) {
-            return Carbon::instance($value);
-        }
-
-        if (is_string($value)) {
-            $value = trim($value);
-
-            if ($value === '') {
-                return null;
-            }
-
-            try {
-                return HotelHelper::dateFromRequest($value);
-            } catch (Throwable) {
-                // Continue to alternative parsing strategies
-            }
-
-            foreach (['Y-m-d H:i', 'd.m.Y H:i'] as $format) {
-                try {
-                    return Carbon::createFromFormat($format, $value);
-                } catch (Throwable) {
-                    continue;
-                }
-            }
-
-            if ($reference && preg_match('/^\d{1,2}:\d{2}$/', $value)) {
-                foreach (['d.m.Y', 'Y-m-d'] as $dateFormat) {
-                    try {
-                        return Carbon::createFromFormat(
-                            $dateFormat . ' H:i',
-                            $reference->format($dateFormat) . ' ' . $value
-                        );
-                    } catch (Throwable) {
-                        continue;
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    protected function calculateBookingAmount(Room $room, array $servicesIds = [], $nights = 1, int $numberOfRooms = 1, array $foods = [], float $baseAmount = 0): array
-    {
-        $amount = $baseAmount;
-
-        $serviceAmount = 0;
-        $selectedServices = [];
-
-        if ($servicesIds) {
-            $services = Service::query()
-                ->whereIn('id', $servicesIds)
-                ->get();
-
-            foreach ($services as $service) {
-                if ($service->price_type == ServicePriceTypeEnum::PER_DAY) {
-                    $serviceAmount += $service->price * $nights;
-                } else {
-                    $serviceAmount += $service->price;
-                }
-            }
-
-            $serviceAmount *= $numberOfRooms;
-
-            $amount += $serviceAmount;
-
-            $selectedServices = $services->pluck('id')->values()->all();
-        }
-
-        $foodAmount = 0;
-        $foodsSelected = [];
-
-        if ($foods) {
-            $foods = Food::query()
-                ->whereIn('id', $foods)
-                ->get();
-
-            foreach ($foods as $food) {
-                $foodAmount += $food->price;
-            }
-
-            $amount += $foodAmount;
-
-            $foodsSelected = $foods->pluck('id')->values()->all();
-        }
-
-        $sessionData = HotelHelper::getCheckoutData();
-
-        $sessionData['service_amount'] = $serviceAmount;
-        $sessionData['selected_services'] = $selectedServices;
-
-        $sessionData['food_amount'] = $foodAmount;
-        $sessionData['selected_foods'] = $foodsSelected;
-
-        $couponCode = Arr::get($sessionData, 'coupon_code');
-
-        $discountAmount = 0;
-
-        if ($couponCode) {
-            $couponService = new CouponService();
-
-            $coupon = $couponService->getCouponByCode($couponCode);
-
-            if ($coupon !== null) {
-                $discountAmount = $couponService->getDiscountAmount(
-                    $coupon->type->getValue(),
-                    $coupon->value,
-                    $amount
-                );
-            }
-
-            $sessionData['coupon_amount'] = $discountAmount;
-            $sessionData['coupon_code'] = $couponCode;
-        }
-
-        HotelHelper::saveCheckoutData($sessionData);
-
-        return [
-            $amount,
-            $discountAmount,
-        ];
-    }
-
-    protected function calculateDynamicPrice(
-        float $basePrice,
-        string $targetType,
-        int $targetId,
-        ?Customer $customer = null,
-        int $quantity = 1
-    ): float {
-        if (! function_exists('is_plugin_active') || ! is_plugin_active('price-configurator')) {
-            return $basePrice;
-        }
-
-        $serviceClass = 'Botble\\PriceConfigurator\\Services\\PriceConfiguratorService';
-
-        if (! class_exists($serviceClass)) {
-            return $basePrice;
-        }
-
-        try {
-            $service = app($serviceClass);
-
-            return $service->calculatePrice($basePrice, $targetType, $targetId, $customer, $quantity);
-        } catch (Throwable) {
-            return $basePrice;
-        }
-    }
 }
