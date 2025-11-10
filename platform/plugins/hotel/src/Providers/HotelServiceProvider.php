@@ -308,6 +308,13 @@ class HotelServiceProvider extends ServiceProvider
                     'route' => 'coupons.index',
                 ])
                 ->registerItem([
+                    'id' => 'cms-plugins-hotel-customer-cards',
+                    'priority' => 12,
+                    'parent_id' => 'cms-plugins-hotel',
+                    'name' => 'plugins/hotel::customer-card.name',
+                    'route' => 'customer-cards.index',
+                ])
+                ->registerItem([
                     'id' => 'cms-plugins-booking',
                     'priority' => 1,
                     'name' => 'plugins/hotel::booking.name',
