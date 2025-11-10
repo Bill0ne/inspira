@@ -82,7 +82,9 @@ textarea.form-control{min-height:100px;}
 .coupon-wrapper .coupon-input-group>.form-control{flex:1 1 auto;min-width:200px;border-radius:6px;}
 .coupon-wrapper .coupon-input-group>.btn{flex:0 0 auto;padding:12px 22px;font-weight:600;border-radius:6px;}
 .coupon-wrapper .apply-coupon-code{background:var(--mint)!important;color:#fff!important;border:none!important;}
-.coupon-wrapper .remove-coupon-code{color:#17463f;font-weight:600;}
+.coupon-wrapper .btn-remove-coupon{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:1px solid rgba(87,142,136,0.35);background:#fff;color:#b23a48;font-weight:600;transition:all .2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+.coupon-wrapper .btn-remove-coupon:hover{background:#fff5f5;color:#922b21;border-color:rgba(178,58,72,0.45);box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+.coupon-wrapper .btn-remove-coupon svg{width:16px;height:16px;}
 @media(max-width:768px){
   .coupon-wrapper{padding:18px;}
 }

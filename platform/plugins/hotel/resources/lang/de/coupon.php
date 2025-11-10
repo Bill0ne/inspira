@@ -33,8 +33,17 @@ return [
     'total' => 'Gesamt',
     'toggle_coupon_form_text' => 'Haben Sie einen Gutscheincode?',
     'apply_coupon_code' => 'Anwenden',
+    'remove_coupon_code' => 'Gutschein entfernen',
     'form' => [
         'create' => 'Neuen Gutschein erstellen',
         'edit' => '":name" bearbeiten',
+    ],
+    'buttons' => [
+        'remove' => 'Gutschein entfernen',
+    ],
+    'messages' => [
+        'applied' => 'Gutschein ":code" wurde erfolgreich angewendet.',
+        'removed' => 'Gutschein ":code" wurde entfernt.',
+        'missing' => 'Es ist kein Gutschein angewendet.',
     ],
 ];

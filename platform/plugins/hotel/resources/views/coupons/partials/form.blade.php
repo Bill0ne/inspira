@@ -8,13 +8,13 @@
     <div class="card coupon-form mt-3" @style(['display: none' => ! ($couponCode && $couponAmount)])>
         <div class="card-body">
             @if ($couponCode && $couponAmount)
-                <div class="d-flex align-items-center justify-content-between alert alert-success mb-0 w-100">
-                    <span>{{ __('Coupon code: :code', ['code' => $couponCode]) }}</span>
+                <div class="d-flex align-items-center justify-content-between alert alert-success mb-0 w-100 flex-wrap gap-2">
+                    <span class="fw-semibold">{{ __('Coupon code: :code', ['code' => $couponCode]) }}</span>
                     <input name="coupon_hidden" type="hidden" value="{{ $couponCode }}" />
 
-                    <button class="btn btn-link text-decoration-none remove-coupon-code" data-url="{{ route('coupon.remove') }}" type="button">
-                        <x-core::icon name="ti ti-trash" />
-                        {{ __('Remove') }}
+                    <button class="btn btn-remove-coupon remove-coupon-code" data-url="{{ route('coupon.remove') }}" type="button">
+                        <x-core::icon class="me-1" name="ti ti-x" />
+                        {{ trans('plugins/hotel::coupon.buttons.remove') }}
                     </button>
                 </div>
             @else
