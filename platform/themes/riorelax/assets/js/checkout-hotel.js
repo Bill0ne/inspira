@@ -1,38 +1,55 @@
-/**
- * checkout-hotel.js
+/* checkout-hotel.js
  * Hotel-spezifische Recalc-Logik (Services, Foods, Slots) + Totals + Payment-Reload
+ * Greift auf CheckoutCommerce.updateTotals/reloadPaymentList zu.
  */
-$(document).ready(function () {
-  const $form = $('.payment-checkout-form');
-  if (!$form.length) return;
+(function (win, $) {
+  'use strict';
+  if (!$) return;
 
-  const collect = () => {
-    const services = $('.service-item:checked').map((_, el) => $(el).val()).get();
-    const foods    = $('.food-item:checked').map((_, el) => $(el).val()).get();
-    const slots    = $('input[name^="slots["][name$="[start_date]"]').map((i, el) => ({
-      start_date: $(el).val(),
-      end_date:   $(`input[name="slots[${i}][end_date]"]`).val(),
-    })).get();
-    return { services, foods, slots };
-  };
+  $(function () {
+    var $form = $('.payment-checkout-form');
+    if (!$form.length) return;
 
-  function updateTotals(data){
-    window.CheckoutCommerce?.updateTotals?.(data);
-  }
+    function collect() {
+      var services = $('.service-item:checked').map(function (_, el) { return $(el).val(); }).get();
+      var foods    = $('.food-item:checked').map(function (_, el) { return $(el).val(); }).get();
+      var slots    = $('input[name^="slots["][name$="[start_date]"]').map(function (i, el) {
+        return {
+          start_date: $(el).val(),
+          end_date:   $('input[name="slots[' + i + '][end_date]"]').val()
+        };
+      }).get();
+      return { services: services, foods: foods, slots: slots };
+    }
 
-  function recalc(){
-    const payload = collect();
-    const roomId  = $('input[name=room_id]').val();
-    const $btn = $('.payment-checkout-btn').prop('disabled', true);
+    function recalc() {
+      var payload = collect();
+      var roomId  = $('input[name=room_id]').val();
+      if (!roomId) return;
 
-    $.get('/ajax/calculate-amount', { room_id: roomId, ...payload })
-      .done(({ error, data, message }) => {
-        if (error) return (window.RiorelaxTheme?.showError?.(message) ?? alert(message || 'Fehler bei der Berechnung.'));
-        updateTotals(data);
-        return window.CheckoutCommerce?.reloadPaymentList?.();
-      })
-      .always(() => $btn.prop('disabled', false));
-  }
+      var $btn = $('.payment-checkout-btn');
+      if ($btn.length) $btn.prop('disabled', true);
 
-  $('.service-item, .food-item').on('change', recalc);
-});
+      $.get('/ajax/calculate-amount', Object.assign({ room_id: roomId }, payload))
+        .done(function (res) {
+          var error   = res && res.error;
+          var message = res && res.message;
+          var data    = res && res.data;
+
+          if (error) {
+            win.RiorelaxTheme?.showError?.(message) ?? console.warn(message || 'Fehler bei der Berechnung.');
+            return;
+          }
+
+          win.CheckoutCommerce?.updateTotals?.(data);
+          return win.CheckoutCommerce?.reloadPaymentList?.();
+        })
+        .always(function () {
+          if ($btn.length) $btn.prop('disabled', false);
+        });
+    }
+
+    $(document).on('change', '.service-item, .food-item', recalc);
+  });
+
+})(window, window.jQuery);
