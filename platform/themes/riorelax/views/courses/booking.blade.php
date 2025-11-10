@@ -128,13 +128,18 @@ textarea.form-control{min-height:100px;}
           <div class="kv"><span>Enddatum</span><b>{{ $endLabel24 }}</b></div>
         @endif
       </div>
+      @php
+        $discountDisplay = $couponAmountNet > 0
+          ? '-' . format_price($couponAmount)
+          : format_price(0);
+      @endphp
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amount) }}</b></div>
-        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
-        <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
+        <div class="kv"><span>Preis (inkl. MwSt.)</span><b class="amount-text">{{ format_price($amount) }}</b></div>
+        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $discountDisplay }}</b></div>
         <hr>
         <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
+        <div class="kv text-muted small mt-1"><span>Enthaltene MwSt.</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
       </div>
     </div>
 
@@ -255,7 +260,6 @@ textarea.form-control{min-height:100px;}
   const emailOk=s=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
   const phoneOk=s=>/^[0-9+\s\-()]+$/.test(s);
   const markInvalid=(el,b)=>el&&el.classList.toggle('is-invalid',!!b);
-  let step2ValidationActive=false;
   let step3Attempted=false;
 
   function showAlert(stepNo,msg){
@@ -267,111 +271,79 @@ textarea.form-control{min-height:100px;}
   }
   function clearAlerts(){['formAlertStep2','formAlertStep3'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.textContent='';}});}
 
-  function validateStep(stepNo,{activate=false}={}){
-    const fF=document.getElementById(fieldIds.first),fL=document.getElementById(fieldIds.last),fE=document.getElementById(fieldIds.email),fP=document.getElementById(fieldIds.phone);
-    const vF=val(fieldIds.first),vL=val(fieldIds.last),vE=val(fieldIds.email),vP=val(fieldIds.phone);
+  function validateStep(stepNo){
+    const fF=document.getElementById(fieldIds.first),
+          fL=document.getElementById(fieldIds.last),
+          fE=document.getElementById(fieldIds.email),
+          fP=document.getElementById(fieldIds.phone);
+    const vF=val(fieldIds.first),
+          vL=val(fieldIds.last),
+          vE=val(fieldIds.email),
+          vP=val(fieldIds.phone);
     let errors=[];
-    if(stepNo===2&&activate)step2ValidationActive=true;
-    const shouldMark=stepNo!==2||step2ValidationActive;
-    if(!vF){errors.push('Vorname ist erforderlich.');if(shouldMark)markInvalid(fF,true);}else if(shouldMark)markInvalid(fF,false);
-    if(!vL){errors.push('Nachname ist erforderlich.');if(shouldMark)markInvalid(fL,true);}else if(shouldMark)markInvalid(fL,false);
-    if(!vE){errors.push('E-Mail ist erforderlich.');if(shouldMark)markInvalid(fE,true);}
-    else if(!emailOk(vE)){errors.push('Bitte geben Sie eine gültige E-Mail-Adresse ein.');if(shouldMark)markInvalid(fE,true);}
-    else if(shouldMark)markInvalid(fE,false);
-    if(!vP){errors.push('Telefon ist erforderlich.');if(shouldMark)markInvalid(fP,true);}
-    else if(!phoneOk(vP)){errors.push('Bitte geben Sie eine gültige Telefonnummer ein.');if(shouldMark)markInvalid(fP,true);}
-    else if(vP.replace(/\D/g,'').length<8){errors.push('Die Telefonnummer muss mindestens 8 Ziffern enthalten.');if(shouldMark)markInvalid(fP,true);}
-    else if(shouldMark)markInvalid(fP,false);
+    if(!vF){errors.push('Vorname ist erforderlich.');markInvalid(fF,true);}else markInvalid(fF,false);
+    if(!vL){errors.push('Nachname ist erforderlich.');markInvalid(fL,true);}else markInvalid(fL,false);
+    if(!vE){errors.push('E-Mail ist erforderlich.');markInvalid(fE,true);}
+    else if(!emailOk(vE)){errors.push('Bitte geben Sie eine gültige E-Mail-Adresse ein.');markInvalid(fE,true);}
+    else markInvalid(fE,false);
+    if(!vP){errors.push('Telefon ist erforderlich.');markInvalid(fP,true);}
+    else if(!phoneOk(vP)){errors.push('Bitte geben Sie eine gültige Telefonnummer ein.');markInvalid(fP,true);}
+    else if(vP.replace(/\D/g,'').length<8){errors.push('Die Telefonnummer muss mindestens 8 Ziffern enthalten.');markInvalid(fP,true);}
+    else markInvalid(fP,false);
     if(stepNo===3){
       const terms=document.getElementById('terms_conditions');
       if(!terms||!terms.checked)errors.push('Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
     }
-    const shouldShowAlert=stepNo===2?step2ValidationActive:(stepNo===3?(activate||step3Attempted):true);
-    if(shouldShowAlert)showAlert(stepNo,errors.length?('⚠️ '+errors[0]):'');
-    else if(stepNo===2)showAlert(stepNo,'');
-    return errors.length===0;
+    return errors;
   }
 
-  form.addEventListener('input',()=>{if(step===2&&step2ValidationActive){validateStep(2);}});
-
+  // Buttons
   form.addEventListener('click',e=>{
-    const next=e.target.closest('[data-next]'),prev=e.target.closest('[data-prev]'),finish=e.target.closest('.payment-checkout-btn');
-    if(next){e.preventDefault();clearAlerts();
+    const next=e.target.closest('[data-next]');
+    const prev=e.target.closest('[data-prev]');
+    const finish=e.target.closest('.payment-checkout-btn');
+
+    if(next){
+      e.preventDefault();clearAlerts();
       if(step===1){step=2;render(step);return;}
-      if(step===2&&!validateStep(2,{activate:true}))return;
+      const errs=validateStep(2);
+      if(errs.length){showAlert(2,'⚠️ '+errs[0]);return;}
       step=Math.min(step+1,3);render(step);
-      if(step===3){const terms=document.getElementById('terms_conditions');if(terms&&terms.checked)showAlert(3,'');}}
+    }
+
     if(prev){e.preventDefault();clearAlerts();step=Math.max(step-1,1);render(step);}
-    if(finish){e.preventDefault();clearAlerts();step3Attempted=true;const ok2=validateStep(2,{activate:true}),ok3=validateStep(3,{activate:true});if(!(ok2&&ok3)){if(!ok2&&step!==2){step=2;render(step);}else if(!ok3&&step!==3){step=3;render(step);}return;}form.submit();}
+
+    if(finish){
+      e.preventDefault();clearAlerts();
+      step3Attempted=true;
+      const errs2=validateStep(2);
+      if(errs2.length){step=2;render(step);showAlert(2,'⚠️ '+errs2[0]);return;}
+      const errs3=validateStep(3);
+      if(errs3.length){showAlert(3,'⚠️ '+errs3[0]);return;}
+      form.submit();
+    }
   });
 
+  // Checkbox ändert Verhalten live
   const termsBox=document.getElementById('terms_conditions');
-  if(termsBox){const submitBtn=form.querySelector('.payment-checkout-btn');
-    const toggleState=()=>{submitBtn.disabled=!termsBox.checked;if(termsBox.checked&&step3Attempted)showAlert(3,'');};
-    toggleState();termsBox.addEventListener('change',()=>{toggleState();if(step3Attempted)validateStep(3,{activate:true});});}
+  if(termsBox){
+    termsBox.addEventListener('change',()=>{
+      if(termsBox.checked && step3Attempted){
+        showAlert(3,'');
+      }
+    });
+  }
+
   function render(s){
     panels.forEach(p=>p.classList.toggle('active',p.dataset.step==s));
     title.textContent=titles[s-1];
-    [1,2,3].forEach(i=>{const d=dots(i),l=lines(i);if(d)d.classList.toggle('active',i<=s);if(l)l.classList.toggle('active',i<s);});
-    const c=document.querySelector('#couponBox .collapse');if(c&&!c.classList.contains('show'))c.classList.add('show');
+    [1,2,3].forEach(i=>{
+      const d=dots(i),l=lines(i);
+      if(d)d.classList.toggle('active',i<=s);
+      if(l)l.classList.toggle('active',i<s);
+    });
+    const c=document.querySelector('#couponBox .collapse');
+    if(c&&!c.classList.contains('show'))c.classList.add('show');
   }
 })();
-
-document.addEventListener('DOMContentLoaded', function() {
-  const couponBox = document.getElementById('couponBox');
-  if (!couponBox) return;
-
-  couponBox.addEventListener('click', function(e) {
-    const btn = e.target.closest('.remove-coupon-code');
-    if (!btn) return;
-    e.preventDefault();
-
-    const url = btn.getAttribute('data-url') || btn.getAttribute('href');
-    if (!url) {
-      toastr.error('Keine gültige URL zum Entfernen gefunden.');
-      return;
-    }
-
-    btn.disabled = true;
-
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-      .then(r => r.json())
-      .then(data => {
-        btn.disabled = false;
-
-        if (data.error) {
-          toastr.error(data.message || 'Fehler beim Entfernen des Gutscheins.');
-          return;
-        }
-
-        // Wenn der Server neue Coupon-HTML liefert
-        if (data.data && data.data.html) {
-          couponBox.innerHTML = data.data.html;
-        }
-
-        // Wenn Preis-/Summenwerte im Response enthalten sind
-        if (data.data) {
-          const d = data.data;
-          const fmt = v => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(Number(v || 0));
-
-          document.querySelector('.amount-text').textContent = fmt(d.price || 0);
-          document.querySelector('.discount-text').textContent = fmt(d.discount || 0);
-          document.querySelector('.tax-text').textContent = fmt(d.tax || 0);
-          document.querySelector('.total-amount-text').textContent = fmt(d.total || 0);
-        }
-
-        toastr.success(data.message || 'Gutschein erfolgreich entfernt!');
-      })
-      .catch(() => {
-        btn.disabled = false;
-        toastr.error('Verbindung fehlgeschlagen.');
-      });
-  });
-});
 </script>

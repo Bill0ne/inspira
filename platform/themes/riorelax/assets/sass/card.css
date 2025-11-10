@@ -1,5 +1,4 @@
-<style>
-/* === Inspira – Course Card (stabile, einheitliche Höhe) === */
+
 .course-card {
   background: #fff !important;
   border-radius: 10px !important;
@@ -161,4 +160,4 @@
 }
 .btn-cart:hover { background: #4B7C75 !important; }
 .btn-cart i { font-size: 15px !important; }
-</style>
+

@@ -52,6 +52,11 @@
                                     <div class="room-booking-card__price-chip">
                                         {{ __(':price / :unit', ['price' => format_price($configuredPrice), 'unit' => $priceUnitLabel]) }}
                                     </div>
+                                    @if ($displayPriceDiffers)
+                                        <div class="room-booking-card__price-original text-muted text-decoration-line-through small">
+                                            {{ format_price($room->price) }}
+                                        </div>
+                                    @endif
                                 @else
                                     <p class="room-booking-card__notice text-muted">
                                         {{ __('Bitte einloggen um die Preise zu sehen') }}
