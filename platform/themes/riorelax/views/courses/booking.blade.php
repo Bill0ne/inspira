@@ -128,13 +128,18 @@ textarea.form-control{min-height:100px;}
           <div class="kv"><span>Enddatum</span><b>{{ $endLabel24 }}</b></div>
         @endif
       </div>
+      @php
+        $discountDisplay = $couponAmountNet > 0
+          ? '-' . format_price($couponAmount)
+          : format_price(0);
+      @endphp
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amount) }}</b></div>
-        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
-        <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
+        <div class="kv"><span>Preis (inkl. MwSt.)</span><b class="amount-text">{{ format_price($amount) }}</b></div>
+        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $discountDisplay }}</b></div>
         <hr>
         <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
+        <div class="kv text-muted small mt-1"><span>Enthaltene MwSt.</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
       </div>
     </div>
 
