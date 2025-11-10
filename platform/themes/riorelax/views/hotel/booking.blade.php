@@ -491,7 +491,6 @@ textarea.form-control{min-height:100px;}
     return errors.length===0;
   }
 
-  // === LOGIC ===
   function attemptFinalization(){
     const ok2 = validateStep(2,{activate:true});
     const ok3 = validateStep(3,{activate:true});
@@ -535,28 +534,24 @@ textarea.form-control{min-height:100px;}
   // === SUBMIT ===
   form.addEventListener('submit',e=>{
     e.preventDefault();
-    if(attemptFinalization()) form.submit();
+    step3Attempted = true;
+    clearAlerts();
+    const valid = attemptFinalization();
+    if(!valid){
+      // zeige Warnung, bleibe auf Schritt 3
+      const terms=document.getElementById('terms_conditions');
+      if(!terms.checked){
+        showAlert(3,'⚠️ Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
+      }
+      return false;
+    }
+    form.submit();
   });
 
   // === AUTO-VALIDATE ON INPUT ===
   form.addEventListener('input',()=>{
     if(step===2&&step2ValidationActive) validateStep(2);
   });
-
-  // === TERMS TOGGLE ===
-  const termsBox=document.getElementById('terms_conditions');
-  if(termsBox){
-    const submitBtn=form.querySelector('.payment-checkout-btn');
-    const toggleState=()=>{
-      if(submitBtn) submitBtn.disabled=!termsBox.checked;
-      if(termsBox.checked&&step3Attempted) showAlert(3,'');
-    };
-    toggleState();
-    termsBox.addEventListener('change',()=>{
-      toggleState();
-      if(step3Attempted) validateStep(3,{activate:true});
-    });
-  }
 
   // === RENDER ===
   function render(s){
@@ -572,3 +567,4 @@ textarea.form-control{min-height:100px;}
   }
 })();
 </script>
+
