@@ -419,6 +419,23 @@ app()->booted(function (): void {
                         ->toArray(),
                 );
         });
+
+        Shortcode::register('all-courses', __('All Courses'), __('Display all available courses'), function (): ?string {
+            $request = request()->duplicate($_GET);
+
+            $query = \Botble\Courses\Models\Course::query()
+                ->wherePublished()
+                ->with(['slugable', 'instructor'])
+                ->whereHas('sessions', function ($q) {
+                    $q->where('start_date', '>=', Carbon::now());
+                });
+
+            $query = \Theme\Riorelax\Supports\FilterHelper::apply($request, $query, 'courses');
+
+            $courses = $query->paginate(12)->withQueryString();
+
+            return Theme::partial('shortcodes.all-courses.index', compact('courses'));
+        });
     }
 
 Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): ?string {
@@ -447,24 +464,6 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
     return Theme::partial('shortcodes.all-rooms.index', compact(
         'rooms', 'startDate', 'endDate', 'adults', 'nights'
     ));
-});
-
-
-Shortcode::register('all-courses', __('All Courses'), __('Display all available courses'), function (): ?string {
-    $request = request()->duplicate($_GET);
-
-    $query = \Botble\Courses\Models\Course::query()
-        ->wherePublished()
-        ->with(['slugable', 'instructor'])
-        ->whereHas('sessions', function ($q) {
-            $q->where('start_date', '>=', Carbon::now());
-        });
-
-    $query = \Theme\Riorelax\Supports\FilterHelper::apply($request, $query, 'courses');
-
-    $courses = $query->paginate(12)->withQueryString();
-
-    return Theme::partial('shortcodes.all-courses.index', compact('courses'));
 });
 
 
