@@ -48,29 +48,31 @@ jobs:
       - name: ⚙️ Run Laravel + Build setup on Stage server
         run: |
           ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no u296731902@145.223.35.233 <<'EOF'
-          cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env
+            cd /home/u296731902/domains/inspira-zentrum.de/public_html/stage-env
 
-          echo "📦 Installing composer dependencies..."
-          composer install --no-dev --optimize-autoloader --quiet
+            echo "📦 Installing composer dependencies..."
+            composer install --no-dev --optimize-autoloader --quiet
 
-          echo "🧱 Installing Node modules & building assets..."
-          if [ -f package.json ]; then
-            yarn install --frozen-lockfile --silent || npm install --silent
-            yarn build || npm run build
-          fi
+            echo "🧱 Installing Node modules & building assets..."
+            if [ -f package.json ]; then
+              yarn install --frozen-lockfile --silent || npm install --silent
+              yarn build || npm run build
+            fi
 
-          echo "🧹 Clearing & optimizing Laravel caches..."
-          php artisan optimize:clear
-          php artisan config:cache
-          php artisan view:clear
-          php artisan view:cache
-          php artisan optimize
+            echo "🧹 Clearing & optimizing Laravel caches..."
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan view:clear
+            php artisan view:cache
+            php artisan optimize
 
-          echo "🧩 Rebuilding plugin & theme cache..."
-          rm -f bootstrap/cache/plugins.php
-          php artisan cms:theme:assets:publish
+            echo "🧩 Rebuilding plugin & theme cache..."
+            php artisan cms:cache:clear
+            php artisan route:clear
+            rm -f bootstrap/cache/plugins.php
+            php artisan cms:theme:assets:publish
 
-          echo "✅ Inspira STAGE deployment completed successfully!"
+            echo "✅ Inspira STAGE deployment completed successfully!"
           EOF
 
       # 5️⃣ Erfolgsmeldung
