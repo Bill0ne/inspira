@@ -71,7 +71,7 @@ jobs:
             rm -f bootstrap/cache/plugins.php
             php artisan cms:theme:assets:publish
 
-            echo "✅ Inspira STAGE deployment completed successfully!"
+            echo "✅ Inspira LIVE deployment completed successfully!"
           EOF
 
       # 5️⃣ Erfolgsmeldung
