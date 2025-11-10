@@ -491,16 +491,23 @@ textarea.form-control{min-height:100px;}
   }
 
   form.addEventListener('click',e=>{
-    const next=e.target.closest('[data-next]'),prev=e.target.closest('[data-prev]'),finish=e.target.closest('.payment-checkout-btn');
+    const next=e.target.closest('[data-next]'),prev=e.target.closest('[data-prev]');
     if(next){e.preventDefault();clearAlerts();
       if(step===1){step=2;render(step);return;}
       if(step===2&&!validateStep(2,{activate:true}))return;
       step=Math.min(step+1,3);render(step);
       if(step===3){const terms=document.getElementById('terms_conditions');if(terms&&terms.checked)showAlert(3,'');}}
     if(prev){e.preventDefault();clearAlerts();step=Math.max(step-1,1);render(step);}
-    if(finish&&!attemptFinalization({checkStep3:true})){
-      e.preventDefault();
-    }
+  });
+
+  form.querySelectorAll('.payment-checkout-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      if(!attemptFinalization({checkStep3:true})){
+        e.preventDefault();
+        if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
+        else e.stopPropagation();
+      }
+    });
   });
 
   form.addEventListener('submit',e=>{
