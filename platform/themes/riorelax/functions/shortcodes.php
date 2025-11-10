@@ -363,6 +363,63 @@ app()->booted(function (): void {
                         ->toArray()
                 );
         });
+    }
+
+    if (is_plugin_active('courses')) {
+        Shortcode::register(
+            'featured-courses',
+            __('Featured Courses'),
+            __('Featured Courses'),
+            function (ShortcodeCompiler $shortcode): ?string {
+                if (! $courseIds = ShortcodeField::parseIds($shortcode->course_ids)) {
+                    return null;
+                }
+
+                $order = array_flip($courseIds);
+
+                $courses = Course::query()
+                    ->wherePublished()
+                    ->with(['slugable', 'sessions'])
+                    ->whereIn('id', $courseIds)
+                    ->get()
+                    ->sortBy(function (Course $course) use ($order) {
+                        return $order[$course->getKey()] ?? PHP_INT_MAX;
+                    })
+                    ->values();
+
+                if ($courses->isEmpty()) {
+                    return null;
+                }
+
+                return Theme::partial('shortcodes.featured-courses.index', compact('shortcode', 'courses'));
+            }
+        );
+
+        Shortcode::setAdminConfig('featured-courses', function (array $attributes) {
+            $courses = Course::query()
+                ->wherePublished()
+                ->pluck('name', 'id')
+                ->toArray();
+
+            $courseIds = ShortcodeField::parseIds(Arr::get($attributes, 'course_ids'));
+
+            return ShortcodeForm::createFromArray($attributes)
+                ->add('title', TextField::class, TextFieldOption::make()->label(__('Title'))->toArray())
+                ->add('subtitle', TextField::class, TextFieldOption::make()->label(__('Subtitle'))->toArray())
+                ->add('description', TextareaField::class, DescriptionFieldOption::make()->toArray())
+                ->add(
+                    'course_ids',
+                    SelectField::class,
+                    SelectFieldOption::make()
+                        ->label(__('Choose courses'))
+                        ->choices($courses)
+                        ->selected($courseIds)
+                        ->multiple()
+                        ->searchable()
+                        ->toArray(),
+                );
+        });
+    }
 
 Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): ?string {
     $request = request()->duplicate($_GET);
