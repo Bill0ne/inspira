@@ -322,7 +322,7 @@ textarea.form-control{min-height:100px;}
     }
   });
 
-  // Checkbox ändert Verhalten live
+
   const termsBox=document.getElementById('terms_conditions');
   if(termsBox){
     termsBox.addEventListener('change',()=>{
