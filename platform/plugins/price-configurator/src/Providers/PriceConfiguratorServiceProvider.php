@@ -28,13 +28,20 @@ class PriceConfiguratorServiceProvider extends ServiceProvider
             ->publishAssets();
 
         DashboardMenu::default()->beforeRetrieving(function (): void {
+            $parentId = null;
+
+            if (function_exists('is_plugin_active') && is_plugin_active('admin-sidebar')) {
+                $parentId = 'cms-custom-inspira-management';
+            }
+
             DashboardMenu::make()
                 ->registerItem(
                     DashboardMenuItem::make()
                         ->id('cms-plugins-price-configurator')
-                        ->priority(4)
+                        ->priority(60)
                         ->name('plugins/price-configurator::price-configurator.name')
                         ->icon('ti ti-calculator')
+                        ->parentId($parentId)
                 )
                 ->registerItem(
                     DashboardMenuItem::make()
