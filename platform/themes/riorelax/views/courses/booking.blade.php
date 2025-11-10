@@ -9,7 +9,6 @@
 
 @php
     Theme::set('pageTitle', '');
-    Theme::asset()->container('footer')->usePath()->add('checkout-js', 'js/course-checkout.js');
     $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
     $endLabel24   = $session->end_date ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i') : null;
 @endphp
