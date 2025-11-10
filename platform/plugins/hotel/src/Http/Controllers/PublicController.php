@@ -569,10 +569,6 @@ class PublicController extends Controller
 
         $booking->save();
 
-        if ($coupon) {
-            $coupon->increment('total_used');
-        }
-
         // 🟢 Save all slot records in booking_rooms with configured pricing per slot
         foreach ($slotSummaries as $slot) {
             BookingRoom::query()->create([
@@ -637,6 +633,10 @@ class PublicController extends Controller
             }
 
             if ($checkoutUrl = Arr::get($data, 'checkoutUrl')) {
+                if ($coupon) {
+                    $coupon->increment('total_used');
+                }
+
                 return $response
                     ->setError($data['error'])
                     ->setNextUrl($checkoutUrl)
@@ -661,6 +661,10 @@ class PublicController extends Controller
         if ($token = $request->input('token')) {
             session()->forget($token);
             session()->forget('checkout_token');
+        }
+
+        if ($coupon) {
+            $coupon->increment('total_used');
         }
 
         return $response
