@@ -24,6 +24,7 @@ body .pb-40{padding-bottom:24px!important;}
 section.checkout-booking-page{background:#fff;}
 .ticket{display:grid;grid-template-columns:1.1fr 1.4fr 1fr;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:28px;}
 .ticket__col{padding:20px 22px;display:flex;flex-direction:column;justify-content:center;}
+.ticket__col.ticket__media{padding:0;}
 .ticket__media img{width:100%;height:100%;min-height:220px;object-fit:cover;}
 .ticket__details{background:var(--mint);color:#fff;}
 .ticket__details .title,.ticket__totals .title{font-weight:600;font-size:15px;margin-bottom:10px;}
@@ -90,7 +91,7 @@ textarea.form-control{min-height:100px;}
       </div>
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amount) }}</b></div>
+        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amountNet) }}</b></div>
         <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
         <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
         <hr>
