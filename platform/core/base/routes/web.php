@@ -3,6 +3,7 @@
 use Botble\Base\Facades\AdminHelper;
 use Botble\Base\Http\Controllers\CacheManagementController;
 use Botble\Base\Http\Controllers\CoreIconController;
+use Botble\Base\Http\Controllers\LicenseReminderController;
 use Botble\Base\Http\Controllers\NotificationController;
 use Botble\Base\Http\Controllers\SearchController;
 use Botble\Base\Http\Controllers\SystemInformationController;
@@ -85,6 +86,16 @@ Route::group(['namespace' => 'Botble\Base\Http\Controllers'], function (): void 
             Route::post('membership/authorize', [
                 'as' => 'membership.authorize',
                 'uses' => 'SystemController@postAuthorize',
+            ]);
+
+            Route::get('unlicensed', [
+                'as' => 'unlicensed',
+                'uses' => 'LicenseReminderController@index',
+            ]);
+
+            Route::post('unlicensed/skip', [
+                'as' => 'unlicensed.skip',
+                'uses' => 'LicenseReminderController@skip',
             ]);
 
             Route::get('menu-items-count', [

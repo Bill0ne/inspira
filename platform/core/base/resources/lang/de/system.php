@@ -98,4 +98,25 @@ return [
         'not_enabled_yet' => 'Diese Funktion ist noch nicht aktiviert. <br />Bitte in der .env-Datei <code>CMS_ENABLED_CLEANUP_DATABASE=true</code> setzen, um sie zu aktivieren!',
     ],
     'cache_too_large_alert' => 'Dein Cache-Ordner ist zu groß (~:size). Bitte gehe zu Plattform-Administration → Cache-Verwaltung und leere ihn, um Speicherplatz freizugeben.',
+    'license' => [
+        'title' => 'Lizenzaktivierung erforderlich',
+        'description' => 'Um die Plattform weiterhin zu nutzen, aktiviere bitte zuerst die Lizenz.',
+        'benefits' => [
+            'updates' => [
+                'title' => 'Erhalte Updates – für immer!',
+                'description' => 'Deine Website bleibt immer auf dem neuesten Stand.',
+            ],
+            'support' => [
+                'title' => 'Support durch unser Entwicklerteam',
+                'description' => 'Du hast ein Problem? Kein Grund zur Sorge – wir helfen dir jederzeit weiter.',
+            ],
+            'security' => [
+                'title' => 'Sicherheit gewährleisten',
+                'description' => 'Erhalte wichtige Updates, die deine Installation schützen.',
+            ],
+        ],
+        'activate_button' => 'Lizenz aktivieren',
+        'activate_aria' => 'Lizenz aktivieren',
+        'skip_button' => 'Überspringen',
+    ],
 ];
