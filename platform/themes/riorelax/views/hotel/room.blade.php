@@ -60,7 +60,10 @@
                                     @endif
                                 @else
                                     <p class="room-booking-card__notice text-muted">
-                                        {{ __('Bitte einloggen um die Preise zu sehen') }}
+                                        {!! __('Bitte :loginLink oder :registerLink, um die Preise zu sehen.', [
+                                            'loginLink' => '<a href="' . e(route('customer.login')) . '">' . __('einloggen') . '</a>',
+                                            'registerLink' => '<a href="' . e(route('customer.register')) . '">' . __('registrieren') . '</a>',
+                                        ]) !!}
                                     </p>
                                 @endif
                             </div>
