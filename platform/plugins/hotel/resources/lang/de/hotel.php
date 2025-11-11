@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'name' => 'Hotel',
+    'name' => 'Zentrum',
     'booking_name' => 'Name der Buchung',
     'booking_email' => 'E-Mail der Buchung',
     'booking_phone' => 'Telefon der Buchung',

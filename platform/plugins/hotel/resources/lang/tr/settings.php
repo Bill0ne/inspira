@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'hotel' => 'Otel',
+    'hotel' => 'Zentrum',
     'invoicing' => [
         'company_name' => 'Şirket adı',
         'company_address' => 'Şirket adresi',
@@ -18,7 +18,7 @@ return [
     'invoice_settings_description' => 'Faturalama için Fatura bilgisi ayarları',
     'general' => [
         'title' => 'Genel',
-        'description' => 'Otel için genel ayarlar',
+        'description' => 'Zentrum için genel ayarlar',
         'enable_booking' => 'Rezervasyon etkinleştirilsin mi?',
         'maximum_number_of_guests' => 'Maksimum misafir sayısı',
         'minimum_number_of_guests' => 'Minimum misafir sayısı',
@@ -34,7 +34,7 @@ return [
     ],
     'review' => [
         'title' => 'Değerlendirmeler',
-        'description' => 'Otel için değerlendirme ayarları',
+        'description' => 'Zentrum için değerlendirme ayarları',
         'enable_review_room' => 'Değerlendirme etkinleştirilsin mi?',
         'reviews_per_page' => 'Sayfa başına değerlendirme sayısı?',
     ],

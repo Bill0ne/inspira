@@ -42,7 +42,7 @@ return [
     'email' => [
         'subject' => 'Warnung: iCal-Synchronisierung fehlgeschlagen',
         'greeting' => 'Hallo,',
-        'message' => 'Wir haben ein Problem bei der iCal-Synchronisierung Ihres Hotelbuchungssystems festgestellt.',
+        'message' => 'Wir haben ein Problem bei der iCal-Synchronisierung Ihres Zentrumbuchungssystems festgestellt.',
         'details' => 'Fehlerdetails',
         'time' => 'Zeit',
         'error' => 'Fehlermeldung',
@@ -56,10 +56,10 @@ return [
     'documentation' => 'iCal-Sync-Dokumentation',
     'documentation_title' => 'So verwenden Sie iCal Sync',
     'what_is_ical' => 'Was ist iCal Sync?',
-    'what_is_ical_desc' => 'iCal (oder iCalendar) ist ein Standardformat zum Austausch von Kalenderdaten. Mit der iCal-Synchronisierung können Sie Ihre Hotelbuchungen mit externen Plattformen wie Booking.com, Airbnb und anderen Buchungssystemen synchronisieren, die iCal unterstützen.',
+    'what_is_ical_desc' => 'iCal (oder iCalendar) ist ein Standardformat zum Austausch von Kalenderdaten. Mit der iCal-Synchronisierung können Sie Ihre Zentrumbuchungen mit externen Plattformen wie Booking.com, Airbnb und anderen Buchungssystemen synchronisieren, die iCal unterstützen.',
 
     'export_bookings' => 'Buchungen exportieren',
-    'export_bookings_desc' => 'Sie können Ihre Hotelbuchungen exportieren, um Doppelbuchungen auf externen Plattformen zu verhindern.',
+    'export_bookings_desc' => 'Sie können Ihre Zentrumbuchungen exportieren, um Doppelbuchungen auf externen Plattformen zu verhindern.',
     'export_step1_title' => 'Zur iCal-Sync-Seite gehen',
     'export_step1_desc' => 'Navigieren Sie im Admin-Panel zu Buchung > iCal Sync.',
     'export_step2_title' => 'Zimmer auswählen, das exportiert werden soll',

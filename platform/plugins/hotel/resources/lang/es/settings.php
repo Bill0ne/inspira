@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'hotel' => 'Hotel',
+    'hotel' => 'Zentrum',
     'invoicing' => [
         'company_name' => 'Nombre de la empresa',
         'company_address' => 'Dirección de la empresa',
@@ -18,7 +18,7 @@ return [
     'invoice_settings_description' => 'Configuración de información de factura para facturación',
     'general' => [
         'title' => 'General',
-        'description' => 'Configuración general para Hotel',
+        'description' => 'Configuración general para Zentrum',
         'enable_booking' => '¿Habilitar reservas?',
         'maximum_number_of_guests' => 'Número máximo de huéspedes',
         'minimum_number_of_guests' => 'Número mínimo de huéspedes',
@@ -34,7 +34,7 @@ return [
     ],
     'review' => [
         'title' => 'Reseñas',
-        'description' => 'Configuración de reseñas para Hotel',
+        'description' => 'Configuración de reseñas para Zentrum',
         'enable_review_room' => '¿Habilitar reseñas?',
         'reviews_per_page' => '¿Número de reseñas por página?',
     ],

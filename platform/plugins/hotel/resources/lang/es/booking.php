@@ -88,7 +88,7 @@ return [
     'number_of_rooms_helper' => 'Número de habitaciones a reservar',
     'number_of_guests_helper' => 'Número de huéspedes adultos',
     'number_of_children_helper' => 'Número de niños',
-    'arrival_time_helper' => 'Hora de llegada esperada al hotel',
+    'arrival_time_helper' => 'Hora de llegada esperada al Zentrum',
     'payment_method_helper' => 'Seleccione el método de pago utilizado para esta reserva',
     'payment_status_helper' => 'Estado actual del pago',
     'status_helper' => 'Estado actual de la reserva',
