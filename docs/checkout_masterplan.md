@@ -23,18 +23,12 @@ Ein schlanker, fehlerfreier, dreistufiger Checkout-Flow, der Vertrauen schafft, 
 ## Technische Struktur
 - **JavaScript-Module:**
   - `checkout-core.js`: Steuernavigation, Validierung, AGB-Check.
-  - `checkout-commerce.js`: Coupon- und Payment-Handling für Kurse.
-  - `checkout-hotel.js`: Zusatzleistungen und Preiskalkulation für Räume.
+  - `checkout-commerce.js`: Coupon-Handling, Payment-Reload sowie Zusatzleistungs-Recalc für Räume.
   - `checkout-init.js`: Initialisierung und Aktivierung je nach Szenario.
 - **Asset-Einbindung:**
   ```blade
-  @if ($isCourse)
-    Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
-    Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js');
-  @else
-    Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
-    Theme::asset()->container('footer')->usePath()->add('checkout-hotel', 'js/checkout-hotel.js');
-  @endif
+  Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
+  Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js');
   ```
 
 ## Designprinzipien

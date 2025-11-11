@@ -422,6 +422,7 @@ class PublicController extends Controller
         $foodAmount = Arr::get($sessionData, 'food_amount', 0);
         $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
         $couponCode   = Arr::get($sessionData, 'coupon_code');
+        $checkoutData = HotelHelper::getCheckoutData();
 
         $totalRoomPrice = $totalConfiguredPrice;
         $extrasAmount = $serviceAmount + $foodAmount;
@@ -461,7 +462,8 @@ class PublicController extends Controller
                 'extrasAmount',
                 'token',
                 'displayStart',
-                'displayEnd'
+                'displayEnd',
+                'checkoutData'
             )
         )->render();
     }

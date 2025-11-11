@@ -31,6 +31,163 @@
     if ('amount_raw'     in data) $('input[name=amount]').val(data.amount_raw);
   }
 
+  function getSharedPayload(options) {
+    var payload = {};
+    var courseInput = document.querySelector('input[name="course_id"]');
+    var roomInput = document.querySelector('input[name="room_id"]');
+
+    if (courseInput && courseInput.value) {
+      payload.course_id = courseInput.value;
+    }
+
+    if (roomInput && roomInput.value) {
+      payload.room_id = roomInput.value;
+    }
+
+    if (options && options.includeHotelSelections) {
+      var selections = getHotelSelectionPayload();
+      Object.keys(selections).forEach(function (key) {
+        payload[key] = selections[key];
+      });
+    }
+
+    return payload;
+  }
+
+  function getHotelSelectionPayload() {
+    var services = $('.service-item:checked').map(function (_, el) {
+      return $(el).val();
+    }).get();
+
+    var foods = $('.food-item:checked').map(function (_, el) {
+      return $(el).val();
+    }).get();
+
+    var slots = $('input[name^="slots["][name$="[start_date]"]').map(function (index, el) {
+      var $el = $(el);
+      var start = $el.val();
+      var endInput = $('input[name="slots[' + index + '][end_date]"]');
+      var end = endInput.length ? endInput.val() : '';
+
+      return {
+        start_date: start,
+        end_date: end
+      };
+    }).get().filter(function (slot) {
+      if (!slot) return false;
+      var start = slot.start_date;
+      var end = slot.end_date;
+      return (typeof start === 'string' && start.length) || (typeof end === 'string' && end.length);
+    });
+
+    return {
+      services: services,
+      foods: foods,
+      slots: slots
+    };
+  }
+
+  function hasHotelContext() {
+    var form = document.querySelector('.payment-checkout-form');
+    if (!form) return false;
+    return !!form.querySelector('input[name="room_id"]');
+  }
+
+  function recalcHotelTotals() {
+    if (!hasHotelContext()) return;
+
+    var payload = getSharedPayload({ includeHotelSelections: true });
+    if (!payload.room_id) return;
+
+    var $btn = $('.payment-checkout-btn');
+    if ($btn.length) {
+      $btn.prop('disabled', true);
+    }
+
+    $.get('/ajax/calculate-amount', payload)
+      .done(function (res) {
+        var error = res && res.error;
+        var message = res && res.message;
+        var data = res && res.data;
+
+        if (error) {
+          callTheme('showError', message || 'Fehler bei der Berechnung.', function (msg) {
+            var output = msg || 'Fehler bei der Berechnung.';
+            if (win.console && console.warn) console.warn(output);
+          });
+          return;
+        }
+
+        updateTotals(data);
+        reloadPaymentList();
+      })
+      .fail(function (err) {
+        callTheme('handleError', err, function () {
+          if (win.console && console.error) console.error(err);
+        });
+      })
+      .always(function () {
+        if ($btn.length) {
+          $btn.prop('disabled', false);
+        }
+      });
+  }
+
+  function refreshCouponBox(html) {
+    var $container = $('#couponBox');
+
+    if (!$container.length) {
+      $container = $('.coupon-wrapper').first();
+    }
+
+    if (!$container.length) return;
+
+    if (typeof html === 'string') {
+      $container.html(html);
+      var $form = $container.find('.coupon-form');
+      if ($form.length) {
+        var hasApplied = $container.find('.coupon-feedback').length > 0;
+        if (hasApplied) {
+          $form.show();
+        }
+      }
+      return;
+    }
+
+    var $target = $container.find('.coupon-box');
+    if (!$target.length) {
+      $target = $container;
+    }
+
+    var refreshUrl = $target.data('refresh-url');
+    if (!refreshUrl) return;
+
+    $.ajax({
+      url: refreshUrl,
+      type: 'GET',
+    })
+      .done(function (res) {
+        if (res && res.data) {
+          refreshCouponBox(res.data);
+        }
+      })
+      .fail(function (err) {
+        callTheme('handleError', err, function () {
+          if (win.console && console.error) console.error(err);
+        });
+      });
+  }
+
+  function toggleLoading($el, isLoading) {
+    if (!$el || !$el.length) return;
+
+    if (typeof $el.prop === 'function') {
+      $el.prop('disabled', !!isLoading);
+    }
+
+    $el.toggleClass('button-loading', !!isLoading);
+  }
+
   function reloadPaymentList() {
     var $list = $('.payment-checkout-form .list_payment_method');
     if (!$list.length) return $.Deferred().resolve();
@@ -50,10 +207,24 @@
   }
 
   // Expose für andere Module (Hotel-Recalc ruft das auf)
-  win.CheckoutCommerce = {
+  win.CheckoutCommerce = $.extend({}, win.CheckoutCommerce, {
     updateTotals: updateTotals,
-    reloadPaymentList: reloadPaymentList
-  };
+    reloadPaymentList: reloadPaymentList,
+    recalcHotelTotals: recalcHotelTotals
+  });
+
+  $(function () {
+    if (!hasHotelContext()) return;
+
+    var recalSelectors = [
+      '.service-item',
+      '.food-item',
+      'input[name^="slots["][name$="[start_date]"]',
+      'input[name^="slots["][name$="[end_date]"]'
+    ].join(', ');
+
+    $(document).on('change', recalSelectors, recalcHotelTotals);
+  });
 
   $(document)
     .on('click', '.toggle-coupon-form', function () {
@@ -78,7 +249,8 @@
         url: url,
         type: 'POST',
         headers: { 'X-CSRF-TOKEN': getCsrf() },
-        data: { coupon_code: code }
+        data: $.extend({ coupon_code: code }, getSharedPayload()),
+        beforeSend: function () { toggleLoading($btn, true); }
       })
       .done(function (res) {
         var error   = res && res.error;
@@ -94,12 +266,22 @@
 
         callTheme('showSuccess', message || 'Gutschein angewendet.');
         updateTotals(data);
+        if (data && typeof data.coupon_code !== 'undefined') {
+          $('input[name=coupon_hidden]').val(data.coupon_code || '');
+          if (data.coupon_code) {
+            $('input[name=coupon_code]').val(data.coupon_code);
+          }
+        }
+        refreshCouponBox(data && data.coupon_view);
         reloadPaymentList();
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
           if (win.console && console.error) console.error(err);
         });
+      })
+      .always(function () {
+        toggleLoading($btn, false);
       });
     })
     .on('click', '.remove-coupon-code', function (e) {
@@ -112,7 +294,9 @@
       $.ajax({
         url: url,
         type: 'POST',
-        headers: { 'X-CSRF-TOKEN': getCsrf() }
+        headers: { 'X-CSRF-TOKEN': getCsrf() },
+        data: getSharedPayload(),
+        beforeSend: function () { toggleLoading($btn, true); }
       })
       .done(function (res) {
         var error   = res && res.error;
@@ -128,12 +312,22 @@
 
         callTheme('showSuccess', message || 'Gutschein entfernt.');
         updateTotals(data);
+        if (data && typeof data.coupon_code !== 'undefined') {
+          $('input[name=coupon_hidden]').val('');
+          if (!data.coupon_code) {
+            $('input[name=coupon_code]').val('');
+          }
+        }
+        refreshCouponBox(data && data.coupon_view);
         reloadPaymentList();
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
           if (win.console && console.error) console.error(err);
         });
+      })
+      .always(function () {
+        toggleLoading($btn, false);
       });
     });
 
