@@ -52,7 +52,7 @@ class CancellationTable extends TableAbstract
             ->queryUsing(function (Builder $query) {
                 return $query->with('rule');
             })
-            ->disableActions()
-            ->disableBulkActions();
+            ->removeAllActions()
+            ->removeAllBulkActions();
     }
 }

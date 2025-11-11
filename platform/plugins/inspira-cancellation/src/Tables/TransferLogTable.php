@@ -51,7 +51,7 @@ class TransferLogTable extends TableAbstract
             ->queryUsing(function (Builder $query) {
                 return $query->with(['oldCustomer', 'newCustomer']);
             })
-            ->disableActions()
-            ->disableBulkActions();
+            ->removeAllActions()
+            ->removeAllBulkActions();
     }
 }
