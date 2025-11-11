@@ -22,6 +22,7 @@ class CourseRequest extends Request
             'category_id'     => ['required'],
             'instructor_id'   => ['required'],
             'unlimited_seats' => [new OnOffRule()],
+            'accept_customer_card' => [new OnOffRule()],
             'is_featured' => [new OnOffRule()],
             'number_of_seats' => [
                 'required_if:unlimited_seats,0',

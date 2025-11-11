@@ -35,6 +35,7 @@ class Course extends BaseModel
         'recurring_until',
         'tax_id',
         'room_id',
+        'accept_customer_card',
     ];
 
     protected $casts = [
@@ -47,6 +48,7 @@ class Course extends BaseModel
         'recurring_interval' => 'integer',
         'is_recurring' => 'boolean',
         'unlimited_seats' => 'boolean',
+        'accept_customer_card' => 'boolean',
     ];
 
     public function instructor()

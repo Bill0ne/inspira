@@ -2,8 +2,8 @@
 
 namespace Botble\Hotel\Http\Controllers;
 
-use Botble\ACL\Models\User;
 use Botble\Base\Events\CreatedContentEvent;
+use Botble\Base\Events\DeletedContentEvent;
 use Botble\Base\Events\UpdatedContentEvent;
 use Botble\Base\Facades\Assets;
 use Botble\Base\Http\Actions\DeleteResourceAction;
@@ -12,9 +12,15 @@ use Botble\Base\Facades\BaseHelper;
 use Botble\Hotel\Enums\CustomerCardTypeEnum;
 use Botble\Hotel\Http\Requests\CustomerCardRequest;
 use Botble\Hotel\Models\CustomerCard;
+use Botble\Hotel\Models\Customer;
+use Botble\Hotel\Services\CustomerCardService;
+use Botble\Hotel\Supports\HotelSupport;
 use Botble\Hotel\Tables\CustomerCardTable;
 use Botble\JsValidation\Facades\JsValidator;
+use Botble\Courses\Models\Course;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class CustomerCardController extends BaseController
 {
@@ -40,37 +46,28 @@ class CustomerCardController extends BaseController
             ->addScriptsDirectly('vendor/core/plugins/hotel/js/customer-card.js');
 
         $jsValidator = JsValidator::formRequest(CustomerCardRequest::class);
-        $card = new CustomerCard();
-        $users = User::query()
-            ->get()
-            ->mapWithKeys(function (User $user) {
-                $label = trim($user->name);
+        $card = new CustomerCard([
+            'is_active' => true,
+            'type' => CustomerCardTypeEnum::CUSTOM,
+        ]);
 
-                if (! $label) {
-                    $label = $user->username ?: $user->email;
-                }
-
-                return [$user->getKey() => $label];
-            })
-            ->all();
-        $types = collect(CustomerCardTypeEnum::values())
-            ->mapWithKeys(fn (CustomerCardTypeEnum $enum) => [$enum->getValue() => $enum->label()])
-            ->all();
-
-        return view('plugins/hotel::customer-cards.create', compact('jsValidator', 'card', 'users', 'types'));
+        return view('plugins/hotel::customer-cards.create', [
+            'jsValidator' => $jsValidator,
+            'card' => $card,
+            'customers' => $this->getCustomersList(),
+            'types' => $this->getTypes(),
+        ]);
     }
 
     public function store(CustomerCardRequest $request)
     {
         $data = $request->validated();
 
-        if ($request->filled('valid_until')) {
-            $data['valid_until'] = Carbon::createFromFormat(BaseHelper::getDateFormat(), $request->input('valid_until'));
-        }
-
+        $data['valid_until'] = $this->parseValidUntil($request);
         $data['is_active'] = $request->boolean('is_active');
-        $data['assigned_to'] = $request->filled('assigned_to') ? $request->input('assigned_to') : null;
-        $data['units_remaining'] = max(0, min($data['units_remaining'] ?? $data['units_total'], $data['units_total']));
+        $data['assigned_to'] = $request->filled('assigned_to') ? (int) $request->input('assigned_to') : null;
+        $data['created_by'] = $request->user()->getKey();
+        $data['units_remaining'] = (int) Arr::get($data, 'units_total', 0);
 
         $card = CustomerCard::query()->create($data);
 
@@ -90,27 +87,12 @@ class CustomerCardController extends BaseController
             ->addScriptsDirectly('vendor/core/plugins/hotel/js/customer-card.js');
 
         $jsValidator = JsValidator::formRequest(CustomerCardRequest::class);
-        $users = User::query()
-            ->get()
-            ->mapWithKeys(function (User $user) {
-                $label = trim($user->name);
-
-                if (! $label) {
-                    $label = $user->username ?: $user->email;
-                }
-
-                return [$user->getKey() => $label];
-            })
-            ->all();
-        $types = collect(CustomerCardTypeEnum::values())
-            ->mapWithKeys(fn (CustomerCardTypeEnum $enum) => [$enum->getValue() => $enum->label()])
-            ->all();
 
         return view('plugins/hotel::customer-cards.edit', [
             'card' => $customerCard,
             'jsValidator' => $jsValidator,
-            'users' => $users,
-            'types' => $types,
+            'customers' => $this->getCustomersList(),
+            'types' => $this->getTypes(),
         ]);
     }
 
@@ -118,17 +100,21 @@ class CustomerCardController extends BaseController
     {
         $data = $request->validated();
 
-        if ($request->filled('valid_until')) {
-            $data['valid_until'] = Carbon::createFromFormat(BaseHelper::getDateFormat(), $request->input('valid_until'));
-        } else {
-            $data['valid_until'] = null;
+        $data['valid_until'] = $this->parseValidUntil($request);
+        $data['is_active'] = $request->boolean('is_active');
+        $data['assigned_to'] = $request->filled('assigned_to') ? (int) $request->input('assigned_to') : null;
+
+        $customerCard->fill($data);
+
+        if ($customerCard->units_remaining > $customerCard->units_total) {
+            $customerCard->units_remaining = $customerCard->units_total;
         }
 
-        $data['is_active'] = $request->boolean('is_active');
-        $data['assigned_to'] = $request->filled('assigned_to') ? $request->input('assigned_to') : null;
-        $data['units_remaining'] = max(0, min($data['units_remaining'] ?? $customerCard->units_total, $data['units_total']));
+        if (! $customerCard->is_active || $customerCard->units_remaining <= 0) {
+            $customerCard->is_active = false;
+        }
 
-        $customerCard->update($data);
+        $customerCard->save();
 
         event(new UpdatedContentEvent(CUSTOMER_CARD_MODULE_SCREEN_NAME, $request, $customerCard));
 
@@ -139,6 +125,85 @@ class CustomerCardController extends BaseController
 
     public function destroy(CustomerCard $customerCard)
     {
+        event(new DeletedContentEvent(CUSTOMER_CARD_MODULE_SCREEN_NAME, request(), $customerCard));
+
         return DeleteResourceAction::make($customerCard);
+    }
+
+    public function assignToCustomer(CustomerCard $customerCard, int $customerId)
+    {
+        $customer = Customer::query()->findOrFail($customerId);
+        $customerCard->update(['assigned_to' => $customer->getKey()]);
+
+        return $this
+            ->httpResponse()
+            ->setMessage(trans('plugins/hotel::customer-card.assigned_message'))
+            ->setNextUrl(route('customer-cards.edit', $customerCard));
+    }
+
+    public function apply(Request $request, CustomerCardService $service)
+    {
+        $card = $service->getValidCard((int) $request->input('card_id'), auth('customer')->id());
+        $courseId = (int) $request->input('course_id');
+
+        if (! $card || ! $service->isApplicable($card, $courseId)) {
+            return $this->httpResponse()->setError()->setMessage(__('Ungültige Karte'));
+        }
+
+        $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
+        $unitsUsed = min($card->units_total, 1);
+        $discount = $service->calculateDiscount($card, $course, $unitsUsed);
+
+        $data = HotelSupport::getCheckoutData();
+        $data['customer_card_id'] = $card->getKey();
+        $data['customer_card_discount'] = $discount;
+        $data['customer_card_units_used'] = $unitsUsed;
+        HotelSupport::saveCheckoutData($data);
+
+        return $this->httpResponse()
+            ->setMessage(__('Karte angewendet.'))
+            ->setData(['discount' => format_price($discount)]);
+    }
+
+    public function remove()
+    {
+        $data = HotelSupport::getCheckoutData();
+        unset($data['customer_card_id'], $data['customer_card_discount'], $data['customer_card_units_used']);
+        HotelSupport::saveCheckoutData($data);
+
+        return $this->httpResponse()->setMessage(__('Karte entfernt.'));
+    }
+
+    protected function parseValidUntil(Request $request): ?Carbon
+    {
+        if (! $request->filled('valid_until')) {
+            return null;
+        }
+
+        return Carbon::createFromFormat(BaseHelper::getDateFormat(), $request->input('valid_until'));
+    }
+
+    protected function getCustomersList(): array
+    {
+        return Customer::query()
+            ->select(['id', 'first_name', 'last_name', 'email'])
+            ->get()
+            ->mapWithKeys(function (Customer $customer) {
+                $name = trim(($customer->first_name ?? '') . ' ' . ($customer->last_name ?? ''));
+
+                if (! $name) {
+                    $name = $customer->email;
+                }
+
+                return [$customer->getKey() => $name];
+            })
+            ->all();
+    }
+
+    protected function getTypes(): array
+    {
+        return collect(CustomerCardTypeEnum::values())
+            ->mapWithKeys(fn (CustomerCardTypeEnum $enum) => [$enum->getValue() => $enum->label()])
+            ->all();
     }
 }

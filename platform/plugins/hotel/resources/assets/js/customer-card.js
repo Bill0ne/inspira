@@ -1,13 +1,7 @@
 $(() => {
-    const $form = $(document).find('form.customer-card-form')
-
-    if (! $form.length) {
-        return
-    }
-
     const currency = (window.customerCard && window.customerCard.currency) || ''
 
-    const getTranslation = (path, fallback = '') => {
+    const t = (path, fallback = '') => {
         const segments = path.split('.')
         let current = window.trans && window.trans.customerCard
 
@@ -19,78 +13,142 @@ $(() => {
             current = current[segment]
         }
 
-        if (current === undefined || current === null) {
-            return fallback
-        }
-
-        return current
+        return current ?? fallback
     }
 
-    const selectors = {
-        basePrice: '[data-bb-customer-card-input="base-price"]',
-        discount: '[data-bb-customer-card-input="discount"]',
-        unitsTotal: '[data-bb-customer-card-input="units-total"]',
-        unitsRemaining: '[data-bb-customer-card-input="units-remaining"]',
-        summary: '[data-bb-customer-card="summary"]',
-        summaryText: '[data-bb-customer-card="summary-text"]',
-        type: '[data-bb-customer-card-select="type"]',
+    const formatPrice = (amount) => {
+        const value = Number(amount || 0)
+
+        return `${currency}${value.toFixed(2)}`
     }
 
-    const updateSummary = () => {
-        const basePrice = parseFloat($form.find(selectors.basePrice).val()) || 0
-        const discount = parseFloat($form.find(selectors.discount).val()) || 0
-        const units = parseInt($form.find(selectors.unitsTotal).val()) || 0
+    const $adminForm = $(document).find('form.customer-card-form')
 
-        if (! basePrice || ! units) {
-            $form.find(selectors.summaryText).text(
-                getTranslation('form.summary.placeholder', '')
-            )
-
-            return
+    if ($adminForm.length) {
+        const selectors = {
+            basePrice: '[data-bb-customer-card-input="base-price"]',
+            discount: '[data-bb-customer-card-input="discount"]',
+            units: '[data-bb-customer-card-input="units-total"]',
+            summaryText: '[data-bb-customer-card="summary-text"]',
+            summaryTotal: '[data-bb-customer-card="summary-total"]',
+            type: '[data-bb-customer-card-select="type"]',
         }
 
-        const gross = basePrice * units
-        const discountFactor = Math.max(Math.min(discount, 100), 0) / 100
-        const net = gross * (1 - discountFactor)
-
-        $form
-            .find(selectors.summaryText)
-            .text(
-                `${currency}${gross.toFixed(2)} → ${currency}${net.toFixed(2)} (${discount.toFixed(0)}% ${getTranslation('form.summary.discount_label', '')})`
-            )
-    }
-
-    const syncUnitsByType = (type) => {
-        const $unitsTotal = $form.find(selectors.unitsTotal)
-        const $unitsRemaining = $form.find(selectors.unitsRemaining)
-
-        if (type === '5er') {
-            $unitsTotal.val(5)
+        const syncUnitsByType = (type) => {
+            if (type === '5er' || type === '10er') {
+                const units = type === '5er' ? 5 : 10
+                $adminForm.find(selectors.units).val(units)
+            }
         }
 
-        if (type === '10er') {
-            $unitsTotal.val(10)
+        const updateSummary = () => {
+            const basePrice = parseFloat($adminForm.find(selectors.basePrice).val()) || 0
+            const discount = parseFloat($adminForm.find(selectors.discount).val()) || 0
+            const units = parseInt($adminForm.find(selectors.units).val(), 10) || 0
+
+            if (! basePrice || ! units) {
+                $adminForm.find(selectors.summaryText).text(t('form.summary.placeholder'))
+                $adminForm.find(selectors.summaryTotal).text('')
+
+                return
+            }
+
+            const gross = basePrice * units
+            const discountAmount = gross * Math.min(Math.max(discount, 0), 100) / 100
+            const net = gross - discountAmount
+
+            $adminForm
+                .find(selectors.summaryText)
+                .text(`${formatPrice(gross)} → ${formatPrice(net)}`)
+
+            $adminForm
+                .find(selectors.summaryTotal)
+                .text(`${discount.toFixed(2)}% ${t('form.summary.discount_label')}`)
         }
 
-        if (type !== 'custom') {
-            $unitsRemaining.val($unitsTotal.val())
-        }
+        $adminForm
+            .on('change', selectors.type, (event) => {
+                syncUnitsByType(event.currentTarget.value)
+                updateSummary()
+            })
+            .on('keyup change', [
+                selectors.basePrice,
+                selectors.discount,
+                selectors.units,
+            ].join(','), updateSummary)
 
+        syncUnitsByType($adminForm.find(selectors.type).val())
         updateSummary()
     }
 
-    $form
-        .on('change keyup', [
-            selectors.basePrice,
-            selectors.discount,
-            selectors.unitsTotal,
-        ].join(','), () => {
-            updateSummary()
-        })
-        .on('change', selectors.type, (e) => {
-            syncUnitsByType(e.currentTarget.value)
+    const request = (url, payload = {}, $trigger = null) => {
+        if (! url) {
+            return Promise.reject(new Error('Missing URL'))
+        }
+
+        return $httpClient.make()
+            .withButtonLoading($trigger)
+            .post(url, payload)
+    }
+
+    const applyRoute = window.customerCard && window.customerCard.routes && window.customerCard.routes.apply
+    const removeRoute = window.customerCard && window.customerCard.routes && window.customerCard.routes.remove
+
+    const applyCustomerCard = (cardId, courseId = null, $trigger = null) => request(applyRoute, {
+        card_id: cardId,
+        course_id: courseId,
+    }, $trigger)
+
+    const removeCustomerCard = ($trigger = null) => request(removeRoute, {}, $trigger)
+
+    window.customerCard = window.customerCard || {}
+    window.customerCard.applyCustomerCard = applyCustomerCard
+    window.customerCard.removeCustomerCard = removeCustomerCard
+
+    const $cardSelect = $('#customer_card_select')
+
+    if ($cardSelect.length) {
+        const $applyButton = $('[data-bb-customer-card="apply"]')
+        const $removeButton = $('[data-bb-customer-card="remove"]')
+        const $infoBox = $('[data-bb-customer-card="info"]')
+        const courseId = Number($cardSelect.data('course')) || null
+
+        $applyButton.on('click', function (event) {
+            event.preventDefault()
+
+            const cardId = Number($cardSelect.val())
+
+            if (! cardId) {
+                Botble.showError(t('messages.select_card'))
+
+                return
+            }
+
+            applyCustomerCard(cardId, courseId, $(this)).then(({ data }) => {
+                Botble.showSuccess(data.message)
+
+                if (data.data && data.data.discount) {
+                    $infoBox
+                        .removeClass('d-none')
+                        .find('[data-bb-customer-card="discount"]').text(data.data.discount)
+                }
+
+                $(document).trigger('customer-card.applied', data)
+            }).catch((error) => {
+                Botble.handleError(error)
+            })
         })
 
-    syncUnitsByType($form.find(selectors.type).val())
-    updateSummary()
+        $removeButton.on('click', function (event) {
+            event.preventDefault()
+
+            removeCustomerCard($(this)).then(({ data }) => {
+                Botble.showSuccess(data.message)
+                $infoBox.addClass('d-none')
+                $(document).trigger('customer-card.removed', data)
+            }).catch((error) => {
+                Botble.handleError(error)
+            })
+        })
+    }
 })

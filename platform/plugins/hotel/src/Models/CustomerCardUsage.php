@@ -4,6 +4,9 @@ namespace Botble\Hotel\Models;
 
 use Botble\Base\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Botble\Hotel\Models\CustomerCard;
+use Botble\Hotel\Models\Booking;
+use Botble\Courses\Models\Course;
 
 class CustomerCardUsage extends BaseModel
 {
