@@ -1,17 +1,13 @@
-<x-core::alert type="warning">
-    @if ($manageLicense = auth()->guard()->user()->hasPermission('core.manage.license'))
-        <div>Your license is invalid. Please activate your license!</div>
-    @else
-        <div>You doesn't have permission to activate the license!</div>
-    @endif
-</x-core::alert>
+@php
+    $manageLicense = auth()->guard()->user()->hasPermission('core.manage.license');
+@endphp
 
 <x-core::form.text-input
     label="Your username on Envato"
     name="buyer"
     id="buyer"
     placeholder="Your Envato's username"
-    :disabled="!$manageLicense"
+    :disabled="! $manageLicense"
 >
     <x-slot:helper-text>
         If your profile page is <a
@@ -26,7 +22,7 @@
     label="Purchase code"
     name="purchase_code"
     id="purchase_code"
-    :disabled="!$manageLicense"
+    :disabled="! $manageLicense"
     placeholder="Ex: 10101000-0101-0100-0010-001101000010"
 >
     <x-slot:helper-text>
@@ -40,7 +36,7 @@
 <x-core::form.on-off.checkbox
     name="license_rules_agreement"
     id="licenseRulesAgreement"
-    :disabled="!$manageLicense"
+    :disabled="! $manageLicense"
 >
     Confirm that, according to the Envato License Terms, each license entitles one person for a single
     project. Creating multiple unregistered installations is a copyright violation.
@@ -55,7 +51,7 @@
     <x-core::button
         type="submit"
         color="primary"
-        :disabled="!$manageLicense"
+        :disabled="! $manageLicense"
     >
         Activate license
     </x-core::button>
