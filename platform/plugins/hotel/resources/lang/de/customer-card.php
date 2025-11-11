@@ -24,6 +24,9 @@ return [
         'valid_until' => 'Gültig bis',
         'assigned_to' => 'Zugewiesen an',
         'status' => 'Status',
+        'usage_title' => 'Kartenverwendung',
+        'view_usage' => 'Verwendung',
+        'room_booking_fallback' => 'Zimmerbuchung',
     ],
     'status' => [
         'active' => 'Aktiv',
@@ -55,6 +58,7 @@ return [
     ],
     'messages' => [
         'select_card' => 'Bitte wählen Sie eine Kundenkarte aus.',
+        'loading' => 'Lade Daten…',
     ],
     'invoice' => [
         'discount_line' => 'Rabatt über Kundenkarte: :card',
@@ -82,6 +86,8 @@ return [
         'units_used' => 'Verbrauchte Einheiten',
         'saved_amount' => 'Ersparnis',
         'success_message' => 'Kundenkarte erfolgreich aktiviert.',
+        'pending_message' => 'Bitte schließe die Zahlung ab, um deine Karte zu aktivieren.',
+        'already_active' => 'Du hast bereits eine aktive Karte.',
     ],
     'checkout' => [
         'back_link' => 'Zurück zu meinen Karten',

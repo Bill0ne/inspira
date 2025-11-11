@@ -5,6 +5,8 @@ namespace Botble\Courses\Services;
 use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Courses\Events\CourseBookingCreated;
 use Botble\Courses\Models\CourseBooking;
+use Botble\Hotel\Models\CustomerCard;
+use Botble\Hotel\Services\CustomerCardService;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
 
@@ -55,6 +57,32 @@ class CourseBookingService
                         break;
                 }
 
+                $courseBooking->save();
+            }
+        }
+
+        if (
+            $courseBooking->status === BookingStatusEnum::PROCESSING
+            && $courseBooking->customer_card_id
+            && $courseBooking->customer_card_units_used > 0
+            && ! $courseBooking->customer_card_consumed_at
+        ) {
+            $card = CustomerCard::query()->find($courseBooking->customer_card_id);
+
+            if ($card && $courseBooking->customer_id && $card->assigned_to !== $courseBooking->customer_id) {
+                $card = null;
+            }
+
+            if ($card) {
+                app(CustomerCardService::class)->consumeUnits(
+                    $card,
+                    null,
+                    $courseBooking->course,
+                    $courseBooking->customer_card_units_used,
+                    $courseBooking->customer_card_discount
+                );
+
+                $courseBooking->customer_card_consumed_at = now();
                 $courseBooking->save();
             }
         }

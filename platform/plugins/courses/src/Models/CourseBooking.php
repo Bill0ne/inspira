@@ -28,11 +28,18 @@ class CourseBooking extends BaseModel
         'additional_info',
         'course_session_id',
         'rule_discount',
+        'customer_card_id',
+        'customer_card_discount',
+        'customer_card_units_used',
+        'customer_card_consumed_at',
     ];
 
     protected $casts = [
         'status' => BookingStatusEnum::class,
         'additional_info' => 'array',
+        'customer_card_discount' => 'decimal:2',
+        'customer_card_units_used' => 'int',
+        'customer_card_consumed_at' => 'datetime',
     ];
 
     public function course()

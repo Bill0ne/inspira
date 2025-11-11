@@ -12,12 +12,19 @@
     Theme::set('breadcrumb', false);
     Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
     Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
+    Theme::asset()->container('footer')->add('customer-card-js', asset('vendor/core/plugins/hotel/js/customer-card.js'), ['jquery']);
     $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
     $endLabel24   = $session->end_date ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i') : null;
 
     session(['url.intended' => request()->fullUrl()]);
     $shouldStartRegister = old('register_customer') == 1;
+    $availableCards = $availableCards ?? collect();
+    $selectedCard = $selectedCard ?? null;
+    $cardDiscount = $cardDiscount ?? 0;
+    $totalAfterDiscount = $totalAfterDiscount ?? $total;
 @endphp
+
+@include('plugins/hotel::customer-cards.partials.scripts', ['jsValidator' => null])
 
 <style>
 :root{--mint:#578E88;--gray:#E5E7EB;--ink:#17463F;}
@@ -159,9 +166,10 @@ textarea.form-control{min-height:100px;}
         <h5 class="title">Gesamtpreis</h5>
         <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amountNet) }}</b></div>
         <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
+        <div class="kv card-discount-row {{ $cardDiscount > 0 ? '' : 'd-none' }}"><span>Kartenrabatt</span><b class="card-discount-text">-{{ format_price($cardDiscount) }}</b></div>
         <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
         <hr>
-        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
+        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($totalAfterDiscount) }}</b></div>
       </div>
     </div>
 
@@ -182,12 +190,13 @@ textarea.form-control{min-height:100px;}
     <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form" data-start-step="{{ $customer->id ? 2 : 1 }}" data-storage-key="course-checkout" data-start-register="{{ $shouldStartRegister ? '1' : '0' }}" data-prefill='@json($prefillPayload)'>
       @csrf
       <input type="hidden" name="token" value="{{ $token }}">
-      <input type="hidden" name="amount" value="{{ $total }}">
+      <input type="hidden" name="amount" value="{{ $totalAfterDiscount }}" data-total data-original-total="{{ $totalAfterDiscount + $cardDiscount }}" data-active-discount="{{ $cardDiscount }}">
       <input type="hidden" name="course_id" value="{{ $course->id }}">
       <input type="hidden" name="session_id" value="{{ $session->id }}">
       <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
       <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
       <input type="hidden" name="register_customer" value="{{ old('register_customer', 0) }}" id="register_customer_flag">
+      <input type="hidden" name="customer_card_id" value="{{ $selectedCard?->getKey() }}" data-customer-card-input>
 
       {{-- Step 1 --}}
       <div class="step-panel active" data-step="1">
@@ -261,6 +270,28 @@ textarea.form-control{min-height:100px;}
       {{-- Step 3 --}}
       <div class="step-panel" data-step="3">
         <div id="formAlertStep3" class="form-alert"></div>
+        @if ($availableCards->isNotEmpty())
+          <div class="card mb-3">
+            <div class="card-body">
+              <label class="form-label">Kundenkarte anwenden</label>
+              <div class="input-group">
+                <select id="customer_card_select" class="form-select" data-course="{{ $course->id }}">
+                  <option value="">Keine Karte auswählen</option>
+                  @foreach ($availableCards as $card)
+                    <option value="{{ $card->id }}" @selected($selectedCard && $selectedCard->id === $card->id)>
+                      {{ $card->name }}@if ($card->uid) — {{ $card->uid }}@endif
+                    </option>
+                  @endforeach
+                </select>
+                <button class="btn btn-mint" type="button" data-bb-customer-card="apply">Anwenden</button>
+                <button class="btn btn-outline-mint {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
+              </div>
+              <div class="alert alert-success mt-3 {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
+                Kartenrabatt: <strong data-bb-customer-card="discount">{{ format_price($cardDiscount) }}</strong>
+              </div>
+            </div>
+          </div>
+        @endif
         <div class="coupon-wrapper" id="couponBox">@include('plugins/courses::coupons.partials.form')</div>
         <label>Zahlungsmethode</label>
         <ul class="list-group list_payment_method">

@@ -1,6 +1,14 @@
 @extends(HotelHelper::viewPath('customers.master'))
 
 @section('content')
+    @if (is_plugin_active('payment'))
+        <link rel="stylesheet" href="{{ asset('vendor/core/plugins/payment/css/payment.css') }}">
+        @php
+            Theme::asset()->container('header')->usePath()->add('jquery', 'plugins/jquery.min.js');
+            Theme::asset()->container('header')->add('payment-js', 'vendor/core/plugins/payment/js/payment.js');
+        @endphp
+        {!! apply_filters(PAYMENT_FILTER_HEADER_ASSETS, null) !!}
+    @endif
     <style>
         .card-checkout-wrapper {
             display: flex;
@@ -91,7 +99,12 @@
                     <p class="text-muted mb-4">{{ trans('plugins/hotel::customer-card.checkout.subtitle', ['name' => $customerCard->name]) }}</p>
 
                     <div class="card-checkout-summary__card mb-4">
-                        <div class="card-checkout-summary__name">{{ $customerCard->name }}</div>
+                        <div class="card-checkout-summary__name">
+                            {{ $customerCard->name }}
+                            @if ($customerCard->uid)
+                                <span class="badge bg-success ms-2">{{ $customerCard->uid }}</span>
+                            @endif
+                        </div>
                         <div>{{ $user->name }}</div>
                         <ul class="card-checkout-summary__list">
                             <li>{{ trans('plugins/hotel::customer-card.purchase.units_included', ['units' => $customerCard->units_total]) }}</li>
@@ -118,8 +131,17 @@
                         {{ trans('plugins/hotel::customer-card.checkout.restriction_note') }}
                     </div>
 
-                    <form method="POST" action="{{ route('customer.cards.purchase', $customerCard) }}" class="mt-4">
+                    <form method="POST" action="{{ route('customer.cards.purchase', $customerCard) }}" class="mt-4 payment-checkout-form">
                         @csrf
+                        <input type="hidden" name="amount" value="{{ $purchasePrice }}">
+                        @if (is_plugin_active('payment'))
+                            <div class="mb-3">
+                                <label class="form-label">{{ __('Zahlungsmethode') }}</label>
+                                <ul class="list-group list_payment_method">
+                                    {!! PaymentMethods::render() !!}
+                                </ul>
+                            </div>
+                        @endif
                         <button type="submit" class="btn btn-primary w-100 btn-lg">
                             {{ trans('plugins/hotel::customer-card.checkout.submit_button', ['price' => format_price($purchasePrice)]) }}
                         </button>
@@ -128,4 +150,7 @@
             </div>
         </div>
     </div>
+    @if (is_plugin_active('payment'))
+        {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
+    @endif
 @endsection

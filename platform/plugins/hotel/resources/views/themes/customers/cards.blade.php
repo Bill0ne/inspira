@@ -16,6 +16,7 @@
         $remainingUnits = $displayCard?->units_remaining ?? 0;
         $totalUnits = $displayCard?->units_total ?? 0;
         $validUntil = $displayCard?->valid_until;
+        $hasActiveCard = $hasActiveCard ?? false;
     @endphp
 
     <style>
@@ -102,6 +103,19 @@
             font-size: 20px;
             font-weight: 600;
             color: #1e7d6d;
+        }
+
+        .inspira-card-visual__uid {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(87, 142, 136, 0.1);
+            color: #1e7d6d;
+            margin-left: 8px;
         }
 
         .inspira-card-visual__owner {
@@ -233,7 +247,12 @@
 
                     <div class="inspira-card-panel__body">
                         <div class="inspira-card-visual">
-                            <div class="inspira-card-visual__headline">{{ $displayCard?->name ?? trans('plugins/hotel::customer-card.purchase.placeholder_name') }}</div>
+                            <div class="inspira-card-visual__headline">
+                                {{ $displayCard?->name ?? trans('plugins/hotel::customer-card.purchase.placeholder_name') }}
+                                @if ($displayCard?->uid)
+                                    <span class="inspira-card-visual__uid">{{ $displayCard->uid }}</span>
+                                @endif
+                            </div>
                             <div class="inspira-card-visual__owner">{{ $customer->name }}</div>
                             <div class="inspira-card-visual__units">
                                 <span>{{ trans('plugins/hotel::customer-card.purchase.balance_label') }}</span>
@@ -257,6 +276,11 @@
                     <div class="inspira-card-market__header">
                         <h2 class="inspira-card-market__title">{{ trans('plugins/hotel::customer-card.purchase.marketplace_title') }}</h2>
                         <p class="inspira-card-market__description">{{ trans('plugins/hotel::customer-card.purchase.marketplace_subtitle') }}</p>
+                        @if ($hasActiveCard)
+                            <div class="alert alert-warning mt-2 mb-0" role="status">
+                                {{ trans('plugins/hotel::customer-card.purchase.already_active') }}
+                            </div>
+                        @endif
                     </div>
 
                     @if ($availableCards->isEmpty())
@@ -285,9 +309,15 @@
                                             <p class="mb-0 text-muted" style="font-size: 12px;">{{ trans('plugins/hotel::customer-card.purchase.price_hint') }}</p>
                                         </div>
 
-                                        <a class="btn btn-primary w-100" href="{{ route('customer.cards.checkout', $card) }}">
-                                            {{ trans('plugins/hotel::customer-card.purchase.buy_button') }}
-                                        </a>
+                                        @if ($hasActiveCard)
+                                            <button class="btn btn-outline-secondary w-100" type="button" disabled>
+                                                {{ trans('plugins/hotel::customer-card.purchase.already_active') }}
+                                            </button>
+                                        @else
+                                            <a class="btn btn-primary w-100" href="{{ route('customer.cards.checkout', $card) }}">
+                                                {{ trans('plugins/hotel::customer-card.purchase.buy_button') }}
+                                            </a>
+                                        @endif
                                     </div>
                                 </div>
                             @endforeach

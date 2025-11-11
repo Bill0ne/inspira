@@ -29,6 +29,7 @@ class CourseCheckoutRequest extends Request
             'register_customer' => ['nullable'],
             'password' => ['nullable', 'required_if:register_customer,1', 'min:6'],
             'password_confirmation' => ['nullable', 'required_if:register_customer,1', 'same:password'],
+            'customer_card_id' => ['nullable', 'integer', 'exists:ht_customer_cards,id'],
         ];
     }
 }

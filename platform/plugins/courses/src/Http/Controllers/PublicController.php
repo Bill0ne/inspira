@@ -25,6 +25,7 @@ use Botble\Hotel\Models\Customer;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Botble\Hotel\Services\CouponService;
+use Botble\Hotel\Services\CustomerCardService;
 use Botble\Courses\Http\Requests\InitBookingRequest;
 use Botble\Courses\Http\Requests\CalculateBookingAmountRequest;
 use Botble\Payment\Supports\PaymentHelper;
@@ -170,7 +171,11 @@ class PublicController extends Controller
         return $response->setNextUrl(route('public.course.booking.form', $token));
     }
 
-    public function getCourseBooking(string $token, BaseHttpResponse $response)
+    public function getCourseBooking(
+        string $token,
+        BaseHttpResponse $response,
+        CustomerCardService $customerCardService
+    )
     {
         SeoHelper::setTitle(__('Course Booking'));
         OptimizerHelper::disable();
@@ -209,6 +214,41 @@ class PublicController extends Controller
         $couponAmount = $course->getPriceWithTax($couponAmountNet);
         $checkoutData = HotelHelper::getCheckoutData();
 
+        $availableCards = collect();
+        $selectedCard = null;
+        $cardDiscount = 0.0;
+        $cardUnitsUsed = max((int) data_get($checkoutData, 'customer_card_units_used', 1), 1);
+
+        if ($customer->id) {
+            $availableCards = $customerCardService->getApplicableCardsForCourse($course->id, $customer->getKey());
+
+            $cardId = (int) data_get($checkoutData, 'customer_card_id');
+
+            if ($cardId) {
+                $selectedCard = $customerCardService->getValidCard($cardId, $customer->getKey());
+
+                if ($selectedCard) {
+                    $storedDiscount = (float) data_get($checkoutData, 'customer_card_discount', 0);
+                    $cardDiscount = $storedDiscount ?: $customerCardService->calculateDiscount($selectedCard, $course, $cardUnitsUsed);
+                    $cardDiscount = min($cardDiscount, $total);
+
+                    HotelHelper::saveCheckoutData([
+                        'customer_card_id' => $selectedCard->getKey(),
+                        'customer_card_discount' => $cardDiscount,
+                        'customer_card_units_used' => $cardUnitsUsed,
+                    ]);
+                } else {
+                    HotelHelper::saveCheckoutData([
+                        'customer_card_id' => null,
+                        'customer_card_discount' => null,
+                        'customer_card_units_used' => null,
+                    ]);
+                }
+            }
+        }
+
+        $totalAfterDiscount = max($total - $cardDiscount, 0);
+
         return Theme::scope(
             'courses.booking',
             compact(
@@ -225,12 +265,20 @@ class PublicController extends Controller
                 'session',
                 'basePrice',
                 'discountAmount',
-                'checkoutData'
+                'checkoutData',
+                'availableCards',
+                'selectedCard',
+                'cardDiscount',
+                'totalAfterDiscount'
             )
         )->render();
     }
 
-    public function postCourseCheckout(CourseCheckoutRequest $request, BaseHttpResponse $response)
+    public function postCourseCheckout(
+        CourseCheckoutRequest $request,
+        BaseHttpResponse $response,
+        CustomerCardService $customerCardService
+    )
     {
         do_action('form_extra_fields_validate', $request);
 
@@ -248,6 +296,26 @@ class PublicController extends Controller
 
         /** @var \Botble\Hotel\Models\Coupon|null $appliedCoupon */
         $appliedCoupon = null;
+
+        $sessionData = HotelHelper::getCheckoutData();
+        $cardId = (int) Arr::get($sessionData, 'customer_card_id');
+        $cardDiscount = (float) Arr::get($sessionData, 'customer_card_discount', 0);
+        $cardUnitsUsed = max((int) Arr::get($sessionData, 'customer_card_units_used', 1), 1);
+        $customerCard = null;
+
+        if ($cardId && Auth::guard('customer')->check()) {
+            $customerCard = $customerCardService->getValidCard($cardId, Auth::guard('customer')->id());
+
+            if (! $customerCard) {
+                $cardDiscount = 0;
+                $cardUnitsUsed = 0;
+                HotelHelper::saveCheckoutData([
+                    'customer_card_id' => null,
+                    'customer_card_discount' => null,
+                    'customer_card_units_used' => null,
+                ]);
+            }
+        }
 
         try {
             DB::beginTransaction();
@@ -296,7 +364,6 @@ class PublicController extends Controller
             $amount = $pricing['calculated_net'];
             $discountAmount = max(0, $pricing['discount_net']);
 
-            $sessionData = HotelHelper::getCheckoutData();
             $couponAmount = (float) Arr::get($sessionData, 'coupon_amount', 0);
             $couponCode = Arr::get($sessionData, 'coupon_code');
             $couponAmount = min($couponAmount, $amount);
@@ -309,7 +376,15 @@ class PublicController extends Controller
             $taxAmount = $course->getTaxAmount($netSubtotal);
 
             $booking->course_session_id = $request->input('session_id');
-            $booking->amount = $netSubtotal + $taxAmount;
+            $grossTotal = $netSubtotal + $taxAmount;
+            $effectiveCardDiscount = 0;
+
+            if ($customerCard) {
+                $calculatedDiscount = $customerCardService->calculateDiscount($customerCard, $course, $cardUnitsUsed);
+                $effectiveCardDiscount = min($cardDiscount ?: $calculatedDiscount, $grossTotal);
+            }
+
+            $booking->amount = max($grossTotal - $effectiveCardDiscount, 0);
             $booking->sub_total = $amount;
             $booking->status = BookingStatusEnum::AWAITING_PAYMENT;
             $booking->coupon_amount = $couponAmount;
@@ -318,6 +393,9 @@ class PublicController extends Controller
             $booking->rule_discount = $discountAmount;
             $booking->transaction_id = Str::upper(Str::random(32));
             $booking->booking_number = CourseBooking::generateUniqueBookingNumber();
+            $booking->customer_card_id = $customerCard?->getKey();
+            $booking->customer_card_discount = $effectiveCardDiscount;
+            $booking->customer_card_units_used = $customerCard ? $cardUnitsUsed : 0;
 
             if (Auth::guard('customer')->check()) {
                 $booking->customer_id = Auth::guard('customer')->id();

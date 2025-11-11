@@ -40,6 +40,25 @@ class CustomerCardTable extends TableAbstract
             ->editColumn('units_remaining', function (CustomerCard $card) {
                 return sprintf('%d / %d', $card->units_remaining, $card->units_total);
             })
+            ->editColumn('name', function (CustomerCard $card) {
+                $uidBadge = $card->uid
+                    ? Html::tag('span', e($card->uid), ['class' => 'badge bg-success ms-2'])
+                    : '';
+
+                $meta = trans('plugins/hotel::customer-card.table.units_remaining') . ': ' . sprintf('%d / %d', $card->units_remaining, $card->units_total);
+
+                return Html::tag('div',
+                    Html::tag('div', e($card->name) . $uidBadge, [
+                        'style' => 'font-weight:600;color:#1e7d6d;margin-bottom:4px;',
+                    ]) .
+                    Html::tag('div', e($meta), [
+                        'style' => 'font-size:12px;color:#4b5c58;',
+                    ]),
+                    [
+                        'style' => 'background:#f3f8f7;border-radius:12px;padding:12px 16px;',
+                    ]
+                );
+            })
             ->editColumn('valid_until', function (CustomerCard $card) {
                 if (! $card->valid_until) {
                     return '&mdash;';
@@ -57,6 +76,16 @@ class CustomerCardTable extends TableAbstract
             })
             ->editColumn('assigned_to', function (CustomerCard $card) {
                 return $card->customer?->email ?: '—';
+            })
+            ->addColumn('usage', function (CustomerCard $card) {
+                return Html::tag('button', trans('plugins/hotel::customer-card.table.view_usage'), [
+                    'class' => 'btn btn-outline-primary btn-sm',
+                    'type' => 'button',
+                    'data-bb-customer-card' => 'usage',
+                    'data-card-id' => $card->getKey(),
+                    'data-title' => $card->name,
+                    'data-url' => route('customer-cards.usages', $card),
+                ]);
             })
             ->addColumn('status', function (CustomerCard $card) {
                 $label = $card->status_label;
@@ -87,6 +116,7 @@ class CustomerCardTable extends TableAbstract
             Column::make('valid_until')->title(trans('plugins/hotel::customer-card.table.valid_until'))->alignLeft(),
             Column::make('assigned_to')->title(trans('plugins/hotel::customer-card.table.assigned_to'))->alignLeft(),
             Column::make('status')->title(trans('plugins/hotel::customer-card.table.status'))->alignLeft(),
+            Column::make('usage')->title(trans('plugins/hotel::customer-card.table.view_usage'))->alignLeft(),
         ];
     }
 
