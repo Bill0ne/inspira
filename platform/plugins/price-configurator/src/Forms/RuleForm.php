@@ -42,8 +42,8 @@ class RuleForm extends FormAbstract
             ->add('price_tier_id',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Price Tier'))
-                    ->emptyValue(__('Select'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.price_tier'))
+                    ->emptyValue(trans('plugins/price-configurator::price-configurator.forms.select'))
                     ->choices(Tier::query()->where('status', PriceConfiguratorStatusEnum::ACTIVE)->pluck('name', 'id')->all())
                     ->searchable()
                     ->required()
@@ -51,8 +51,8 @@ class RuleForm extends FormAbstract
             ->add('customer_category_id',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Customer Category'))
-                    ->emptyValue(__('Select'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.customer_category'))
+                    ->emptyValue(trans('plugins/price-configurator::price-configurator.forms.select'))
                     ->choices(
                         CustomerCategory::query()
                             ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
@@ -68,16 +68,16 @@ class RuleForm extends FormAbstract
             ->add('adjustment_direction',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Direction'))
-                    ->emptyValue(__('Select'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.direction'))
+                    ->emptyValue(trans('plugins/price-configurator::price-configurator.forms.select'))
                     ->choices(RuleDirectionEnum::labels())
                     ->required()
             )
             ->add('scope',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Scope'))
-                    ->emptyValue(__('Select'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.scope'))
+                    ->emptyValue(trans('plugins/price-configurator::price-configurator.forms.select'))
                     ->choices(ScopeEnum::labels())
                     ->required()
                     ->attributes([
@@ -88,9 +88,9 @@ class RuleForm extends FormAbstract
             ->add('target_type',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Target Type'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.target_type'))
                     ->choices(TargetTypeEnum::labels())
-                    ->emptyValue(__('Select'))
+                    ->emptyValue(trans('plugins/price-configurator::price-configurator.forms.select'))
                     ->required()
                     ->selected($rule->target_type ?? '')
                     ->wrapperAttributes([
@@ -103,7 +103,7 @@ class RuleForm extends FormAbstract
             ->add('target_ids',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Applicable Categories / Products'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.applicable_targets'))
                     ->multiple(true)
                     ->searchable()
                     ->selected($targetIds)
@@ -116,29 +116,29 @@ class RuleForm extends FormAbstract
             ->add('calculation_type',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Calculation Type'))
-                    ->emptyValue(__('Select'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.calculation_type'))
+                    ->emptyValue(trans('plugins/price-configurator::price-configurator.forms.select'))
                     ->choices(CalculationTypeEnum::labels())
                     ->required()
             )
             ->add('calculation_value',
                 NumberField::class,
                 NumberFieldOption::make()
-                    ->label(__('Calculation Value'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.calculation_value'))
                     ->defaultValue(0)
                     ->required()
             )
             ->add('rounding_mode',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Rounding Mode'))
-                    ->emptyValue(__('Select'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.rounding_mode'))
+                    ->emptyValue(trans('plugins/price-configurator::price-configurator.forms.select'))
                     ->choices(RoundingModeEnum::labels())
             )
             ->add('round_to',
                 NumberField::class,
                 NumberFieldOption::make()
-                    ->label(__('Round To'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.round_to'))
                     ->attributes([
                         'step' => '0.01',
                         'lang' => 'en'
