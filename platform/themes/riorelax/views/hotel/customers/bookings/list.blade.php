@@ -220,105 +220,6 @@
 
                             @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
                                 @php
-                                    $cancelModalId = 'inspiraCancel-room-' . $booking->getKey();
-                                    $ruleDescription = $cancellationQuote['rule']->description ?? null;
-                                    $refundAmount = $cancellationQuote['refund_amount'] ?? 0;
-                                    $refundPercent = $cancellationQuote['refund_percent'] ?? 0;
-                                    $feeAmount = $cancellationQuote['fee_amount'] ?? 0;
-                                    $daysUntilStart = $cancellationQuote['days_until_start'] ?? null;
-                                @endphp
-
-                                <div class="modal fade inspira-modal" id="{{ $cancelModalId }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ trans('core/base::forms.cancel') }}"></button>
-                                            </div>
-
-                                            <div class="modal-body">
-                                                <div class="inspira-policy-alert">
-                                                    <span class="icon"><i class="fal fa-info-circle" aria-hidden="true"></i></span>
-                                                    <div class="content">
-                                                        {{ trans('plugins/inspira-cancellation::cancellation.frontend.guideline') }}<br>
-                                                        {{ $ruleDescription }}
-                                                    </div>
-                                                </div>
-
-                                                <ul class="list-unstyled text-muted small mb-3">
-                                                    <li><strong>{{ $roomName }}</strong></li>
-                                                    <li>{{ __('Gebucht am :date', ['date' => $booking->created_at->format('d.m.Y')]) }}</li>
-                                                    @if ($start && $end)
-                                                        <li>{{ $start }} – {{ $end }}</li>
-                                                    @elseif ($booking->room->booking_period)
-                                                        <li>{{ $booking->room->booking_period }}</li>
-                                                    @endif
-                                                </ul>
-
-                                                <div class="inspira-refund-summary">
-                                                    <div class="inspira-refund-card">
-                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.refund_amount') }}</div>
-                                                        <div class="value">{{ format_price($refundAmount) }}</div>
-                                                    </div>
-                                                    <div class="inspira-refund-card">
-                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.rule.refund_percent') }}</div>
-                                                        <div class="value">{{ $refundPercent }}%</div>
-                                                    </div>
-                                                    <div class="inspira-refund-card">
-                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.fee_amount') }}</div>
-                                                        <div class="value">{{ format_price($feeAmount) }}</div>
-                                                    </div>
-                                                </div>
-
-                                                @if (! is_null($daysUntilStart))
-                                                    <p class="text-muted small mb-3">
-                                                        <i class="fal fa-calendar-day me-2" aria-hidden="true"></i>
-                                                        {{ trans('plugins/inspira-cancellation::cancellation.frontend.days_until_start', ['days' => $daysUntilStart]) }}
-                                                    </p>
-                                                @endif
-
-                                                <form
-                                                    class="inspira-action-form js-cancellation-form"
-                                                    action="{{ route('customer.bookings.cancel', ['room', $booking->getKey()]) }}"
-                                                    method="POST"
-                                                    data-modal-target="#{{ $cancelModalId }}"
-                                                >
-                                                    @csrf
-                                                    <div class="mb-3">
-                                                        <label class="form-label" for="cancel-note-room-{{ $booking->getKey() }}">
-                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.notes_label') }}
-                                                        </label>
-                                                        <textarea
-                                                            class="form-control"
-                                                            id="cancel-note-room-{{ $booking->getKey() }}"
-                                                            name="notes"
-                                                            rows="3"
-                                                            placeholder="{{ trans('plugins/inspira-cancellation::cancellation.frontend.notes_placeholder') }}"
-                                                        ></textarea>
-                                                    </div>
-
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="1" id="cancel-confirm-room-{{ $booking->getKey() }}" name="accept_terms" required>
-                                                        <label class="form-check-label" for="cancel-confirm-room-{{ $booking->getKey() }}">
-                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.accept_terms') }}
-                                                        </label>
-                                                    </div>
-
-                                                    <div class="inspira-form-feedback d-none"></div>
-
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ trans('core/base::forms.cancel') }}</button>
-                                                        <button type="submit" class="btn btn-danger">{{ trans('plugins/inspira-cancellation::cancellation.frontend.confirm_cancellation') }}</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-
-                            @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
-                                @php
                                     $cancelModalId = 'inspiraCancel-course-' . $booking->getKey();
                                     $transferModalId = 'inspiraTransfer-course-' . $booking->getKey();
                                     $ruleDescription = $cancellationQuote['rule']->description ?? null;
@@ -543,6 +444,106 @@
                                     </div>
                                 </div>
                             </article>
+
+                            @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
+                                @php
+                                    $cancelModalId = 'inspiraCancel-room-' . $booking->getKey();
+                                    $ruleDescription = $cancellationQuote['rule']->description ?? null;
+                                    $refundAmount = $cancellationQuote['refund_amount'] ?? 0;
+                                    $refundPercent = $cancellationQuote['refund_percent'] ?? 0;
+                                    $feeAmount = $cancellationQuote['fee_amount'] ?? 0;
+                                    $daysUntilStart = $cancellationQuote['days_until_start'] ?? null;
+                                @endphp
+
+                                <div class="modal fade inspira-modal" id="{{ $cancelModalId }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ trans('core/base::forms.cancel') }}"></button>
+                                            </div>
+
+                                            <div class="modal-body">
+                                                <div class="inspira-policy-alert">
+                                                    <span class="icon"><i class="fal fa-info-circle" aria-hidden="true"></i></span>
+                                                    <div class="content">
+                                                        {{ trans('plugins/inspira-cancellation::cancellation.frontend.guideline') }}<br>
+                                                        {{ $ruleDescription }}
+                                                    </div>
+                                                </div>
+
+                                                <ul class="list-unstyled text-muted small mb-3">
+                                                    <li><strong>{{ $roomName }}</strong></li>
+                                                    <li>{{ __('Gebucht am :date', ['date' => $booking->created_at->format('d.m.Y')]) }}</li>
+                                                    @if ($start && $end)
+                                                        <li>{{ $start }} – {{ $end }}</li>
+                                                    @elseif ($booking->room->booking_period)
+                                                        <li>{{ $booking->room->booking_period }}</li>
+                                                    @endif
+                                                </ul>
+
+                                                <div class="inspira-refund-summary">
+                                                    <div class="inspira-refund-card">
+                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.refund_amount') }}</div>
+                                                        <div class="value">{{ format_price($refundAmount) }}</div>
+                                                    </div>
+                                                    <div class="inspira-refund-card">
+                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.rule.refund_percent') }}</div>
+                                                        <div class="value">{{ $refundPercent }}%</div>
+                                                    </div>
+                                                    <div class="inspira-refund-card">
+                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.fee_amount') }}</div>
+                                                        <div class="value">{{ format_price($feeAmount) }}</div>
+                                                    </div>
+                                                </div>
+
+                                                @if (! is_null($daysUntilStart))
+                                                    <p class="text-muted small mb-3">
+                                                        <i class="fal fa-calendar-day me-2" aria-hidden="true"></i>
+                                                        {{ trans('plugins/inspira-cancellation::cancellation.frontend.days_until_start', ['days' => $daysUntilStart]) }}
+                                                    </p>
+                                                @endif
+
+                                                <form
+                                                    class="inspira-action-form js-cancellation-form"
+                                                    action="{{ route('customer.bookings.cancel', ['room', $booking->getKey()]) }}"
+                                                    method="POST"
+                                                    data-modal-target="#{{ $cancelModalId }}"
+                                                >
+                                                    @csrf
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="cancel-note-room-{{ $booking->getKey() }}">
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.notes_label') }}
+                                                        </label>
+                                                        <textarea
+                                                            class="form-control"
+                                                            id="cancel-note-room-{{ $booking->getKey() }}"
+                                                            name="notes"
+                                                            rows="3"
+                                                            placeholder="{{ trans('plugins/inspira-cancellation::cancellation.frontend.notes_placeholder') }}"
+                                                        ></textarea>
+                                                    </div>
+
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="1" id="cancel-confirm-room-{{ $booking->getKey() }}" name="accept_terms" required>
+                                                        <label class="form-check-label" for="cancel-confirm-room-{{ $booking->getKey() }}">
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.accept_terms') }}
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="inspira-form-feedback d-none"></div>
+
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ trans('core/base::forms.cancel') }}</button>
+                                                        <button type="submit" class="btn btn-danger">{{ trans('plugins/inspira-cancellation::cancellation.frontend.confirm_cancellation') }}</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
                         @endif
                     @endforeach
                 </div>
