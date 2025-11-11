@@ -29,35 +29,35 @@ class TierForm extends FormAbstract
             ->add('name',
                 TextField::class,
                 NameFieldOption::make()
-                    ->label(__('Tier Name'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.tier_name'))
                     ->required()
             )
             ->add('priority',
                 NumberField::class,
                 NumberFieldOption::make()
-                    ->label(__('Priority'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.priority'))
                     ->defaultValue(100)
             )
             ->add('is_exclusive',
                 OnOffField::class,
                 OnOffFieldOption::make()
-                    ->label(__('Is Exclusive'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.is_exclusive'))
                     ->defaultValue(false)
             )
             ->add('starts_at',
                 DatetimeField::class,
                 DatePickerFieldOption::make()
-                    ->label(__('Starts At'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.starts_at'))
             )
             ->add('ends_at',
                 DatetimeField::class,
                 DatePickerFieldOption::make()
-                    ->label(__('Ends At'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.ends_at'))
             )
             ->add('notes',
                 TextareaField::class,
                 TextareaFieldOption::make()
-                    ->label(__('Notes'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.notes'))
             )
             ->add('status',
                 SelectField::class,

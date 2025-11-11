@@ -32,21 +32,23 @@ class TierTable extends TableAbstract
             ->addColumns([
                 IdColumn::make(),
                 NameColumn::make()->route('tier.edit'),
-                FormattedColumn::make('priority')->title(__('Priority')),
+                FormattedColumn::make('priority')->title(trans('plugins/price-configurator::price-configurator.forms.priority')),
                 FormattedColumn::make('is_exclusive')
-                    ->title(__('Exclusive'))
+                    ->title(trans('plugins/price-configurator::price-configurator.tables.exclusive'))
                     ->getValueUsing(function ($col) {
                         $isExclusive = $col->getItem()->is_exclusive;
 
                         return sprintf(
                             '<span class="badge %s">%s</span>',
                             $isExclusive ? 'badge bg-primary text-white' : 'badge bg-warning text-white',
-                            $isExclusive ? __('Yes') : __('No')
+                            $isExclusive
+                                ? trans('plugins/price-configurator::price-configurator.options.yes')
+                                : trans('plugins/price-configurator::price-configurator.options.no')
                         );
                     }),
-                FormattedColumn::make('starts_at')->title(__('Starts At'))->withEmptyState(),
-                FormattedColumn::make('ends_at')->title(__('Ends At'))->withEmptyState(),
-                FormattedColumn::make('notes')->title(__('Notes')),
+                FormattedColumn::make('starts_at')->title(trans('plugins/price-configurator::price-configurator.forms.starts_at'))->withEmptyState(),
+                FormattedColumn::make('ends_at')->title(trans('plugins/price-configurator::price-configurator.forms.ends_at'))->withEmptyState(),
+                FormattedColumn::make('notes')->title(trans('plugins/price-configurator::price-configurator.forms.notes')),
                 StatusColumn::make(),
                 CreatedAtColumn::make(),
             ])

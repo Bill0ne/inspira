@@ -1,8 +1,17 @@
 @php
-    $couponCode = \Botble\Hotel\Facades\HotelHelper::getCheckoutData('coupon_code');
-    $couponAmount = \Botble\Hotel\Facades\HotelHelper::getCheckoutData('coupon_amount');
+    $sessionData = \Botble\Hotel\Facades\HotelHelper::getCheckoutData();
+    $couponCode = \Illuminate\Support\Arr::get($sessionData, 'coupon_code');
+    $couponAmount = \Illuminate\Support\Arr::get($sessionData, 'coupon_amount');
+
+    if (! isset($course) || ! $course) {
+        $courseId = \Illuminate\Support\Arr::get($sessionData, 'course_id');
+
+        if ($courseId) {
+            $course = \Botble\Courses\Models\Course::query()->find($courseId);
+        }
+    }
 @endphp
-<div class="order-detail-box coupon-box" data-refresh-url="{{ route('coupon.course.refresh') }}">
+<div class="order-detail-box coupon-box" data-refresh-url="{{ route('coupon.course.refresh') }}" @if(isset($course) && $course) data-course-id="{{ $course->getKey() }}" @endif>
     <button class="btn-link ps-0 text-decoration-none toggle-coupon-form" type="button">{{ trans('plugins/hotel::coupon.toggle_coupon_form_text') }}</button>
 
     <div class="coupon-form mt-3" @style(['display: none' => ! ($couponCode && $couponAmount)])>
@@ -14,9 +23,13 @@
                 </div>
                 <input name="coupon_hidden" type="hidden" value="{{ $couponCode }}" />
 
-                <button class="btn btn-link text-decoration-none remove-coupon-code" data-url="{{ route('coupon.course.remove') }}" type="button">
+                <button
+                    class="btn btn-link text-decoration-none remove-coupon-code"
+                    data-url="{{ route('coupon.course.remove') }}"
+                    type="button"
+                >
                     <x-core::icon name="ti ti-trash" />
-                    {{ __('Remove') }}
+                    {{ __('Coupon entfernen') }}
                 </button>
             </div>
         @else

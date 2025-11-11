@@ -9,26 +9,57 @@
 
 @php
     Theme::set('pageTitle', '');
-    Theme::asset()->container('footer')->usePath()->add('checkout-js', 'js/course-checkout.js');
+    Theme::set('breadcrumb', false);
+    Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
+    Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
     $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
     $endLabel24   = $session->end_date ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i') : null;
+
+    session(['url.intended' => request()->fullUrl()]);
+    $shouldStartRegister = old('register_customer') == 1;
 @endphp
 
 <style>
-:root{--mint:#578E88;--gray:#E5E7EB;}
-.header,.topbar,.page-title,.breadcrumb,.page-breadcrumb,.hero-banner{display:none!important;}
+:root{--mint:#578E88;--gray:#E5E7EB;--ink:#17463F;}
+body > header.header-area,
+body .header,
+body .header-top,
+body .menu-area,
+body #header-sticky,
+body .topbar,
+body .page-title,
+body .breadcrumb,
+body .breadcrumb-area,
+body .page-breadcrumb,
+body .hero-banner,
+body .second-header,
+body .main-menu{display:none!important;}
 .checkout-fw .container{max-width:980px;}
 body .pt-120{padding-top:24px!important;}
 body .pb-40{padding-bottom:24px!important;}
 section.checkout-booking-page{background:#fff;}
-
-/* ==== Ticket Header ==== */
-.ticket{
-  display:grid;grid-template-columns:1.1fr 1.4fr 1fr;
-  border-radius:10px;overflow:hidden;background:#fff;
-  box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:28px;
-}
+.checkout-topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:10px 24px;background:#F8F8F8;color:var(--ink);font-size:14px;font-weight:600;box-shadow:0 1px 0 rgba(23,70,63,0.06);}
+.checkout-topbar__link{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:1px solid rgba(23,70,63,0.15);color:var(--ink);transition:all .2s ease;}
+.checkout-topbar__link svg{width:14px;height:14px;}
+.checkout-topbar__link:hover{background:rgba(23,70,63,0.08);}
+.checkout-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(18,33,31,0.55);z-index:99;padding:24px;}
+.checkout-modal__backdrop{position:absolute;inset:0;}
+.checkout-modal.is-visible{display:flex;}
+.checkout-modal__dialog{background:#fff;border-radius:12px;max-width:420px;width:100%;padding:30px 28px;position:relative;box-shadow:0 20px 50px rgba(0,0,0,0.15);z-index:1;}
+.checkout-modal__close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;color:#4b5c58;cursor:pointer;line-height:1;}
+.checkout-modal__title{font-weight:600;font-size:18px;margin-bottom:18px;color:var(--ink);}
+.checkout-modal__form .form-control{margin-bottom:14px;height:46px;border-radius:6px;}
+.checkout-modal__actions{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+.checkout-modal__actions label{font-size:13px;}
+.checkout-modal__actions a{font-size:13px;color:var(--mint);font-weight:600;}
+.checkout-modal__submit{width:100%;margin-top:6px;background:var(--mint);border:1px solid var(--mint);color:#fff;font-weight:600;height:46px;border-radius:6px;transition:filter .2s ease;}
+.checkout-modal__submit:hover{filter:brightness(0.95);}
+.checkout-modal__footer{text-align:center;font-size:13px;margin-top:16px;color:#4b5c58;}
+.checkout-modal__footer a{color:var(--mint);font-weight:600;}
+.checkout-modal-open{overflow:hidden;}
+.ticket{display:grid;grid-template-columns:1.1fr 1.4fr 1fr;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:28px;}
 .ticket__col{padding:20px 22px;display:flex;flex-direction:column;justify-content:center;}
+.ticket__col.ticket__media{padding:0;}
 .ticket__media img{width:100%;height:100%;min-height:220px;object-fit:cover;}
 .ticket__details{background:var(--mint);color:#fff;}
 .ticket__details .title,.ticket__totals .title{font-weight:600;font-size:15px;margin-bottom:10px;}
@@ -42,8 +73,6 @@ section.checkout-booking-page{background:#fff;}
   .ticket__details,.ticket__totals{padding:18px 20px;}
   .ticket__totals{border-left:none;border-top:1px solid rgba(255,255,255,0.15);}
 }
-
-/* ==== Stepper ==== */
 .stepper-wrap{text-align:center;margin-bottom:18px;}
 #stepTitle{font-size:16px;font-weight:600;color:#3b4a47;margin-bottom:14px;}
 .stepper{display:flex;align-items:center;justify-content:space-between;width:100%;}
@@ -51,48 +80,20 @@ section.checkout-booking-page{background:#fff;}
 .stepper .dot{width:13px;height:13px;border-radius:50%;background:#D5D8D7;transition:all .3s ease;box-shadow:0 0 0 3px #fff inset;}
 .stepper .dot.active{background:var(--mint);box-shadow:0 0 0 4px rgba(87,142,136,0.18);}
 .stepper .line.active{background:var(--mint);}
-@media(max-width:768px){#stepTitle{font-size:15px;}}
-
-/* ==== Panels ==== */
 .step-panel{display:none;padding:30px 26px 24px;background:#fff;border:none;}
 .step-panel.active{display:block;animation:fade .2s ease-out;}
 @keyframes fade{from{opacity:.4;transform:translateY(3px);}to{opacity:1;transform:none;}}
 .form-control{height:46px;border-radius:6px;}
 textarea.form-control{min-height:100px;}
 .is-invalid{border-color:#c0392b!important;}
-
-/* ==== Alert Box ==== */
-.form-alert{display:none;margin:0 0 16px;padding:12px 16px;border-radius:6px;
-  background:#fff3f3;color:#b71c1c;font-size:14px;border:1px solid #f1b4b4;}
-
-/* ==== Coupon ==== */
+.register-box{margin-top:18px;padding:20px 24px;border:1px solid var(--gray);border-radius:10px;background:#fbfbfb;box-shadow:0 8px 22px rgba(0,0,0,0.05);}
+.register-box .btnrow{justify-content:flex-end;}
+.register-box .form-control{height:44px;}
+.form-alert{display:none;margin:0 0 16px;padding:12px 16px;border-radius:6px;background:#fff3f3;color:#b71c1c;font-size:14px;border:1px solid #f1b4b4;}
 .coupon-wrapper{background:#F9F9F9;border:1px solid var(--gray);border-radius:8px;padding:20px;margin-bottom:24px;}
-.coupon-wrapper label{font-weight:500;}
-.coupon-wrapper .coupon-box{display:flex;flex-direction:column;gap:14px;}
-.coupon-wrapper .coupon-form{margin:0;}
-.coupon-wrapper .coupon-feedback{border-radius:8px;padding:16px 18px;}
-.coupon-wrapper .coupon-feedback .btn{color:#17463f;font-weight:600;}
-.coupon-wrapper .coupon-input-group{display:flex;align-items:stretch;gap:12px;}
-.coupon-wrapper .coupon-input-group>.form-control{flex:1 1 auto;min-width:200px;border-radius:6px;}
-.coupon-wrapper .coupon-input-group>.btn{flex:0 0 auto;padding:12px 22px;font-weight:600;border-radius:6px;}
-.coupon-wrapper .apply-coupon-code{background:var(--mint)!important;color:#fff!important;border:none!important;}
-.coupon-wrapper .remove-coupon-code{color:#17463f;font-weight:600;}
-@media(max-width:768px){
-  .coupon-wrapper{padding:18px;}
-}
-@media(max-width:575px){
-  .coupon-wrapper .coupon-input-group{flex-direction:column;gap:10px;}
-  .coupon-wrapper .coupon-input-group>.form-control{min-width:0;width:100%;}
-  .coupon-wrapper .coupon-input-group>.btn{width:100%;padding:12px;font-size:14px;}
-  .coupon-wrapper .toggle-coupon-form{font-size:14px;}
-}
-
-/* ==== Payment ==== */
 .list_payment_method{border:1px solid var(--gray);border-radius:8px;margin-bottom:20px;}
 .list_payment_method li{padding:14px 16px;border-bottom:1px solid #f0f0f0;}
 .list_payment_method li:last-child{border-bottom:none;}
-
-/* ==== Buttons ==== */
 .btnrow{display:flex;justify-content:center;gap:14px;margin-top:24px;}
 .btnX{height:48px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-radius:3px;transition:all .25s ease;}
 .btn-outline-mint{width:150px;border:1px solid var(--mint);color:var(--mint);background:#fff;}
@@ -105,12 +106,38 @@ textarea.form-control{min-height:100px;}
   .btn-mint{order:1;}
   .btn-outline-mint{order:2;}
 }
-
-/* ==== Accordion ==== */
 .cxl-accordion details{border-radius:10px;background:#fff;border:1px solid var(--gray);margin-top:20px;}
 .cxl-accordion summary{cursor:pointer;padding:14px 18px;font-weight:600;list-style:none;}
 .cxl-accordion .cxl-body{padding:0 18px 18px;}
 </style>
+
+<div class="checkout-topbar">
+  <a class="checkout-topbar__link" href="{{ route('public.courses') }}" aria-label="Zurück zur Übersicht">
+    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9.5 3.5 5 8l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
+  <span>Zurück zur Übersicht</span>
+</div>
+
+@php
+  $contactValues = [
+      'first_name' => old('first_name', data_get($checkoutData ?? [], 'first_name', optional($customer)->first_name)),
+      'last_name' => old('last_name', data_get($checkoutData ?? [], 'last_name', optional($customer)->last_name)),
+      'email' => old('email', data_get($checkoutData ?? [], 'email', optional($customer)->email)),
+      'phone' => old('phone', data_get($checkoutData ?? [], 'phone', optional($customer)->phone)),
+      'country' => old('country', data_get($checkoutData ?? [], 'country', optional($customer)->country)),
+      'state' => old('state', data_get($checkoutData ?? [], 'state', optional($customer)->state)),
+      'city' => old('city', data_get($checkoutData ?? [], 'city', optional($customer)->city)),
+      'address' => old('address', data_get($checkoutData ?? [], 'address', optional($customer)->address)),
+      'zip' => old('zip', data_get($checkoutData ?? [], 'zip', optional($customer)->zip)),
+  ];
+
+  $prefillPayload = collect($contactValues)
+      ->filter(fn ($value) => !blank($value))
+      ->map(fn ($value) => is_string($value) ? $value : (string) $value)
+      ->all();
+@endphp
 
 <section class="checkout-booking-page checkout-fw">
   <div class="container pt-120 pb-40 checkout-booking">
@@ -128,18 +155,13 @@ textarea.form-control{min-height:100px;}
           <div class="kv"><span>Enddatum</span><b>{{ $endLabel24 }}</b></div>
         @endif
       </div>
-      @php
-        $discountDisplay = $couponAmountNet > 0
-          ? '-' . format_price($couponAmount)
-          : format_price(0);
-      @endphp
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis (inkl. MwSt.)</span><b class="amount-text">{{ format_price($amount) }}</b></div>
-        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $discountDisplay }}</b></div>
+        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amountNet) }}</b></div>
+        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
+        <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
         <hr>
         <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
-        <div class="kv text-muted small mt-1"><span>Enthaltene MwSt.</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
       </div>
     </div>
 
@@ -155,8 +177,9 @@ textarea.form-control{min-height:100px;}
       </div>
     </div>
 
+   
     {{-- ░░ Formular ░░ --}}
-    <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form">
+    <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form" data-start-step="{{ $customer->id ? 2 : 1 }}" data-storage-key="course-checkout" data-start-register="{{ $shouldStartRegister ? '1' : '0' }}" data-prefill='@json($prefillPayload)'>
       @csrf
       <input type="hidden" name="token" value="{{ $token }}">
       <input type="hidden" name="amount" value="{{ $total }}">
@@ -164,9 +187,11 @@ textarea.form-control{min-height:100px;}
       <input type="hidden" name="session_id" value="{{ $session->id }}">
       <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
       <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
+      <input type="hidden" name="register_customer" value="{{ old('register_customer', 0) }}" id="register_customer_flag">
 
       {{-- Step 1 --}}
       <div class="step-panel active" data-step="1">
+        <div id="formAlertStep1" class="form-alert"></div>
         @if ($customer->id)
           <p>Angemeldet als <b>{{ $customer->name ?? $customer->email }}</b></p>
           <div class="btnrow">
@@ -175,9 +200,38 @@ textarea.form-control{min-height:100px;}
           </div>
         @else
           <p>Wie möchtest du fortfahren?</p>
-          <div class="btnrow">
+          <div class="btnrow" data-register-actions>
             <button type="button" class="btnX btn-mint" data-next>Als Gast buchen</button>
-            <a href="{{ route('customer.login') }}?redirect={{ urlencode(request()->fullUrl()) }}" class="btnX btn-outline-mint">Einloggen</a>
+            <button type="button" class="btnX btn-outline-mint" data-open-login>Einloggen</button>
+            <button type="button" class="btnX btn-outline-mint" data-toggle-register>Registrieren</button>
+          </div>
+          <div class="register-box {{ $shouldStartRegister ? '' : 'd-none' }}" data-register-box>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label>Vorname *</label>
+                <input type="text" name="register_first_name" class="form-control" value="{{ old('first_name') }}" autocomplete="given-name">
+              </div>
+              <div class="col-md-6">
+                <label>Nachname *</label>
+                <input type="text" name="register_last_name" class="form-control" value="{{ old('last_name') }}" autocomplete="family-name">
+              </div>
+              <div class="col-md-12">
+                <label>E-Mail *</label>
+                <input type="email" name="register_email" class="form-control" value="{{ old('email') }}" autocomplete="email">
+              </div>
+              <div class="col-md-6">
+                <label>Passwort *</label>
+                <input type="password" name="password" class="form-control" autocomplete="new-password">
+              </div>
+              <div class="col-md-6">
+                <label>Passwort bestätigen *</label>
+                <input type="password" name="password_confirmation" class="form-control" autocomplete="new-password">
+              </div>
+            </div>
+            <div class="btnrow mt-3">
+              <button type="button" class="btnX btn-outline-mint" data-cancel-register>Abbrechen</button>
+              <button type="button" class="btnX btn-mint" data-register-next>Weiter</button>
+            </div>
           </div>
         @endif
       </div>
@@ -187,17 +241,17 @@ textarea.form-control{min-height:100px;}
         <div id="formAlertStep2" class="form-alert"></div>
         <p>Pflichtfelder sind mit * gekennzeichnet</p>
         <div class="row">
-          <div class="col-md-6 mb-3"><label>Vorname *</label><input id="txt-first_name" name="first_name" class="form-control" required></div>
-          <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" required></div>
-          <div class="col-md-6 mb-3"><label>E-Mail *</label><input id="txt-email" name="email" class="form-control" type="email" required></div>
-          <div class="col-md-6 mb-3"><label>Telefon *</label><input id="txt-phone" name="phone" class="form-control" required></div>
-          <div class="col-md-6 mb-3"><label>Land</label><input id="txt-country" name="country" class="form-control"></div>
-          <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input id="txt-state" name="state" class="form-control"></div>
-          <div class="col-md-6 mb-3"><label>Stadt</label><input id="txt-city" name="city" class="form-control"></div>
-          <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control"></div>
-          <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control"></div>
+          <div class="col-md-6 mb-3"><label>Vorname *</label><input id="txt-first_name" name="first_name" class="form-control" value="{{ $contactValues['first_name'] }}" required></div>
+          <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" value="{{ $contactValues['last_name'] }}" required></div>
+          <div class="col-md-6 mb-3"><label>E-Mail *</label><input id="txt-email" name="email" class="form-control" type="email" value="{{ $contactValues['email'] }}" required></div>
+          <div class="col-md-6 mb-3"><label>Telefon *</label><input id="txt-phone" name="phone" class="form-control" value="{{ $contactValues['phone'] }}" required></div>
+          <div class="col-md-6 mb-3"><label>Land</label><input id="txt-country" name="country" class="form-control" value="{{ $contactValues['country'] }}"></div>
+          <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input id="txt-state" name="state" class="form-control" value="{{ $contactValues['state'] }}"></div>
+          <div class="col-md-6 mb-3"><label>Stadt</label><input id="txt-city" name="city" class="form-control" value="{{ $contactValues['city'] }}"></div>
+          <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control" value="{{ $contactValues['address'] }}"></div>
+          <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control" value="{{ $contactValues['zip'] }}"></div>
         </div>
-        <div class="mb-3"><label>Anfragen</label><textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas..."></textarea></div>
+        <div class="mb-3"><label>Anfragen</label><textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas...">{{ old('requests') }}</textarea></div>
         <div class="btnrow">
           <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
           <button type="button" class="btnX btn-mint" data-next>Weiter</button>
@@ -220,7 +274,18 @@ textarea.form-control{min-height:100px;}
           ]) !!}
           {!! PaymentMethods::render() !!}
         </ul>
-        <label><input type="checkbox" id="terms_conditions" name="terms_conditions" value="1"> Allgemeine Geschäftsbedingungen *</label>
+        <label class="d-flex align-items-center gap-2">
+          <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))>
+          <span>
+            Allgemeine&nbsp;Geschäftsbedingungen&nbsp;*
+            <a href="https://stage.inspira-zentrum.de/de/term-and-conditions"
+               target="_blank"
+               rel="noopener"
+               style="color:#578E88;font-weight:600;text-decoration:underline;">
+              (AGB&nbsp;öffnen)
+            </a>
+          </span>
+        </label>
         <div class="btnrow">
           <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
           <button type="submit" class="btnX btn-mint payment-checkout-btn" data-processing-text="Wird verarbeitet..." data-error-header="Fehler">Abschließen</button>
@@ -239,111 +304,9 @@ textarea.form-control{min-height:100px;}
   </div>
 </section>
 
+{!! Theme::partial('checkout.login-modal', ['redirectUrl' => request()->fullUrl()]) !!}
+
 @if (is_plugin_active('payment'))
   {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
 @endif
 
-{{-- ==== JS ==== --}}
-<script>
-(function(){
-  const form=document.getElementById('bookingForm');
-  const panels=[...document.querySelectorAll('.step-panel')];
-  const title=document.getElementById('stepTitle');
-  const dots=i=>document.querySelector('[data-step-dot="'+i+'"]');
-  const lines=i=>document.querySelector('[data-step-line="'+i+'"]');
-  const titles=['Allgemeine Informationen','Ihre Angaben','Zahlung & Abschluss'];
-  let step={{ $customer->id ? 2 : 1 }};
-  render(step);
-
-  const fieldIds={first:'txt-first_name',last:'txt-last_name',email:'txt-email',phone:'txt-phone'};
-  const val=id=>(document.getElementById(id)?.value.trim()||'');
-  const emailOk=s=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-  const phoneOk=s=>/^[0-9+\s\-()]+$/.test(s);
-  const markInvalid=(el,b)=>el&&el.classList.toggle('is-invalid',!!b);
-  let step3Attempted=false;
-
-  function showAlert(stepNo,msg){
-    const box=document.getElementById(stepNo===2?'formAlertStep2':'formAlertStep3');
-    if(!box)return;
-    box.textContent=msg;
-    box.style.display=msg?'block':'none';
-    if(msg)box.scrollIntoView({behavior:'smooth',block:'center'});
-  }
-  function clearAlerts(){['formAlertStep2','formAlertStep3'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.textContent='';}});}
-
-  function validateStep(stepNo){
-    const fF=document.getElementById(fieldIds.first),
-          fL=document.getElementById(fieldIds.last),
-          fE=document.getElementById(fieldIds.email),
-          fP=document.getElementById(fieldIds.phone);
-    const vF=val(fieldIds.first),
-          vL=val(fieldIds.last),
-          vE=val(fieldIds.email),
-          vP=val(fieldIds.phone);
-    let errors=[];
-    if(!vF){errors.push('Vorname ist erforderlich.');markInvalid(fF,true);}else markInvalid(fF,false);
-    if(!vL){errors.push('Nachname ist erforderlich.');markInvalid(fL,true);}else markInvalid(fL,false);
-    if(!vE){errors.push('E-Mail ist erforderlich.');markInvalid(fE,true);}
-    else if(!emailOk(vE)){errors.push('Bitte geben Sie eine gültige E-Mail-Adresse ein.');markInvalid(fE,true);}
-    else markInvalid(fE,false);
-    if(!vP){errors.push('Telefon ist erforderlich.');markInvalid(fP,true);}
-    else if(!phoneOk(vP)){errors.push('Bitte geben Sie eine gültige Telefonnummer ein.');markInvalid(fP,true);}
-    else if(vP.replace(/\D/g,'').length<8){errors.push('Die Telefonnummer muss mindestens 8 Ziffern enthalten.');markInvalid(fP,true);}
-    else markInvalid(fP,false);
-    if(stepNo===3){
-      const terms=document.getElementById('terms_conditions');
-      if(!terms||!terms.checked)errors.push('Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen, um fortzufahren.');
-    }
-    return errors;
-  }
-
-  // Buttons
-  form.addEventListener('click',e=>{
-    const next=e.target.closest('[data-next]');
-    const prev=e.target.closest('[data-prev]');
-    const finish=e.target.closest('.payment-checkout-btn');
-
-    if(next){
-      e.preventDefault();clearAlerts();
-      if(step===1){step=2;render(step);return;}
-      const errs=validateStep(2);
-      if(errs.length){showAlert(2,'⚠️ '+errs[0]);return;}
-      step=Math.min(step+1,3);render(step);
-    }
-
-    if(prev){e.preventDefault();clearAlerts();step=Math.max(step-1,1);render(step);}
-
-    if(finish){
-      e.preventDefault();clearAlerts();
-      step3Attempted=true;
-      const errs2=validateStep(2);
-      if(errs2.length){step=2;render(step);showAlert(2,'⚠️ '+errs2[0]);return;}
-      const errs3=validateStep(3);
-      if(errs3.length){showAlert(3,'⚠️ '+errs3[0]);return;}
-      form.submit();
-    }
-  });
-
-  // Checkbox ändert Verhalten live
-  const termsBox=document.getElementById('terms_conditions');
-  if(termsBox){
-    termsBox.addEventListener('change',()=>{
-      if(termsBox.checked && step3Attempted){
-        showAlert(3,'');
-      }
-    });
-  }
-
-  function render(s){
-    panels.forEach(p=>p.classList.toggle('active',p.dataset.step==s));
-    title.textContent=titles[s-1];
-    [1,2,3].forEach(i=>{
-      const d=dots(i),l=lines(i);
-      if(d)d.classList.toggle('active',i<=s);
-      if(l)l.classList.toggle('active',i<s);
-    });
-    const c=document.querySelector('#couponBox .collapse');
-    if(c&&!c.classList.contains('show'))c.classList.add('show');
-  }
-})();
-</script>

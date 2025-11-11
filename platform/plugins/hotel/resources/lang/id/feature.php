@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'menu' => 'Fitur hotel',
+    'menu' => 'Fitur zentrum',
     'name' => 'Fitur',
     'create' => 'Fitur baru',
     'edit' => 'Edit fitur',

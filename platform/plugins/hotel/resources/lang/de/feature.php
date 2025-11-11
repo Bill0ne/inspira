@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'menu' => 'Hotelfunktionen',
+    'menu' => 'Zentrumfunktionen',
     'name' => 'Funktionen',
     'create' => 'Neue Funktion',
     'edit' => 'Funktion bearbeiten',

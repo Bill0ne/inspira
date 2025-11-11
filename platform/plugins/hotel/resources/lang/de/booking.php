@@ -90,7 +90,7 @@ return [
     'number_of_rooms_helper' => 'Anzahl der zu buchenden Zimmer',
     'number_of_guests_helper' => 'Anzahl der erwachsenen Gäste',
     'number_of_children_helper' => 'Anzahl der Kinder',
-    'arrival_time_helper' => 'Voraussichtliche Ankunftszeit im Hotel',
+    'arrival_time_helper' => 'Voraussichtliche Ankunftszeit im Zentrum',
     'payment_method_helper' => 'Zahlungsmethode für diese Buchung auswählen',
     'payment_status_helper' => 'Aktueller Status der Zahlung',
     'status_helper' => 'Aktueller Status der Buchung',

@@ -88,7 +88,7 @@ return [
     'number_of_rooms_helper' => 'Jumlah kamar yang akan dipesan',
     'number_of_guests_helper' => 'Jumlah tamu dewasa',
     'number_of_children_helper' => 'Jumlah anak-anak',
-    'arrival_time_helper' => 'Perkiraan waktu kedatangan di hotel',
+    'arrival_time_helper' => 'Perkiraan waktu kedatangan di zentrum',
     'payment_method_helper' => 'Pilih metode pembayaran yang digunakan untuk pemesanan ini',
     'payment_status_helper' => 'Status pembayaran saat ini',
     'status_helper' => 'Status pemesanan saat ini',

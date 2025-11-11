@@ -207,6 +207,7 @@ class PublicController extends Controller
         $taxAmount = $course->getTaxAmount($netSubtotal);
         $total = $netSubtotal + $taxAmount;
         $couponAmount = $course->getPriceWithTax($couponAmountNet);
+        $checkoutData = HotelHelper::getCheckoutData();
 
         return Theme::scope(
             'courses.booking',
@@ -223,7 +224,8 @@ class PublicController extends Controller
                 'couponCode',
                 'session',
                 'basePrice',
-                'discountAmount'
+                'discountAmount',
+                'checkoutData'
             )
         )->render();
     }
@@ -243,6 +245,9 @@ class PublicController extends Controller
 
             abort(404);
         }
+
+        /** @var \Botble\Hotel\Models\Coupon|null $appliedCoupon */
+        $appliedCoupon = null;
 
         try {
             DB::beginTransaction();
@@ -296,6 +301,10 @@ class PublicController extends Controller
             $couponCode = Arr::get($sessionData, 'coupon_code');
             $couponAmount = min($couponAmount, $amount);
 
+            if ($couponCode) {
+                $appliedCoupon = \Botble\Hotel\Models\Coupon::where('code', $couponCode)->first();
+            }
+
             $netSubtotal = max($amount - $couponAmount, 0);
             $taxAmount = $course->getTaxAmount($netSubtotal);
 
@@ -315,13 +324,6 @@ class PublicController extends Controller
             }
 
             $booking->save();
-
-            if ($couponCode) {
-                $coupon = \Botble\Hotel\Models\Coupon::where('code', $couponCode)->first();
-                if ($coupon) {
-                    $coupon->increment('total_used', 1);
-                }
-            }
 
             $bookingAddress = new \Botble\Courses\Models\CourseBookingAddress();
             $bookingAddress->fill($request->only([
@@ -377,6 +379,10 @@ class PublicController extends Controller
             }
 
             if ($checkoutUrl = Arr::get($data, 'checkoutUrl')) {
+                if ($appliedCoupon) {
+                    $appliedCoupon->increment('total_used');
+                }
+
                 return $response
                     ->setError($data['error'])
                     ->setNextUrl($checkoutUrl)
@@ -401,6 +407,10 @@ class PublicController extends Controller
         if ($token = $request->input('token')) {
             session()->forget($token);
             session()->forget('checkout_token');
+        }
+
+        if ($appliedCoupon) {
+            $appliedCoupon->increment('total_used');
         }
 
         return $response

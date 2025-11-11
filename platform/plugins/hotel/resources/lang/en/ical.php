@@ -42,7 +42,7 @@ return [
     'email' => [
         'subject' => 'iCal Sync Failure Alert',
         'greeting' => 'Hello,',
-        'message' => 'We detected an issue with the iCal synchronization for your hotel booking system.',
+        'message' => 'We detected an issue with the iCal synchronization for your Zentrum booking system.',
         'details' => 'Error Details',
         'time' => 'Time',
         'error' => 'Error Message',
@@ -56,10 +56,10 @@ return [
     'documentation' => 'iCal Sync Documentation',
     'documentation_title' => 'How to Use iCal Sync',
     'what_is_ical' => 'What is iCal Sync?',
-    'what_is_ical_desc' => 'iCal (or iCalendar) is a standard format for calendar data exchange. The iCal Sync feature allows you to synchronize your hotel room bookings with external platforms like Booking.com, Airbnb, and other booking systems that support iCal.',
+    'what_is_ical_desc' => 'iCal (or iCalendar) is a standard format for calendar data exchange. The iCal Sync feature allows you to synchronize your Zentrum room bookings with external platforms like Booking.com, Airbnb, and other booking systems that support iCal.',
 
     'export_bookings' => 'Exporting Your Bookings',
-    'export_bookings_desc' => 'You can export your hotel bookings to external platforms to prevent double bookings.',
+    'export_bookings_desc' => 'You can export your Zentrum bookings to external platforms to prevent double bookings.',
     'export_step1_title' => 'Go to iCal Sync page',
     'export_step1_desc' => 'Navigate to Booking > iCal Sync in the admin panel.',
     'export_step2_title' => 'Find the room you want to export',

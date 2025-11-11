@@ -218,6 +218,38 @@ class ThemeService
 
             $this->files->copyDirectory($resourcePath, $publishPath);
 
+            $assetsJsPath = $this->getPath($theme, 'assets/js');
+
+            if ($this->files->isDirectory($assetsJsPath)) {
+                $publishJsPath = $publishPath . '/js';
+
+                if (! $this->files->isDirectory($publishJsPath)) {
+                    $this->files->makeDirectory($publishJsPath, 0755, true);
+                }
+
+                foreach ($this->files->allFiles($assetsJsPath) as $file) {
+                    if ($file->getExtension() !== 'js') {
+                        continue;
+                    }
+
+                    $relativeDirectory = $file->getRelativePath();
+                    $destinationDirectory = $publishJsPath;
+
+                    if ($relativeDirectory) {
+                        $destinationDirectory .= '/' . $relativeDirectory;
+
+                        if (! $this->files->isDirectory($destinationDirectory)) {
+                            $this->files->makeDirectory($destinationDirectory, 0755, true);
+                        }
+                    }
+
+                    $this->files->copy(
+                        $file->getPathname(),
+                        $destinationDirectory . '/' . $file->getFilename()
+                    );
+                }
+            }
+
             $screenshot = $this->getPath($theme, 'screenshot.png');
 
             if ($this->files->exists($screenshot)) {
