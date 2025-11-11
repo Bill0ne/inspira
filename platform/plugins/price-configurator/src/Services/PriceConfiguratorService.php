@@ -33,12 +33,10 @@ class PriceConfiguratorService
 
         $price = $basePrice;
 
-        if ($rules->isEmpty()) {
-            return $price;
-        }
-
-        foreach ($rules as $rule) {
-            $price = $this->applyRule($price, $rule);
+        if (! $rules->isEmpty()) {
+            foreach ($rules as $rule) {
+                $price = $this->applyRule($price, $rule);
+            }
         }
 
         if ($targetType == TargetTypeEnum::ROOM) {
