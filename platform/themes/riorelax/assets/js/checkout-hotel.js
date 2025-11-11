@@ -64,14 +64,16 @@
       var $btn = $('.payment-checkout-btn');
       if ($btn.length) $btn.prop('disabled', true);
 
-      $.get('/ajax/calculate-amount', Object.assign({ room_id: roomId }, payload))
+      $.get('/ajax/calculate-amount', $.extend({ room_id: roomId }, payload))
         .done(function (res) {
           var error   = res && res.error;
           var message = res && res.message;
           var data    = res && res.data;
+          var theme   = win.RiorelaxTheme || {};
 
           if (error) {
-            win.RiorelaxTheme?.showError?.(message) ?? console.warn(message || 'Fehler bei der Berechnung.');
+            if (theme && typeof theme.showError === 'function') theme.showError(message);
+            else if (win.console && console.warn) console.warn(message || 'Fehler bei der Berechnung.');
             return;
           }
 

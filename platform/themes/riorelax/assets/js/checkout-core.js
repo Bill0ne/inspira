@@ -5,6 +5,49 @@
 (function () {
   'use strict';
 
+  function matchesSelector(el, selector) {
+    if (!el || !selector) return false;
+    var proto = Element.prototype;
+    var fn = proto.matches || proto.matchesSelector || proto.msMatchesSelector || proto.webkitMatchesSelector;
+    if (fn) return fn.call(el, selector);
+
+    var attrMatch = selector && selector.match(/^\[([^=\]]+)(?:=("?)([^\]"]*)\2)?\]$/);
+    if (attrMatch) {
+      var attrName = attrMatch[1];
+      var attrValue = typeof attrMatch[3] === 'undefined' ? null : attrMatch[3];
+      if (!el.hasAttribute(attrName)) return false;
+      if (attrValue === null) return true;
+      return el.getAttribute(attrName) === attrValue;
+    }
+
+    return false;
+  }
+
+  function closestElement(el, selector, stopAt) {
+    var limit = stopAt || null;
+    while (el && el !== limit && el.nodeType === 1) {
+      if (matchesSelector(el, selector)) return el;
+      el = el.parentElement;
+    }
+    if (limit && el === limit && matchesSelector(el, selector)) return el;
+    return null;
+  }
+
+  function dispatchInputEvent(target) {
+    if (!target) return;
+    try {
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (err) {
+      try {
+        var evt = document.createEvent('Event');
+        evt.initEvent('input', true, true);
+        target.dispatchEvent(evt);
+      } catch (err2) {
+        // ignore
+      }
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     var form = document.querySelector('.payment-checkout-form');
     if (!form) return;
@@ -154,7 +197,7 @@
       target.value = value;
       markInvalid(target, false);
       persistField(name, value);
-      try { target.dispatchEvent(new Event('input', { bubbles: true })); } catch (err) {}
+      dispatchInputEvent(target);
     }
 
     function handleRegisterContinue() {
@@ -219,12 +262,12 @@
     }
 
     document.addEventListener('click', function (e) {
-      if (e.target.closest('[data-open-login]')) {
+      if (closestElement(e.target, '[data-open-login]')) {
         e.preventDefault();
         openLoginModal();
         return;
       }
-      if (e.target.closest('[data-close-login]')) {
+      if (closestElement(e.target, '[data-close-login]')) {
         e.preventDefault();
         closeLoginModal();
       }
@@ -238,11 +281,11 @@
 
     // --- NAVIGATION & EVENTS ---
     form.addEventListener('click', function (e) {
-      var next = e.target.closest('[data-next]');
-      var prev = e.target.closest('[data-prev]');
-      var registerToggleBtn = e.target.closest('[data-toggle-register]');
-      var registerCancelBtn = e.target.closest('[data-cancel-register]');
-      var registerNextBtn = e.target.closest('[data-register-next]');
+      var next = closestElement(e.target, '[data-next]', form);
+      var prev = closestElement(e.target, '[data-prev]', form);
+      var registerToggleBtn = closestElement(e.target, '[data-toggle-register]', form);
+      var registerCancelBtn = closestElement(e.target, '[data-cancel-register]', form);
+      var registerNextBtn = closestElement(e.target, '[data-register-next]', form);
 
       if (registerToggleBtn) {
         e.preventDefault();

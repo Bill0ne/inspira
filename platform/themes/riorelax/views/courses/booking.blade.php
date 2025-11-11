@@ -9,6 +9,7 @@
 
 @php
     Theme::set('pageTitle', '');
+    Theme::set('breadcrumb', false);
     Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
     Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
     $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
@@ -20,7 +21,19 @@
 
 <style>
 :root{--mint:#578E88;--gray:#E5E7EB;--ink:#17463F;}
-.header,.topbar,.page-title,.breadcrumb,.page-breadcrumb,.hero-banner{display:none!important;}
+body > header.header-area,
+body .header,
+body .header-top,
+body .menu-area,
+body #header-sticky,
+body .topbar,
+body .page-title,
+body .breadcrumb,
+body .breadcrumb-area,
+body .page-breadcrumb,
+body .hero-banner,
+body .second-header,
+body .main-menu{display:none!important;}
 .checkout-fw .container{max-width:980px;}
 body .pt-120{padding-top:24px!important;}
 body .pb-40{padding-bottom:24px!important;}
