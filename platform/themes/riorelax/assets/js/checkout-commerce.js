@@ -11,6 +11,16 @@
     return meta ? meta.getAttribute('content') : '';
   }
 
+  function callTheme(method, value, fallback) {
+    var theme = win.RiorelaxTheme || {};
+    var fn = theme && typeof theme[method] === 'function' ? theme[method] : null;
+    if (fn) {
+      fn.call(theme, value);
+    } else if (typeof fallback === 'function') {
+      fallback(value);
+    }
+  }
+
   function updateTotals(data) {
     if (!data || typeof data !== 'object') return;
     // Auch 0-Werte übernehmen (deshalb 'in' statt truthy)
@@ -57,7 +67,12 @@
       var code = ($('input[name=coupon_code]').val() || '').trim();
 
       if (!url) return;
-      if (!code.length) return (win.RiorelaxTheme?.showError?.('Bitte Gutscheincode eingeben.') ?? alert('Bitte Gutscheincode eingeben.'));
+      if (!code.length) {
+        callTheme('showError', 'Bitte Gutscheincode eingeben.', function (msg) {
+          if (win.alert) alert(msg);
+        });
+        return;
+      }
 
       $.ajax({
         url: url,
@@ -70,14 +85,21 @@
         var message = res && res.message;
         var data    = res && res.data;
 
-        if (error) return (win.RiorelaxTheme?.showError?.(message) ?? alert(message || 'Fehler beim Anwenden des Gutscheins.'));
+        if (error) {
+          callTheme('showError', message || 'Fehler beim Anwenden des Gutscheins.', function (msg) {
+            if (win.alert) alert(msg);
+          });
+          return;
+        }
 
-        win.RiorelaxTheme?.showSuccess?.(message || 'Gutschein angewendet.');
+        callTheme('showSuccess', message || 'Gutschein angewendet.');
         updateTotals(data);
         reloadPaymentList();
       })
       .fail(function (err) {
-        win.RiorelaxTheme?.handleError?.(err) ?? console.error(err);
+        callTheme('handleError', err, function () {
+          if (win.console && console.error) console.error(err);
+        });
       });
     })
     .on('click', '.remove-coupon-code', function (e) {
@@ -97,14 +119,21 @@
         var message = res && res.message;
         var data    = res && res.data;
 
-        if (error) return (win.RiorelaxTheme?.showError?.(message) ?? alert(message || 'Fehler beim Entfernen des Gutscheins.'));
+        if (error) {
+          callTheme('showError', message || 'Fehler beim Entfernen des Gutscheins.', function (msg) {
+            if (win.alert) alert(msg);
+          });
+          return;
+        }
 
-        win.RiorelaxTheme?.showSuccess?.(message || 'Gutschein entfernt.');
+        callTheme('showSuccess', message || 'Gutschein entfernt.');
         updateTotals(data);
         reloadPaymentList();
       })
       .fail(function (err) {
-        win.RiorelaxTheme?.handleError?.(err) ?? console.error(err);
+        callTheme('handleError', err, function () {
+          if (win.console && console.error) console.error(err);
+        });
       });
     });
 
