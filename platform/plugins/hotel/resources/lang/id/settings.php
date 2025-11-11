@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'hotel' => 'Hotel',
+    'hotel' => 'Zentrum',
     'invoicing' => [
         'company_name' => 'Nama perusahaan',
         'company_address' => 'Alamat perusahaan',
@@ -18,7 +18,7 @@ return [
     'invoice_settings_description' => 'Pengaturan informasi Faktur untuk penagihan',
     'general' => [
         'title' => 'Umum',
-        'description' => 'Pengaturan umum untuk Hotel',
+        'description' => 'Pengaturan umum untuk Zentrum',
         'enable_booking' => 'Aktifkan pemesanan?',
         'maximum_number_of_guests' => 'Jumlah maksimum tamu',
         'minimum_number_of_guests' => 'Jumlah minimum tamu',
@@ -34,7 +34,7 @@ return [
     ],
     'review' => [
         'title' => 'Ulasan',
-        'description' => 'Pengaturan ulasan untuk Hotel',
+        'description' => 'Pengaturan ulasan untuk Zentrum',
         'enable_review_room' => 'Aktifkan ulasan?',
         'reviews_per_page' => 'Jumlah ulasan per halaman?',
     ],

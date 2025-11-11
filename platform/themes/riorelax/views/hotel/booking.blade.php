@@ -396,7 +396,7 @@ textarea.form-control{min-height:100px;}
     @if ($hotelRules = theme_option('hotel_rules'))
       <div class="cxl-accordion">
         <details>
-          <summary>Hotelregeln</summary>
+          <summary>Zentrumregeln</summary>
           <div class="cxl-body">{!! BaseHelper::clean($hotelRules) !!}</div>
         </details>
       </div>

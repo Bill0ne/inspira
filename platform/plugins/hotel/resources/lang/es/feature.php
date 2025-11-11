@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'menu' => 'Características del hotel',
+    'menu' => 'Características del Zentrum',
     'name' => 'Características',
     'create' => 'Nueva característica',
     'edit' => 'Editar característica',
