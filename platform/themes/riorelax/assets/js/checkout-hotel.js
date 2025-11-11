@@ -22,6 +22,40 @@
       return { services: services, foods: foods, slots: slots };
     }
 
+    function updateTotals(data) {
+      if (!data || typeof data !== 'object') return;
+      if ('sub_total' in data) $('.amount-text').text(data.sub_total);
+      if ('discount_amount' in data) $('.discount-text').text(data.discount_amount);
+      if ('tax_amount' in data) $('.tax-text').text(data.tax_amount);
+      if ('total_amount' in data) $('.total-amount-text').text(data.total_amount);
+      if ('amount_raw' in data) $('input[name=amount]').val(data.amount_raw);
+    }
+
+    function reloadPaymentList() {
+      var $list = $('.payment-checkout-form .list_payment_method');
+      if (!$list.length) return $.Deferred().resolve();
+
+      var selected = $list.find('input[name="payment_method"]:checked').val();
+      var dfd = $.Deferred();
+
+      $list.load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function (resp, status) {
+        if (status === 'error') {
+          dfd.reject();
+          return;
+        }
+        if (selected) {
+          $list.find('input[name="payment_method"][value="' + selected + '"]').prop('checked', true).trigger('change');
+        }
+        dfd.resolve();
+      });
+
+      return dfd.promise();
+    }
+
+    var sharedApi = win.CheckoutCommerce || {};
+    var applyTotals = typeof sharedApi.updateTotals === 'function' ? sharedApi.updateTotals : updateTotals;
+    var refreshPayments = typeof sharedApi.reloadPaymentList === 'function' ? sharedApi.reloadPaymentList : reloadPaymentList;
+
     function recalc() {
       var payload = collect();
       var roomId  = $('input[name=room_id]').val();
@@ -41,8 +75,8 @@
             return;
           }
 
-          win.CheckoutCommerce?.updateTotals?.(data);
-          return win.CheckoutCommerce?.reloadPaymentList?.();
+          applyTotals(data);
+          return refreshPayments();
         })
         .always(function () {
           if ($btn.length) $btn.prop('disabled', false);

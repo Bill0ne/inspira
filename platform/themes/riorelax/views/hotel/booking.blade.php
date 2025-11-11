@@ -10,8 +10,7 @@
 @php
     Theme::set('pageTitle', '');
     Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
-    Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
-    Theme::asset()->container('footer')->usePath()->add('checkout-hotel', 'js/checkout-hotel.js', ['jquery', 'checkout-commerce']);
+    Theme::asset()->container('footer')->usePath()->add('checkout-hotel', 'js/checkout-hotel.js', ['jquery']);
 
     $startLabel24 = $displayStart ? BaseHelper::formatDate($displayStart, 'd.m.Y H:i') : null;
     $endLabel24 = $displayEnd ? BaseHelper::formatDate($displayEnd, 'd.m.Y H:i') : null;
@@ -19,15 +18,40 @@
 
     $roomPriceDisplay = $totalRoomPrice ?? 0;
     $extrasAmountDisplay = $extrasAmount ?? 0;
+    session(['url.intended' => request()->fullUrl()]);
+    $shouldStartRegister = old('register_customer') == 1;
 @endphp
 
 <style>
-:root{--mint:#578E88;--gray:#E5E7EB;}
+:root{--mint:#578E88;--gray:#E5E7EB;--ink:#17463F;}
 .header,.topbar,.page-title,.breadcrumb,.page-breadcrumb,.hero-banner{display:none!important;}
 .checkout-fw .container{max-width:980px;}
 body .pt-120{padding-top:24px!important;}
 body .pb-40{padding-bottom:24px!important;}
 section.checkout-booking-page{background:#fff;}
+
+/* ==== Topbar ==== */
+.checkout-topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:10px 24px;background:#F8F8F8;color:var(--ink);font-size:14px;font-weight:600;box-shadow:0 1px 0 rgba(23,70,63,0.06);}
+.checkout-topbar__link{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:1px solid rgba(23,70,63,0.15);color:var(--ink);transition:all .2s ease;}
+.checkout-topbar__link svg{width:14px;height:14px;}
+.checkout-topbar__link:hover{background:rgba(23,70,63,0.08);}
+
+/* ==== Modal ==== */
+.checkout-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(18,33,31,0.55);z-index:99;padding:24px;}
+.checkout-modal__backdrop{position:absolute;inset:0;}
+.checkout-modal.is-visible{display:flex;}
+.checkout-modal__dialog{background:#fff;border-radius:12px;max-width:420px;width:100%;padding:30px 28px;position:relative;box-shadow:0 20px 50px rgba(0,0,0,0.15);z-index:1;}
+.checkout-modal__close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;color:#4b5c58;cursor:pointer;line-height:1;}
+.checkout-modal__title{font-weight:600;font-size:18px;margin-bottom:18px;color:var(--ink);}
+.checkout-modal__form .form-control{margin-bottom:14px;height:46px;border-radius:6px;}
+.checkout-modal__actions{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+.checkout-modal__actions label{font-size:13px;}
+.checkout-modal__actions a{font-size:13px;color:var(--mint);font-weight:600;}
+.checkout-modal__submit{width:100%;margin-top:6px;background:var(--mint);border:1px solid var(--mint);color:#fff;font-weight:600;height:46px;border-radius:6px;transition:filter .2s ease;}
+.checkout-modal__submit:hover{filter:brightness(0.95);}
+.checkout-modal__footer{text-align:center;font-size:13px;margin-top:16px;color:#4b5c58;}
+.checkout-modal__footer a{color:var(--mint);font-weight:600;}
+.checkout-modal-open{overflow:hidden;}
 
 /* ==== Ticket Header ==== */
 .ticket{display:grid;grid-template-columns:1.1fr 1.4fr 1fr;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:28px;}
@@ -67,6 +91,9 @@ section.checkout-booking-page{background:#fff;}
 .form-control,.form-select{height:46px;border-radius:6px;}
 textarea.form-control{min-height:100px;}
 .is-invalid{border-color:#c0392b!important;}
+.register-box{margin-top:18px;padding:20px 24px;border:1px solid var(--gray);border-radius:10px;background:#fbfbfb;box-shadow:0 8px 22px rgba(0,0,0,0.05);}
+.register-box .btnrow{justify-content:flex-end;}
+.register-box .form-control{height:44px;}
 .step-section{margin-bottom:22px;}
 .step-section h5{font-size:15px;font-weight:600;margin-bottom:12px;color:#17463f;}
 .step-section p{margin-bottom:14px;}
@@ -142,6 +169,15 @@ textarea.form-control{min-height:100px;}
 }
 </style>
 
+<div class="checkout-topbar">
+  <a class="checkout-topbar__link" href="{{ route('public.rooms') }}" aria-label="Zurück zur Übersicht">
+    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9.5 3.5 5 8l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
+  <span>Zurück zur Übersicht</span>
+</div>
+
 <section class="checkout-booking-page checkout-fw">
   <div class="container pt-120 pb-40 checkout-booking">
 
@@ -178,7 +214,6 @@ textarea.form-control{min-height:100px;}
         @if($extrasAmountDisplay > 0)
           <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($extrasAmountDisplay) }}</b></div>
         @endif
-        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
         <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
         <hr>
         <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
@@ -198,7 +233,7 @@ textarea.form-control{min-height:100px;}
     </div>
 
     {{-- ░░ Formular ░░ --}}
-    <form action="{{ route('public.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form" data-start-step="{{ $customer->id ? 2 : 1 }}">
+    <form action="{{ route('public.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form" data-start-step="{{ $customer->id ? 2 : 1 }}" data-storage-key="hotel-checkout" data-start-register="{{ $shouldStartRegister ? '1' : '0' }}">
       @csrf
       <input type="hidden" name="token" value="{{ $token }}">
       <input type="hidden" name="amount" value="{{ $total }}">
@@ -215,9 +250,11 @@ textarea.form-control{min-height:100px;}
         <input type="hidden" name="callback_url" value="{{ route('payments.paypal.status') }}">
       @endif
       <input type="hidden" name="number_of_guests" value="{{ $adults }}">
+      <input type="hidden" name="register_customer" value="{{ old('register_customer', 0) }}" id="register_customer_flag">
 
       {{-- Step 1 --}}
       <div class="step-panel active" data-step="1">
+        <div id="formAlertStep1" class="form-alert"></div>
         @if ($customer->id)
           <p>Angemeldet als <b>{{ $customer->name ?? $customer->email }}</b></p>
           <div class="btnrow">
@@ -226,9 +263,38 @@ textarea.form-control{min-height:100px;}
           </div>
         @else
           <p>Wie möchtest du fortfahren?</p>
-          <div class="btnrow">
+          <div class="btnrow" data-register-actions>
             <button type="button" class="btnX btn-mint" data-next>Als Gast buchen</button>
-            <a href="{{ route('customer.login') }}?redirect={{ urlencode(request()->fullUrl()) }}" class="btnX btn-outline-mint">Einloggen</a>
+            <button type="button" class="btnX btn-outline-mint" data-open-login>Einloggen</button>
+            <button type="button" class="btnX btn-outline-mint" data-toggle-register>Registrieren</button>
+          </div>
+          <div class="register-box {{ $shouldStartRegister ? '' : 'd-none' }}" data-register-box>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label>Vorname *</label>
+                <input type="text" name="register_first_name" class="form-control" value="{{ old('first_name') }}" autocomplete="given-name">
+              </div>
+              <div class="col-md-6">
+                <label>Nachname *</label>
+                <input type="text" name="register_last_name" class="form-control" value="{{ old('last_name') }}" autocomplete="family-name">
+              </div>
+              <div class="col-md-12">
+                <label>E-Mail *</label>
+                <input type="email" name="register_email" class="form-control" value="{{ old('email') }}" autocomplete="email">
+              </div>
+              <div class="col-md-6">
+                <label>Passwort *</label>
+                <input type="password" name="password" class="form-control" autocomplete="new-password">
+              </div>
+              <div class="col-md-6">
+                <label>Passwort bestätigen *</label>
+                <input type="password" name="password_confirmation" class="form-control" autocomplete="new-password">
+              </div>
+            </div>
+            <div class="btnrow mt-3">
+              <button type="button" class="btnX btn-outline-mint" data-cancel-register>Abbrechen</button>
+              <button type="button" class="btnX btn-mint" data-register-next>Weiter</button>
+            </div>
           </div>
         @endif
       </div>
@@ -293,51 +359,36 @@ textarea.form-control{min-height:100px;}
             <div class="col-md-6">
               <label>Ankunftszeit</label>
               <select name="arrival_time" id="arrival_time" class="form-select">
-                <option>{{ __('I do not know') }}</option>
-                <option>12:00 - 1:00 {{ __('AM') }}</option>
-                <option>1:00 - 2:00 {{ __('AM') }}</option>
-                <option>2:00 - 3:00 {{ __('AM') }}</option>
-                <option>3:00 - 4:00 {{ __('AM') }}</option>
-                <option>4:00 - 5:00 {{ __('AM') }}</option>
-                <option>5:00 - 6:00 {{ __('AM') }}</option>
-                <option>6:00 - 7:00 {{ __('AM') }}</option>
-                <option>7:00 - 8:00 {{ __('AM') }}</option>
-                <option>8:00 - 9:00 {{ __('AM') }}</option>
-                <option>9:00 - 10:00 {{ __('AM') }}</option>
-                <option>10:00 - 11:00 {{ __('AM') }}</option>
-                <option>11:00 - 12:00 {{ __('PM') }}</option>
-                <option>12:00 - 1:00 {{ __('PM') }}</option>
-                <option>1:00 - 2:00 {{ __('PM') }}</option>
-                <option>2:00 - 3:00 {{ __('PM') }}</option>
-                <option>3:00 - 4:00 {{ __('PM') }}</option>
-                <option>4:00 - 5:00 {{ __('PM') }}</option>
-                <option>5:00 - 6:00 {{ __('PM') }}</option>
-                <option>6:00 - 7:00 {{ __('PM') }}</option>
-                <option>7:00 - 8:00 {{ __('PM') }}</option>
-                <option>8:00 - 9:00 {{ __('PM') }}</option>
-                <option>9:00 - 10:00 {{ __('PM') }}</option>
-                <option>10:00 - 11:00 {{ __('PM') }}</option>
-                <option>11:00 - 12:00 {{ __('PM') }}</option>
+                @php($arrivalSelected = old('arrival_time'))
+                <option @selected(! $arrivalSelected || $arrivalSelected === __('I do not know'))>{{ __('I do not know') }}</option>
+                <option @selected($arrivalSelected === '12:00 - 1:00 ' . __('AM'))>12:00 - 1:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '1:00 - 2:00 ' . __('AM'))>1:00 - 2:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '2:00 - 3:00 ' . __('AM'))>2:00 - 3:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '3:00 - 4:00 ' . __('AM'))>3:00 - 4:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '4:00 - 5:00 ' . __('AM'))>4:00 - 5:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '5:00 - 6:00 ' . __('AM'))>5:00 - 6:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '6:00 - 7:00 ' . __('AM'))>6:00 - 7:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '7:00 - 8:00 ' . __('AM'))>7:00 - 8:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '8:00 - 9:00 ' . __('AM'))>8:00 - 9:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '9:00 - 10:00 ' . __('AM'))>9:00 - 10:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '10:00 - 11:00 ' . __('AM'))>10:00 - 11:00 {{ __('AM') }}</option>
+                <option @selected($arrivalSelected === '11:00 - 12:00 ' . __('PM'))>11:00 - 12:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '12:00 - 1:00 ' . __('PM'))>12:00 - 1:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '1:00 - 2:00 ' . __('PM'))>1:00 - 2:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '2:00 - 3:00 ' . __('PM'))>2:00 - 3:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '3:00 - 4:00 ' . __('PM'))>3:00 - 4:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '4:00 - 5:00 ' . __('PM'))>4:00 - 5:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '5:00 - 6:00 ' . __('PM'))>5:00 - 6:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '6:00 - 7:00 ' . __('PM'))>6:00 - 7:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '7:00 - 8:00 ' . __('PM'))>7:00 - 8:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '8:00 - 9:00 ' . __('PM'))>8:00 - 9:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '9:00 - 10:00 ' . __('PM'))>9:00 - 10:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '10:00 - 11:00 ' . __('PM'))>10:00 - 11:00 {{ __('PM') }}</option>
+                <option @selected($arrivalSelected === '11:00 - 12:00 ' . __('PM'))>11:00 - 12:00 {{ __('PM') }}</option>
               </select>
             </div>
           </div>
         </div>
-
-        @if(! $customer->id)
-          <div class="step-section create-customer">
-            <label class="addon-card custom-checkbox" for="register-customer">
-              <input type="checkbox" id="register-customer" name="register_customer" value="1">
-              <div class="addon-meta">
-                <div class="addon-name">{{ __('Register an account with above information?') }}</div>
-                <div class="addon-price text-muted">{{ __('Passwort wird im nächsten Schritt festgelegt.') }}</div>
-              </div>
-            </label>
-            <div class="row g-3 mt-3 d-none form-create-customer-password">
-              <div class="col-md-6"><label>{{ __('Password') }}</label><input type="password" name="password" class="form-control"></div>
-              <div class="col-md-6"><label>{{ __('Password confirm') }}</label><input type="password" name="password_confirmation" class="form-control"></div>
-            </div>
-          </div>
-        @endif
 
         <div class="step-section requests-box">
           <h5>Spezielle Wünsche</h5>
@@ -365,8 +416,6 @@ textarea.form-control{min-height:100px;}
           <div><span>Erwachsene</span>{{ $adults }}</div>
         </div>
 
-        <div class="coupon-wrapper" id="couponBox">@include('plugins/hotel::coupons.partials.form')</div>
-
         @if (is_plugin_active('payment') && ($defaultPaymentMethod = PaymentMethods::getDefaultMethod()) && get_payment_setting('status', $defaultPaymentMethod))
           <label>Zahlungsmethode</label>
           <ul class="list-group list_payment_method">
@@ -384,7 +433,7 @@ textarea.form-control{min-height:100px;}
 
         {!! apply_filters('form_extra_fields_render', null) !!}
 
-        <label class="d-flex align-items-center gap-2 mt-2"><input type="checkbox" id="terms_conditions" name="terms_conditions" value="1"> <span>Allgemeine Geschäftsbedingungen *</span></label>
+        <label class="d-flex align-items-center gap-2 mt-2"><input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))> <span>Allgemeine Geschäftsbedingungen *</span></label>
 
         <div class="btnrow">
           <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
@@ -412,6 +461,8 @@ textarea.form-control{min-height:100px;}
     @endif
   </div>
 </section>
+
+{!! Theme::partial('checkout.login-modal', ['redirectUrl' => request()->fullUrl()]) !!}
 
 @if (is_plugin_active('payment'))
   {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
