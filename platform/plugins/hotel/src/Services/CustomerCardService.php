@@ -2,6 +2,7 @@
 
 namespace Botble\Hotel\Services;
 
+use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\CustomerCard;
 use Botble\Hotel\Models\CustomerCardUsage;
 use Botble\Hotel\Models\Booking;
@@ -91,6 +92,14 @@ class CustomerCardService
         return round(max($discount, 0), 2);
     }
 
+    public function calculatePurchasePrice(CustomerCard $card): float
+    {
+        $total = (float) $card->base_price * max($card->units_total, 0);
+        $discount = $total * ($card->discount_percent / 100);
+
+        return round(max($total - $discount, 0), 2);
+    }
+
     public function consumeUnits(CustomerCard $card, ?Booking $booking, ?Course $course, int $units, float $discountAmount): CustomerCardUsage
     {
         $units = max(0, min($units, $card->units_remaining));
@@ -133,6 +142,43 @@ class CustomerCardService
             }
 
             return $card->refresh();
+        });
+    }
+
+    public function assignTemplateToCustomer(CustomerCard $template, Customer $customer): CustomerCard
+    {
+        return $this->database->transaction(function () use ($template, $customer) {
+            $attributes = [
+                'name' => $template->name,
+                'type' => $template->type,
+                'base_price' => $template->base_price,
+                'discount_percent' => $template->discount_percent,
+                'units_total' => $template->units_total,
+                'units_remaining' => $template->units_total,
+                'valid_until' => $template->valid_until,
+                'is_active' => true,
+                'created_by' => $template->created_by,
+                'assigned_to' => $customer->getKey(),
+            ];
+
+            $existingCard = CustomerCard::query()
+                ->where('assigned_to', $customer->getKey())
+                ->where('name', $template->name)
+                ->first();
+
+            if ($existingCard) {
+                $existingCard->fill($attributes);
+                $existingCard->units_remaining = $template->units_total;
+                $existingCard->save();
+
+                return $existingCard->refresh();
+            }
+
+            $newCard = $template->replicate();
+            $newCard->fill($attributes);
+            $newCard->save();
+
+            return $newCard->refresh();
         });
     }
 }

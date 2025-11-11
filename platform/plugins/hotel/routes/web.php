@@ -324,6 +324,10 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
                 'middleware' => ['customer'],
             ], function (): void {
                 Route::get('cards', [CustomerDashboardController::class, 'cards'])->name('customer.cards');
+                Route::get('cards/checkout/{customer_card}', [CustomerDashboardController::class, 'checkoutCard'])
+                    ->name('customer.cards.checkout');
+                Route::post('cards/purchase/{customer_card}', [CustomerDashboardController::class, 'purchaseCard'])
+                    ->name('customer.cards.purchase');
             });
 
             Route::get('ajax/calculate-amount', 'PublicController@ajaxCalculateBookingAmount')
