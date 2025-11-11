@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\CustomerCardUsage;
+use Illuminate\Support\Str;
 
 class CustomerCard extends BaseModel
 {
@@ -18,6 +19,7 @@ class CustomerCard extends BaseModel
 
     protected $fillable = [
         'name',
+        'uid',
         'type',
         'base_price',
         'discount_percent',
@@ -40,6 +42,21 @@ class CustomerCard extends BaseModel
     ];
 
     protected $appends = ['status_label', 'status_color'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (CustomerCard $card): void {
+            if ($card->assigned_to && ! $card->uid) {
+                $card->uid = static::generateUid();
+            }
+        });
+
+        static::saving(function (CustomerCard $card): void {
+            if ($card->assigned_to && ! $card->uid) {
+                $card->uid = static::generateUid();
+            }
+        });
+    }
 
     public function creator(): BelongsTo
     {
@@ -99,5 +116,14 @@ class CustomerCard extends BaseModel
             ->where(function ($q) {
                 $q->whereNull('valid_until')->orWhere('valid_until', '>=', Carbon::now());
             });
+    }
+
+    public static function generateUid(): string
+    {
+        do {
+            $uid = strtoupper(Str::random(12));
+        } while (static::query()->where('uid', $uid)->exists());
+
+        return $uid;
     }
 }

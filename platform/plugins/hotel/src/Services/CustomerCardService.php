@@ -21,9 +21,7 @@ class CustomerCardService
         return CustomerCard::query()
             ->active()
             ->when($userId, function ($query, $userId) {
-                $query->where(function ($subQuery) use ($userId) {
-                    $subQuery->whereNull('assigned_to')->orWhere('assigned_to', $userId);
-                });
+                $query->where('assigned_to', $userId);
             })
             ->orderBy('name')
             ->get();
@@ -50,10 +48,10 @@ class CustomerCardService
             ->active()
             ->whereKey($cardId)
             ->where(function ($query) use ($userId) {
-                $query->whereNull('assigned_to');
-
                 if ($userId) {
-                    $query->orWhere('assigned_to', $userId);
+                    $query->where('assigned_to', $userId);
+                } else {
+                    $query->whereNull('assigned_to');
                 }
             })
             ->first();
@@ -80,14 +78,22 @@ class CustomerCardService
 
     public function calculateDiscount(CustomerCard $card, ?Course $course, int $units = 1): float
     {
-        $units = max(1, $units);
-        $baseAmount = $card->base_price * $units;
+        $availableUnits = max($card->units_remaining, 0);
 
-        if ($course && $course->price) {
-            $baseAmount = min((float) $course->price, $card->base_price) * $units;
+        if ($availableUnits <= 0) {
+            return 0.0;
         }
 
-        $discount = $baseAmount * ($card->discount_percent / 100);
+        $units = max(1, min($units, $availableUnits));
+        $coursePrice = $course ? (float) $course->price : 0.0;
+
+        if ($coursePrice <= 0) {
+            $unitValue = 0;
+        } else {
+            $unitValue = min((float) $card->base_price, $coursePrice);
+        }
+
+        $discount = $unitValue * $units;
 
         return round(max($discount, 0), 2);
     }
@@ -169,6 +175,9 @@ class CustomerCardService
             if ($existingCard) {
                 $existingCard->fill($attributes);
                 $existingCard->units_remaining = $template->units_total;
+                if (! $existingCard->uid) {
+                    $existingCard->uid = CustomerCard::generateUid();
+                }
                 $existingCard->save();
 
                 return $existingCard->refresh();
@@ -176,9 +185,21 @@ class CustomerCardService
 
             $newCard = $template->replicate();
             $newCard->fill($attributes);
+            $newCard->uid = CustomerCard::generateUid();
             $newCard->save();
 
             return $newCard->refresh();
         });
+    }
+
+    public function customerHasActiveCard(int $customerId, ?int $ignoreCardId = null): bool
+    {
+        return CustomerCard::query()
+            ->active()
+            ->where('assigned_to', $customerId)
+            ->when($ignoreCardId, function ($query, $ignoreCardId) {
+                $query->whereKeyNot($ignoreCardId);
+            })
+            ->exists();
     }
 }

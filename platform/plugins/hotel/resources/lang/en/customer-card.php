@@ -24,6 +24,9 @@ return [
         'valid_until' => 'Valid until',
         'assigned_to' => 'Assigned to',
         'status' => 'Status',
+        'usage_title' => 'Card usage',
+        'view_usage' => 'Usage',
+        'room_booking_fallback' => 'Room booking',
     ],
     'status' => [
         'active' => 'Active',
@@ -55,6 +58,7 @@ return [
     ],
     'messages' => [
         'select_card' => 'Please select a customer card to continue.',
+        'loading' => 'Loading…',
     ],
     'invoice' => [
         'discount_line' => 'Customer card discount: :card',
@@ -82,6 +86,8 @@ return [
         'units_used' => 'Units used',
         'saved_amount' => 'Amount saved',
         'success_message' => 'Customer card activated successfully.',
+        'pending_message' => 'Please complete the payment to activate your card.',
+        'already_active' => 'You already have an active card.',
     ],
     'checkout' => [
         'back_link' => 'Back to my cards',

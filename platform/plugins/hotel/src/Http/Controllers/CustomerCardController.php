@@ -9,6 +9,7 @@ use Botble\Base\Facades\Assets;
 use Botble\Base\Http\Actions\DeleteResourceAction;
 use Botble\Base\Http\Controllers\BaseController;
 use Botble\Base\Facades\BaseHelper;
+use Botble\Base\Http\Responses\BaseHttpResponse;
 use Botble\Hotel\Enums\CustomerCardTypeEnum;
 use Botble\Hotel\Http\Requests\CustomerCardRequest;
 use Botble\Hotel\Models\CustomerCard;
@@ -34,6 +35,8 @@ class CustomerCardController extends BaseController
     public function index(CustomerCardTable $table)
     {
         $this->pageTitle(trans('plugins/hotel::customer-card.name'));
+
+        Assets::addScriptsDirectly('vendor/core/plugins/hotel/js/customer-card.js');
 
         return $table->renderTable();
     }
@@ -151,10 +154,10 @@ class CustomerCardController extends BaseController
         }
 
         $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
-        $unitsUsed = min($card->units_total, 1);
+        $unitsUsed = min($card->units_remaining, 1);
         $discount = $service->calculateDiscount($card, $course, $unitsUsed);
 
-        $data = HotelSupport::getCheckoutData();
+        $data = HotelSupport::getCheckoutData() ?: [];
         $data['customer_card_id'] = $card->getKey();
         $data['customer_card_discount'] = $discount;
         $data['customer_card_units_used'] = $unitsUsed;
@@ -162,16 +165,38 @@ class CustomerCardController extends BaseController
 
         return $this->httpResponse()
             ->setMessage(__('Karte angewendet.'))
-            ->setData(['discount' => format_price($discount)]);
+            ->setData([
+                'discount' => format_price($discount),
+                'raw_discount' => $discount,
+                'card_id' => $card->getKey(),
+                'units_used' => $unitsUsed,
+            ]);
     }
 
     public function remove()
     {
-        $data = HotelSupport::getCheckoutData();
+        $data = HotelSupport::getCheckoutData() ?: [];
         unset($data['customer_card_id'], $data['customer_card_discount'], $data['customer_card_units_used']);
         HotelSupport::saveCheckoutData($data);
 
-        return $this->httpResponse()->setMessage(__('Karte entfernt.'));
+        return $this->httpResponse()
+            ->setMessage(__('Karte entfernt.'))
+            ->setData([
+                'discount' => format_price(0),
+                'raw_discount' => 0,
+            ]);
+    }
+
+    public function usages(CustomerCard $customerCard, BaseHttpResponse $response): BaseHttpResponse
+    {
+        $usages = $customerCard->usages()
+            ->with(['course', 'booking.room.room'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return $response->setData([
+            'html' => view('plugins/hotel::customer-cards.partials.usages', compact('customerCard', 'usages'))->render(),
+        ]);
     }
 
     protected function parseValidUntil(Request $request): ?Carbon
