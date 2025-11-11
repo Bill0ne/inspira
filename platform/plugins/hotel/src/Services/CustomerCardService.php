@@ -2,14 +2,13 @@
 
 namespace Botble\Hotel\Services;
 
+use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\CustomerCard;
 use Botble\Hotel\Models\CustomerCardUsage;
 use Botble\Hotel\Models\Booking;
 use Botble\Courses\Models\Course;
-use Carbon\Carbon;
 use Illuminate\Database\DatabaseManager;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 class CustomerCardService
 {
@@ -20,15 +19,11 @@ class CustomerCardService
     public function getActiveCardsByUser(?int $userId): Collection
     {
         return CustomerCard::query()
+            ->active()
             ->when($userId, function ($query, $userId) {
-                $query->where(function ($q) use ($userId) {
-                    $q->whereNull('assigned_to')->orWhere('assigned_to', $userId);
+                $query->where(function ($subQuery) use ($userId) {
+                    $subQuery->whereNull('assigned_to')->orWhere('assigned_to', $userId);
                 });
-            })
-            ->where('is_active', true)
-            ->where('units_remaining', '>', 0)
-            ->where(function ($query) {
-                $query->whereNull('valid_until')->orWhere('valid_until', '>=', Carbon::now());
             })
             ->orderBy('name')
             ->get();
@@ -36,30 +31,73 @@ class CustomerCardService
 
     public function getApplicableCardsForCourse(?int $courseId, ?int $userId): Collection
     {
-        $cards = $this->getActiveCardsByUser($userId);
-
-        if (! $courseId || ! class_exists(Course::class)) {
-            return $cards;
-        }
-
-        $course = Course::query()->find($courseId);
-
-        if (! $course || ! Arr::get($course->toArray(), 'accept_customer_card')) {
+        if (! $courseId) {
             return collect();
         }
 
-        return $cards;
+        $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
+
+        if (! $course || ! $course->accept_customer_card) {
+            return collect();
+        }
+
+        return $this->getActiveCardsByUser($userId);
+    }
+
+    public function getValidCard(int $cardId, ?int $userId): ?CustomerCard
+    {
+        return CustomerCard::query()
+            ->active()
+            ->whereKey($cardId)
+            ->where(function ($query) use ($userId) {
+                $query->whereNull('assigned_to');
+
+                if ($userId) {
+                    $query->orWhere('assigned_to', $userId);
+                }
+            })
+            ->first();
+    }
+
+    public function isApplicable(CustomerCard $card, ?int $courseId): bool
+    {
+        if (! $card->is_active || $card->units_remaining <= 0) {
+            return false;
+        }
+
+        if ($card->valid_until && $card->valid_until->isPast()) {
+            return false;
+        }
+
+        if (! $courseId) {
+            return true;
+        }
+
+        $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
+
+        return $course ? (bool) $course->accept_customer_card : false;
     }
 
     public function calculateDiscount(CustomerCard $card, ?Course $course, int $units = 1): float
     {
-        $discountPerUnit = (float) $card->base_price * ($card->discount_percent / 100);
+        $units = max(1, $units);
+        $baseAmount = $card->base_price * $units;
 
         if ($course && $course->price) {
-            $discountPerUnit = min($discountPerUnit, (float) $course->price);
+            $baseAmount = min((float) $course->price, $card->base_price) * $units;
         }
 
-        return round($discountPerUnit * max($units, 1), 2);
+        $discount = $baseAmount * ($card->discount_percent / 100);
+
+        return round(max($discount, 0), 2);
+    }
+
+    public function calculatePurchasePrice(CustomerCard $card): float
+    {
+        $total = (float) $card->base_price * max($card->units_total, 0);
+        $discount = $total * ($card->discount_percent / 100);
+
+        return round(max($total - $discount, 0), 2);
     }
 
     public function consumeUnits(CustomerCard $card, ?Booking $booking, ?Course $course, int $units, float $discountAmount): CustomerCardUsage
@@ -76,6 +114,10 @@ class CustomerCardService
                 $card->update(['is_active' => false, 'units_remaining' => 0]);
             }
 
+            if ($card->valid_until && $card->valid_until->isPast()) {
+                $card->update(['is_active' => false]);
+            }
+
             return CustomerCardUsage::query()->create([
                 'card_id' => $card->getKey(),
                 'booking_id' => $booking?->getKey(),
@@ -83,6 +125,60 @@ class CustomerCardService
                 'units_used' => $units,
                 'discount_amount' => $discountAmount,
             ]);
+        });
+    }
+
+    public function restoreUnits(CustomerCard $card, int $units): CustomerCard
+    {
+        $units = max(0, $units);
+
+        return $this->database->transaction(function () use ($card, $units) {
+            if ($units > 0) {
+                $card->increment('units_remaining', $units);
+            }
+
+            if ($card->units_remaining > 0) {
+                $card->update(['is_active' => true]);
+            }
+
+            return $card->refresh();
+        });
+    }
+
+    public function assignTemplateToCustomer(CustomerCard $template, Customer $customer): CustomerCard
+    {
+        return $this->database->transaction(function () use ($template, $customer) {
+            $attributes = [
+                'name' => $template->name,
+                'type' => $template->type,
+                'base_price' => $template->base_price,
+                'discount_percent' => $template->discount_percent,
+                'units_total' => $template->units_total,
+                'units_remaining' => $template->units_total,
+                'valid_until' => $template->valid_until,
+                'is_active' => true,
+                'created_by' => $template->created_by,
+                'assigned_to' => $customer->getKey(),
+            ];
+
+            $existingCard = CustomerCard::query()
+                ->where('assigned_to', $customer->getKey())
+                ->where('name', $template->name)
+                ->first();
+
+            if ($existingCard) {
+                $existingCard->fill($attributes);
+                $existingCard->units_remaining = $template->units_total;
+                $existingCard->save();
+
+                return $existingCard->refresh();
+            }
+
+            $newCard = $template->replicate();
+            $newCard->fill($attributes);
+            $newCard->save();
+
+            return $newCard->refresh();
         });
     }
 }
