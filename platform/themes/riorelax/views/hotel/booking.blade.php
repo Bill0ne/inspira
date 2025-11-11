@@ -32,6 +32,7 @@ section.checkout-booking-page{background:#fff;}
 /* ==== Ticket Header ==== */
 .ticket{display:grid;grid-template-columns:1.1fr 1.4fr 1fr;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:28px;}
 .ticket__col{padding:20px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px;}
+.ticket__col.ticket__media{padding:0;}
 .ticket__media img{width:100%;height:100%;min-height:220px;object-fit:cover;}
 .ticket__details{background:var(--mint);color:#fff;}
 .ticket__details .title,.ticket__totals .title{font-weight:600;font-size:15px;margin-bottom:10px;}
