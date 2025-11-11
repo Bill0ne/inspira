@@ -40,15 +40,7 @@ readonly class EnsureLicenseHasBeenActivated
             throw $e;
         }
 
-        $whitelistRoutes = [
-            'unlicensed',
-            'unlicensed.skip',
-            'settings.license.activate',
-        ];
-
-        if (! $request->routeIs($whitelistRoutes)) {
-            return redirect()->route('unlicensed', ['redirect_url' => $request->fullUrl()]);
-        }
+        $this->core->skipLicenseReminder();
 
         return $next($request);
     }
