@@ -30,13 +30,13 @@ class QuantityDiscountTable extends TableAbstract
             ])
             ->addColumns([
                 IdColumn::make(),
-                FormattedColumn::make('title')->title(__('Title')),
-                EnumColumn::make('condition_type')->title(__('Condition Type')),
-                FormattedColumn::make('range_min')->title(__('Range Min'))->withEmptyState(),
-                FormattedColumn::make('range_max')->title(__('Range Max'))->withEmptyState(),
-                EnumColumn::make('discount_type')->title(__('Discount Type')),
-                FormattedColumn::make('discount_value')->title(__('Discount Value')),
-                FormattedColumn::make('priority')->title(__('Priority')),
+                FormattedColumn::make('title')->title(trans('plugins/price-configurator::price-configurator.forms.title')),
+                EnumColumn::make('condition_type')->title(trans('plugins/price-configurator::price-configurator.forms.condition_type')),
+                FormattedColumn::make('range_min')->title(trans('plugins/price-configurator::price-configurator.forms.range_min'))->withEmptyState(),
+                FormattedColumn::make('range_max')->title(trans('plugins/price-configurator::price-configurator.forms.range_max'))->withEmptyState(),
+                EnumColumn::make('discount_type')->title(trans('plugins/price-configurator::price-configurator.forms.discount_type')),
+                FormattedColumn::make('discount_value')->title(trans('plugins/price-configurator::price-configurator.forms.discount_value')),
+                FormattedColumn::make('priority')->title(trans('plugins/price-configurator::price-configurator.forms.priority')),
                 StatusColumn::make(),
                 CreatedAtColumn::make(),
             ])

@@ -26,42 +26,42 @@ class QuantityDiscountForm extends FormAbstract
             ->add('title',
                 TextField::class,
                 NameFieldOption::make()
-                    ->label(__('Title'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.title'))
                     ->required()
             )
             ->add('condition_type',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Condition Type'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.condition_type'))
                     ->choices(ConditionTypeEnum::labels())
                     ->required()
             )
             ->add('range_min',
                 NumberField::class,
                 NumberFieldOption::make()
-                    ->label(__('Range Min'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.range_min'))
             )
             ->add('range_max',
                 NumberField::class,
                 NumberFieldOption::make()
-                    ->label(__('Range Max'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.range_max'))
             )
             ->add('discount_type', SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Discount Type'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.discount_type'))
                     ->choices(CalculationTypeEnum::labels())
                     ->required()
             )
             ->add('discount_value',
                 NumberField::class,
                 NumberFieldOption::make()
-                    ->label(__('Discount Value'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.discount_value'))
                     ->required()
             )
             ->add('priority',
                 NumberField::class,
                 NumberFieldOption::make()
-                    ->label(__('Priority'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.priority'))
                     ->defaultValue(0)
             )
             ->add('status',

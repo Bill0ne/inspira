@@ -29,9 +29,9 @@ class CustomerCategoryTable extends TableAbstract
             ])
             ->addColumns([
                 IdColumn::make(),
-                FormattedColumn::make('code')->title(__('Code')),
-                FormattedColumn::make('label')->title(__('Label')),
-                FormattedColumn::make('description')->title(__('Description')),
+                FormattedColumn::make('code')->title(trans('plugins/price-configurator::price-configurator.forms.code')),
+                FormattedColumn::make('label')->title(trans('plugins/price-configurator::price-configurator.forms.label')),
+                FormattedColumn::make('description')->title(trans('plugins/price-configurator::price-configurator.forms.description')),
                 StatusColumn::make(),
                 CreatedAtColumn::make(),
             ])
