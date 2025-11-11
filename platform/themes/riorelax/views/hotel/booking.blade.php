@@ -446,7 +446,18 @@ textarea.form-control{min-height:100px;}
 
         {!! apply_filters('form_extra_fields_render', null) !!}
 
-        <label class="d-flex align-items-center gap-2 mt-2"><input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))> <span>Allgemeine Geschäftsbedingungen *</span></label>
+        <label class="d-flex align-items-center gap-2 mt-2">
+            <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))>
+            <span>
+                Allgemeine&nbsp;Geschäftsbedingungen&nbsp;*
+                <a href="https://stage.inspira-zentrum.de/de/term-and-conditions"
+                   target="_blank"
+                   rel="noopener"
+                   style="color:#578E88;font-weight:600;text-decoration:underline;">
+                    (AGB&nbsp;öffnen)
+                </a>
+            </span>
+        </label>
 
         <div class="btnrow">
           <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
