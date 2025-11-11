@@ -14,6 +14,7 @@ MIGRATIONS=(
   "platform/plugins/hotel/database/migrations/2025_11_10_000002_create_ht_customer_card_usages_table.php"
   "platform/plugins/hotel/database/migrations/2025_11_10_000003_add_accept_customer_card_to_courses_table.php"
   "platform/plugins/hotel/database/migrations/2025_11_10_000004_add_customer_card_columns_to_bookings_table.php"
+  "platform/plugins/hotel/database/migrations/2025_11_10_000005_update_ht_customer_cards_assigned_to_foreign.php"
 )
 
 usage() {
