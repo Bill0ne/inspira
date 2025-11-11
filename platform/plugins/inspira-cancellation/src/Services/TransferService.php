@@ -64,24 +64,28 @@ class TransferService
 
     protected function syncContactInformation(Model $booking, array $payload): void
     {
-        $firstName = Arr::get($payload, 'first_name');
-        $lastName = Arr::get($payload, 'last_name');
-        $email = Arr::get($payload, 'email');
-
-        if (method_exists($booking, 'address')) {
-            $address = $booking->address;
-            $address->first_name = $firstName;
-            $address->last_name = $lastName;
-            $address->email = $email;
-            $address->save();
+        if (! method_exists($booking, 'address')) {
+            return;
         }
 
-        if ($booking instanceof CourseBooking) {
-            $address = $booking->address;
-            $address->first_name = $firstName;
-            $address->last_name = $lastName;
-            $address->email = $email;
-            $address->save();
+        $address = $booking->address;
+
+        if (! $address) {
+            return;
+        }
+
+        $address->first_name = Arr::get($payload, 'first_name');
+        $address->last_name = Arr::get($payload, 'last_name');
+        $address->email = Arr::get($payload, 'email');
+
+        if ($address->isFillable('phone')) {
+            $address->phone = Arr::get($payload, 'phone');
+        }
+
+        $address->save();
+
+        if (method_exists($booking, 'setRelation')) {
+            $booking->setRelation('address', $address);
         }
     }
 
