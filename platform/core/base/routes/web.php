@@ -97,6 +97,10 @@ Route::group(['namespace' => 'Botble\Base\Http\Controllers'], function (): void 
                     'as' => 'unlicensed.skip',
                     'uses' => 'LicenseReminderController@skip',
                 ]);
+            } else {
+                Route::get('unlicensed', static fn () => abort(404))->name('unlicensed');
+
+                Route::post('unlicensed/skip', static fn () => abort(404))->name('unlicensed.skip');
             }
 
             Route::get('menu-items-count', [
