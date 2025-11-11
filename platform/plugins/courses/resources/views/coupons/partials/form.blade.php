@@ -1,7 +1,7 @@
 @php
     $sessionData = \Botble\Hotel\Facades\HotelHelper::getCheckoutData();
-    $couponCode = \Illuminate\Support\Arr::get($sessionData, 'coupon_code');
-    $couponAmount = \Illuminate\Support\Arr::get($sessionData, 'coupon_amount');
+    $couponCode = $appliedCouponCode ?? \Illuminate\Support\Arr::get($sessionData, 'coupon_code');
+    $couponAmount = $appliedCouponAmount ?? \Illuminate\Support\Arr::get($sessionData, 'coupon_amount');
 
     if (! isset($course) || ! $course) {
         $courseId = \Illuminate\Support\Arr::get($sessionData, 'course_id');
@@ -14,8 +14,11 @@
 <div class="order-detail-box coupon-box" data-refresh-url="{{ route('coupon.course.refresh') }}" @if(isset($course) && $course) data-course-id="{{ $course->getKey() }}" @endif>
     <button class="btn-link ps-0 text-decoration-none toggle-coupon-form" type="button">{{ trans('plugins/hotel::coupon.toggle_coupon_form_text') }}</button>
 
-    <div class="coupon-form mt-3" @style(['display: none' => ! ($couponCode && $couponAmount)])>
-        @if ($couponCode && $couponAmount)
+    @php
+        $hasCoupon = $couponCode && (float) $couponAmount > 0;
+    @endphp
+    <div class="coupon-form mt-3" @style(['display: none' => ! $hasCoupon])>
+        @if ($hasCoupon)
             <div class="alert alert-success d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 coupon-feedback mb-0">
                 <div class="d-flex flex-column">
                     <span class="fw-semibold">{{ __('Coupon erfolgreich angewendet') }}</span>

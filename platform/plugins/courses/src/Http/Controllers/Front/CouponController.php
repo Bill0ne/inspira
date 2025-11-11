@@ -78,7 +78,12 @@ class CouponController extends BaseController
                 'tax_amount' => format_price($taxAmount),
                 'total_amount' => format_price($totalAmount),
                 'amount_raw' => $totalAmount,
-                'coupon_view' => view('plugins/courses::coupons.partials.form', compact('course'))->render(),
+                'coupon_code' => $couponCode,
+                'coupon_view' => view('plugins/courses::coupons.partials.form', [
+                    'course' => $course,
+                    'appliedCouponCode' => $couponCode,
+                    'appliedCouponAmount' => $discountAmount,
+                ])->render(),
             ])
             ->setMessage(__('Applied coupon ":code" successfully!', ['code' => $couponCode]));
     }
@@ -99,7 +104,9 @@ class CouponController extends BaseController
 
         HotelHelper::saveCheckoutData($sessionData);
 
-        $data = null;
+        $data = [
+            'coupon_code' => null,
+        ];
 
         if ($course) {
             $pricing = $course->resolvePricing(Auth::guard('customer')->user());
@@ -109,14 +116,18 @@ class CouponController extends BaseController
             $totalAmount = $netSubtotal + $taxAmount;
             $subTotalDisplay = $course->getPriceWithTax($amountNet);
 
-            $data = [
+            $data = array_merge($data, [
                 'sub_total' => format_price($subTotalDisplay),
                 'discount_amount' => format_price(0),
                 'tax_amount' => format_price($taxAmount),
                 'total_amount' => format_price($totalAmount),
                 'amount_raw' => $totalAmount,
-                'coupon_view' => view('plugins/courses::coupons.partials.form', compact('course'))->render(),
-            ];
+                'coupon_view' => view('plugins/courses::coupons.partials.form', [
+                    'course' => $course,
+                    'appliedCouponCode' => null,
+                    'appliedCouponAmount' => 0,
+                ])->render(),
+            ]);
         }
 
         return $this->response

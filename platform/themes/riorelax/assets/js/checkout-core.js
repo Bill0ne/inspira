@@ -398,7 +398,12 @@
         if (terms) markInvalid(terms, false);
         if (!terms || !terms.checked) {
           errors.push(['Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen.', terms]);
-          if (terms) markInvalid(terms, true);
+          if (terms) {
+            markInvalid(terms, true);
+            if (typeof terms.focus === 'function') {
+              terms.focus();
+            }
+          }
         }
       }
 
@@ -408,13 +413,19 @@
 
     // --- ACTION BUTTON GUARD ---
     form.addEventListener('click', function (e) {
-      if (!matchesSelector(e.target, '.payment-checkout-btn')) return;
+      var rawTarget = e.target;
+      if (rawTarget && rawTarget.nodeType !== 1) {
+        rawTarget = rawTarget.parentElement;
+      }
+      var btn = closestElement(rawTarget, '.payment-checkout-btn', form);
+      if (!btn) return;
       clearAlerts();
       var step2Ok = validateStep(2);
       var step3Ok = validateStep(3);
       if (!step2Ok || !step3Ok) {
         e.preventDefault();
         e.stopPropagation();
+        btn.blur();
         return false;
       }
       return true;

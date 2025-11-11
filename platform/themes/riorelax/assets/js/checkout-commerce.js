@@ -161,6 +161,12 @@
 
         callTheme('showSuccess', message || 'Gutschein angewendet.');
         updateTotals(data);
+        if (data && typeof data.coupon_code !== 'undefined') {
+          $('input[name=coupon_hidden]').val(data.coupon_code || '');
+          if (data.coupon_code) {
+            $('input[name=coupon_code]').val(data.coupon_code);
+          }
+        }
         refreshCouponBox(data && data.coupon_view);
         reloadPaymentList();
       })
@@ -201,6 +207,12 @@
 
         callTheme('showSuccess', message || 'Gutschein entfernt.');
         updateTotals(data);
+        if (data && typeof data.coupon_code !== 'undefined') {
+          $('input[name=coupon_hidden]').val('');
+          if (!data.coupon_code) {
+            $('input[name=coupon_code]').val('');
+          }
+        }
         refreshCouponBox(data && data.coupon_view);
         reloadPaymentList();
       })
