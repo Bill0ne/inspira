@@ -97,6 +97,19 @@
     var storageKey = form.getAttribute('data-storage-key');
     var storageFields = ['first_name', 'last_name', 'email', 'phone', 'country', 'state', 'city', 'address', 'zip', 'requests', 'arrival_time'];
     var storedData = {};
+    var prefillData = {};
+
+    var prefillAttr = form.getAttribute('data-prefill');
+    if (prefillAttr) {
+      try {
+        prefillData = JSON.parse(prefillAttr);
+      } catch (err) {
+        prefillData = {};
+      }
+      if (!prefillData || typeof prefillData !== 'object' || Array.isArray(prefillData)) {
+        prefillData = {};
+      }
+    }
 
     if (storageKey) {
       try {
@@ -140,6 +153,30 @@
         storedData[name] = value;
       }
       try { localStorage.setItem(storageKey, JSON.stringify(storedData)); } catch (err) {}
+    }
+
+    function applyPrefill() {
+      if (!prefillData || typeof prefillData !== 'object') return;
+      Object.keys(prefillData).forEach(function (name) {
+        var el = form.querySelector('[name="' + name + '"]');
+        if (!el || el.value) return;
+        var value = prefillData[name];
+        if (typeof value === 'undefined' || value === null) return;
+        if (el.type === 'checkbox') {
+          el.checked = value === true || value === '1' || value === 1;
+        } else {
+          el.value = value;
+        }
+        markInvalid(el, false);
+        dispatchInputEvent(el);
+        if (storageFields.indexOf(name) !== -1) {
+          persistField(name, el.type === 'checkbox' ? (el.checked ? '1' : '') : el.value);
+        }
+      });
+    }
+
+    if (Object.keys(prefillData).length) {
+      applyPrefill();
     }
 
     function handleFieldPersist(target) {
@@ -358,12 +395,30 @@
 
       if (stepNo === 3) {
         var terms = document.getElementById('terms_conditions');
-        if (!terms || !terms.checked) errors.push(['Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen.', terms]);
+        if (terms) markInvalid(terms, false);
+        if (!terms || !terms.checked) {
+          errors.push(['Bitte akzeptieren Sie die Allgemeinen Geschäftsbedingungen.', terms]);
+          if (terms) markInvalid(terms, true);
+        }
       }
 
       showAlert(stepNo, errors.length ? '⚠️ ' + errors[0][0] : '');
       return errors.length === 0;
     }
+
+    // --- ACTION BUTTON GUARD ---
+    form.addEventListener('click', function (e) {
+      if (!matchesSelector(e.target, '.payment-checkout-btn')) return;
+      clearAlerts();
+      var step2Ok = validateStep(2);
+      var step3Ok = validateStep(3);
+      if (!step2Ok || !step3Ok) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      return true;
+    }, true);
 
     // --- SUBMIT (Capture-Phase -> blockt vor jQuery/Payment) ---
     form.addEventListener('submit', function (e) {
@@ -378,6 +433,16 @@
       }
       return true;
     }, true);
+
+    var termsCheckbox = document.getElementById('terms_conditions');
+    if (termsCheckbox) {
+      termsCheckbox.addEventListener('change', function () {
+        if (termsCheckbox.checked) {
+          markInvalid(termsCheckbox, false);
+          showAlert(3, '');
+        }
+      });
+    }
 
     function render(s) {
       panels.forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-step') == String(s)); });
