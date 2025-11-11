@@ -53,6 +53,13 @@
 
     if (typeof html === 'string') {
       $container.html(html);
+      var $form = $container.find('.coupon-form');
+      if ($form.length) {
+        var hasApplied = $container.find('.coupon-feedback').length > 0;
+        if (hasApplied) {
+          $form.show();
+        }
+      }
       return;
     }
 

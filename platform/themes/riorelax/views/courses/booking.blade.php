@@ -120,6 +120,25 @@ textarea.form-control{min-height:100px;}
   <span>Zurück zur Übersicht</span>
 </div>
 
+@php
+  $contactValues = [
+      'first_name' => old('first_name', data_get($checkoutData ?? [], 'first_name', optional($customer)->first_name)),
+      'last_name' => old('last_name', data_get($checkoutData ?? [], 'last_name', optional($customer)->last_name)),
+      'email' => old('email', data_get($checkoutData ?? [], 'email', optional($customer)->email)),
+      'phone' => old('phone', data_get($checkoutData ?? [], 'phone', optional($customer)->phone)),
+      'country' => old('country', data_get($checkoutData ?? [], 'country', optional($customer)->country)),
+      'state' => old('state', data_get($checkoutData ?? [], 'state', optional($customer)->state)),
+      'city' => old('city', data_get($checkoutData ?? [], 'city', optional($customer)->city)),
+      'address' => old('address', data_get($checkoutData ?? [], 'address', optional($customer)->address)),
+      'zip' => old('zip', data_get($checkoutData ?? [], 'zip', optional($customer)->zip)),
+  ];
+
+  $prefillPayload = collect($contactValues)
+      ->filter(fn ($value) => !blank($value))
+      ->map(fn ($value) => is_string($value) ? $value : (string) $value)
+      ->all();
+@endphp
+
 <section class="checkout-booking-page checkout-fw">
   <div class="container pt-120 pb-40 checkout-booking">
 
@@ -160,7 +179,7 @@ textarea.form-control{min-height:100px;}
 
    
     {{-- ░░ Formular ░░ --}}
-    <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form" data-start-step="{{ $customer->id ? 2 : 1 }}" data-storage-key="course-checkout" data-start-register="{{ $shouldStartRegister ? '1' : '0' }}">
+    <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form" data-start-step="{{ $customer->id ? 2 : 1 }}" data-storage-key="course-checkout" data-start-register="{{ $shouldStartRegister ? '1' : '0' }}" data-prefill='@json($prefillPayload)'>
       @csrf
       <input type="hidden" name="token" value="{{ $token }}">
       <input type="hidden" name="amount" value="{{ $total }}">
@@ -222,15 +241,15 @@ textarea.form-control{min-height:100px;}
         <div id="formAlertStep2" class="form-alert"></div>
         <p>Pflichtfelder sind mit * gekennzeichnet</p>
         <div class="row">
-          <div class="col-md-6 mb-3"><label>Vorname *</label><input id="txt-first_name" name="first_name" class="form-control" value="{{ old('first_name', optional($customer)->first_name) }}" required></div>
-          <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" value="{{ old('last_name', optional($customer)->last_name) }}" required></div>
-          <div class="col-md-6 mb-3"><label>E-Mail *</label><input id="txt-email" name="email" class="form-control" type="email" value="{{ old('email', optional($customer)->email) }}" required></div>
-          <div class="col-md-6 mb-3"><label>Telefon *</label><input id="txt-phone" name="phone" class="form-control" value="{{ old('phone', optional($customer)->phone) }}" required></div>
-          <div class="col-md-6 mb-3"><label>Land</label><input id="txt-country" name="country" class="form-control" value="{{ old('country', optional($customer)->country) }}"></div>
-          <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input id="txt-state" name="state" class="form-control" value="{{ old('state', optional($customer)->state) }}"></div>
-          <div class="col-md-6 mb-3"><label>Stadt</label><input id="txt-city" name="city" class="form-control" value="{{ old('city', optional($customer)->city) }}"></div>
-          <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control" value="{{ old('address', optional($customer)->address) }}"></div>
-          <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control" value="{{ old('zip', optional($customer)->zip) }}"></div>
+          <div class="col-md-6 mb-3"><label>Vorname *</label><input id="txt-first_name" name="first_name" class="form-control" value="{{ $contactValues['first_name'] }}" required></div>
+          <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" value="{{ $contactValues['last_name'] }}" required></div>
+          <div class="col-md-6 mb-3"><label>E-Mail *</label><input id="txt-email" name="email" class="form-control" type="email" value="{{ $contactValues['email'] }}" required></div>
+          <div class="col-md-6 mb-3"><label>Telefon *</label><input id="txt-phone" name="phone" class="form-control" value="{{ $contactValues['phone'] }}" required></div>
+          <div class="col-md-6 mb-3"><label>Land</label><input id="txt-country" name="country" class="form-control" value="{{ $contactValues['country'] }}"></div>
+          <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input id="txt-state" name="state" class="form-control" value="{{ $contactValues['state'] }}"></div>
+          <div class="col-md-6 mb-3"><label>Stadt</label><input id="txt-city" name="city" class="form-control" value="{{ $contactValues['city'] }}"></div>
+          <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control" value="{{ $contactValues['address'] }}"></div>
+          <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control" value="{{ $contactValues['zip'] }}"></div>
         </div>
         <div class="mb-3"><label>Anfragen</label><textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas...">{{ old('requests') }}</textarea></div>
         <div class="btnrow">

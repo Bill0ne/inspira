@@ -207,6 +207,7 @@ class PublicController extends Controller
         $taxAmount = $course->getTaxAmount($netSubtotal);
         $total = $netSubtotal + $taxAmount;
         $couponAmount = $course->getPriceWithTax($couponAmountNet);
+        $checkoutData = HotelHelper::getCheckoutData();
 
         return Theme::scope(
             'courses.booking',
@@ -223,7 +224,8 @@ class PublicController extends Controller
                 'couponCode',
                 'session',
                 'basePrice',
-                'discountAmount'
+                'discountAmount',
+                'checkoutData'
             )
         )->render();
     }

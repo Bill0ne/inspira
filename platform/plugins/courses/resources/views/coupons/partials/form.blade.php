@@ -23,9 +23,13 @@
                 </div>
                 <input name="coupon_hidden" type="hidden" value="{{ $couponCode }}" />
 
-                <button class="btn btn-link text-decoration-none remove-coupon-code" data-url="{{ route('coupon.course.remove') }}" type="button">
+                <button
+                    class="btn btn-link text-decoration-none remove-coupon-code"
+                    data-url="{{ route('coupon.course.remove') }}"
+                    type="button"
+                >
                     <x-core::icon name="ti ti-trash" />
-                    {{ __('Remove') }}
+                    {{ __('Coupon entfernen') }}
                 </button>
             </div>
         @else
