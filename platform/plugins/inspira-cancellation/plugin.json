@@ -1,0 +1,11 @@
+{
+    "id": "botble/inspira-cancellation",
+    "name": "Inspira Cancellation",
+    "namespace": "Botble\\InspiraCancellation\\",
+    "provider": "Botble\\InspiraCancellation\\Providers\\InspiraCancellationServiceProvider",
+    "author": "Inspira Zentrum",
+    "url": "https://inspira-zentrum.de",
+    "version": "1.0.0",
+    "description": "Cancellation and replacement attendee management for Inspira.",
+    "minimum_core_version": "7.3.0"
+}
