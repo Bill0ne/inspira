@@ -5,6 +5,7 @@ use Botble\Hotel\Facades\HotelHelper;
 use Botble\Hotel\Http\Controllers\CouponController;
 use Botble\Hotel\Http\Controllers\CustomerCardController;
 use Botble\Hotel\Http\Controllers\Front\CouponController as CouponControllerFront;
+use Botble\Hotel\Http\Controllers\Front\CustomerDashboardController;
 use Botble\Hotel\Http\Controllers\InvoiceController;
 use Botble\Hotel\Http\Controllers\Settings\CurrencySettingController;
 use Botble\Hotel\Http\Controllers\Settings\GeneralSettingController;
@@ -308,6 +309,21 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
                 Route::post('apply', [CouponControllerFront::class, 'apply'])->name('apply');
                 Route::post('remove', [CouponControllerFront::class, 'remove'])->name('remove');
                 Route::get('refresh', [CouponControllerFront::class, 'refresh'])->name('refresh');
+            });
+
+            Route::group([
+                'prefix' => 'ajax/customer-card',
+                'middleware' => ['customer'],
+            ], function (): void {
+                Route::post('apply', [CustomerCardController::class, 'apply'])->name('ajax.customer-card.apply');
+                Route::post('remove', [CustomerCardController::class, 'remove'])->name('ajax.customer-card.remove');
+            });
+
+            Route::group([
+                'prefix' => 'account',
+                'middleware' => ['customer'],
+            ], function (): void {
+                Route::get('cards', [CustomerDashboardController::class, 'cards'])->name('customer.cards');
             });
 
             Route::get('ajax/calculate-amount', 'PublicController@ajaxCalculateBookingAmount')
