@@ -255,7 +255,18 @@ textarea.form-control{min-height:100px;}
           ]) !!}
           {!! PaymentMethods::render() !!}
         </ul>
-        <label><input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))> Allgemeine Geschäftsbedingungen *</label>
+        <label class="d-flex align-items-center gap-2">
+          <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))>
+          <span>
+            Allgemeine&nbsp;Geschäftsbedingungen&nbsp;*
+            <a href="https://stage.inspira-zentrum.de/de/term-and-conditions"
+               target="_blank"
+               rel="noopener"
+               style="color:#578E88;font-weight:600;text-decoration:underline;">
+              (AGB&nbsp;öffnen)
+            </a>
+          </span>
+        </label>
         <div class="btnrow">
           <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
           <button type="submit" class="btnX btn-mint payment-checkout-btn" data-processing-text="Wird verarbeitet..." data-error-header="Fehler">Abschließen</button>

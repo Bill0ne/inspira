@@ -31,6 +31,65 @@
     if ('amount_raw'     in data) $('input[name=amount]').val(data.amount_raw);
   }
 
+  function getSharedPayload() {
+    var payload = {};
+    var courseInput = document.querySelector('input[name="course_id"]');
+
+    if (courseInput && courseInput.value) {
+      payload.course_id = courseInput.value;
+    }
+
+    return payload;
+  }
+
+  function refreshCouponBox(html) {
+    var $container = $('#couponBox');
+
+    if (!$container.length) {
+      $container = $('.coupon-wrapper').first();
+    }
+
+    if (!$container.length) return;
+
+    if (typeof html === 'string') {
+      $container.html(html);
+      return;
+    }
+
+    var $target = $container.find('.coupon-box');
+    if (!$target.length) {
+      $target = $container;
+    }
+
+    var refreshUrl = $target.data('refresh-url');
+    if (!refreshUrl) return;
+
+    $.ajax({
+      url: refreshUrl,
+      type: 'GET',
+    })
+      .done(function (res) {
+        if (res && res.data) {
+          refreshCouponBox(res.data);
+        }
+      })
+      .fail(function (err) {
+        callTheme('handleError', err, function () {
+          if (win.console && console.error) console.error(err);
+        });
+      });
+  }
+
+  function toggleLoading($el, isLoading) {
+    if (!$el || !$el.length) return;
+
+    if (typeof $el.prop === 'function') {
+      $el.prop('disabled', !!isLoading);
+    }
+
+    $el.toggleClass('button-loading', !!isLoading);
+  }
+
   function reloadPaymentList() {
     var $list = $('.payment-checkout-form .list_payment_method');
     if (!$list.length) return $.Deferred().resolve();
@@ -78,7 +137,8 @@
         url: url,
         type: 'POST',
         headers: { 'X-CSRF-TOKEN': getCsrf() },
-        data: { coupon_code: code }
+        data: $.extend({ coupon_code: code }, getSharedPayload()),
+        beforeSend: function () { toggleLoading($btn, true); }
       })
       .done(function (res) {
         var error   = res && res.error;
@@ -94,12 +154,16 @@
 
         callTheme('showSuccess', message || 'Gutschein angewendet.');
         updateTotals(data);
+        refreshCouponBox(data && data.coupon_view);
         reloadPaymentList();
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
           if (win.console && console.error) console.error(err);
         });
+      })
+      .always(function () {
+        toggleLoading($btn, false);
       });
     })
     .on('click', '.remove-coupon-code', function (e) {
@@ -112,7 +176,9 @@
       $.ajax({
         url: url,
         type: 'POST',
-        headers: { 'X-CSRF-TOKEN': getCsrf() }
+        headers: { 'X-CSRF-TOKEN': getCsrf() },
+        data: getSharedPayload(),
+        beforeSend: function () { toggleLoading($btn, true); }
       })
       .done(function (res) {
         var error   = res && res.error;
@@ -128,12 +194,16 @@
 
         callTheme('showSuccess', message || 'Gutschein entfernt.');
         updateTotals(data);
+        refreshCouponBox(data && data.coupon_view);
         reloadPaymentList();
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
           if (win.console && console.error) console.error(err);
         });
+      })
+      .always(function () {
+        toggleLoading($btn, false);
       });
     });
 
