@@ -8,19 +8,22 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('ht_customer_cards', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('slug')->unique();
-            $table->string('type', 20);
+            $table->bigIncrements('id');
+            $table->string('name', 191);
+            $table->enum('type', ['5er', '10er', 'custom'])->default('custom');
+            $table->decimal('base_price', 15, 2);
+            $table->decimal('discount_percent', 5, 2);
             $table->unsignedInteger('units_total');
             $table->unsignedInteger('units_remaining');
-            $table->decimal('base_price', 15, 2)->default(0);
-            $table->unsignedTinyInteger('discount_percent')->default(0);
             $table->dateTime('valid_until')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('assigned_to')->nullable();
             $table->timestamps();
+
+            $table->unique(['name', 'assigned_to']);
+            $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('assigned_to')->references('id')->on('ht_customers')->nullOnDelete();
         });
     }
 

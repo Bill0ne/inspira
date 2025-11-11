@@ -7,6 +7,7 @@ use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Hotel\Facades\HotelHelper;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
+use Botble\Hotel\Models\CustomerCard;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,12 +36,17 @@ class Booking extends BaseModel
         'tax_amount',
         'booking_number',
         'rule_discount',
+        'customer_card_id',
+        'customer_card_discount',
+        'customer_card_units_used',
     ];
 
     protected $casts = [
         'number_of_guests' => 'int',
         'number_of_children' => 'int',
         'status' => BookingStatusEnum::class,
+        'customer_card_discount' => 'decimal:2',
+        'customer_card_units_used' => 'int',
     ];
 
     public function customer(): BelongsTo
@@ -86,6 +92,11 @@ class Booking extends BaseModel
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class, 'reference_id')->withDefault();
+    }
+
+    public function customerCard(): BelongsTo
+    {
+        return $this->belongsTo(CustomerCard::class, 'customer_card_id')->withDefault();
     }
 
     protected static function booted(): void

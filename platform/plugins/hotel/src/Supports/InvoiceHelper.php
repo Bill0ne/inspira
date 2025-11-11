@@ -101,6 +101,20 @@ class InvoiceHelper
             }
         }
 
+        if ($booking->customer_card_id && $booking->customer_card_discount > 0) {
+            $invoice->items()->create([
+                'name' => trans('plugins/hotel::customer-card.invoice.discount_line', [
+                    'card' => optional($booking->customerCard)->name,
+                ]),
+                'description' => null,
+                'qty' => 1,
+                'sub_total' => 0,
+                'tax_amount' => 0,
+                'discount_amount' => $booking->customer_card_discount,
+                'amount' => -1 * $booking->customer_card_discount,
+            ]);
+        }
+
         return $invoice;
     }
 
