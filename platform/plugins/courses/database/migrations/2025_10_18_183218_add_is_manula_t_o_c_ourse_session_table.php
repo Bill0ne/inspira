@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('course_sessions', function (Blueprint $table) {
-            $table->boolean('is_manual')->default(false)->nullable();
-        });
+        if (! Schema::hasColumn('course_sessions', 'is_manual')) {
+            Schema::table('course_sessions', function (Blueprint $table) {
+                $table->boolean('is_manual')->default(false)->nullable();
+            });
+        }
     }
 
     /**
@@ -21,6 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        if (Schema::hasColumn('course_sessions', 'is_manual')) {
+            Schema::table('course_sessions', function (Blueprint $table) {
+                $table->dropColumn('is_manual');
+            });
+        }
     }
 };
