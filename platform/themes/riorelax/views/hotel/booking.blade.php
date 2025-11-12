@@ -13,6 +13,17 @@
     Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
     Theme::asset()->container('footer')->usePath()->add('checkout-hotel', 'js/checkout-hotel.js', ['jquery']);
 
+    if (is_plugin_active('payment')) {
+        Theme::asset()
+            ->container('footer')
+            ->writeContent('payment-footer-assets', apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null));
+    }
+
+    Theme::asset()
+        ->container('footer')
+        ->add('js-validation', 'vendor/core/core/js-validation/js/js-validation.js', ['jquery'])
+        ->writeContent('checkout-validator', JsValidator::formRequest(Botble\Hotel\Http\Requests\CheckoutRequest::class));
+
     $startLabel24 = $displayStart ? BaseHelper::formatDate($displayStart, 'd.m.Y H:i') : null;
     $endLabel24 = $displayEnd ? BaseHelper::formatDate($displayEnd, 'd.m.Y H:i') : null;
     $isLoggedIn = auth('customer')->check() || auth()->check();
@@ -506,14 +517,4 @@ textarea.form-control{min-height:100px;}
 </section>
 
 {!! Theme::partial('checkout.login-modal', ['redirectUrl' => request()->fullUrl()]) !!}
-
-@if (is_plugin_active('payment'))
-  {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
-@endif
-
-@php
-    Theme::asset()->container('footer')
-        ->add('js-validation', 'vendor/core/core/js-validation/js/js-validation.js', ['jquery'])
-        ->writeContent('checkout-validator', JsValidator::formRequest(Botble\Hotel\Http\Requests\CheckoutRequest::class));
-@endphp
 
