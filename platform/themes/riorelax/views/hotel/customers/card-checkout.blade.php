@@ -1,6 +1,15 @@
 @extends(HotelHelper::viewPath('customers.master'))
 
 @section('content')
+    @if (is_plugin_active('payment'))
+        <link rel="stylesheet" href="{{ asset('vendor/core/plugins/payment/css/payment.css') }}">
+        @php
+            Theme::asset()->container('header')->usePath()->add('jquery', 'plugins/jquery.min.js');
+            Theme::asset()->container('header')->add('payment-js', 'vendor/core/plugins/payment/js/payment.js', ['jquery']);
+        @endphp
+
+        {!! apply_filters(PAYMENT_FILTER_HEADER_ASSETS, null) !!}
+    @endif
     <style>
         .card-checkout-wrapper {
             display: flex;
@@ -118,9 +127,40 @@
                         {{ trans('plugins/hotel::customer-card.checkout.restriction_note') }}
                     </div>
 
-                    <form method="POST" action="{{ route('customer.cards.purchase', $customerCard) }}" class="mt-4">
+                    <form
+                        method="POST"
+                        action="{{ route('customer.cards.purchase', $customerCard) }}"
+                        class="mt-4 payment-checkout-form"
+                    >
                         @csrf
-                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                        <input type="hidden" name="amount" value="{{ $purchasePrice }}">
+                        <input type="hidden" name="return_url" value="{{ route('customer.cards') }}">
+                        <input type="hidden" name="callback_url" value="{{ route('customer.cards') }}">
+
+                        @if (is_plugin_active('payment'))
+                            <div class="mb-3">
+                                <label class="form-label">{{ __('Zahlungsmethode') }}</label>
+                                <ul class="list-group list_payment_method">
+                                    {!! apply_filters(PAYMENT_FILTER_ADDITIONAL_PAYMENT_METHODS, null, [
+                                        'amount' => $purchasePrice,
+                                        'currency' => strtoupper(get_application_currency()->title),
+                                        'name' => $customerCard->name,
+                                        'selected' => PaymentMethods::getSelectedMethod(),
+                                        'default' => PaymentMethods::getDefaultMethod(),
+                                        'selecting' => PaymentMethods::getSelectingMethod(),
+                                    ]) !!}
+
+                                    {!! PaymentMethods::render() !!}
+                                </ul>
+                            </div>
+                        @endif
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-100 btn-lg payment-checkout-btn"
+                            data-processing-text="{{ __('Wird verarbeitet...') }}"
+                            data-error-header="{{ __('Fehler') }}"
+                        >
                             {{ trans('plugins/hotel::customer-card.checkout.submit_button', ['price' => format_price($purchasePrice)]) }}
                         </button>
                     </form>
@@ -128,4 +168,7 @@
             </div>
         </div>
     </div>
+    @if (is_plugin_active('payment'))
+        {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
+    @endif
 @endsection
