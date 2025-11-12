@@ -83,6 +83,7 @@ return [
     'payment_via_cod' => 'Cash on delivery (COD)',
     'payment_via_bank_transfer' => 'Bank transfer',
     'payment_pending' => 'Checkout successfully. Your payment is pending and will be checked by our staff.',
+    'payment_method_required' => 'Please select a payment method to continue.',
     'created_at' => 'Created At',
     'payment_channel' => 'Payment Channel',
     'total' => 'Total',
