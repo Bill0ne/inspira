@@ -28,6 +28,7 @@ use Botble\Hotel\Services\CouponService;
 use Botble\Hotel\Services\CustomerCardService;
 use Botble\Courses\Http\Requests\InitBookingRequest;
 use Botble\Courses\Http\Requests\CalculateBookingAmountRequest;
+use Botble\Courses\Services\CourseBookingService;
 use Botble\Payment\Supports\PaymentHelper;
 use Botble\Payment\Services\Gateways\BankTransferPaymentService;
 use Botble\Payment\Services\Gateways\CodPaymentService;
@@ -40,6 +41,8 @@ use Throwable;
 
 class PublicController extends Controller
 {
+    protected const MINIMUM_ONLINE_PAYMENT_AMOUNT = 0.9;
+
     public function __construct(
         protected GetCourseService $getCourseService
     ) {
@@ -248,6 +251,14 @@ class PublicController extends Controller
         }
 
         $totalAfterDiscount = max($total - $cardDiscount, 0);
+        $minimumOnlinePaymentFee = 0.0;
+
+        if ($totalAfterDiscount > 0 && $totalAfterDiscount < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
+            $minimumOnlinePaymentFee = round(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscount, 2);
+        }
+
+        $finalTotal = round($totalAfterDiscount + $minimumOnlinePaymentFee, 2);
+        $minimumOnlinePaymentThreshold = self::MINIMUM_ONLINE_PAYMENT_AMOUNT;
 
         return Theme::scope(
             'courses.booking',
@@ -269,7 +280,10 @@ class PublicController extends Controller
                 'availableCards',
                 'selectedCard',
                 'cardDiscount',
-                'totalAfterDiscount'
+                'totalAfterDiscount',
+                'minimumOnlinePaymentFee',
+                'finalTotal',
+                'minimumOnlinePaymentThreshold'
             )
         )->render();
     }
@@ -384,9 +398,20 @@ class PublicController extends Controller
                 $effectiveCardDiscount = min($cardDiscount ?: $calculatedDiscount, $grossTotal);
             }
 
-            $booking->amount = max($grossTotal - $effectiveCardDiscount, 0);
+            $amountDue = max($grossTotal - $effectiveCardDiscount, 0);
+            $minimumOnlinePaymentFee = 0.0;
+
+            if ($amountDue > 0 && $amountDue < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
+                $minimumOnlinePaymentFee = round(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $amountDue, 2);
+            }
+
+            $amountDue = round($amountDue + $minimumOnlinePaymentFee, 2);
+
+            $booking->amount = $amountDue;
             $booking->sub_total = $amount;
-            $booking->status = BookingStatusEnum::AWAITING_PAYMENT;
+            $booking->status = $amountDue <= 0
+                ? BookingStatusEnum::PROCESSING
+                : BookingStatusEnum::AWAITING_PAYMENT;
             $booking->coupon_amount = $couponAmount;
             $booking->coupon_code = $couponCode;
             $booking->tax_amount = $taxAmount;
@@ -418,6 +443,23 @@ class PublicController extends Controller
         }
 
         session()->put('course_booking_transaction_id', $booking->transaction_id);
+
+        if ($booking->amount <= 0) {
+            if ($appliedCoupon) {
+                $appliedCoupon->increment('total_used');
+            }
+
+            app(CourseBookingService::class)->processBooking($booking->getKey());
+
+            if ($token = $request->input('token')) {
+                session()->forget($token);
+                session()->forget('checkout_token');
+            }
+
+            return $response
+                ->setNextUrl(route('public.course.booking.information', $booking->transaction_id))
+                ->setMessage(__('Course Booking successfully!'));
+        }
 
         $request->merge([
             'order_id' => [$booking->getKey()],
@@ -538,7 +580,8 @@ class PublicController extends Controller
 
     public function ajaxCalculateBookingAmount(
         CalculateBookingAmountRequest $request,
-        BaseHttpResponse $response
+        BaseHttpResponse $response,
+        CustomerCardService $customerCardService
     ) {
         $course = Course::query()->findOrFail($request->input('course_id'));
 
@@ -549,18 +592,78 @@ class PublicController extends Controller
         $taxAmount = $course->getTaxAmount($netSubtotal);
         $totalAmount = $netSubtotal + $taxAmount;
 
+        $sessionData = HotelHelper::getCheckoutData();
+        $cardDiscount = 0.0;
+        $cardId = (int) Arr::get($sessionData, 'customer_card_id');
+        $cardUnitsUsed = max((int) Arr::get($sessionData, 'customer_card_units_used', 1), 1);
+        $selectedCard = null;
+
+        if ($cardId && Auth::guard('customer')->check()) {
+            $selectedCard = $customerCardService->getValidCard($cardId, Auth::guard('customer')->id());
+        }
+
+        if ($selectedCard) {
+            $storedDiscount = (float) Arr::get($sessionData, 'customer_card_discount', 0);
+            $calculatedDiscount = $customerCardService->calculateDiscount($selectedCard, $course, $cardUnitsUsed);
+            $cardDiscount = min($storedDiscount ?: $calculatedDiscount, $totalAmount);
+
+            HotelHelper::saveCheckoutData([
+                'customer_card_id' => $selectedCard->getKey(),
+                'customer_card_discount' => $cardDiscount,
+                'customer_card_units_used' => $cardUnitsUsed,
+            ]);
+        } else {
+            if ($cardId) {
+                HotelHelper::saveCheckoutData([
+                    'customer_card_id' => null,
+                    'customer_card_discount' => null,
+                    'customer_card_units_used' => null,
+                ]);
+            }
+
+            $cardDiscount = 0.0;
+        }
+
+        $totalAfterDiscount = max($totalAmount - $cardDiscount, 0);
+        $minimumOnlinePaymentFee = 0.0;
+
+        if ($totalAfterDiscount > 0 && $totalAfterDiscount < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
+            $minimumOnlinePaymentFee = round(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscount, 2);
+        }
+
+        $finalTotal = round($totalAfterDiscount + $minimumOnlinePaymentFee, 2);
+
         $subTotalDisplay = $course->getPriceWithTax($amountNet);
         $couponDisplay = $course->getPriceWithTax($couponAmountNet);
         $discountDisplay = $couponAmountNet > 0
             ? '-' . format_price($couponDisplay)
             : format_price(0);
 
+        $cardDiscountDisplay = $cardDiscount > 0
+            ? '-' . format_price($cardDiscount)
+            : format_price(0);
+
+        $cardDiscountPlain = $cardDiscount > 0
+            ? format_price($cardDiscount)
+            : format_price(0);
+
+        $minimumFeeDisplay = $minimumOnlinePaymentFee > 0
+            ? format_price($minimumOnlinePaymentFee)
+            : format_price(0);
+
         return $response->setData([
-            'total_amount'      => format_price($totalAmount),
-            'amount_raw'        => $totalAmount,
+            'total_amount'      => format_price($finalTotal),
+            'amount_raw'        => $finalTotal,
             'sub_total'         => format_price($subTotalDisplay),
             'tax_amount'        => format_price($taxAmount),
             'discount_amount'   => $discountDisplay,
+            'card_discount_raw' => $cardDiscount,
+            'card_discount_display' => $cardDiscountDisplay,
+            'card_discount_display_plain' => $cardDiscountPlain,
+            'minimum_fee_raw'   => $minimumOnlinePaymentFee,
+            'minimum_fee_display' => $minimumFeeDisplay,
+            'minimum_threshold' => self::MINIMUM_ONLINE_PAYMENT_AMOUNT,
+            'total_before_card_raw' => $totalAmount,
         ]);
     }
 
