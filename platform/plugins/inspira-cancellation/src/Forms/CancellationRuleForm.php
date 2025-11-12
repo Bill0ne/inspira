@@ -37,7 +37,7 @@ class CancellationRuleForm extends FormAbstract
                 NumberField::class,
                 NumberFieldOption::make()
                     ->label(trans('plugins/inspira-cancellation::cancellation.rule.from_days'))
-                    ->minValue(0)
+                    ->min(0)
                     ->step(1)
             )
             ->add(
@@ -45,7 +45,7 @@ class CancellationRuleForm extends FormAbstract
                 NumberField::class,
                 NumberFieldOption::make()
                     ->label(trans('plugins/inspira-cancellation::cancellation.rule.to_days'))
-                    ->minValue(0)
+                    ->min(0)
                     ->step(1)
             )
             ->add(
@@ -54,7 +54,7 @@ class CancellationRuleForm extends FormAbstract
                 NumberFieldOption::make()
                     ->label(trans('plugins/inspira-cancellation::cancellation.rule.refund_percent'))
                     ->required()
-                    ->minValue(0)
+                    ->min(0)
                     ->maxValue(100)
             )
             ->add(
@@ -69,7 +69,7 @@ class CancellationRuleForm extends FormAbstract
                 NumberField::class,
                 NumberFieldOption::make()
                     ->label(trans('plugins/inspira-cancellation::cancellation.rule.order'))
-                    ->minValue(0)
+                    ->min(0)
                     ->step(1)
             )
             ->add(
