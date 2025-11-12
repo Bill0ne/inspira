@@ -47,30 +47,23 @@ class CouponController extends BaseController
         }
 
         $pricing = $course->resolvePricing(Auth::guard('customer')->user());
-        $priceBreakdown = course_price_breakdown($course, Auth::guard('customer')->user());
-        $amountNetRaw = (float) Arr::get($pricing, 'calculated_net', 0);
+        $amountNet = (float) Arr::get($pricing, 'calculated_net', 0);
 
         $discountAmount = $couponService->getDiscountAmount(
             $coupon->type->getValue(),
             (float) $coupon->value,
-            $amountNetRaw
+            $amountNet
         );
 
-        $discountAmount = min($discountAmount, $amountNetRaw);
-        $discountAmount = course_truncate_price($discountAmount);
-        $netSubtotalRaw = max($amountNetRaw - $discountAmount, 0);
-        $netSubtotal = course_truncate_price($netSubtotalRaw);
-        $taxAmountRaw = $course->getTaxAmount($netSubtotalRaw);
-        $taxAmount = course_truncate_price($taxAmountRaw);
-        $totalAmount = course_truncate_price($netSubtotalRaw + $taxAmountRaw);
-        $subTotalDisplay = course_truncate_price($course->getPriceWithTax($amountNetRaw));
-        $couponDisplay = course_truncate_price($course->getPriceWithTax($discountAmount));
+        $discountAmount = min($discountAmount, $amountNet);
+        $netSubtotal = max($amountNet - $discountAmount, 0);
+        $taxAmount = $course->getTaxAmount($netSubtotal);
+        $totalAmount = $netSubtotal + $taxAmount;
+        $subTotalDisplay = $course->getPriceWithTax($amountNet);
+        $couponDisplay = $course->getPriceWithTax($discountAmount);
         $discountDisplay = $discountAmount > 0
-            ? '-' . course_format_price($couponDisplay)
-            : course_format_price(0);
-        $displayTaxAmount = course_format_price($priceBreakdown['calculated_tax'] ?? 0);
-        $displaySubTotal = course_format_price($subTotalDisplay);
-        $displayTotal = course_format_price($totalAmount);
+            ? '-' . format_price($couponDisplay)
+            : format_price(0);
 
         $sessionData['coupon_code'] = $couponCode;
         $sessionData['coupon_amount'] = $discountAmount;
@@ -80,10 +73,10 @@ class CouponController extends BaseController
 
         return $this->response
             ->setData([
-                'sub_total' => $displaySubTotal,
+                'sub_total' => format_price($subTotalDisplay),
                 'discount_amount' => $discountDisplay,
-                'tax_amount' => $displayTaxAmount,
-                'total_amount' => $displayTotal,
+                'tax_amount' => format_price($taxAmount),
+                'total_amount' => format_price($totalAmount),
                 'amount_raw' => $totalAmount,
                 'coupon_code' => $couponCode,
                 'coupon_view' => view('plugins/courses::coupons.partials.form', [
@@ -117,20 +110,17 @@ class CouponController extends BaseController
 
         if ($course) {
             $pricing = $course->resolvePricing(Auth::guard('customer')->user());
-            $priceBreakdown = course_price_breakdown($course, Auth::guard('customer')->user());
-            $amountNetRaw = (float) Arr::get($pricing, 'calculated_net', 0);
-            $netSubtotalRaw = $amountNetRaw;
-            $netSubtotal = course_truncate_price($netSubtotalRaw);
-            $taxAmountRaw = $course->getTaxAmount($netSubtotalRaw);
-            $taxAmount = course_truncate_price($taxAmountRaw);
-            $totalAmount = course_truncate_price($netSubtotalRaw + $taxAmountRaw);
-            $subTotalDisplay = course_truncate_price($course->getPriceWithTax($amountNetRaw));
+            $amountNet = (float) Arr::get($pricing, 'calculated_net', 0);
+            $netSubtotal = $amountNet;
+            $taxAmount = $course->getTaxAmount($netSubtotal);
+            $totalAmount = $netSubtotal + $taxAmount;
+            $subTotalDisplay = $course->getPriceWithTax($amountNet);
 
             $data = array_merge($data, [
-                'sub_total' => course_format_price($subTotalDisplay),
-                'discount_amount' => course_format_price(0),
-                'tax_amount' => course_format_price($priceBreakdown['calculated_tax'] ?? 0),
-                'total_amount' => course_format_price($totalAmount),
+                'sub_total' => format_price($subTotalDisplay),
+                'discount_amount' => format_price(0),
+                'tax_amount' => format_price($taxAmount),
+                'total_amount' => format_price($totalAmount),
                 'amount_raw' => $totalAmount,
                 'coupon_view' => view('plugins/courses::coupons.partials.form', [
                     'course' => $course,

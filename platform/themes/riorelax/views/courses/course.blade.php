@@ -168,27 +168,27 @@
             @endif
                 @if($course->price)
                     @php
-                        $pricing = course_price_breakdown($course, auth('customer')->user());
-                        $hasDiscount = $pricing['has_discount'];
+                        $pricing = $course->resolvePricing(auth('customer')->user());
+                        $hasDiscount = $pricing['calculated_net'] < $pricing['base_net'];
                     @endphp
 
                     <div class="chip price-chip d-flex align-items-center">
                         @if($hasDiscount)
                             <span class="old-price text-decoration-line-through text-muted me-2">
-                {{ course_format_price($pricing['base_gross']) }}
+                {{ format_price($pricing['base_gross']) }}
             </span>
                             <span class="new-price text-success fw-bold">
-                {{ course_format_price($pricing['calculated_gross']) }}
+                {{ format_price($pricing['calculated_gross']) }}
             </span>
                         @else
-                            <span class="price fw-bold">{{ course_format_price($pricing['calculated_gross']) }}</span>
+                            <span class="price fw-bold">{{ format_price($pricing['calculated_gross']) }}</span>
                         @endif
                     </div>
 
                     @if($hasDiscount && abs($pricing['discount_gross']) > 0)
                         <div class="chip discount-info text-success small mt-1">
                             <i class="fas fa-tag me-1"></i>
-                            {{ __('You save :amount', ['amount' => course_format_price(abs($pricing['discount_gross']))]) }}
+                            {{ __('You save :amount', ['amount' => format_price(abs($pricing['discount_gross']))]) }}
                         </div>
                     @endif
                 @endif

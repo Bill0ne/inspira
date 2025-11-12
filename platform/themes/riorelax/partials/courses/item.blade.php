@@ -60,9 +60,9 @@ $image = $thumbnail
         </span>
         @if ($course->price)
           @php
-            $pricing = course_price_breakdown($course, auth('customer')->user());
+            $pricing = $course->resolvePricing(auth('customer')->user());
           @endphp
-          <span class="mtxt">{{ course_format_price($pricing['calculated_gross']) }}</span>
+          <span class="mtxt">{{ format_price($pricing['calculated_gross']) }}</span>
         @endif
       </div>
     </div>

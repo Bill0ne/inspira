@@ -164,29 +164,13 @@ textarea.form-control{min-height:100px;}
       </div>
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        @php
-          $configuratorNet = $priceBreakdown['configurator_net'] ?? 0;
-          $showConfiguratorRow = abs($configuratorNet) > 0.00001;
-          $configuratorPrefix = $configuratorNet > 0 ? '+' : ($configuratorNet < 0 ? '-' : '');
-        @endphp
-        <div class="kv"><span>Originalpreis</span><b>{{ course_format_price($priceBreakdown['base_net'] ?? 0) }}</b></div>
-        <div class="kv price-configurator-row {{ $showConfiguratorRow ? '' : 'd-none' }}">
-          <span>Preis Konfigurator</span>
-          <b class="configurator-text">
-            @if($configuratorPrefix)
-              {{ $configuratorPrefix }}{{ course_format_price(abs($configuratorNet)) }}
-            @else
-              {{ course_format_price(0) }}
-            @endif
-          </b>
-        </div>
-        <div class="kv"><span>Steuern</span><b class="tax-text">{{ course_format_price($priceBreakdown['calculated_tax'] ?? 0) }}</b></div>
-        <div class="kv"><span>Bruttopreis</span><b class="amount-text">{{ course_format_price($priceBreakdown['calculated_gross'] ?? 0) }}</b></div>
-        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $couponAmount > 0 ? '-' : '' }}{{ course_format_price($couponAmount) }}</b></div>
-        <div class="kv card-discount-row {{ $cardDiscount > 0 ? '' : 'd-none' }}"><span>Kartenrabatt</span><b class="card-discount-text">-{{ course_format_price($cardDiscount) }}</b></div>
-        <div class="kv minimum-fee-row {{ $minimumOnlinePaymentFee > 0 ? '' : 'd-none' }}"><span>Mindestgebühr (Online-Zahlung)</span><b class="minimum-fee-text">{{ course_format_price($minimumOnlinePaymentFee) }}</b></div>
+        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($amountNet) }}</b></div>
+        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
+        <div class="kv card-discount-row {{ $cardDiscount > 0 ? '' : 'd-none' }}"><span>Kartenrabatt</span><b class="card-discount-text">-{{ format_price($cardDiscount) }}</b></div>
+        <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
+        <div class="kv minimum-fee-row {{ $minimumOnlinePaymentFee > 0 ? '' : 'd-none' }}"><span>Mindestgebühr (Online-Zahlung)</span><b class="minimum-fee-text">{{ format_price($minimumOnlinePaymentFee) }}</b></div>
         <hr>
-        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ course_format_price($finalTotal) }}</b></div>
+        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($finalTotal) }}</b></div>
       </div>
     </div>
 
@@ -313,7 +297,7 @@ textarea.form-control{min-height:100px;}
                 <button class="btn btn-outline-mint {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
               </div>
               <div class="alert alert-success mt-3 {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
-                Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong>
+                Kartenrabatt: <strong data-bb-customer-card="discount">{{ format_price($cardDiscount) }}</strong>
               </div>
             </div>
           </div>
