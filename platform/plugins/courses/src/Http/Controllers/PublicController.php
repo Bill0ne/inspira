@@ -202,19 +202,25 @@ class PublicController extends Controller
         $session = CourseSession::query()->findOrFail(Arr::get($sessionData, 'session_id'));
 
         $pricing = $course->resolvePricing($customer);
-        $amountNet = $pricing['calculated_net'];
-        $amount = $pricing['calculated_gross'];
-        $basePrice = $pricing['base_net'];
-        $discountAmount = $pricing['discount_gross'];
+        $priceBreakdown = course_price_breakdown($course, $customer);
+
+        $amountNetRaw = (float) ($pricing['calculated_net'] ?? 0);
+        $amountNet = course_truncate_price($amountNetRaw);
+        $amount = course_truncate_price((float) ($pricing['calculated_gross'] ?? 0));
+        $basePrice = course_truncate_price((float) ($pricing['base_net'] ?? 0));
+        $discountAmount = course_truncate_price((float) ($pricing['discount_gross'] ?? 0));
 
         $couponAmountNet = (float) Arr::get($sessionData, 'coupon_amount', 0);
-        $couponAmountNet = min($couponAmountNet, $amountNet);
+        $couponAmountNet = min($couponAmountNet, $amountNetRaw);
         $couponCode = Arr::get($sessionData, 'coupon_code');
 
-        $netSubtotal = max($amountNet - $couponAmountNet, 0);
-        $taxAmount = $course->getTaxAmount($netSubtotal);
-        $total = $netSubtotal + $taxAmount;
-        $couponAmount = $course->getPriceWithTax($couponAmountNet);
+        $netSubtotalRaw = max($amountNetRaw - $couponAmountNet, 0);
+        $netSubtotal = course_truncate_price($netSubtotalRaw);
+        $taxAmountRaw = $course->getTaxAmount($netSubtotalRaw);
+        $taxAmount = course_truncate_price($taxAmountRaw);
+        $totalRaw = $netSubtotalRaw + $taxAmountRaw;
+        $total = course_truncate_price($totalRaw);
+        $couponAmount = course_truncate_price($course->getPriceWithTax($couponAmountNet));
         $checkoutData = HotelHelper::getCheckoutData();
 
         $availableCards = collect();
@@ -233,7 +239,8 @@ class PublicController extends Controller
                 if ($selectedCard) {
                     $storedDiscount = (float) data_get($checkoutData, 'customer_card_discount', 0);
                     $cardDiscount = $storedDiscount ?: $customerCardService->calculateDiscount($selectedCard, $course, $cardUnitsUsed);
-                    $cardDiscount = min($cardDiscount, $total);
+                    $cardDiscount = min($cardDiscount, $totalRaw);
+                    $cardDiscount = course_truncate_price($cardDiscount);
 
                     HotelHelper::saveCheckoutData([
                         'customer_card_id' => $selectedCard->getKey(),
@@ -250,14 +257,15 @@ class PublicController extends Controller
             }
         }
 
-        $totalAfterDiscount = max($total - $cardDiscount, 0);
+        $totalAfterDiscountRaw = max($totalRaw - $cardDiscount, 0);
+        $totalAfterDiscount = course_truncate_price($totalAfterDiscountRaw);
         $minimumOnlinePaymentFee = 0.0;
 
-        if ($totalAfterDiscount > 0 && $totalAfterDiscount < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
-            $minimumOnlinePaymentFee = round(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscount, 2);
+        if ($totalAfterDiscountRaw > 0 && $totalAfterDiscountRaw < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
+            $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscountRaw);
         }
 
-        $finalTotal = round($totalAfterDiscount + $minimumOnlinePaymentFee, 2);
+        $finalTotal = course_truncate_price($totalAfterDiscountRaw + $minimumOnlinePaymentFee);
         $minimumOnlinePaymentThreshold = self::MINIMUM_ONLINE_PAYMENT_AMOUNT;
 
         return Theme::scope(
@@ -268,6 +276,7 @@ class PublicController extends Controller
                 'customer',
                 'amount',
                 'amountNet',
+                'netSubtotal',
                 'total',
                 'taxAmount',
                 'couponAmount',
@@ -283,7 +292,8 @@ class PublicController extends Controller
                 'totalAfterDiscount',
                 'minimumOnlinePaymentFee',
                 'finalTotal',
-                'minimumOnlinePaymentThreshold'
+                'minimumOnlinePaymentThreshold',
+                'priceBreakdown'
             )
         )->render();
     }
@@ -374,38 +384,45 @@ class PublicController extends Controller
             $booking->fill($request->input());
 
             $pricing = $course->resolvePricing(Auth::guard('customer')->user());
-            $basePrice = $pricing['base_net'];
-            $amount = $pricing['calculated_net'];
-            $discountAmount = max(0, $pricing['discount_net']);
+            $basePrice = course_truncate_price((float) ($pricing['base_net'] ?? 0));
+            $amountNetRaw = (float) ($pricing['calculated_net'] ?? 0);
+            $amount = course_truncate_price($amountNetRaw);
+            $discountAmount = course_truncate_price(max(0, (float) ($pricing['discount_net'] ?? 0)));
 
             $couponAmount = (float) Arr::get($sessionData, 'coupon_amount', 0);
             $couponCode = Arr::get($sessionData, 'coupon_code');
-            $couponAmount = min($couponAmount, $amount);
+            $couponAmount = min($couponAmount, $amountNetRaw);
+            $couponAmount = course_truncate_price($couponAmount);
 
             if ($couponCode) {
                 $appliedCoupon = \Botble\Hotel\Models\Coupon::where('code', $couponCode)->first();
             }
 
-            $netSubtotal = max($amount - $couponAmount, 0);
-            $taxAmount = $course->getTaxAmount($netSubtotal);
+            $netSubtotalRaw = max($amountNetRaw - $couponAmount, 0);
+            $netSubtotal = course_truncate_price($netSubtotalRaw);
+            $taxAmountRaw = $course->getTaxAmount($netSubtotalRaw);
+            $taxAmount = course_truncate_price($taxAmountRaw);
 
             $booking->course_session_id = $request->input('session_id');
-            $grossTotal = $netSubtotal + $taxAmount;
+            $grossTotalRaw = $netSubtotalRaw + $taxAmountRaw;
+            $grossTotal = course_truncate_price($grossTotalRaw);
             $effectiveCardDiscount = 0;
 
             if ($customerCard) {
                 $calculatedDiscount = $customerCardService->calculateDiscount($customerCard, $course, $cardUnitsUsed);
-                $effectiveCardDiscount = min($cardDiscount ?: $calculatedDiscount, $grossTotal);
+                $effectiveCardDiscount = min($cardDiscount ?: $calculatedDiscount, $grossTotalRaw);
+                $effectiveCardDiscount = course_truncate_price($effectiveCardDiscount);
             }
 
-            $amountDue = max($grossTotal - $effectiveCardDiscount, 0);
+            $amountDueRaw = max($grossTotalRaw - $effectiveCardDiscount, 0);
+            $amountDue = course_truncate_price($amountDueRaw);
             $minimumOnlinePaymentFee = 0.0;
 
-            if ($amountDue > 0 && $amountDue < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
-                $minimumOnlinePaymentFee = round(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $amountDue, 2);
+            if ($amountDueRaw > 0 && $amountDueRaw < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
+                $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $amountDueRaw);
             }
 
-            $amountDue = round($amountDue + $minimumOnlinePaymentFee, 2);
+            $amountDue = course_truncate_price($amountDueRaw + $minimumOnlinePaymentFee);
 
             $booking->amount = $amountDue;
             $booking->sub_total = $amount;
@@ -585,12 +602,16 @@ class PublicController extends Controller
     ) {
         $course = Course::query()->findOrFail($request->input('course_id'));
 
-        [$amountNet, $couponAmountNet] = $this->calculateBookingAmount($course, $request->input('coupon_code'));
+        [$amountNetRaw, $couponAmountNet] = $this->calculateBookingAmount($course, $request->input('coupon_code'));
 
-        $couponAmountNet = min($couponAmountNet, $amountNet);
-        $netSubtotal = max($amountNet - $couponAmountNet, 0);
-        $taxAmount = $course->getTaxAmount($netSubtotal);
-        $totalAmount = $netSubtotal + $taxAmount;
+        $amountNetRaw = (float) $amountNetRaw;
+        $couponAmountNet = min($couponAmountNet, $amountNetRaw);
+        $netSubtotalRaw = max($amountNetRaw - $couponAmountNet, 0);
+        $netSubtotal = course_truncate_price($netSubtotalRaw);
+        $taxAmountRaw = $course->getTaxAmount($netSubtotalRaw);
+        $taxAmount = course_truncate_price($taxAmountRaw);
+        $totalAmountRaw = $netSubtotalRaw + $taxAmountRaw;
+        $totalAmount = course_truncate_price($totalAmountRaw);
 
         $sessionData = HotelHelper::getCheckoutData();
         $cardDiscount = 0.0;
@@ -605,7 +626,8 @@ class PublicController extends Controller
         if ($selectedCard) {
             $storedDiscount = (float) Arr::get($sessionData, 'customer_card_discount', 0);
             $calculatedDiscount = $customerCardService->calculateDiscount($selectedCard, $course, $cardUnitsUsed);
-            $cardDiscount = min($storedDiscount ?: $calculatedDiscount, $totalAmount);
+            $cardDiscount = min($storedDiscount ?: $calculatedDiscount, $totalAmountRaw);
+            $cardDiscount = course_truncate_price($cardDiscount);
 
             HotelHelper::saveCheckoutData([
                 'customer_card_id' => $selectedCard->getKey(),
@@ -624,38 +646,41 @@ class PublicController extends Controller
             $cardDiscount = 0.0;
         }
 
-        $totalAfterDiscount = max($totalAmount - $cardDiscount, 0);
+        $totalAfterDiscountRaw = max($totalAmountRaw - $cardDiscount, 0);
+        $totalAfterDiscount = course_truncate_price($totalAfterDiscountRaw);
         $minimumOnlinePaymentFee = 0.0;
 
-        if ($totalAfterDiscount > 0 && $totalAfterDiscount < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
-            $minimumOnlinePaymentFee = round(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscount, 2);
+        if ($totalAfterDiscountRaw > 0 && $totalAfterDiscountRaw < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
+            $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscountRaw);
         }
 
-        $finalTotal = round($totalAfterDiscount + $minimumOnlinePaymentFee, 2);
+        $finalTotal = course_truncate_price($totalAfterDiscountRaw + $minimumOnlinePaymentFee);
 
-        $subTotalDisplay = $course->getPriceWithTax($amountNet);
-        $couponDisplay = $course->getPriceWithTax($couponAmountNet);
+        $priceBreakdown = course_price_breakdown($course, Auth::guard('customer')->user());
+
+        $subTotalDisplay = course_truncate_price($course->getPriceWithTax($amountNetRaw));
+        $couponDisplay = course_truncate_price($course->getPriceWithTax($couponAmountNet));
         $discountDisplay = $couponAmountNet > 0
-            ? '-' . format_price($couponDisplay)
-            : format_price(0);
+            ? '-' . course_format_price($couponDisplay)
+            : course_format_price(0);
 
         $cardDiscountDisplay = $cardDiscount > 0
-            ? '-' . format_price($cardDiscount)
-            : format_price(0);
+            ? '-' . course_format_price($cardDiscount)
+            : course_format_price(0);
 
         $cardDiscountPlain = $cardDiscount > 0
-            ? format_price($cardDiscount)
-            : format_price(0);
+            ? course_format_price($cardDiscount)
+            : course_format_price(0);
 
         $minimumFeeDisplay = $minimumOnlinePaymentFee > 0
-            ? format_price($minimumOnlinePaymentFee)
-            : format_price(0);
+            ? course_format_price($minimumOnlinePaymentFee)
+            : course_format_price(0);
 
         return $response->setData([
-            'total_amount'      => format_price($finalTotal),
+            'total_amount'      => course_format_price($finalTotal),
             'amount_raw'        => $finalTotal,
-            'sub_total'         => format_price($subTotalDisplay),
-            'tax_amount'        => format_price($taxAmount),
+            'sub_total'         => course_format_price($subTotalDisplay),
+            'tax_amount'        => course_format_price($priceBreakdown['calculated_tax'] ?? 0),
             'discount_amount'   => $discountDisplay,
             'card_discount_raw' => $cardDiscount,
             'card_discount_display' => $cardDiscountDisplay,
@@ -670,7 +695,7 @@ class PublicController extends Controller
     protected function calculateBookingAmount(Course $course, ?string $couponCode = null): array
     {
         $pricing = $course->resolvePricing(Auth::guard('customer')->user());
-        $amount = $pricing['calculated_net'];
+        $amount = (float) ($pricing['calculated_net'] ?? 0);
 
         $sessionData = HotelHelper::getCheckoutData();
 
@@ -690,6 +715,7 @@ class PublicController extends Controller
                     $amount
                 );
                 $discountAmount = min($discountAmount, $amount);
+                $discountAmount = course_truncate_price($discountAmount);
             }
 
             $sessionData['coupon_amount'] = $discountAmount;
