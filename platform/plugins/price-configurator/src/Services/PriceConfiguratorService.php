@@ -182,7 +182,9 @@ class PriceConfiguratorService
 
     protected function applyQuantityDiscount(float $price, int $hours): float
     {
-        if ($hours <= 1) {
+        $hours = max(0, $hours);
+
+        if ($hours <= 0) {
             return $price;
         }
 
@@ -190,13 +192,15 @@ class PriceConfiguratorService
             ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
             ->where('condition_type', ConditionTypeEnum::QUANTITY)
             ->where(function ($query) use ($hours) {
-                $query->where('range_min', '<=', $hours)
-                    ->where(function ($q) use ($hours) {
-                        $q->whereNull('range_max')
-                            ->orWhere('range_max', '>=', $hours);
-                    });
+                $query->whereNull('range_min')
+                    ->orWhere('range_min', '<=', $hours);
             })
-            ->orderBy('priority', 'desc')
+            ->where(function ($query) use ($hours) {
+                $query->whereNull('range_max')
+                    ->orWhere('range_max', '>=', $hours);
+            })
+            ->orderByDesc('priority')
+            ->orderByDesc('range_min')
             ->first();
 
         if (! $discount) {
