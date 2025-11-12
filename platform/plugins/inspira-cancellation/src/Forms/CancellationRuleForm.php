@@ -55,7 +55,7 @@ class CancellationRuleForm extends FormAbstract
                     ->label(trans('plugins/inspira-cancellation::cancellation.rule.refund_percent'))
                     ->required()
                     ->min(0)
-                    ->maxValue(100)
+                    ->max(100)
             )
             ->add(
                 'description',
