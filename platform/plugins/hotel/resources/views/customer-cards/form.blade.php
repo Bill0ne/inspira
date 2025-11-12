@@ -86,6 +86,13 @@
                     :value="old('assigned_to', $card->assigned_to)"
                 />
 
+                <x-core::form.select
+                    :label="trans('plugins/hotel::customer-card.form.fields.is_single_purchase')"
+                    name="is_single_purchase"
+                    :options="[0 => trans('core/base::base.no'), 1 => trans('core/base::base.yes')]"
+                    :value="old('is_single_purchase', (int) $card->is_single_purchase)"
+                />
+
                 <x-core::form.checkbox
                     :label="trans('plugins/hotel::customer-card.form.fields.is_active')"
                     name="is_active"

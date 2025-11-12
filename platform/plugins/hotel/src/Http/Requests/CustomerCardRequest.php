@@ -32,6 +32,7 @@ class CustomerCardRequest extends Request
             'units_total' => ['required', 'integer', 'min:1'],
             'valid_until' => ['nullable', 'date_format:' . BaseHelper::getDateFormat(), 'after:today'],
             'is_active' => ['sometimes', 'boolean'],
+            'is_single_purchase' => ['sometimes', 'boolean'],
             'assigned_to' => ['nullable', 'integer', 'exists:ht_customers,id'],
         ];
     }

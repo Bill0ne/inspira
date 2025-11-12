@@ -14,6 +14,7 @@ use Botble\Hotel\Enums\CustomerCardTypeEnum;
 use Botble\Hotel\Http\Requests\CustomerCardRequest;
 use Botble\Hotel\Models\CustomerCard;
 use Botble\Hotel\Models\Customer;
+use Botble\Hotel\Models\CustomerCardUsage;
 use Botble\Hotel\Services\CustomerCardService;
 use Botble\Hotel\Supports\HotelSupport;
 use Botble\Hotel\Tables\CustomerCardTable;
@@ -68,6 +69,7 @@ class CustomerCardController extends BaseController
 
         $data['valid_until'] = $this->parseValidUntil($request);
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_single_purchase'] = $request->boolean('is_single_purchase');
         $data['assigned_to'] = $request->filled('assigned_to') ? (int) $request->input('assigned_to') : null;
         $data['created_by'] = $request->user()->getKey();
         $data['units_remaining'] = (int) Arr::get($data, 'units_total', 0);
@@ -105,6 +107,7 @@ class CustomerCardController extends BaseController
 
         $data['valid_until'] = $this->parseValidUntil($request);
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_single_purchase'] = $request->boolean('is_single_purchase');
         $data['assigned_to'] = $request->filled('assigned_to') ? (int) $request->input('assigned_to') : null;
 
         $customerCard->fill($data);
@@ -189,13 +192,36 @@ class CustomerCardController extends BaseController
 
     public function usages(CustomerCard $customerCard, BaseHttpResponse $response): BaseHttpResponse
     {
-        $usages = $customerCard->usages()
-            ->with(['course', 'booking.room.room'])
+        $orders = collect();
+        $assignedCardIds = [$customerCard->getKey()];
+
+        if (! $customerCard->assigned_to) {
+            $orders = $customerCard->orders()
+                ->where('status', 'completed')
+                ->with([
+                    'customer',
+                    'assignedCard' => function ($query) {
+                        $query
+                            ->withCount('usages')
+                            ->with(['usages' => function ($usageQuery) {
+                                $usageQuery->latest()->limit(1);
+                            }]);
+                    },
+                ])
+                ->orderByDesc('completed_at')
+                ->get();
+
+            $assignedCardIds = $orders->pluck('assigned_card_id')->filter()->all();
+        }
+
+        $usages = CustomerCardUsage::query()
+            ->whereIn('card_id', $assignedCardIds)
+            ->with(['course', 'booking.room.room', 'card.customer'])
             ->orderByDesc('created_at')
             ->get();
 
         return $response->setData([
-            'html' => view('plugins/hotel::customer-cards.partials.usages', compact('customerCard', 'usages'))->render(),
+            'html' => view('plugins/hotel::customer-cards.partials.usages', compact('customerCard', 'usages', 'orders'))->render(),
         ]);
     }
 
