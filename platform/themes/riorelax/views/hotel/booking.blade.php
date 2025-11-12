@@ -32,6 +32,11 @@
     $extrasAmountDisplay = $extrasAmount ?? 0;
     session(['url.intended' => request()->fullUrl()]);
     $shouldStartRegister = old('register_customer') == 1;
+
+    $requestsValue = old('requests', '');
+    if ($requestsValue === "{{ old('requests') }}") {
+        $requestsValue = '';
+    }
 @endphp
 
 <style>
@@ -435,7 +440,7 @@ textarea.form-control{min-height:100px;}
 
         <div class="step-section requests-box">
           <h5>Spezielle Wünsche</h5>
-          <textarea id="requests" name="requests" class="form-control" placeholder="{{ __('Write Something') }}...">{{ old('requests') }}</textarea>
+          <textarea id="requests" name="requests" class="form-control" placeholder="{{ __('Write Something') }}...">{{ $requestsValue }}</textarea>
         </div>
 
         <div class="btnrow">
