@@ -4,6 +4,7 @@ namespace Botble\Hotel\Tables;
 
 use Botble\Base\Facades\Html;
 use Botble\Hotel\Models\CustomerCard;
+use Botble\Hotel\Services\CustomerCardService;
 use Botble\Table\Abstracts\TableAbstract;
 use Botble\Table\Actions\DeleteAction;
 use Botble\Table\Actions\EditAction;
@@ -40,6 +41,14 @@ class CustomerCardTable extends TableAbstract
             ->editColumn('units_remaining', function (CustomerCard $card) {
                 return sprintf('%d / %d', $card->units_remaining, $card->units_total);
             })
+            ->addColumn('purchase_price', function (CustomerCard $card) {
+                $price = app(CustomerCardService::class)->calculatePurchasePrice($card);
+
+                return format_price($price);
+            })
+            ->addColumn('active_assignments', function (CustomerCard $card) {
+                return sprintf('%d', (int) $card->active_assignments_count);
+            })
             ->editColumn('name', function (CustomerCard $card) {
                 $uidBadge = $card->uid
                     ? Html::tag('span', e($card->uid), ['class' => 'badge bg-success ms-2'])
@@ -74,9 +83,6 @@ class CustomerCardTable extends TableAbstract
 
                 return Html::tag('span', $card->valid_until->toDateString(), ['class' => 'badge badge-success']);
             })
-            ->editColumn('assigned_to', function (CustomerCard $card) {
-                return $card->customer?->email ?: '—';
-            })
             ->addColumn('usage', function (CustomerCard $card) {
                 return Html::tag('button', trans('plugins/hotel::customer-card.table.view_usage'), [
                     'class' => 'btn btn-outline-primary btn-sm',
@@ -99,7 +105,18 @@ class CustomerCardTable extends TableAbstract
 
     public function query(): Relation|Builder|QueryBuilder
     {
-        $query = $this->getModel()->query()->select(['*'])->with('customer');
+        $query = $this->getModel()->query()
+            ->select(['ht_customer_cards.*'])
+            ->whereNull('assigned_to')
+            ->withCount([
+                'orders as active_assignments_count' => function ($relation) {
+                    $relation
+                        ->where('status', 'completed')
+                        ->whereHas('assignedCard', function ($assignedCard) {
+                            $assignedCard->active();
+                        });
+                },
+            ]);
 
         return $this->applyScopes($query);
     }
@@ -112,9 +129,10 @@ class CustomerCardTable extends TableAbstract
             Column::make('type')->title(trans('plugins/hotel::customer-card.table.type'))->alignLeft(),
             Column::make('discount_percent')->title(trans('plugins/hotel::customer-card.table.discount'))->alignLeft(),
             Column::make('base_price')->title(trans('plugins/hotel::customer-card.table.base_price'))->alignLeft(),
+            Column::make('purchase_price')->title(trans('plugins/hotel::customer-card.table.purchase_price'))->alignLeft(),
             Column::make('units_remaining')->title(trans('plugins/hotel::customer-card.table.units_remaining'))->alignLeft(),
+            Column::make('active_assignments')->title(trans('plugins/hotel::customer-card.table.active_assignments'))->alignLeft(),
             Column::make('valid_until')->title(trans('plugins/hotel::customer-card.table.valid_until'))->alignLeft(),
-            Column::make('assigned_to')->title(trans('plugins/hotel::customer-card.table.assigned_to'))->alignLeft(),
             Column::make('status')->title(trans('plugins/hotel::customer-card.table.status'))->alignLeft(),
             Column::make('usage')->title(trans('plugins/hotel::customer-card.table.view_usage'))->alignLeft(),
         ];

@@ -43,8 +43,21 @@ class CustomerDashboardController
 
         $availableCards = CustomerCard::query()
             ->whereNull('assigned_to')
-            ->where('is_active', true)
             ->active()
+            ->where(function ($query) use ($user) {
+                $query->where('is_single_purchase', false);
+
+                if ($user) {
+                    $query->orWhere(function ($inner) use ($user) {
+                        $inner->where('is_single_purchase', true)
+                            ->whereDoesntHave('orders', function ($orderQuery) use ($user) {
+                                $orderQuery
+                                    ->where('customer_id', $user->getKey())
+                                    ->where('status', 'completed');
+                            });
+                    });
+                }
+            })
             ->orderBy('name')
             ->get()
             ->map(function (CustomerCard $card) use ($customerCardService) {
@@ -84,11 +97,18 @@ class CustomerDashboardController
                 ->setNextUrl(route('customer.cards'));
         }
 
+        if (! $customerCardService->customerCanPurchaseTemplate($customerCard, $user)) {
+            return $response
+                ->setError()
+                ->setMessage(trans('plugins/hotel::customer-card.purchase.single_restriction'))
+                ->setNextUrl(route('customer.cards'));
+        }
+
         $purchasePrice = $customerCardService->calculatePurchasePrice($customerCard);
 
         $paymentMethods = [];
 
-        if (is_plugin_active('payment')) {
+        if (is_plugin_active('payment') && app()->bound('payment.methods')) {
             $paymentMethods = app('payment.methods')->all();
         }
 
@@ -117,6 +137,13 @@ class CustomerDashboardController
                 ->setError()
                 ->setNextUrl(route('customer.cards'))
                 ->setMessage(trans('plugins/hotel::customer-card.purchase.already_active'));
+        }
+
+        if (! $customerCardService->customerCanPurchaseTemplate($customerCard, $user)) {
+            return $response
+                ->setError()
+                ->setNextUrl(route('customer.cards'))
+                ->setMessage(trans('plugins/hotel::customer-card.purchase.single_restriction'));
         }
 
         $amount = $customerCardService->calculatePurchasePrice($customerCard);

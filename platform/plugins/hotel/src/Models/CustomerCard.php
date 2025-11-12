@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\CustomerCardUsage;
+use Botble\Hotel\Models\CustomerCardOrder;
 use Illuminate\Support\Str;
 
 class CustomerCard extends BaseModel
@@ -27,6 +28,7 @@ class CustomerCard extends BaseModel
         'units_remaining',
         'valid_until',
         'is_active',
+        'is_single_purchase',
         'created_by',
         'assigned_to',
     ];
@@ -39,6 +41,7 @@ class CustomerCard extends BaseModel
         'units_remaining' => 'int',
         'valid_until' => 'datetime',
         'is_active' => 'bool',
+        'is_single_purchase' => 'bool',
     ];
 
     protected $appends = ['status_label', 'status_color'];
@@ -71,6 +74,11 @@ class CustomerCard extends BaseModel
     public function usages(): HasMany
     {
         return $this->hasMany(CustomerCardUsage::class, 'card_id');
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(CustomerCardOrder::class, 'card_template_id');
     }
 
     protected function statusLabel(): Attribute

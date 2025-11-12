@@ -9,6 +9,7 @@ use Botble\Hotel\Models\Booking;
 use Botble\Courses\Models\Course;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Collection;
+use Botble\Hotel\Models\CustomerCardOrder;
 
 class CustomerCardService
 {
@@ -104,6 +105,24 @@ class CustomerCardService
         $discount = $total * ($card->discount_percent / 100);
 
         return round(max($total - $discount, 0), 2);
+    }
+
+    public function customerHasPurchasedTemplate(int $customerId, int $templateId): bool
+    {
+        return CustomerCardOrder::query()
+            ->where('customer_id', $customerId)
+            ->where('card_template_id', $templateId)
+            ->where('status', 'completed')
+            ->exists();
+    }
+
+    public function customerCanPurchaseTemplate(CustomerCard $card, Customer $customer): bool
+    {
+        if (! $card->is_single_purchase) {
+            return true;
+        }
+
+        return ! $this->customerHasPurchasedTemplate($customer->getKey(), $card->getKey());
     }
 
     public function consumeUnits(CustomerCard $card, ?Booking $booking, ?Course $course, int $units, float $discountAmount): CustomerCardUsage
