@@ -2,6 +2,8 @@
 
 namespace Botble\InspiraCancellation\Services;
 
+use Botble\Courses\Events\CourseBookingChangedStatus;
+use Botble\Hotel\Events\BookingStatusChanged;
 use Botble\InspiraCancellation\Events\BookingCancelledEvent;
 use Botble\InspiraCancellation\Models\Cancellation;
 use Botble\InspiraCancellation\Models\CancellationRule;
@@ -62,8 +64,20 @@ class CancellationService
         ]);
 
         if ($booking instanceof Booking || $booking instanceof CourseBooking) {
+            $originalStatus = $booking->getOriginal('status');
+
             $booking->status = BookingStatusEnum::CANCELLED;
             $booking->save();
+
+            if ($originalStatus !== BookingStatusEnum::CANCELLED) {
+                if ($booking instanceof Booking) {
+                    event(new BookingStatusChanged($originalStatus, $booking));
+                }
+
+                if ($booking instanceof CourseBooking) {
+                    CourseBookingChangedStatus::dispatch($originalStatus, $booking);
+                }
+            }
         }
 
         event(new BookingCancelledEvent($booking, $cancellation, $quote));
