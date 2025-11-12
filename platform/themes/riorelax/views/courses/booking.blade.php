@@ -168,8 +168,9 @@ textarea.form-control{min-height:100px;}
         <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ format_price($couponAmount) }}</b></div>
         <div class="kv card-discount-row {{ $cardDiscount > 0 ? '' : 'd-none' }}"><span>Kartenrabatt</span><b class="card-discount-text">-{{ format_price($cardDiscount) }}</b></div>
         <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
+        <div class="kv minimum-fee-row {{ $minimumOnlinePaymentFee > 0 ? '' : 'd-none' }}"><span>Mindestgebühr (Online-Zahlung)</span><b class="minimum-fee-text">{{ format_price($minimumOnlinePaymentFee) }}</b></div>
         <hr>
-        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($totalAfterDiscount) }}</b></div>
+        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($finalTotal) }}</b></div>
       </div>
     </div>
 
@@ -190,7 +191,16 @@ textarea.form-control{min-height:100px;}
     <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form" data-start-step="{{ $customer->id ? 2 : 1 }}" data-storage-key="course-checkout" data-start-register="{{ $shouldStartRegister ? '1' : '0' }}" data-prefill='@json($prefillPayload)'>
       @csrf
       <input type="hidden" name="token" value="{{ $token }}">
-      <input type="hidden" name="amount" value="{{ $totalAfterDiscount }}" data-total data-original-total="{{ $totalAfterDiscount + $cardDiscount }}" data-active-discount="{{ $cardDiscount }}">
+      <input
+        type="hidden"
+        name="amount"
+        value="{{ number_format($finalTotal, 2, '.', '') }}"
+        data-total
+        data-original-total="{{ number_format($total, 2, '.', '') }}"
+        data-active-discount="{{ number_format($cardDiscount, 2, '.', '') }}"
+        data-minimum-fee="{{ number_format($minimumOnlinePaymentFee, 2, '.', '') }}"
+        data-minimum-threshold="{{ number_format($minimumOnlinePaymentThreshold, 2, '.', '') }}"
+      >
       <input type="hidden" name="course_id" value="{{ $course->id }}">
       <input type="hidden" name="session_id" value="{{ $session->id }}">
       <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">

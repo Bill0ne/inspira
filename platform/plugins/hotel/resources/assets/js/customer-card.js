@@ -115,29 +115,45 @@ $(() => {
         const $cardInput = $('[data-customer-card-input]')
         const $discountRow = $('.card-discount-row')
         const $discountText = $('.card-discount-text')
+        const $minimumFeeRow = $('.minimum-fee-row')
+        const $minimumFeeText = $('.minimum-fee-text')
         const $totalAmountText = $('.total-amount-text')
         const courseId = Number($cardSelect.data('course')) || null
 
         const getOriginalTotal = () => {
-            let base = Number($totalInput.data('original-total'))
+            const storedValue = $totalInput.data('original-total')
 
-            if (! base) {
-                const currentTotal = Number($totalInput.val()) || 0
-                const activeDiscount = Number($totalInput.data('active-discount') || 0)
-                base = currentTotal + activeDiscount
-                $totalInput.data('original-total', base)
+            if (typeof storedValue !== 'undefined' && storedValue !== null && storedValue !== '') {
+                return Number(storedValue)
             }
+
+            const currentTotal = Number($totalInput.val()) || 0
+            const activeDiscount = Number($totalInput.data('active-discount') || 0)
+            const minimumFee = Number($totalInput.data('minimum-fee') || 0)
+            const base = currentTotal + activeDiscount - minimumFee
+
+            $totalInput.data('original-total', base)
 
             return base
         }
 
         const updateTotals = (discountValue = 0, formattedDiscount = null) => {
             const baseTotal = getOriginalTotal()
-            const nextTotal = Math.max(baseTotal - Number(discountValue || 0), 0)
+            let nextTotal = Math.max(baseTotal - Number(discountValue || 0), 0)
+            const threshold = Number($totalInput.data('minimum-threshold') || 0)
+            let minimumFee = 0
+
+            if (nextTotal > 0 && threshold > 0 && nextTotal < threshold) {
+                minimumFee = parseFloat((threshold - nextTotal).toFixed(2))
+                nextTotal = parseFloat((nextTotal + minimumFee).toFixed(2))
+            } else {
+                nextTotal = parseFloat(nextTotal.toFixed(2))
+            }
 
             $totalInput
                 .val(nextTotal.toFixed(2))
                 .data('active-discount', Number(discountValue || 0))
+                .data('minimum-fee', minimumFee)
 
             if ($discountRow.length) {
                 if (discountValue > 0) {
@@ -150,6 +166,20 @@ $(() => {
                 } else {
                     $discountRow.addClass('d-none')
                     $discountText.text(`-${formatPrice(0)}`)
+                }
+            }
+
+            if ($minimumFeeRow.length) {
+                if (minimumFee > 0) {
+                    $minimumFeeRow.removeClass('d-none')
+                    if ($minimumFeeText.length) {
+                        $minimumFeeText.text(formatPrice(minimumFee))
+                    }
+                } else {
+                    $minimumFeeRow.addClass('d-none')
+                    if ($minimumFeeText.length) {
+                        $minimumFeeText.text(formatPrice(0))
+                    }
                 }
             }
 
@@ -212,6 +242,36 @@ $(() => {
                 .catch((error) => {
                     Botble.handleError(error)
                 })
+        })
+
+        $(document).on('customer-card.totals-updated', (event, payload = {}) => {
+            const discountRaw = Number(payload.card_discount_raw || 0)
+            const formattedDiscount = payload.card_discount_display_plain || null
+
+            if (typeof payload.total_before_card_raw !== 'undefined') {
+                $totalInput.data('original-total', Number(payload.total_before_card_raw))
+            }
+
+            if (typeof payload.minimum_fee_raw !== 'undefined') {
+                $totalInput.data('minimum-fee', Number(payload.minimum_fee_raw || 0))
+            }
+
+            if (typeof payload.minimum_threshold !== 'undefined') {
+                $totalInput.data('minimum-threshold', Number(payload.minimum_threshold) || 0)
+            }
+
+            if ($infoBox.length && Number($cardInput.val())) {
+                $infoBox
+                    .toggleClass('d-none', discountRaw <= 0)
+                    .find('[data-bb-customer-card="discount"]')
+                    .text(formattedDiscount || formatPrice(discountRaw))
+            }
+
+            if (discountRaw > 0) {
+                $removeButton.removeClass('d-none')
+            }
+
+            updateTotals(discountRaw, formattedDiscount)
         })
     }
 

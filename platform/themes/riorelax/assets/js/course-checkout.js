@@ -26,11 +26,65 @@ $(document).ready(function () {
                 }
 
                 // Update sidebar totals
+                const $totalInput = $('input[name=amount]');
+                const $cardDiscountRow = $('.card-discount-row');
+                const $cardDiscountText = $('.card-discount-text');
+                const $minimumFeeRow = $('.minimum-fee-row');
+                const $minimumFeeText = $('.minimum-fee-text');
+                const $cardInfoBox = $('[data-bb-customer-card="info"]');
+                const $cardInfoDiscount = $cardInfoBox.find('[data-bb-customer-card="discount"]');
+                const cardDiscountRaw = Number(data.card_discount_raw || 0);
+                const minimumFeeRaw = Number(data.minimum_fee_raw || 0);
+
+                $totalInput
+                    .val(data.amount_raw)
+                    .data('original-total', Number(data.total_before_card_raw || data.amount_raw))
+                    .data('active-discount', cardDiscountRaw)
+                    .data('minimum-fee', minimumFeeRaw)
+                    .data('minimum-threshold', Number(data.minimum_threshold || 0));
+
                 $('.total-amount-text').text(data.total_amount);
-                $('input[name=amount]').val(data.amount_raw);
                 $('.amount-text').text(data.sub_total);
                 $('.discount-text').text(data.discount_amount);
                 $('.tax-text').text(data.tax_amount);
+
+                if ($cardDiscountRow.length) {
+                    if (cardDiscountRaw > 0) {
+                        $cardDiscountRow.removeClass('d-none');
+                    } else {
+                        $cardDiscountRow.addClass('d-none');
+                    }
+
+                    if (data.card_discount_display) {
+                        $cardDiscountText.text(data.card_discount_display);
+                    }
+                }
+
+                if ($minimumFeeRow.length) {
+                    if (minimumFeeRaw > 0) {
+                        $minimumFeeRow.removeClass('d-none');
+                    } else {
+                        $minimumFeeRow.addClass('d-none');
+                    }
+
+                    if (data.minimum_fee_display) {
+                        $minimumFeeText.text(data.minimum_fee_display);
+                    }
+                }
+
+                if ($cardInfoBox.length && Number($('[data-customer-card-input]').val())) {
+                    if (cardDiscountRaw > 0) {
+                        $cardInfoBox.removeClass('d-none');
+                    } else {
+                        $cardInfoBox.addClass('d-none');
+                    }
+
+                    if (data.card_discount_display_plain) {
+                        $cardInfoDiscount.text(data.card_discount_display_plain);
+                    }
+                }
+
+                $(document).trigger('customer-card.totals-updated', data);
 
                 // Reload payment methods (preserve selection)
                 $('.payment-checkout-form .list_payment_method').load(
