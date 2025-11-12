@@ -88,6 +88,10 @@ class HookServiceProvider extends ServiceProvider
                             ->processBooking($orderId, $data['charge_id']);
 
                     case CustomerCardOrder::class:
+                        if (! $orderId && empty($data['charge_id'])) {
+                            return null;
+                        }
+
                         return app(CustomerCardPurchaseService::class)
                             ->completeOrder($orderId, $data['charge_id'] ?? null);
 

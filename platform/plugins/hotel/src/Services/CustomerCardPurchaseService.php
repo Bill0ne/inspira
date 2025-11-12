@@ -44,20 +44,34 @@ class CustomerCardPurchaseService
         return $order->refresh();
     }
 
-    public function completeOrder(int $orderId, ?string $chargeId = null): ?CustomerCardOrder
+    public function completeOrder(?int $orderId, ?string $chargeId = null): ?CustomerCardOrder
     {
+        $payment = null;
+
+        if (! $orderId && $chargeId) {
+            $payment = Payment::query()->where('charge_id', $chargeId)->first();
+
+            if ($payment && $payment->order_id) {
+                $orderId = (int) $payment->order_id;
+            }
+        }
+
+        if (! $orderId) {
+            return null;
+        }
+
         $order = CustomerCardOrder::query()->find($orderId);
 
         if (! $order) {
             return null;
         }
 
-        if ($chargeId) {
+        if ($chargeId && ! $payment) {
             $payment = Payment::query()->where('charge_id', $chargeId)->first();
+        }
 
-            if ($payment) {
-                return $this->handlePayment($order, $payment);
-            }
+        if ($payment) {
+            return $this->handlePayment($order, $payment);
         }
 
         return $this->finalizeOrder($order);
