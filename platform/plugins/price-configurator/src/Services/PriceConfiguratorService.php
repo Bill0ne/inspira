@@ -160,7 +160,9 @@ class PriceConfiguratorService
         if (
             $rule->rounding_mode &&
             $rule->rounding_mode != RoundingModeEnum::NONE &&
-            $rule->round_to > 0
+            $rule->round_to > 0 &&
+            $rule->target_type != TargetTypeEnum::COURSE &&
+            $rule->target_type != TargetTypeEnum::ROOM
         ) {
             $price = $this->applyRounding($price, $rule->rounding_mode, $rule->round_to);
         }
