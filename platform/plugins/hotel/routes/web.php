@@ -315,6 +315,20 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
                 Route::get('refresh', [CouponControllerFront::class, 'refresh'])->name('refresh');
             });
 
+            // ------------------------------------------------------------
+            // PUBLIC CUSTOMER CARD ROUTES (analog zu COUPONS)
+            // ------------------------------------------------------------
+
+            Route::prefix('customer-card')->name('public.customer-card.')->group(function (): void {
+                Route::post('apply', [\Botble\Hotel\Http\Controllers\CustomerCardController::class, 'apply'])
+                    ->middleware(['customer'])
+                    ->name('apply');
+
+                Route::post('remove', [\Botble\Hotel\Http\Controllers\CustomerCardController::class, 'remove'])
+                    ->middleware(['customer'])
+                    ->name('remove');
+            });
+
             Route::group([
                 'prefix' => 'ajax/customer-card',
                 'middleware' => ['customer'],
