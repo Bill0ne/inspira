@@ -13,7 +13,8 @@ $(() => {
         handleError: (err) => console.error('Request error:', err),
     };
 
-    const currency = (window.customerCard && window.customerCard.currency) || ''
+    const CARD_CONFIG = window.customerCard = window.customerCard || {}
+    CARD_CONFIG.routes = CARD_CONFIG.routes || {}
 
     const t = (path, fallback = '') => {
         const segments = path.split('.')
@@ -32,7 +33,7 @@ $(() => {
 
     const formatPrice = (amount) => {
         const value = Number(amount || 0)
-        return `${currency}${value.toFixed(2)}`
+        return `${CARD_CONFIG.currency || ''}${value.toFixed(2)}`
     }
 
     const $adminForm = $(document).find('form.customer-card-form')
@@ -103,28 +104,31 @@ $(() => {
      *  SHARED REQUEST WRAPPER
      * ----------------------------------------------------------
      */
-    const request = (url, payload = {}, $trigger = null) => {
-        if (! url) {
-            return Promise.reject(new Error('Missing URL'))
+    const applyCustomerCard = (cardId, courseId = null, $trigger = null) => {
+        if (! CARD_CONFIG.routes?.apply) {
+            return Promise.reject(new Error('Missing apply route'))
         }
 
         return $httpClient.make()
             .withButtonLoading($trigger)
-            .post(url, payload)
+            .post(CARD_CONFIG.routes.apply, {
+                card_id: cardId,
+                course_id: courseId,
+            })
     }
 
-    const applyRoute = window.customerCard?.routes?.apply
-    const removeRoute = window.customerCard?.routes?.remove
+    const removeCustomerCard = ($trigger = null) => {
+        if (! CARD_CONFIG.routes?.remove) {
+            return Promise.reject(new Error('Missing remove route'))
+        }
 
-    const applyCustomerCard = (cardId, courseId = null, $trigger = null) =>
-        request(applyRoute, { card_id: cardId, course_id: courseId }, $trigger)
+        return $httpClient.make()
+            .withButtonLoading($trigger)
+            .post(CARD_CONFIG.routes.remove)
+    }
 
-    const removeCustomerCard = ($trigger = null) =>
-        request(removeRoute, {}, $trigger)
-
-    window.customerCard = window.customerCard || {}
-    window.customerCard.applyCustomerCard = applyCustomerCard
-    window.customerCard.removeCustomerCard = removeCustomerCard
+    CARD_CONFIG.applyCustomerCard = applyCustomerCard
+    CARD_CONFIG.removeCustomerCard = removeCustomerCard
 
     /**
      * ----------------------------------------------------------
@@ -237,7 +241,7 @@ $(() => {
                 .then(({ data }) => {
                     window.Botble.showSuccess(data.message)
 
-                    const payload = data.data || {}
+                    const payload = data?.data || {}
 
                     if (payload.discount) {
                         $infoBox
@@ -249,7 +253,9 @@ $(() => {
                     $cardInput.val(cardId)
                     $removeButton.removeClass('d-none')
 
-                    $(document).trigger('customer-card.applied', data)
+                    $(document).trigger('customer-card.applied', {
+                        discount: Number(payload.raw_discount || 0),
+                    })
                 })
                 .catch((error) => {
                     window.Botble.handleError(error)
@@ -270,7 +276,7 @@ $(() => {
                     $removeButton.addClass('d-none')
                     $cardInput.val('')
                     updateTotals(0)
-                    $(document).trigger('customer-card.removed', data)
+                    $(document).trigger('customer-card.removed', {})
                 })
                 .catch((error) => {
                     window.Botble.handleError(error)
@@ -326,18 +332,17 @@ $(() => {
             .find('.modal-body')
             .html(`<div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>`)
 
-        $modal.modal('show')
-
-        $httpClient.make()
-            .get(url)
-            .then(({ data }) => {
-                if (data.data && data.data.html) {
-                    $modal.find('.modal-body').html(data.data.html)
-                }
-            })
-            .catch((error) => {
-                $modal.modal('hide')
-                window.Botble.handleError(error)
-            })
-    })
+            $httpClient.make()
+                .get(url)
+                .then(({ data }) => {
+                    if (data?.data?.html) {
+                        $modal.find('.modal-body').html(data.data.html)
+                    }
+                })
+                .catch((error) => {
+                    $modal.modal('hide')
+                    window.Botble.handleError(error)
+                })
+        })
+    }
 })

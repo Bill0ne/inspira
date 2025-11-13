@@ -9,6 +9,12 @@
         @endphp
         {!! apply_filters(PAYMENT_FILTER_HEADER_ASSETS, null) !!}
     @endif
+    @php
+        Theme::asset()
+            ->container('footer')
+            ->add('payment-http-client', 'vendor/core/plugins/payment/js/http-client.js', ['jquery'])
+            ->add('hotel-customer-card-js', 'vendor/core/plugins/hotel/js/customer-card.js', ['payment-http-client']);
+    @endphp
     <style>
         .card-checkout-wrapper {
             display: flex;

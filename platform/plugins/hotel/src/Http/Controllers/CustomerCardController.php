@@ -37,7 +37,10 @@ class CustomerCardController extends BaseController
     {
         $this->pageTitle(trans('plugins/hotel::customer-card.name'));
 
-        Assets::addScriptsDirectly('vendor/core/plugins/hotel/js/customer-card.js');
+        Assets::addScriptsDirectly([
+            'vendor/core/plugins/payment/js/http-client.js',
+            'vendor/core/plugins/hotel/js/customer-card.js',
+        ]);
 
         return $table->renderTable();
     }
@@ -46,8 +49,12 @@ class CustomerCardController extends BaseController
     {
         $this->pageTitle(trans('plugins/hotel::customer-card.form.create'));
 
-        Assets::addScripts(['form-validation'])
-            ->addScriptsDirectly('vendor/core/plugins/hotel/js/customer-card.js');
+        Assets::addScripts(['form-validation']);
+
+        Assets::addScriptsDirectly([
+            'vendor/core/plugins/payment/js/http-client.js',
+            'vendor/core/plugins/hotel/js/customer-card.js',
+        ]);
 
         $jsValidator = JsValidator::formRequest(CustomerCardRequest::class);
         $card = new CustomerCard([
@@ -88,8 +95,12 @@ class CustomerCardController extends BaseController
     {
         $this->pageTitle(trans('plugins/hotel::customer-card.form.edit', ['name' => $customerCard->name]));
 
-        Assets::addScripts(['form-validation'])
-            ->addScriptsDirectly('vendor/core/plugins/hotel/js/customer-card.js');
+        Assets::addScripts(['form-validation']);
+
+        Assets::addScriptsDirectly([
+            'vendor/core/plugins/payment/js/http-client.js',
+            'vendor/core/plugins/hotel/js/customer-card.js',
+        ]);
 
         $jsValidator = JsValidator::formRequest(CustomerCardRequest::class);
 
