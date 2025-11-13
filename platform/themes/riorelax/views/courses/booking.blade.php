@@ -21,9 +21,34 @@
     $selectedCard = $selectedCard ?? null;
     $cardDiscount = $cardDiscount ?? 0;
     $totalAfterDiscount = $totalAfterDiscount ?? $total;
+    $isCourseCheckout = ! isset($room);
 @endphp
 
-@include('plugins/hotel::customer-cards.partials.scripts', ['jsValidator' => null])
+@if ($isCourseCheckout)
+    @push('header')
+        <script>
+            window.customerCard = window.customerCard || {};
+            window.customerCard.currency = '{{ get_application_currency()->symbol }}';
+            window.customerCard.routes = {
+                apply: '{{ route('ajax.customer-card.apply') }}',
+                remove: '{{ route('ajax.customer-card.remove') }}',
+            };
+            window.trans = window.trans || {};
+            window.trans.customerCard = {{ Js::from(trans('plugins/hotel::customer-card')) }};
+        </script>
+    @endpush
+
+    @php
+        Theme::asset()
+            ->container('footer')
+            ->add('payment-http-client', 'vendor/core/plugins/payment/js/http-client.js', ['jquery'])
+            ->add('hotel-customer-card-js', 'vendor/core/plugins/hotel/js/customer-card.js', ['payment-http-client']);
+    @endphp
+
+    @push('footer')
+        <script src="{{ Theme::asset()->url('js/customer-card.js') }}"></script>
+    @endpush
+@endif
 
 <style>
 :root{--mint:#578E88;--gray:#E5E7EB;--ink:#17463F;}
@@ -184,7 +209,8 @@ textarea.form-control{min-height:100px;}
       ->all();
 @endphp
 
-<section class="checkout-booking-page checkout-fw">
+@if ($isCourseCheckout)
+<section class="checkout-booking-page checkout-fw" data-checkout-context="course">
   <div class="container pt-120 pb-40 checkout-booking">
 
     {{-- ░░ Ticket Header ░░ --}}
@@ -242,7 +268,16 @@ textarea.form-control{min-height:100px;}
 
    
     {{-- ░░ Formular ░░ --}}
-    <form action="{{ route('public.course.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form" data-start-step="{{ $customer->id ? 2 : 1 }}" data-storage-key="course-checkout" data-start-register="{{ $shouldStartRegister ? '1' : '0' }}" data-prefill='@json($prefillPayload)'>
+    <form
+      action="{{ route('public.course.booking.checkout') }}"
+      method="POST"
+      id="bookingForm"
+      class="payment-checkout-form"
+      data-checkout-context="course"
+      data-start-step="{{ $customer->id ? 2 : 1 }}"
+      data-storage-key="course-checkout"
+      data-start-register="{{ $shouldStartRegister ? '1' : '0' }}"
+      data-prefill='@json($prefillPayload)'>
       @csrf
       <input type="hidden" name="token" value="{{ $token }}">
       <input
@@ -363,7 +398,11 @@ textarea.form-control{min-height:100px;}
             </div>
           </div>
         @endif
-        <div class="coupon-wrapper" id="couponBox">@include('plugins/courses::coupons.partials.form')</div>
+        <div class="coupon-wrapper" id="courseCouponBox" data-checkout-context="course">
+          @if ($isCourseCheckout)
+            @include('plugins/courses::coupons.partials.form')
+          @endif
+        </div>
         <label>Zahlungsmethode</label>
         <ul class="list-group list_payment_method">
           {!! apply_filters(PAYMENT_FILTER_ADDITIONAL_PAYMENT_METHODS, null, [
@@ -410,5 +449,6 @@ textarea.form-control{min-height:100px;}
 
 @if (is_plugin_active('payment'))
   {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
+@endif
 @endif
 

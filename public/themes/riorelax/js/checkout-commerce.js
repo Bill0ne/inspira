@@ -6,6 +6,71 @@
   'use strict';
   if (!$) return;
 
+  var contextRoots = {
+    course: document.querySelector('[data-checkout-context="course"]'),
+    hotel: document.querySelector('[data-checkout-context="hotel"]')
+  };
+
+  function hasContext(context) {
+    if (!contextRoots[context]) return false;
+    if (context === 'course') {
+      return !!document.querySelector('input[name="course_id"]');
+    }
+    if (context === 'hotel') {
+      return !!document.querySelector('input[name="room_id"]');
+    }
+    return false;
+  }
+
+  var isCourseCheckout = hasContext('course');
+  var isHotelCheckout = hasContext('hotel');
+
+  function getActiveContext(fallback) {
+    if (fallback && hasContext(fallback)) return fallback;
+    if (isCourseCheckout) return 'course';
+    if (isHotelCheckout) return 'hotel';
+    return null;
+  }
+
+  function resolveContext(element) {
+    var el = element && element.nodeType ? element : null;
+    while (el) {
+      if (el.hasAttribute('data-checkout-context')) {
+        var type = el.getAttribute('data-checkout-context');
+        if (type && hasContext(type)) {
+          var root = contextRoots[type];
+          if (!root) {
+            return null;
+          }
+          return {
+            type: type,
+            root: root,
+            $root: $(root),
+            $box: $(type === 'course' ? root.querySelector('#courseCouponBox') : root.querySelector('#hotelCouponBox'))
+          };
+        }
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function ensureContextRoot(context) {
+    var ctx = getActiveContext(context);
+    return ctx ? contextRoots[ctx] : null;
+  }
+
+  function getCouponContainer(context) {
+    var root = ensureContextRoot(context);
+    if (!root) return $();
+    var id = context === 'hotel' ? '#hotelCouponBox' : '#courseCouponBox';
+    var target = root.querySelector(id);
+    if (!target) {
+      target = root.querySelector('.coupon-wrapper');
+    }
+    return $(target || []);
+  }
+
   function getCsrf() {
     var meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.getAttribute('content') : '';
@@ -21,34 +86,42 @@
     }
   }
 
-  function updateTotals(data) {
+  function updateTotals(data, context) {
     if (!data || typeof data !== 'object') return;
+    var ctx = getActiveContext(context);
+    if (!ctx) return;
+    var root = contextRoots[ctx] || document;
+    var $root = $(root);
     // Auch 0-Werte übernehmen (deshalb 'in' statt truthy)
-    if ('sub_total'      in data) $('.amount-text').text(data.sub_total);
-    if ('discount_amount'in data) $('.discount-text').text(data.discount_amount);
-    if ('tax_amount'     in data) $('.tax-text').text(data.tax_amount);
-    if ('total_amount'   in data) $('.total-amount-text').text(data.total_amount);
-    if ('amount_raw'     in data) $('input[name=amount]').val(data.amount_raw);
+    if ('sub_total'      in data) $root.find('.amount-text').text(data.sub_total);
+    if ('discount_amount'in data) $root.find('.discount-text').text(data.discount_amount);
+    if ('tax_amount'     in data) $root.find('.tax-text').text(data.tax_amount);
+    if ('total_amount'   in data) $root.find('.total-amount-text').text(data.total_amount);
+    if ('amount_raw'     in data) $root.find('input[name=amount]').val(data.amount_raw);
   }
 
-  function getSharedPayload() {
+  function getSharedPayload(context) {
     var payload = {};
-    var courseInput = document.querySelector('input[name="course_id"]');
-
-    if (courseInput && courseInput.value) {
-      payload.course_id = courseInput.value;
+    if (context === 'course' && isCourseCheckout) {
+      var courseInput = document.querySelector('input[name="course_id"]');
+      if (courseInput && courseInput.value) {
+        payload.course_id = courseInput.value;
+      }
+    }
+    if (context === 'hotel' && isHotelCheckout) {
+      var roomInput = document.querySelector('input[name="room_id"]');
+      if (roomInput && roomInput.value) {
+        payload.room_id = roomInput.value;
+      }
     }
 
     return payload;
   }
 
-  function refreshCouponBox(html) {
-    var $container = $('#couponBox');
-
-    if (!$container.length) {
-      $container = $('.coupon-wrapper').first();
-    }
-
+  function refreshCouponBox(html, context) {
+    var ctx = getActiveContext(context);
+    if (!ctx) return;
+    var $container = getCouponContainer(ctx);
     if (!$container.length) return;
 
     if (typeof html === 'string') {
@@ -77,7 +150,7 @@
     })
       .done(function (res) {
         if (res && res.data) {
-          refreshCouponBox(res.data);
+          refreshCouponBox(res.data, ctx);
         }
       })
       .fail(function (err) {
@@ -97,8 +170,11 @@
     $el.toggleClass('button-loading', !!isLoading);
   }
 
-  function reloadPaymentList() {
-    var $list = $('.payment-checkout-form .list_payment_method');
+  function reloadPaymentList(context) {
+    var ctx = getActiveContext(context);
+    if (!ctx) return $.Deferred().resolve();
+    var root = contextRoots[ctx] || document;
+    var $list = $(root).find('.payment-checkout-form .list_payment_method');
     if (!$list.length) return $.Deferred().resolve();
 
     var selected = $list.find('input[name="payment_method"]:checked').val();
@@ -118,19 +194,30 @@
   // Expose für andere Module (Hotel-Recalc ruft das auf)
   win.CheckoutCommerce = {
     updateTotals: updateTotals,
-    reloadPaymentList: reloadPaymentList
+    reloadPaymentList: reloadPaymentList,
+    isCourseCheckout: isCourseCheckout,
+    isHotelCheckout: isHotelCheckout
   };
 
   $(document)
-    .on('click', '.toggle-coupon-form', function () {
-      $('.coupon-form').toggle('fast');
+    .on('click', '.toggle-coupon-form', function (e) {
+      var ctx = resolveContext(e.target);
+      if (!ctx) return;
+      if (ctx.type === 'course' && !isCourseCheckout) return;
+      if (ctx.type === 'hotel' && !isHotelCheckout) return;
+      ctx.$box.find('.coupon-form').toggle('fast');
     })
     .on('click', '.apply-coupon-code', function (e) {
       e.preventDefault();
 
       var $btn = $(e.currentTarget);
+      var ctx = resolveContext(e.currentTarget);
+      if (!ctx) return;
+      if (ctx.type === 'course' && !isCourseCheckout) return;
+      if (ctx.type === 'hotel' && !isHotelCheckout) return;
       var url  = $btn.data('url');
-      var code = ($('input[name=coupon_code]').val() || '').trim();
+      var $codeInput = ctx.$box.find('input[name=coupon_code]');
+      var code = ($codeInput.val() || '').trim();
 
       if (!url) return;
       if (!code.length) {
@@ -144,7 +231,7 @@
         url: url,
         type: 'POST',
         headers: { 'X-CSRF-TOKEN': getCsrf() },
-        data: $.extend({ coupon_code: code }, getSharedPayload()),
+        data: $.extend({ coupon_code: code }, getSharedPayload(ctx.type)),
         beforeSend: function () { toggleLoading($btn, true); }
       })
       .done(function (res) {
@@ -162,13 +249,13 @@
         callTheme('showSuccess', message || 'Gutschein angewendet.');
         updateTotals(data);
         if (data && typeof data.coupon_code !== 'undefined') {
-          $('input[name=coupon_hidden]').val(data.coupon_code || '');
+          ctx.$box.find('input[name=coupon_hidden]').val(data.coupon_code || '');
           if (data.coupon_code) {
-            $('input[name=coupon_code]').val(data.coupon_code);
+            ctx.$box.find('input[name=coupon_code]').val(data.coupon_code);
           }
         }
-        refreshCouponBox(data && data.coupon_view);
-        reloadPaymentList();
+        refreshCouponBox(data && data.coupon_view, ctx.type);
+        reloadPaymentList(ctx.type);
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
@@ -183,6 +270,10 @@
       e.preventDefault();
 
       var $btn = $(e.currentTarget);
+      var ctx = resolveContext(e.currentTarget);
+      if (!ctx) return;
+      if (ctx.type === 'course' && !isCourseCheckout) return;
+      if (ctx.type === 'hotel' && !isHotelCheckout) return;
       var url  = $btn.data('url');
       if (!url) return;
 
@@ -190,7 +281,7 @@
         url: url,
         type: 'POST',
         headers: { 'X-CSRF-TOKEN': getCsrf() },
-        data: getSharedPayload(),
+        data: getSharedPayload(ctx.type),
         beforeSend: function () { toggleLoading($btn, true); }
       })
       .done(function (res) {
@@ -208,13 +299,13 @@
         callTheme('showSuccess', message || 'Gutschein entfernt.');
         updateTotals(data);
         if (data && typeof data.coupon_code !== 'undefined') {
-          $('input[name=coupon_hidden]').val('');
+          ctx.$box.find('input[name=coupon_hidden]').val('');
           if (!data.coupon_code) {
-            $('input[name=coupon_code]').val('');
+            ctx.$box.find('input[name=coupon_code]').val('');
           }
         }
-        refreshCouponBox(data && data.coupon_view);
-        reloadPaymentList();
+        refreshCouponBox(data && data.coupon_view, ctx.type);
+        reloadPaymentList(ctx.type);
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
