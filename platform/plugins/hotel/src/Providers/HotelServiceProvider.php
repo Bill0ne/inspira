@@ -471,5 +471,9 @@ class HotelServiceProvider extends ServiceProvider
             Captcha::registerFormSupport(ForgotPasswordForm::class, ForgotPasswordRequest::class, trans('plugins/hotel::hotel.forgot_password_form'));
             Captcha::registerFormSupport(ResetPasswordForm::class, ResetPasswordRequest::class, trans('plugins/hotel::hotel.reset_password_form'));
         }
+
+        add_filter(THEME_FRONT_FOOTER, function (?string $html): string {
+            return ($html ?? '') . view('plugins/hotel::customer-cards.partials.config')->render();
+        });
     }
 }
