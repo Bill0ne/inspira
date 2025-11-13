@@ -12,6 +12,7 @@ use Botble\Payment\Repositories\Interfaces\PaymentInterface;
 use Botble\Payment\Supports\PaymentHelper;
 use Botble\Payment\Supports\PaymentMethods as PaymentMethodsSupport;
 use Illuminate\Foundation\AliasLoader;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
@@ -47,6 +48,35 @@ class PaymentServiceProvider extends ServiceProvider
             ->loadAnonymousComponents()
             ->loadMigrations()
             ->publishAssets();
+
+        add_filter(PAYMENT_FILTER_HEADER_ASSETS, function (?string $html) {
+            $html = (string) $html;
+
+            $omiseConfig = config('plugins.payment.payment.providers.omise', []);
+
+            $enabled = filter_var(Arr::get($omiseConfig, 'enabled', false), FILTER_VALIDATE_BOOLEAN);
+            $publicKey = Arr::get($omiseConfig, 'public_key');
+            $scriptUrl = Arr::get($omiseConfig, 'script_url');
+            $currency = Arr::get($omiseConfig, 'currency');
+
+            if (! $currency) {
+                $currencyModel = get_application_currency();
+                $currency = $currencyModel ? strtoupper($currencyModel->title) : config('plugins.payment.payment.currency');
+            }
+
+            $hasPublicKey = ! empty($publicKey);
+
+            $config = [
+                'enabled' => $enabled,
+                'configured' => $hasPublicKey,
+                'active' => $enabled && $hasPublicKey,
+                'publicKey' => $publicKey,
+                'scriptUrl' => $scriptUrl,
+                'currency' => $currency,
+            ];
+
+            return $html . view('plugins/payment::partials.omise-config', compact('config'))->render();
+        }, 45);
 
         add_filter(BASE_FILTER_APPEND_MENU_NAME, [$this, 'countPendingTransactions'], 26, 2);
         add_filter(BASE_FILTER_MENU_ITEMS_COUNT, [$this, 'getMenuItemCount'], 26);
