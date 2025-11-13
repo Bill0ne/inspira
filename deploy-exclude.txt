@@ -1,35 +1,36 @@
-#############################
-# SAFE EXCLUDES (perfekt)
-#############################
+###########################################
+# SAFE DEPLOY EXCLUDES (Stage → Live)
+###########################################
 
-# Git & CI
-.git
-.github
+# Git / CI
+.git/
+.github/
 .gitignore
-README.md
 
-# System / Local
+# Environment files (NIEMALS überschreiben)
 .env
 .env.*
+.htaccess
+
+# System runtime (niemals deployen)
 storage/logs/
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
-storage/app/public/
+storage/app/
 
-# Dependencies (werden serverseitig installiert)
+# User uploads (NIEMALS löschen oder überschreiben)
+public/uploads/
+public/storage/
+
+# Dependencies (werden auf LIVE neu installiert)
 node_modules/
 vendor/
 
-# User Uploads (werden nicht überschrieben)
-public/storage/
-public/uploads/
-
-# Tests / Docs / Dev
+# Dev-only
 tests/
 docs/
 .idea/
 .vscode/
-*.log
-*.gz
 phpunit.result.cache
+dev-test-repo/
