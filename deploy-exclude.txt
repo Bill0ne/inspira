@@ -19,7 +19,7 @@ storage/framework/sessions/*
 storage/framework/views/*
 storage/app/
 
-# User uploads (NIEMALS löschen oder überschreiben)
+# User uploads – NIEMALS überschreiben
 public/uploads/
 public/storage/
 
