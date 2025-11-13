@@ -1,3 +1,5 @@
+const CARD_CONFIG = window.customerCard ?? { routes: {} }
+
 $(() => {
     /**
      * ----------------------------------------------------------
@@ -13,7 +15,7 @@ $(() => {
         handleError: (err) => console.error('Request error:', err),
     };
 
-    const currency = (window.customerCard && window.customerCard.currency) || ''
+    const currency = CARD_CONFIG.currency || ''
 
     const t = (path, fallback = '') => {
         const segments = path.split('.')
@@ -103,24 +105,65 @@ $(() => {
      *  SHARED REQUEST WRAPPER
      * ----------------------------------------------------------
      */
-    const request = (url, payload = {}, $trigger = null) => {
-        if (! url) {
-            return Promise.reject(new Error('Missing URL'))
-        }
-
-        return $httpClient.make()
-            .withButtonLoading($trigger)
-            .post(url, payload)
-    }
-
-    const applyRoute = window.customerCard?.routes?.apply
-    const removeRoute = window.customerCard?.routes?.remove
-
     const applyCustomerCard = (cardId, courseId = null, $trigger = null) =>
-        request(applyRoute, { card_id: cardId, course_id: courseId }, $trigger)
+        $.ajax({
+            method: 'POST',
+            url: CARD_CONFIG.routes.apply,
+            data: {
+                card_id: cardId,
+                course_id: courseId,
+                _token: $('meta[name="csrf-token"]').attr('content'),
+            },
+            beforeSend() {
+                if ($trigger) $trigger.prop('disabled', true).text('...')
+            },
+            success(res) {
+                if (res.error) {
+                    Botble.showError(res.message)
+                    return
+                }
+
+                Botble.showSuccess(res.message)
+
+                $('[data-bb-customer-card="discount"]').text(res.discount)
+                $('[data-bb-customer-card="info"]').removeClass('d-none')
+                $('[data-customer-card-input]').val(res.card_id)
+
+                $('[data-bb-customer-card="remove"]').removeClass('d-none')
+            },
+            complete() {
+                if ($trigger) $trigger.prop('disabled', false).text('Anwenden')
+            }
+        })
 
     const removeCustomerCard = ($trigger = null) =>
-        request(removeRoute, {}, $trigger)
+        $.ajax({
+            method: 'POST',
+            url: CARD_CONFIG.routes.remove,
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+            },
+            beforeSend() {
+                if ($trigger) $trigger.prop('disabled', true).text('...')
+            },
+            success(res) {
+                if (res.error) {
+                    Botble.showError(res.message)
+                    return
+                }
+
+                Botble.showSuccess(res.message)
+
+                $('[data-bb-customer-card="info"]').addClass('d-none')
+                $('[data-bb-customer-card="discount"]').text('0')
+                $('[data-customer-card-input]').val('')
+
+                $('[data-bb-customer-card="remove"]').addClass('d-none')
+            },
+            complete() {
+                if ($trigger) $trigger.prop('disabled', false).text('Entfernen')
+            }
+        })
 
     window.customerCard = window.customerCard || {}
     window.customerCard.applyCustomerCard = applyCustomerCard
@@ -234,24 +277,19 @@ $(() => {
             }
 
             applyCustomerCard(cardId, courseId, $(this))
-                .then(({ data }) => {
-                    window.Botble.showSuccess(data.message)
-
-                    const payload = data.data || {}
-
-                    if (payload.discount) {
-                        $infoBox
-                            .removeClass('d-none')
-                            .find('[data-bb-customer-card="discount"]').text(payload.discount)
+                .done((res) => {
+                    if (res?.error) {
+                        return
                     }
 
-                    updateTotals(Number(payload.raw_discount || 0), payload.discount)
-                    $cardInput.val(cardId)
+                    const rawDiscount = Number(res?.raw_discount || 0)
+                    updateTotals(rawDiscount, res?.discount)
+                    $cardInput.val(res?.card_id || cardId)
                     $removeButton.removeClass('d-none')
 
-                    $(document).trigger('customer-card.applied', data)
+                    $(document).trigger('customer-card.applied', res)
                 })
-                .catch((error) => {
+                .fail((error) => {
                     window.Botble.handleError(error)
                 })
         })
@@ -263,16 +301,19 @@ $(() => {
             event.preventDefault()
 
             removeCustomerCard($(this))
-                .then(({ data }) => {
-                    window.Botble.showSuccess(data.message)
+                .done((res) => {
+                    if (res?.error) {
+                        return
+                    }
+
                     $infoBox.addClass('d-none')
                     $cardSelect.val('')
                     $removeButton.addClass('d-none')
                     $cardInput.val('')
                     updateTotals(0)
-                    $(document).trigger('customer-card.removed', data)
+                    $(document).trigger('customer-card.removed', res)
                 })
-                .catch((error) => {
+                .fail((error) => {
                     window.Botble.handleError(error)
                 })
         })
