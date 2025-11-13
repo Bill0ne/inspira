@@ -22,6 +22,10 @@ use Illuminate\Support\Collection;
 
 class PriceConfiguratorService
 {
+    protected array $categoryCache = [];
+
+    protected array $quantityDiscountCache = [];
+
     public function calculatePrice(
         float $basePrice,
         TargetTypeEnum|string $targetType,
@@ -29,28 +33,32 @@ class PriceConfiguratorService
         ?Customer $customer = null,
         int $quantity = 1
     ): float {
-        $rules = $this->getApplicableRules($targetType, $targetId, $customer);
+        $targetTypeValue = $targetType instanceof TargetTypeEnum ? $targetType->getValue() : $targetType;
+
+        $rules = $this->getApplicableRules($targetTypeValue, $targetId, $customer);
 
         $price = $basePrice;
 
-        if (! $rules->isEmpty()) {
-            foreach ($rules as $rule) {
-                $price = $this->applyRule($price, $rule);
-            }
+        foreach ($rules as $rule) {
+            $price = $this->applyRule($price, $rule);
         }
 
-        if ($targetType == TargetTypeEnum::ROOM) {
+        if ($targetTypeValue === TargetTypeEnum::ROOM) {
             $price = $this->applyQuantityDiscount($price, $quantity);
         }
 
         return max($price, 0);
     }
 
-    protected function getApplicableRules(TargetTypeEnum|string $targetType, int $targetId, ?Customer $customer): Collection
+    protected function getApplicableRules(string $targetType, int $targetId, ?Customer $customer): Collection
     {
         $now = Carbon::now();
 
         $tiers = Tier::query()
+            ->with(['rules' => function ($query) use ($targetType) {
+                $query->where('status', PriceConfiguratorStatusEnum::ACTIVE)
+                    ->where('target_type', $targetType);
+            }])
             ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
             ->where(function ($query) use ($now) {
                 $query->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
@@ -58,65 +66,66 @@ class PriceConfiguratorService
             ->where(function ($query) use ($now) {
                 $query->whereNull('ends_at')->orWhere('ends_at', '>=', $now);
             })
-            ->orderBy('priority', 'desc')
+            ->orderByDesc('priority')
             ->get();
 
-        $exclusiveTier = $tiers->firstWhere('is_exclusive', true);
-        if ($exclusiveTier) {
+        if ($tiers->isEmpty()) {
+            return collect();
+        }
+
+        if ($exclusiveTier = $tiers->firstWhere('is_exclusive', true)) {
             $tiers = collect([$exclusiveTier]);
         } else {
-            $highestPriority = $tiers->first()?->priority;
-            $tiers = $tiers->where('priority', $highestPriority);
-            $tiers = collect([$tiers->first()]);
+            $highestPriority = $tiers->first()->priority;
+            $tiers = $tiers->where('priority', $highestPriority)->values();
         }
 
-        $rules = collect();
+        $categoryId = $this->resolveTargetCategory($targetType, $targetId);
+        $customerCategoryId = $customer?->customer_category_id;
 
-        foreach ($tiers as $tier) {
-
-            if (!$tier) {
-                continue;
-            }
-
-            $tierRules = $tier->rules()
-                ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
-                ->where('target_type', $targetType instanceof TargetTypeEnum ? $targetType->getValue() : $targetType)
-                ->get();
-
-            foreach ($tierRules as $rule) {
+        return $tiers
+            ->flatMap(fn (Tier $tier) => $tier->rules)
+            ->filter(function (Rule $rule) use ($targetType, $targetId, $categoryId, $customerCategoryId) {
                 if ($rule->scope == ScopeEnum::BY_CATEGORY) {
-                    $categoryId = null;
-
-                    if ($targetType == TargetTypeEnum::COURSE) {
-                        $categoryId = \Botble\Courses\Models\Course::query()
-                            ->where('id', $targetId)
-                            ->value('category_id');
-                    } elseif ($targetType == TargetTypeEnum::ROOM) {
-                        $categoryId = \Botble\Hotel\Models\Room::query()
-                            ->where('id', $targetId)
-                            ->value('room_category_id');
-                    }
-
-                    if (!$categoryId || !in_array($categoryId, $rule->target_ids ?? [])) {
-                        continue;
+                    if (! $categoryId || ! in_array($categoryId, $rule->target_ids ?? [], true)) {
+                        return false;
                     }
                 } elseif ($rule->scope == ScopeEnum::SPECIFIC_PRODUCTS) {
-                    if (!in_array($targetId, $rule->target_ids ?? [])) {
-                        continue;
+                    if (! in_array($targetId, $rule->target_ids ?? [], true)) {
+                        return false;
                     }
                 }
 
-                if ($customer && $rule->customer_category_id) {
-                    if ($rule->customer_category_id != $customer->customer_category_id) {
-                        continue;
-                    }
+                if ($customerCategoryId && $rule->customer_category_id && $rule->customer_category_id !== $customerCategoryId) {
+                    return false;
                 }
 
-                $rules->push($rule);
-            }
+                return true;
+            })
+            ->values();
+    }
+
+    protected function resolveTargetCategory(string $targetType, int $targetId): ?int
+    {
+        $cacheKey = sprintf('%s-%d', $targetType, $targetId);
+
+        if (array_key_exists($cacheKey, $this->categoryCache)) {
+            return $this->categoryCache[$cacheKey];
         }
 
-        return $rules;
+        $categoryId = null;
+
+        if ($targetType === TargetTypeEnum::COURSE) {
+            $categoryId = \Botble\Courses\Models\Course::query()
+                ->whereKey($targetId)
+                ->value('category_id');
+        } elseif ($targetType === TargetTypeEnum::ROOM) {
+            $categoryId = \Botble\Hotel\Models\Room::query()
+                ->whereKey($targetId)
+                ->value('room_category_id');
+        }
+
+        return $this->categoryCache[$cacheKey] = $categoryId ? (int) $categoryId : null;
     }
 
     protected function applyRule(float $price, Rule $rule): float
@@ -125,7 +134,7 @@ class PriceConfiguratorService
 
         $direction = $rule->adjustment_direction instanceof RuleDirectionEnum
             ? $rule->adjustment_direction->getValue()
-            : RuleDirectionEnum::DECREASE;
+            : ($rule->adjustment_direction ?: RuleDirectionEnum::DECREASE);
 
         $isIncrease = $direction == RuleDirectionEnum::INCREASE;
         $isDecrease = $direction == RuleDirectionEnum::DECREASE;
@@ -190,20 +199,24 @@ class PriceConfiguratorService
             return $price;
         }
 
-        $discount = QuantityDiscount::query()
-            ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
-            ->where('condition_type', ConditionTypeEnum::QUANTITY)
-            ->where(function ($query) use ($hours) {
-                $query->whereNull('range_min')
-                    ->orWhere('range_min', '<=', $hours);
-            })
-            ->where(function ($query) use ($hours) {
-                $query->whereNull('range_max')
-                    ->orWhere('range_max', '>=', $hours);
-            })
-            ->orderByDesc('priority')
-            ->orderByDesc('range_min')
-            ->first();
+        if (! isset($this->quantityDiscountCache[$hours])) {
+            $this->quantityDiscountCache[$hours] = QuantityDiscount::query()
+                ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
+                ->where('condition_type', ConditionTypeEnum::QUANTITY)
+                ->where(function ($query) use ($hours) {
+                    $query->whereNull('range_min')
+                        ->orWhere('range_min', '<=', $hours);
+                })
+                ->where(function ($query) use ($hours) {
+                    $query->whereNull('range_max')
+                        ->orWhere('range_max', '>=', $hours);
+                })
+                ->orderByDesc('priority')
+                ->orderByDesc('range_min')
+                ->first();
+        }
+
+        $discount = $this->quantityDiscountCache[$hours];
 
         if (! $discount) {
             return $price;
