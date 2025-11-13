@@ -52,6 +52,17 @@
     var form = document.querySelector('.payment-checkout-form');
     if (!form) return;
 
+    var isCourseCheckout = !!form.querySelector('input[name="course_id"]');
+    var isHotelCheckout = !!form.querySelector('input[name="room_id"]');
+    if (!isCourseCheckout && !isHotelCheckout) return;
+
+    var contextType = isCourseCheckout ? 'course' : 'hotel';
+    if (!form.hasAttribute('data-checkout-context')) {
+      form.setAttribute('data-checkout-context', contextType);
+    }
+
+    var contextRoot = form.closest('[data-checkout-context="' + contextType + '"]') || form;
+
     // --- STEP UI ---
     var panels = Array.prototype.slice.call(document.querySelectorAll('.step-panel'));
     var titleEl = document.getElementById('stepTitle');
@@ -280,6 +291,13 @@
     // --- LOGIN-MODAL ---
     var loginModal = document.getElementById('checkoutLoginModal');
 
+    function isTargetInContext(target) {
+      if (!target) return false;
+      if (contextRoot && contextRoot.contains(target)) return true;
+      if (loginModal && loginModal.contains(target)) return true;
+      return false;
+    }
+
     function openLoginModal() {
       if (!loginModal) return;
       loginModal.classList.add('is-visible');
@@ -299,6 +317,7 @@
     }
 
     document.addEventListener('click', function (e) {
+      if (!isTargetInContext(e.target)) return;
       if (closestElement(e.target, '[data-open-login]')) {
         e.preventDefault();
         openLoginModal();
@@ -463,7 +482,7 @@
         if (d) d.classList.toggle('active', i <= s);
         if (l) l.classList.toggle('active', i < s);
       });
-      var c = document.querySelector('#couponBox .collapse');
+      var c = contextRoot ? contextRoot.querySelector('#courseCouponBox .collapse, #hotelCouponBox .collapse') : null;
       if (c && !c.classList.contains('show')) c.classList.add('show');
     }
 

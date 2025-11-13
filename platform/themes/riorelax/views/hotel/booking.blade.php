@@ -37,6 +37,7 @@
     if ($requestsValue === "{{ old('requests') }}") {
         $requestsValue = '';
     }
+    $isHotelCheckout = ! isset($course);
 @endphp
 
 <style>
@@ -226,7 +227,8 @@ textarea.form-control{min-height:100px;}
       ->all();
 @endphp
 
-<section class="checkout-booking-page checkout-fw">
+@if ($isHotelCheckout)
+<section class="checkout-booking-page checkout-fw" data-checkout-context="hotel">
   <div class="container pt-120 pb-40 checkout-booking">
 
     {{-- ░░ Ticket Header ░░ --}}
@@ -281,7 +283,16 @@ textarea.form-control{min-height:100px;}
     </div>
 
     {{-- ░░ Formular ░░ --}}
-    <form action="{{ route('public.booking.checkout') }}" method="POST" id="bookingForm" class="payment-checkout-form" data-start-step="{{ $customer->id ? 2 : 1 }}" data-storage-key="hotel-checkout" data-start-register="{{ $shouldStartRegister ? '1' : '0' }}" data-prefill='@json($prefillPayload)'>
+    <form
+      action="{{ route('public.booking.checkout') }}"
+      method="POST"
+      id="bookingForm"
+      class="payment-checkout-form"
+      data-checkout-context="hotel"
+      data-start-step="{{ $customer->id ? 2 : 1 }}"
+      data-storage-key="hotel-checkout"
+      data-start-register="{{ $shouldStartRegister ? '1' : '0' }}"
+      data-prefill='@json($prefillPayload)'>
       @csrf
       <input type="hidden" name="token" value="{{ $token }}">
       <input type="hidden" name="amount" value="{{ $total }}">
@@ -464,6 +475,12 @@ textarea.form-control{min-height:100px;}
           <div><span>Erwachsene</span>{{ $adults }}</div>
         </div>
 
+        <div class="coupon-wrapper" id="hotelCouponBox" data-checkout-context="hotel">
+          @if ($isHotelCheckout)
+            @include('plugins/hotel::coupons.partials.form')
+          @endif
+        </div>
+
         @if (is_plugin_active('payment') && ($defaultPaymentMethod = PaymentMethods::getDefaultMethod()) && get_payment_setting('status', $defaultPaymentMethod))
           <label>Zahlungsmethode</label>
           <ul class="list-group list_payment_method">
@@ -522,4 +539,6 @@ textarea.form-control{min-height:100px;}
 </section>
 
 {!! Theme::partial('checkout.login-modal', ['redirectUrl' => request()->fullUrl()]) !!}
+
+@endif
 
