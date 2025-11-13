@@ -1,4 +1,18 @@
 $(() => {
+    /**
+     * ----------------------------------------------------------
+     *  BOTBLE FALLBACK (NEU)
+     * ----------------------------------------------------------
+     * Stellt sicher, dass im Frontend (Checkout) das Script läuft,
+     * auch wenn window.Botble NICHT existiert.
+     * ----------------------------------------------------------
+     */
+    window.Botble = window.Botble || {
+        showSuccess: (msg) => console.log('Success:', msg),
+        showError: (msg) => console.error('Error:', msg),
+        handleError: (err) => console.error('Request error:', err),
+    };
+
     const currency = (window.customerCard && window.customerCard.currency) || ''
 
     const t = (path, fallback = '') => {
@@ -18,12 +32,16 @@ $(() => {
 
     const formatPrice = (amount) => {
         const value = Number(amount || 0)
-
         return `${currency}${value.toFixed(2)}`
     }
 
     const $adminForm = $(document).find('form.customer-card-form')
 
+    /**
+     * ----------------------------------------------------------
+     *  ADMIN MODE – FORM SYNC
+     * ----------------------------------------------------------
+     */
     if ($adminForm.length) {
         const selectors = {
             basePrice: '[data-bb-customer-card-input="base-price"]',
@@ -49,7 +67,6 @@ $(() => {
             if (! basePrice || ! units) {
                 $adminForm.find(selectors.summaryText).text(t('form.summary.placeholder'))
                 $adminForm.find(selectors.summaryTotal).text('')
-
                 return
             }
 
@@ -81,6 +98,11 @@ $(() => {
         updateSummary()
     }
 
+    /**
+     * ----------------------------------------------------------
+     *  SHARED REQUEST WRAPPER
+     * ----------------------------------------------------------
+     */
     const request = (url, payload = {}, $trigger = null) => {
         if (! url) {
             return Promise.reject(new Error('Missing URL'))
@@ -91,20 +113,24 @@ $(() => {
             .post(url, payload)
     }
 
-    const applyRoute = window.customerCard && window.customerCard.routes && window.customerCard.routes.apply
-    const removeRoute = window.customerCard && window.customerCard.routes && window.customerCard.routes.remove
+    const applyRoute = window.customerCard?.routes?.apply
+    const removeRoute = window.customerCard?.routes?.remove
 
-    const applyCustomerCard = (cardId, courseId = null, $trigger = null) => request(applyRoute, {
-        card_id: cardId,
-        course_id: courseId,
-    }, $trigger)
+    const applyCustomerCard = (cardId, courseId = null, $trigger = null) =>
+        request(applyRoute, { card_id: cardId, course_id: courseId }, $trigger)
 
-    const removeCustomerCard = ($trigger = null) => request(removeRoute, {}, $trigger)
+    const removeCustomerCard = ($trigger = null) =>
+        request(removeRoute, {}, $trigger)
 
     window.customerCard = window.customerCard || {}
     window.customerCard.applyCustomerCard = applyCustomerCard
     window.customerCard.removeCustomerCard = removeCustomerCard
 
+    /**
+     * ----------------------------------------------------------
+     *  FRONTEND CHECKOUT MODE
+     * ----------------------------------------------------------
+     */
     const $cardSelect = $('#customer_card_select')
 
     if ($cardSelect.length) {
@@ -118,18 +144,20 @@ $(() => {
         const $minimumFeeRow = $('.minimum-fee-row')
         const $minimumFeeText = $('.minimum-fee-text')
         const $totalAmountText = $('.total-amount-text')
+
         const courseId = Number($cardSelect.data('course')) || null
 
         const getOriginalTotal = () => {
             const storedValue = $totalInput.data('original-total')
 
-            if (typeof storedValue !== 'undefined' && storedValue !== null && storedValue !== '') {
+            if (storedValue !== undefined && storedValue !== null && storedValue !== '') {
                 return Number(storedValue)
             }
 
             const currentTotal = Number($totalInput.val()) || 0
             const activeDiscount = Number($totalInput.data('active-discount') || 0)
             const minimumFee = Number($totalInput.data('minimum-fee') || 0)
+
             const base = currentTotal + activeDiscount - minimumFee
 
             $totalInput.data('original-total', base)
@@ -192,20 +220,22 @@ $(() => {
 
         updateTotals(Number($totalInput.data('active-discount') || 0))
 
+        /**
+         * APPLY CARD
+         */
         $applyButton.on('click', function (event) {
             event.preventDefault()
 
             const cardId = Number($cardSelect.val())
 
             if (! cardId) {
-                Botble.showError(t('messages.select_card'))
-
+                window.Botble.showError(t('messages.select_card'))
                 return
             }
 
             applyCustomerCard(cardId, courseId, $(this))
                 .then(({ data }) => {
-                    Botble.showSuccess(data.message)
+                    window.Botble.showSuccess(data.message)
 
                     const payload = data.data || {}
 
@@ -222,16 +252,19 @@ $(() => {
                     $(document).trigger('customer-card.applied', data)
                 })
                 .catch((error) => {
-                    Botble.handleError(error)
+                    window.Botble.handleError(error)
                 })
         })
 
+        /**
+         * REMOVE CARD
+         */
         $removeButton.on('click', function (event) {
             event.preventDefault()
 
             removeCustomerCard($(this))
                 .then(({ data }) => {
-                    Botble.showSuccess(data.message)
+                    window.Botble.showSuccess(data.message)
                     $infoBox.addClass('d-none')
                     $cardSelect.val('')
                     $removeButton.addClass('d-none')
@@ -240,41 +273,16 @@ $(() => {
                     $(document).trigger('customer-card.removed', data)
                 })
                 .catch((error) => {
-                    Botble.handleError(error)
+                    window.Botble.handleError(error)
                 })
-        })
-
-        $(document).on('customer-card.totals-updated', (event, payload = {}) => {
-            const discountRaw = Number(payload.card_discount_raw || 0)
-            const formattedDiscount = payload.card_discount_display_plain || null
-
-            if (typeof payload.total_before_card_raw !== 'undefined') {
-                $totalInput.data('original-total', Number(payload.total_before_card_raw))
-            }
-
-            if (typeof payload.minimum_fee_raw !== 'undefined') {
-                $totalInput.data('minimum-fee', Number(payload.minimum_fee_raw || 0))
-            }
-
-            if (typeof payload.minimum_threshold !== 'undefined') {
-                $totalInput.data('minimum-threshold', Number(payload.minimum_threshold) || 0)
-            }
-
-            if ($infoBox.length && Number($cardInput.val())) {
-                $infoBox
-                    .toggleClass('d-none', discountRaw <= 0)
-                    .find('[data-bb-customer-card="discount"]')
-                    .text(formattedDiscount || formatPrice(discountRaw))
-            }
-
-            if (discountRaw > 0) {
-                $removeButton.removeClass('d-none')
-            }
-
-            updateTotals(discountRaw, formattedDiscount)
         })
     }
 
+    /**
+     * ----------------------------------------------------------
+     *  USAGE MODAL
+     * ----------------------------------------------------------
+     */
     const $usageButtons = $('[data-bb-customer-card="usage"]')
 
     if ($usageButtons.length) {
@@ -330,7 +338,7 @@ $(() => {
                 })
                 .catch((error) => {
                     $modal.modal('hide')
-                    Botble.handleError(error)
+                    window.Botble.handleError(error)
                 })
         })
     }
