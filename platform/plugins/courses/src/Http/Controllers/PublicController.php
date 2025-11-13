@@ -38,6 +38,7 @@ use Botble\Payment\Enums\PaymentMethodEnum;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Throwable;
+use Botble\Hotel\Supports\HotelSupport;
 
 class PublicController extends Controller
 {
@@ -168,7 +169,9 @@ class PublicController extends Controller
 
         session([
             $token => $request->except(['_token']),
+            'course_checkout_token' => $token,
             'checkout_token' => $token,
+            'checkout_context' => \Botble\Hotel\Supports\HotelSupport::CONTEXT_COURSE,
         ]);
 
         return $response->setNextUrl(route('public.course.booking.form', $token));
@@ -221,7 +224,7 @@ class PublicController extends Controller
         $totalRaw = $netSubtotalRaw + $taxAmountRaw;
         $total = course_truncate_price($totalRaw);
         $couponAmount = course_truncate_price($course->getPriceWithTax($couponAmountNet));
-        $checkoutData = HotelHelper::getCheckoutData();
+        $checkoutData = HotelHelper::getCheckoutData(null, HotelSupport::CONTEXT_COURSE);
 
         $availableCards = collect();
         $selectedCard = null;
@@ -246,13 +249,13 @@ class PublicController extends Controller
                         'customer_card_id' => $selectedCard->getKey(),
                         'customer_card_discount' => $cardDiscount,
                         'customer_card_units_used' => $cardUnitsUsed,
-                    ]);
+                    ], HotelSupport::CONTEXT_COURSE);
                 } else {
                     HotelHelper::saveCheckoutData([
                         'customer_card_id' => null,
                         'customer_card_discount' => null,
                         'customer_card_units_used' => null,
-                    ]);
+                    ], HotelSupport::CONTEXT_COURSE);
                 }
             }
         }
@@ -321,7 +324,7 @@ class PublicController extends Controller
         /** @var \Botble\Hotel\Models\Coupon|null $appliedCoupon */
         $appliedCoupon = null;
 
-        $sessionData = HotelHelper::getCheckoutData();
+        $sessionData = HotelHelper::getCheckoutData(null, HotelSupport::CONTEXT_COURSE);
         $cardId = (int) Arr::get($sessionData, 'customer_card_id');
         $cardDiscount = (float) Arr::get($sessionData, 'customer_card_discount', 0);
         $cardUnitsUsed = max((int) Arr::get($sessionData, 'customer_card_units_used', 1), 1);
@@ -337,7 +340,7 @@ class PublicController extends Controller
                     'customer_card_id' => null,
                     'customer_card_discount' => null,
                     'customer_card_units_used' => null,
-                ]);
+                ], HotelSupport::CONTEXT_COURSE);
             }
         }
 
@@ -470,7 +473,7 @@ class PublicController extends Controller
 
             if ($token = $request->input('token')) {
                 session()->forget($token);
-                session()->forget('checkout_token');
+                HotelHelper::clearCheckoutData();
             }
 
             return $response
@@ -543,7 +546,7 @@ class PublicController extends Controller
 
         if ($token = $request->input('token')) {
             session()->forget($token);
-            session()->forget('checkout_token');
+            HotelHelper::clearCheckoutData();
         }
 
         if ($appliedCoupon) {
@@ -613,7 +616,7 @@ class PublicController extends Controller
         $totalAmountRaw = $netSubtotalRaw + $taxAmountRaw;
         $totalAmount = course_truncate_price($totalAmountRaw);
 
-        $sessionData = HotelHelper::getCheckoutData();
+        $sessionData = HotelHelper::getCheckoutData(null, HotelSupport::CONTEXT_COURSE);
         $cardDiscount = 0.0;
         $cardId = (int) Arr::get($sessionData, 'customer_card_id');
         $cardUnitsUsed = max((int) Arr::get($sessionData, 'customer_card_units_used', 1), 1);
@@ -633,14 +636,14 @@ class PublicController extends Controller
                 'customer_card_id' => $selectedCard->getKey(),
                 'customer_card_discount' => $cardDiscount,
                 'customer_card_units_used' => $cardUnitsUsed,
-            ]);
+            ], HotelSupport::CONTEXT_COURSE);
         } else {
             if ($cardId) {
                 HotelHelper::saveCheckoutData([
                     'customer_card_id' => null,
                     'customer_card_discount' => null,
                     'customer_card_units_used' => null,
-                ]);
+                ], HotelSupport::CONTEXT_COURSE);
             }
 
             $cardDiscount = 0.0;
@@ -697,7 +700,7 @@ class PublicController extends Controller
         $pricing = $course->resolvePricing(Auth::guard('customer')->user());
         $amount = (float) ($pricing['calculated_net'] ?? 0);
 
-        $sessionData = HotelHelper::getCheckoutData();
+        $sessionData = HotelHelper::getCheckoutData(null, HotelSupport::CONTEXT_COURSE);
 
         if (! $couponCode) {
             $couponCode = Arr::get($sessionData, 'coupon_code');
@@ -724,7 +727,7 @@ class PublicController extends Controller
             unset($sessionData['coupon_amount'], $sessionData['coupon_code']);
         }
 
-        HotelHelper::saveCheckoutData($sessionData);
+        HotelHelper::saveCheckoutData($sessionData, HotelSupport::CONTEXT_COURSE);
 
         return [$amount, $discountAmount];
     }
