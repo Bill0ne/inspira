@@ -79,12 +79,35 @@
             gap: 10px;
         }
 
+        .booking-card-action--cancel,
+        .booking-card-action--transfer {
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+            color: inherit;
+            height: auto;
+            min-width: 0;
+            padding: 0;
+            width: auto;
+        }
+
         .booking-card-action--cancel {
             color: #c0392b;
         }
 
         .booking-card-action--transfer {
             color: #1b7d43;
+        }
+
+        .booking-card-action--cancel:hover,
+        .booking-card-action--transfer:hover {
+            background-color: transparent;
+        }
+
+        .booking-card-action-icon {
+            display: block;
+            height: 22px;
+            width: 22px;
         }
 
         .inspira-form-feedback {
@@ -187,7 +210,11 @@
                                                 data-bs-target="#inspiraCancel-course-{{ $booking->getKey() }}"
                                                 title="{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}"
                                             >
-                                                <i class="fal fa-ban" aria-hidden="true"></i>
+                                                <x-core::icon
+                                                    name="ti ti-circle-x"
+                                                    class="booking-card-action-icon"
+                                                    aria-hidden="true"
+                                                />
                                                 <span class="visually-hidden">{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}</span>
                                             </button>
 
@@ -198,7 +225,11 @@
                                                 data-bs-target="#inspiraTransfer-course-{{ $booking->getKey() }}"
                                                 title="{{ trans('plugins/inspira-cancellation::cancellation.frontend.replace') }}"
                                             >
-                                                <i class="fal fa-user-exchange" aria-hidden="true"></i>
+                                                <x-core::icon
+                                                    name="ti ti-arrows-exchange"
+                                                    class="booking-card-action-icon"
+                                                    aria-hidden="true"
+                                                />
                                                 <span class="visually-hidden">{{ trans('plugins/inspira-cancellation::cancellation.frontend.replace') }}</span>
                                             </button>
                                         @endif
@@ -425,7 +456,11 @@
                                                     data-bs-target="#inspiraCancel-room-{{ $booking->getKey() }}"
                                                     title="{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}"
                                                 >
-                                                    <i class="fal fa-ban" aria-hidden="true"></i>
+                                                    <x-core::icon
+                                                        name="ti ti-circle-x"
+                                                        class="booking-card-action-icon"
+                                                        aria-hidden="true"
+                                                    />
                                                     <span class="visually-hidden">{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}</span>
                                                 </button>
                                             @endif
