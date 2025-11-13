@@ -11,7 +11,12 @@
     Theme::set('pageTitle', '');
     Theme::set('breadcrumb', false);
     Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
-    Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
+
+    $isCourseCheckoutRoute = Route::is('public.course.*');
+
+    if ($isCourseCheckoutRoute) {
+        Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
+    }
     $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
     $endLabel24   = $session->end_date ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i') : null;
 

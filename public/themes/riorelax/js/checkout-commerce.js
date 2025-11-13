@@ -227,6 +227,8 @@
         return;
       }
 
+      if (!ensureCourseContext('Coupon anwenden')) return;
+
       $.ajax({
         url: url,
         type: 'POST',
@@ -276,6 +278,8 @@
       if (ctx.type === 'hotel' && !isHotelCheckout) return;
       var url  = $btn.data('url');
       if (!url) return;
+
+      if (!ensureCourseContext('Coupon entfernen')) return;
 
       $.ajax({
         url: url,
