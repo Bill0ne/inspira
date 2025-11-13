@@ -1,4 +1,4 @@
-name: 🚀 Deploy to Inspira Live
+name: 🚀 Deploy to Inspira LIVE (Safe Mode)
 
 on:
   workflow_dispatch:
@@ -11,20 +11,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧩 Checkout
+      # 1. Checkout
+      - name: 🧩 Checkout Repository
         uses: actions/checkout@v4
 
+      # 2. Setup SSH
       - name: 🔐 Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          echo "145.223.35.233 ssh-ed25519 AAAAC3Nza..." >> ~/.ssh/known_hosts
+          echo "145.223.35.233 ssh-ed25519 AAAA..." >> ~/.ssh/known_hosts
 
-      - name: 📦 Deploy files via rsync
+      # 3. Deploy via rsync (OHNE delete)
+      - name: 📦 Deploy to LIVE via rsync (safe mode)
         uses: burnett01/rsync-deployments@5.2
         with:
-          switches: -avzr --delete --exclude-from='deploy-exclude.txt'
+          switches: -avzr --exclude-from='deploy-exclude.txt'
           path: "./"
           remote_path: "/home/u296731902/domains/inspira-zentrum.de/public_html/"
           remote_host: "145.223.35.233"
@@ -32,36 +35,39 @@ jobs:
           remote_user: "u296731902"
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: ⚙️ Run install + migrate + cache rebuild
+      # 4. Install & Build & Optimize
+      - name: ⚙️ Build & Migrate & Cache
         run: |
           ssh -p 65002 -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
           u296731902@145.223.35.233 << 'EOF'
 
             cd /home/u296731902/domains/inspira-zentrum.de/public_html
 
-            echo "📦 Composer install..."
+            echo "📦 Installing composer dependencies..."
             composer install --no-dev --optimize-autoloader --quiet
 
-            echo "📦 Node build..."
+            echo "🧱 Building frontend assets..."
             if [ -f package.json ]; then
               yarn install --frozen-lockfile --silent || npm install --silent
               yarn build || npm run build
             fi
 
-            echo "🗄️ Run migrations..."
+            echo "🗄️ Running migrations..."
             php artisan migrate --force
 
-            echo "🧹 Clear & optimize..."
+            echo "🧹 Clearing Laravel & Botble caches..."
             php artisan optimize:clear
-            php artisan view:clear
             php artisan cache:clear
             php artisan config:clear
+            php artisan view:clear
+            php artisan route:clear
 
-            echo "🔁 Rebuild plugin/theme caches..."
+            echo "🔁 Rebuilding plugin/theme cache..."
             rm -f bootstrap/cache/plugins.php
-
             php artisan cms:plugin:assets:publish
             php artisan cms:theme:assets:publish
 
-            echo "✅ LIVE deployment completed!"
+            php artisan optimize
+
+            echo "✅ LIVE deployment completed successfully!"
           EOF
