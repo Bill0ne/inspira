@@ -97,7 +97,30 @@ textarea.form-control{min-height:100px;}
 .register-box .btnrow{justify-content:flex-end;}
 .register-box .form-control{height:44px;}
 .form-alert{display:none;margin:0 0 16px;padding:12px 16px;border-radius:6px;background:#fff3f3;color:#b71c1c;font-size:14px;border:1px solid #f1b4b4;}
-.coupon-wrapper{background:#F9F9F9;border:1px solid var(--gray);border-radius:8px;padding:20px;margin-bottom:24px;}
+.coupon-wrapper{padding:0;margin-bottom:24px;border:none;background:none;}
+.checkout-action-card{padding:24px;border-radius:18px;border:1px solid rgba(23,70,63,0.12);background:linear-gradient(180deg,#fff 0%,#f7fbfa 100%);box-shadow:0 12px 30px rgba(23,70,63,0.08);transition:box-shadow .25s ease,transform .25s ease;}
+.checkout-action-card:hover{box-shadow:0 16px 36px rgba(23,70,63,0.12);transform:translateY(-2px);}
+.checkout-action-card__header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.checkout-action-card__eyebrow{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(23,70,63,0.65);margin-bottom:6px;}
+.checkout-action-card__title{margin:0;font-size:20px;font-weight:600;color:var(--ink);}
+.checkout-action-toggle{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:rgba(87,142,136,0.12);color:var(--mint);font-weight:600;border:none;cursor:pointer;transition:background .2s ease,transform .2s ease;}
+.checkout-action-toggle:hover{background:rgba(87,142,136,0.2);transform:translateY(-1px);}
+.checkout-action-form{margin-top:20px;display:flex;flex-direction:column;gap:14px;}
+.checkout-action-label{font-weight:600;color:var(--ink);margin-bottom:0;}
+.checkout-action-controls{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;}
+.checkout-action-controls--single{grid-template-columns:minmax(0,1fr) auto;}
+.checkout-action-input,
+.checkout-action-select{height:50px;border-radius:14px;border:1px solid rgba(23,70,63,0.18);background:#fff;padding:0 18px;font-weight:500;color:var(--ink);transition:border-color .2s ease,box-shadow .2s ease;}
+.checkout-action-input:focus,
+.checkout-action-select:focus{border-color:var(--mint);box-shadow:0 0 0 4px rgba(87,142,136,0.18);outline:none;}
+.checkout-action-button{height:50px;border-radius:14px;padding:0 24px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .2s ease,box-shadow .2s ease,background .2s ease;color:var(--ink);border:1px solid transparent;}
+.checkout-action-button--primary{background:var(--mint);color:#fff;border-color:var(--mint);box-shadow:0 14px 22px rgba(87,142,136,0.24);}
+.checkout-action-button--primary:hover{transform:translateY(-1px);box-shadow:0 16px 26px rgba(87,142,136,0.28);}
+.checkout-action-button--ghost{background:rgba(87,142,136,0.08);color:var(--mint);}
+.checkout-action-button--ghost:hover{background:rgba(87,142,136,0.16);}
+.checkout-action-feedback{margin-top:18px;border-radius:14px;padding:16px 20px;background:rgba(87,142,136,0.12);border:1px solid transparent;color:var(--ink);display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px;}
+.checkout-action-feedback strong{font-size:16px;color:var(--mint);}
+.checkout-action-feedback .checkout-action-button{height:44px;padding:0 18px;}
 .list_payment_method{border:1px solid var(--gray);border-radius:8px;margin-bottom:20px;}
 .list_payment_method li{padding:14px 16px;border-bottom:1px solid #f0f0f0;}
 .list_payment_method li:last-child{border-bottom:none;}
@@ -112,6 +135,22 @@ textarea.form-control{min-height:100px;}
   .btnX{width:100%;max-width:100%;padding:14px 0;}
   .btn-mint{order:1;}
   .btn-outline-mint{order:2;}
+}
+.checkout-action-card__header,.checkout-action-form{width:100%;}
+@media(max-width:992px){
+  .checkout-action-controls{grid-template-columns:1fr auto auto;}
+}
+@media(max-width:768px){
+  .checkout-action-controls,.checkout-action-controls--single{grid-template-columns:1fr;}
+  .checkout-action-button{width:100%;}
+  .checkout-action-toggle{width:100%;justify-content:center;}
+  .checkout-action-card{padding:20px;}
+  .checkout-action-feedback{flex-direction:column;align-items:stretch;}
+  .checkout-action-feedback .checkout-action-button{width:100%;}
+}
+@media(max-width:480px){
+  .checkout-action-card__title{font-size:18px;}
+  .checkout-action-card{border-radius:16px;}
 }
 .cxl-accordion details{border-radius:10px;background:#fff;border:1px solid var(--gray);margin-top:20px;}
 .cxl-accordion summary{cursor:pointer;padding:14px 18px;font-weight:600;list-style:none;}
@@ -297,11 +336,17 @@ textarea.form-control{min-height:100px;}
       <div class="step-panel" data-step="3">
         <div id="formAlertStep3" class="form-alert"></div>
         @if ($availableCards->isNotEmpty())
-          <div class="card mb-3">
-            <div class="card-body">
-              <label class="form-label">Kundenkarte anwenden</label>
-              <div class="input-group">
-                <select id="customer_card_select" class="form-select" data-course="{{ $course->id }}">
+          <div class="checkout-action-card mb-3">
+            <div class="checkout-action-card__header">
+              <div>
+                <span class="checkout-action-card__eyebrow">Kundenkarte</span>
+                <h5 class="checkout-action-card__title">Kundenkarte anwenden</h5>
+              </div>
+            </div>
+            <div class="checkout-action-form">
+              <label class="form-label checkout-action-label" for="customer_card_select">Kundenkarte auswählen</label>
+              <div class="checkout-action-controls">
+                <select id="customer_card_select" class="form-select checkout-action-select" data-course="{{ $course->id }}">
                   <option value="">Keine Karte auswählen</option>
                   @foreach ($availableCards as $card)
                     <option value="{{ $card->id }}" @selected($selectedCard && $selectedCard->id === $card->id)>
@@ -309,12 +354,13 @@ textarea.form-control{min-height:100px;}
                     </option>
                   @endforeach
                 </select>
-                <button class="btn btn-mint" type="button" data-bb-customer-card="apply">Anwenden</button>
-                <button class="btn btn-outline-mint {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
+                <button class="checkout-action-button checkout-action-button--primary" type="button" data-bb-customer-card="apply">Anwenden</button>
+                <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
               </div>
-              <div class="alert alert-success mt-3 {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
-                Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong>
-              </div>
+            </div>
+            <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
+              <span>Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong></span>
+              <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
             </div>
           </div>
         @endif
