@@ -42,6 +42,21 @@
     return payload;
   }
 
+  function hasCourseContext() {
+    return !!document.querySelector('input[name="course_id"]');
+  }
+
+  function ensureCourseContext(action) {
+    if (hasCourseContext()) return true;
+
+    if (win.console && console.warn) {
+      var label = action ? ' (' + action + ')' : '';
+      console.warn('CheckoutCommerce: Abbruch' + label + ' – kein Kurs-Kontext gefunden.');
+    }
+
+    return false;
+  }
+
   function refreshCouponBox(html) {
     var $container = $('#couponBox');
 
@@ -140,6 +155,8 @@
         return;
       }
 
+      if (!ensureCourseContext('Coupon anwenden')) return;
+
       $.ajax({
         url: url,
         type: 'POST',
@@ -185,6 +202,8 @@
       var $btn = $(e.currentTarget);
       var url  = $btn.data('url');
       if (!url) return;
+
+      if (!ensureCourseContext('Coupon entfernen')) return;
 
       $.ajax({
         url: url,
