@@ -289,51 +289,48 @@ $(() => {
      *  USAGE MODAL
      * ----------------------------------------------------------
      */
-    const $usageButtons = $('[data-bb-customer-card="usage"]')
+    const usageSelector = '[data-bb-customer-card="usage"]'
 
-    if ($usageButtons.length) {
-        const ensureUsageModal = () => {
-            let $modal = $('#customer-card-usage-modal')
+    const ensureUsageModal = () => {
+        let $modal = $('#customer-card-usage-modal')
 
-            if (! $modal.length) {
-                $modal = $(
-                    `<div class="modal fade" id="customer-card-usage-modal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">${t('table.usage_title', 'Kartenverwendung')}</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>
-                                </div>
+        if (! $modal.length) {
+            $modal = $(
+                `<div class="modal fade" id="customer-card-usage-modal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${t('table.usage_title', 'Kartenverwendung')}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>
                             </div>
                         </div>
-                    </div>`
-                )
+                    </div>
+                </div>`
+            )
 
-                $('body').append($modal)
-            }
-
-            return $modal
+            $('body').append($modal)
         }
 
-        $usageButtons.on('click', function () {
-            const url = $(this).data('url')
-            const title = $(this).data('title') || t('table.usage_title', 'Kartenverwendung')
+        return $modal
+    }
 
-            if (! url) {
-                return
-            }
+    $(document).on('click', usageSelector, function () {
+        const url = $(this).data('url')
+        const title = $(this).data('title') || t('table.usage_title', 'Kartenverwendung')
 
-            const $modal = ensureUsageModal()
+        if (! url) {
+            return
+        }
 
-            $modal.find('.modal-title').text(title)
-            $modal
-                .find('.modal-body')
-                .html(`<div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>`)
+        const $modal = ensureUsageModal()
 
-            $modal.modal('show')
+        $modal.find('.modal-title').text(title)
+        $modal
+            .find('.modal-body')
+            .html(`<div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>`)
 
             $httpClient.make()
                 .get(url)
