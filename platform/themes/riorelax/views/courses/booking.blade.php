@@ -1,7 +1,10 @@
+@php
+    Theme::asset()->container('header')->usePath()->add('jquery', 'plugins/jquery.min.js');
+@endphp
+
 @if (is_plugin_active('payment'))
     <link rel="stylesheet" href="{{ asset('vendor/core/plugins/payment/css/payment.css') }}?v=1.0.6">
     @php
-        Theme::asset()->container('header')->usePath()->add('jquery', 'plugins/jquery.min.js');
         Theme::asset()->container('header')->add('payment-js', 'vendor/core/plugins/payment/js/payment.js');
     @endphp
     {!! apply_filters(PAYMENT_FILTER_HEADER_ASSETS, null) !!}
