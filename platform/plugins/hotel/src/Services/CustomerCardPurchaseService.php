@@ -16,6 +16,30 @@ class CustomerCardPurchaseService
     {
     }
 
+    public function preparePendingOrder(
+        CustomerCard $template,
+        Customer $customer,
+        float $amount
+    ): CustomerCardOrder {
+        $order = CustomerCardOrder::query()
+            ->where('customer_id', $customer->getKey())
+            ->where('card_template_id', $template->getKey())
+            ->where('status', 'pending')
+            ->whereNull('assigned_card_id')
+            ->latest()
+            ->first();
+
+        if ($order) {
+            if ((float) $order->amount !== (float) $amount) {
+                $order->update(['amount' => $amount]);
+            }
+
+            return $order->refresh();
+        }
+
+        return $this->createOrder($template, $customer, $amount);
+    }
+
     public function createOrder(CustomerCard $template, Customer $customer, float $amount): CustomerCardOrder
     {
         return CustomerCardOrder::query()->create([

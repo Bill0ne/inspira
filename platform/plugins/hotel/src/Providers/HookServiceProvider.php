@@ -106,48 +106,64 @@ class HookServiceProvider extends ServiceProvider
                 $orderIds = (array) $request->input('order_id', []);
                 $orderType = Arr::get($data, 'order_type') ?: $request->input('order_type');
 
-                if ($orderType === CustomerCardOrder::class) {
-                    $order = CustomerCardOrder::query()->with('template')->find(Arr::first($orderIds));
+                if ($orderType === 'customer_card') {
+                    $orderType = CustomerCardOrder::class;
+                }
 
-                    if (! $order) {
+                if ($orderType === CustomerCardOrder::class) {
+                    $order = null;
+
+                    if (! empty($orderIds)) {
+                        $order = CustomerCardOrder::query()->with('template')->find(Arr::first($orderIds));
+                    }
+
+                    if ($order) {
                         return array_merge($data, [
-                            'amount' => 0,
+                            'amount' => (float) $order->amount,
+                            'shipping_amount' => 0,
+                            'shipping_method' => null,
+                            'tax_amount' => 0,
+                            'discount_amount' => 0,
                             'currency' => strtoupper(get_application_currency()->title),
                             'order_id' => $orderIds,
+                            'description' => trans('plugins/payment::payment.payment_description', [
+                                'order_id' => Arr::first($orderIds),
+                                'site_url' => request()->getHost(),
+                            ]),
+                            'customer_id' => $order->customer_id,
+                            'customer_type' => Customer::class,
+                            'return_url' => $request->input('return_url', route('customer.cards')),
+                            'callback_url' => $request->input('callback_url', route('customer.cards')),
+                            'products' => [
+                                [
+                                    'id' => $order->card_template_id,
+                                    'name' => $order->template->name ?? 'Customer card',
+                                    'image' => null,
+                                    'price' => $order->amount,
+                                    'price_per_order' => $order->amount,
+                                    'qty' => 1,
+                                ],
+                            ],
+                            'orders' => [$order],
+                            'address' => [],
+                            'checkout_token' => session('checkout_token'),
                             'order_type' => CustomerCardOrder::class,
                         ]);
                     }
 
                     return array_merge($data, [
-                        'amount' => (float) $order->amount,
-                        'shipping_amount' => 0,
-                        'shipping_method' => null,
-                        'tax_amount' => 0,
-                        'discount_amount' => 0,
+                        'amount' => (float) $request->input('amount', Arr::get($data, 'amount', 0)),
                         'currency' => strtoupper(get_application_currency()->title),
                         'order_id' => $orderIds,
-                        'description' => trans('plugins/payment::payment.payment_description', [
-                            'order_id' => Arr::first($orderIds),
-                            'site_url' => request()->getHost(),
-                        ]),
-                        'customer_id' => $order->customer_id,
-                        'customer_type' => Customer::class,
+                        'order_type' => CustomerCardOrder::class,
                         'return_url' => $request->input('return_url', route('customer.cards')),
                         'callback_url' => $request->input('callback_url', route('customer.cards')),
-                        'products' => [
-                            [
-                                'id' => $order->card_template_id,
-                                'name' => $order->template->name ?? 'Customer card',
-                                'image' => null,
-                                'price' => $order->amount,
-                                'price_per_order' => $order->amount,
-                                'qty' => 1,
-                            ],
-                        ],
-                        'orders' => [$order],
+                        'customer_id' => auth('customer')->check() ? auth('customer')->id() : null,
+                        'customer_type' => Customer::class,
+                        'products' => [],
+                        'orders' => [],
                         'address' => [],
                         'checkout_token' => session('checkout_token'),
-                        'order_type' => CustomerCardOrder::class,
                     ]);
                 }
 

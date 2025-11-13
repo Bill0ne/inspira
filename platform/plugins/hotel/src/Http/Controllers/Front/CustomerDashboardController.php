@@ -81,6 +81,7 @@ class CustomerDashboardController
     public function checkoutCard(
         CustomerCard $customerCard,
         CustomerCardService $customerCardService,
+        CustomerCardPurchaseService $purchaseService,
         BaseHttpResponse $response
     )
     {
@@ -106,6 +107,12 @@ class CustomerDashboardController
 
         $purchasePrice = $customerCardService->calculatePurchasePrice($customerCard);
 
+        $order = null;
+
+        if (is_plugin_active('payment')) {
+            $order = $purchaseService->preparePendingOrder($customerCard, $user, $purchasePrice);
+        }
+
         $paymentMethods = [];
 
         if (is_plugin_active('payment') && app()->bound('payment.methods')) {
@@ -114,7 +121,7 @@ class CustomerDashboardController
 
         return Theme::scope(
             'hotel.customers.card-checkout',
-            compact('customerCard', 'purchasePrice', 'user', 'paymentMethods'),
+            compact('customerCard', 'purchasePrice', 'user', 'paymentMethods', 'order'),
             'plugins/hotel::themes.customers.card-checkout'
         )->render();
     }
@@ -161,7 +168,28 @@ class CustomerDashboardController
                 ->setMessage(trans('plugins/hotel::customer-card.purchase.success_message'));
         }
 
-        $order = $purchaseService->createOrder($customerCard, $user, $amount);
+        $order = null;
+
+        $requestOrderId = (int) $request->input('order_id');
+
+        if ($requestOrderId) {
+            $order = CustomerCardOrder::query()
+                ->whereKey($requestOrderId)
+                ->where('customer_id', $user->getKey())
+                ->where('card_template_id', $customerCard->getKey())
+                ->where('status', 'pending')
+                ->first();
+        }
+
+        if ($order) {
+            if ((float) $order->amount !== (float) $amount) {
+                $order->update(['amount' => $amount]);
+            }
+
+            $order->refresh();
+        } else {
+            $order = $purchaseService->createOrder($customerCard, $user, $amount);
+        }
 
         if (! is_plugin_active('payment')) {
             $assignedCard = $customerCardService->assignTemplateToCustomer($customerCard, $user);

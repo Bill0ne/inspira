@@ -134,6 +134,10 @@
                     <form method="POST" action="{{ route('customer.cards.purchase', $customerCard) }}" class="mt-4 payment-checkout-form">
                         @csrf
                         <input type="hidden" name="amount" value="{{ $purchasePrice }}">
+                        @if (isset($order))
+                            <input type="hidden" name="order_id" value="{{ $order->getKey() }}">
+                            <input type="hidden" name="order_type" value="customer_card">
+                        @endif
                         @if (is_plugin_active('payment'))
                             <div class="mb-3">
                                 <label class="form-label">{{ __('Zahlungsmethode') }}</label>
