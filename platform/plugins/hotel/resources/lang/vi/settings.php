@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'hotel' => 'Khách sạn',
+    'hotel' => 'Zentrum',
     'invoicing' => [
         'company_name' => 'Tên công ty',
         'company_address' => 'Địa chỉ công ty',
@@ -18,7 +18,7 @@ return [
     'invoice_settings_description' => 'Cài đặt thông tin hóa đơn cho việc lập hóa đơn',
     'general' => [
         'title' => 'Chung',
-        'description' => 'Cài đặt chung cho Khách sạn',
+        'description' => 'Cài đặt chung cho Zentrum',
         'enable_booking' => 'Bật đặt phòng?',
         'maximum_number_of_guests' => 'Số lượng khách tối đa',
         'minimum_number_of_guests' => 'Số lượng khách tối thiểu',
@@ -34,7 +34,7 @@ return [
     ],
     'review' => [
         'title' => 'Đánh giá',
-        'description' => 'Cài đặt đánh giá cho Khách sạn',
+        'description' => 'Cài đặt đánh giá cho Zentrum',
         'enable_review_room' => 'Bật đánh giá?',
         'reviews_per_page' => 'Số lượng đánh giá mỗi trang?',
     ],

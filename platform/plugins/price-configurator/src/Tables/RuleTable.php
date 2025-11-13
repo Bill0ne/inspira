@@ -31,19 +31,19 @@ class RuleTable extends TableAbstract
             ->addColumns([
                 IdColumn::make(),
                 FormattedColumn::make('tier_id')
-                    ->title(__('Tier'))
+                    ->title(trans('plugins/price-configurator::price-configurator.tier.name'))
                     ->getValueUsing(fn($col) => $col->getItem()->tier?->name ?? '—'),
                 FormattedColumn::make('customer_category_id')
-                    ->title(__('Customer Category'))
+                    ->title(trans('plugins/price-configurator::price-configurator.forms.customer_category'))
                     ->getValueUsing(fn($col) => $col->getItem()->customerCategory
                         ? $col->getItem()->customerCategory->code . ' - ' . $col->getItem()->customerCategory->label
                         : '—'
                     ),
-                EnumColumn::make('scope')->title(__('Scope')),
-                EnumColumn::make('calculation_type')->title(__('Calculation Type')),
-                FormattedColumn::make('calculation_value')->title(__('Calculation Value')),
-                EnumColumn::make('rounding_mode')->title(__('Rounding Mode')),
-                FormattedColumn::make('round_to')->title(__('Round To')),
+                EnumColumn::make('scope')->title(trans('plugins/price-configurator::price-configurator.forms.scope')),
+                EnumColumn::make('calculation_type')->title(trans('plugins/price-configurator::price-configurator.forms.calculation_type')),
+                FormattedColumn::make('calculation_value')->title(trans('plugins/price-configurator::price-configurator.forms.calculation_value')),
+                EnumColumn::make('rounding_mode')->title(trans('plugins/price-configurator::price-configurator.forms.rounding_mode')),
+                FormattedColumn::make('round_to')->title(trans('plugins/price-configurator::price-configurator.forms.round_to')),
                 StatusColumn::make(),
                 CreatedAtColumn::make(),
             ])

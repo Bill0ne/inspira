@@ -308,6 +308,13 @@ class HotelServiceProvider extends ServiceProvider
                     'route' => 'coupons.index',
                 ])
                 ->registerItem([
+                    'id' => 'cms-plugins-hotel-customer-cards',
+                    'priority' => 12,
+                    'parent_id' => 'cms-plugins-hotel',
+                    'name' => 'plugins/hotel::customer-card.name',
+                    'route' => 'customer-cards.index',
+                ])
+                ->registerItem([
                     'id' => 'cms-plugins-booking',
                     'priority' => 1,
                     'name' => 'plugins/hotel::booking.name',
@@ -464,5 +471,9 @@ class HotelServiceProvider extends ServiceProvider
             Captcha::registerFormSupport(ForgotPasswordForm::class, ForgotPasswordRequest::class, trans('plugins/hotel::hotel.forgot_password_form'));
             Captcha::registerFormSupport(ResetPasswordForm::class, ResetPasswordRequest::class, trans('plugins/hotel::hotel.reset_password_form'));
         }
+
+        add_filter(THEME_FRONT_FOOTER, function (?string $html): string {
+            return ($html ?? '') . view('plugins/hotel::customer-cards.partials.config')->render();
+        });
     }
 }

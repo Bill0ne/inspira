@@ -90,7 +90,7 @@ return [
     'number_of_rooms_helper' => 'Number of rooms to book',
     'number_of_guests_helper' => 'Number of adult guests',
     'number_of_children_helper' => 'Number of children',
-    'arrival_time_helper' => 'Expected arrival time at the hotel',
+    'arrival_time_helper' => 'Expected arrival time at the Zentrum',
     'payment_method_helper' => 'Select the payment method used for this booking',
     'payment_status_helper' => 'Current status of the payment',
     'status_helper' => 'Current status of the booking',

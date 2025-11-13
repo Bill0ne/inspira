@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'menu' => 'Hotel features',
+    'menu' => 'Zentrum features',
     'name' => 'Features',
     'create' => 'New feature',
     'edit' => 'Edit feature',

@@ -164,6 +164,14 @@ if ($course && $course->getKey()) {
                     ->wrapperAttributes(['class' => 'form-group col-md-6'])
                     ->required()
             )
+            ->when(is_plugin_active('hotel'), function ($form) {
+                $form->add('accept_customer_card', OnOffField::class,
+                    OnOffFieldOption::make()
+                        ->label(trans('plugins/hotel::customer-card.form.fields.accept_customer_card'))
+                        ->checked((bool) ($form->getModel()?->accept_customer_card ?? false))
+                        ->wrapperAttributes(['class' => 'form-group col-md-6'])
+                );
+            })
             ->add('duration', TextField::class,
                 NameFieldOption::make()
                     ->label(trans('plugins/courses::courses.course.duration'))

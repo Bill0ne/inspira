@@ -7,7 +7,9 @@ use Botble\Base\Http\Controllers\NotificationController;
 use Botble\Base\Http\Controllers\SearchController;
 use Botble\Base\Http\Controllers\SystemInformationController;
 use Botble\Base\Http\Controllers\ToggleThemeModeController;
+use Botble\Base\Supports\Core;
 use Botble\Base\Http\Middleware\RequiresJsonRequestMiddleware;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['namespace' => 'Botble\Base\Http\Controllers'], function (): void {
@@ -87,19 +89,41 @@ Route::group(['namespace' => 'Botble\Base\Http\Controllers'], function (): void 
                 'uses' => 'SystemController@postAuthorize',
             ]);
 
+            if (class_exists(\Botble\Base\Http\Controllers\LicenseReminderController::class)) {
+                Route::get('unlicensed', [
+                    'as' => 'unlicensed',
+                    'uses' => 'LicenseReminderController@index',
+                ]);
+
+                Route::post('unlicensed/skip', [
+                    'as' => 'unlicensed.skip',
+                    'uses' => 'LicenseReminderController@skip',
+                ]);
+            } else {
+                Route::get('unlicensed', function (Request $request) {
+                    page_title()->setTitle(trans('core/base::system.license.title'));
+
+                    $redirectUrl = $request->input('redirect_url', $request->headers->get('referer'));
+
+                    return view('core/base::system.unlicensed', compact('redirectUrl'));
+                })->name('unlicensed');
+
+                Route::post('unlicensed/skip', function (Request $request) {
+                    Core::make()->skipLicenseReminder();
+
+                    $redirectUrl = $request->input('redirect_url');
+
+                    if (! $redirectUrl) {
+                        $redirectUrl = rescue(fn () => route('dashboard.index'), url('/'));
+                    }
+
+                    return redirect()->to($redirectUrl);
+                })->name('unlicensed.skip');
+            }
+
             Route::get('menu-items-count', [
                 'as' => 'menu-items-count',
                 'uses' => 'SystemController@getMenuItemsCount',
-            ]);
-
-            Route::get('unlicensed', [
-                'as' => 'unlicensed',
-                'uses' => 'UnlicensedController@index',
-            ]);
-
-            Route::post('unlicensed', [
-                'as' => 'unlicensed.skip',
-                'uses' => 'UnlicensedController@postSkip',
             ]);
 
             Route::group(

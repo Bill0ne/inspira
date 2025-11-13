@@ -17,6 +17,12 @@
             'pattern' => ['customer.bookings', 'customer.course-bookings'],
         ],
         [
+            'label' => trans('plugins/hotel::customer-card.name'),
+            'route' => 'customer.cards',
+            'icon' => 'fal fa-credit-card',
+            'pattern' => 'customer.cards',
+        ],
+        [
             'label' => __('Profile'),
             'route' => 'customer.edit-account',
             'icon' => 'fal fa-id-card',

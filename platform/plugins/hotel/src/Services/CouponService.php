@@ -28,10 +28,12 @@ class CouponService
 
     public function getDiscountAmount(string $type, float $value, float $amountTotal = 0): float
     {
-        return match ($type) {
+        $discount = match ($type) {
             CouponTypeEnum::PERCENTAGE => $value / 100 * $amountTotal,
-            CouponTypeEnum::FIXED => $value,
+            CouponTypeEnum::FIXED => min($value, $amountTotal),
             default => 0,
         };
+
+        return max($discount, 0);
     }
 }

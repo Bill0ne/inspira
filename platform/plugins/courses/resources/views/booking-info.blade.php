@@ -276,11 +276,11 @@
       </div>
       <div class="booking-ticket__right-content">
         <div class="right-title">{{ __('Gesamtpreis') }}</div>
-        <div class="kv"><span>{{ __('Preis') }}</span><b>{{ format_price($booking->sub_total) }}</b></div>
-        <div class="kv"><span>{{ __('Rabatt') }}</span><b>{{ format_price($booking->coupon_amount) }}</b></div>
-        <div class="kv"><span>{{ __('Steuern') }}</span><b>{{ format_price($booking->tax_amount) }}</b></div>
+        <div class="kv"><span>{{ __('Preis') }}</span><b>{{ course_format_price($booking->sub_total) }}</b></div>
+        <div class="kv"><span>{{ __('Rabatt') }}</span><b>{{ course_format_price($booking->coupon_amount) }}</b></div>
+        <div class="kv"><span>{{ __('Steuern') }}</span><b>{{ course_format_price($booking->tax_amount) }}</b></div>
         <div class="divider"></div>
-        <div class="total"><span>{{ __('Gesamt') }}</span><span>{{ format_price($booking->amount) }}</span></div>
+        <div class="total"><span>{{ __('Gesamt') }}</span><span>{{ course_format_price($booking->amount) }}</span></div>
       </div>
     </div>
 

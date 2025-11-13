@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'hotel' => 'হোটেল',
+    'hotel' => 'Zentrum',
     'invoicing' => [
         'company_name' => 'কোম্পানির নাম',
         'company_address' => 'কোম্পানির ঠিকানা',
@@ -18,7 +18,7 @@ return [
     'invoice_settings_description' => 'চালান তৈরির জন্য চালান তথ্য সেটিংস',
     'general' => [
         'title' => 'সাধারণ',
-        'description' => 'হোটেলের জন্য সাধারণ সেটিংস',
+        'description' => 'Zentrum এর জন্য সাধারণ সেটিংস',
         'enable_booking' => 'বুকিং সক্ষম করবেন?',
         'maximum_number_of_guests' => 'সর্বাধিক অতিথি সংখ্যা',
         'minimum_number_of_guests' => 'সর্বনিম্ন অতিথি সংখ্যা',
@@ -34,7 +34,7 @@ return [
     ],
     'review' => [
         'title' => 'রিভিউ',
-        'description' => 'হোটেলের জন্য রিভিউ সেটিংস',
+        'description' => 'Zentrum এর জন্য রিভিউ সেটিংস',
         'enable_review_room' => 'রিভিউ সক্ষম করবেন?',
         'reviews_per_page' => 'প্রতি পৃষ্ঠায় রিভিউ সংখ্যা?',
     ],

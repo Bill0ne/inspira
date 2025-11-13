@@ -9,7 +9,8 @@ use Botble\PriceConfigurator\Enums\{
     TargetTypeEnum,
     CalculationTypeEnum,
     RoundingModeEnum,
-    RuleDirectionEnum
+    RuleDirectionEnum,
+    ConditionTypeEnum
 };
 use Botble\PriceConfigurator\Models\{
     Rule,
@@ -32,13 +33,10 @@ class PriceConfiguratorService
 
         $price = $basePrice;
 
-        if ($rules->isEmpty()) {
-            $price = $this->applyRounding($price, RoundingModeEnum::NEAREST, 1);
-            return $price;
-        }
-
-        foreach ($rules as $rule) {
-            $price = $this->applyRule($price, $rule);
+        if (! $rules->isEmpty()) {
+            foreach ($rules as $rule) {
+                $price = $this->applyRule($price, $rule);
+            }
         }
 
         if ($targetType == TargetTypeEnum::ROOM) {
@@ -162,7 +160,9 @@ class PriceConfiguratorService
         if (
             $rule->rounding_mode &&
             $rule->rounding_mode != RoundingModeEnum::NONE &&
-            $rule->round_to > 0
+            $rule->round_to > 0 &&
+            $rule->target_type != TargetTypeEnum::COURSE &&
+            $rule->target_type != TargetTypeEnum::ROOM
         ) {
             $price = $this->applyRounding($price, $rule->rounding_mode, $rule->round_to);
         }
@@ -184,31 +184,44 @@ class PriceConfiguratorService
 
     protected function applyQuantityDiscount(float $price, int $hours): float
     {
-        if ($hours <= 1) {
+        $hours = max(0, $hours);
+
+        if ($hours <= 0) {
             return $price;
         }
 
         $discount = QuantityDiscount::query()
             ->where('status', PriceConfiguratorStatusEnum::ACTIVE)
+            ->where('condition_type', ConditionTypeEnum::QUANTITY)
             ->where(function ($query) use ($hours) {
-                $query->where('range_min', '<=', $hours)
-                    ->where(function ($q) use ($hours) {
-                        $q->whereNull('range_max')
-                            ->orWhere('range_max', '>=', $hours);
-                    });
+                $query->whereNull('range_min')
+                    ->orWhere('range_min', '<=', $hours);
             })
-            ->orderBy('priority', 'desc')
+            ->where(function ($query) use ($hours) {
+                $query->whereNull('range_max')
+                    ->orWhere('range_max', '>=', $hours);
+            })
+            ->orderByDesc('priority')
+            ->orderByDesc('range_min')
             ->first();
 
         if (! $discount) {
             return $price;
         }
 
-        return match ($discount->discount_type) {
-            CalculationTypeEnum::PERCENT => $price - ($price * ($discount->discount_value / 100)),
-            CalculationTypeEnum::ABSOLUTE => $price - $discount->discount_value,
+        $discountType = $discount->discount_type instanceof CalculationTypeEnum
+            ? $discount->discount_type->getValue()
+            : $discount->discount_type;
+
+        $discountValue = (float) $discount->discount_value;
+
+        $discountedPrice = match ($discountType) {
+            CalculationTypeEnum::PERCENT => $price - ($price * ($discountValue / 100)),
+            CalculationTypeEnum::ABSOLUTE => $price - $discountValue,
             default => $price,
         };
+
+        return max($discountedPrice, 0);
     }
 
 }

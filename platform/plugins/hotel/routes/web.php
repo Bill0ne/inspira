@@ -3,7 +3,9 @@
 use Botble\Base\Facades\BaseHelper;
 use Botble\Hotel\Facades\HotelHelper;
 use Botble\Hotel\Http\Controllers\CouponController;
+use Botble\Hotel\Http\Controllers\CustomerCardController;
 use Botble\Hotel\Http\Controllers\Front\CouponController as CouponControllerFront;
+use Botble\Hotel\Http\Controllers\Front\CustomerDashboardController;
 use Botble\Hotel\Http\Controllers\InvoiceController;
 use Botble\Hotel\Http\Controllers\Settings\CurrencySettingController;
 use Botble\Hotel\Http\Controllers\Settings\GeneralSettingController;
@@ -269,6 +271,21 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
                 'permission' => 'coupons.destroy',
             ]);
         });
+
+        Route::group(['prefix' => 'customer-cards', 'as' => 'customer-cards.'], function (): void {
+            Route::get('{customer_card}/usages', [CustomerCardController::class, 'usages'])
+                ->name('usages')
+                ->permission('customer-cards.index');
+
+            Route::resource('', CustomerCardController::class)
+                ->parameters(['' => 'customer_card']);
+
+            Route::delete('deletes', [
+                'as' => 'deletes',
+                'uses' => 'CustomerCardController@deletes',
+                'permission' => 'customer-cards.destroy',
+            ]);
+        });
     });
 
     if (defined('THEME_MODULE_SCREEN_NAME')) {
@@ -296,6 +313,39 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
                 Route::post('apply', [CouponControllerFront::class, 'apply'])->name('apply');
                 Route::post('remove', [CouponControllerFront::class, 'remove'])->name('remove');
                 Route::get('refresh', [CouponControllerFront::class, 'refresh'])->name('refresh');
+            });
+
+            // ------------------------------------------------------------
+            // PUBLIC CUSTOMER CARD ROUTES (analog zu COUPONS)
+            // ------------------------------------------------------------
+
+            Route::prefix('customer-card')->name('public.customer-card.')->group(function (): void {
+                Route::post('apply', [\Botble\Hotel\Http\Controllers\CustomerCardController::class, 'apply'])
+                    ->middleware(['customer'])
+                    ->name('apply');
+
+                Route::post('remove', [\Botble\Hotel\Http\Controllers\CustomerCardController::class, 'remove'])
+                    ->middleware(['customer'])
+                    ->name('remove');
+            });
+
+            Route::group([
+                'prefix' => 'ajax/customer-card',
+                'middleware' => ['customer'],
+            ], function (): void {
+                Route::post('apply', [CustomerCardController::class, 'apply'])->name('ajax.customer-card.apply');
+                Route::post('remove', [CustomerCardController::class, 'remove'])->name('ajax.customer-card.remove');
+            });
+
+            Route::group([
+                'prefix' => 'account',
+                'middleware' => ['customer'],
+            ], function (): void {
+                Route::get('cards', [CustomerDashboardController::class, 'cards'])->name('customer.cards');
+                Route::get('cards/checkout/{customer_card}', [CustomerDashboardController::class, 'checkoutCard'])
+                    ->name('customer.cards.checkout');
+                Route::post('cards/purchase/{customer_card}', [CustomerDashboardController::class, 'purchaseCard'])
+                    ->name('customer.cards.purchase');
             });
 
             Route::get('ajax/calculate-amount', 'PublicController@ajaxCalculateBookingAmount')

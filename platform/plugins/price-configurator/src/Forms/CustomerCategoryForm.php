@@ -23,19 +23,19 @@ class CustomerCategoryForm extends FormAbstract
             ->add('code',
                 TextField::class,
                 NameFieldOption::make()
-                    ->label(__('Code'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.code'))
                     ->required()
             )
             ->add('label',
                 TextField::class,
                 NameFieldOption::make()
-                    ->label(__('Label'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.label'))
                     ->required()
             )
             ->add('description',
                 TextareaField::class,
                 TextareaFieldOption::make()
-                    ->label(__('Description'))
+                    ->label(trans('plugins/price-configurator::price-configurator.forms.description'))
             )
             ->add('status',
                 SelectField::class,

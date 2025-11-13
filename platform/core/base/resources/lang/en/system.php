@@ -98,4 +98,25 @@ return [
         'not_enabled_yet' => 'This featured is not enabled yet. <br />Please add into .env: <code>CMS_ENABLED_CLEANUP_DATABASE=true</code> to enable this feature!',
     ],
     'cache_too_large_alert' => 'Your cache folder is too large ~:size. Please go to Platform administration -> Cache management and clear it to reduce disk space.',
+    'license' => [
+        'title' => 'Requires License Activation',
+        'description' => 'If you want to continue to use our platform, please activate the license first.',
+        'benefits' => [
+            'updates' => [
+                'title' => 'Get Updates, FOREVER!',
+                'description' => 'Your website is always up-to-date.',
+            ],
+            'support' => [
+                'title' => 'Get Support From Our Dev Team',
+                'description' => 'You have a problem. Don\'t worry. We are here to help whenever you need it.',
+            ],
+            'security' => [
+                'title' => 'Stay Secure',
+                'description' => 'Receive important fixes that keep your installation protected.',
+            ],
+        ],
+        'activate_button' => 'Activate License',
+        'activate_aria' => 'Activate license',
+        'skip_button' => 'Skip',
+    ],
 ];

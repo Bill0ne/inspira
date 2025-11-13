@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'hotel' => 'فندق',
+    'hotel' => 'Zentrum',
     'invoicing' => [
         'company_name' => 'اسم الشركة',
         'company_address' => 'عنوان الشركة',
@@ -18,7 +18,7 @@ return [
     'invoice_settings_description' => 'إعدادات معلومات الفاتورة للفواتير',
     'general' => [
         'title' => 'عام',
-        'description' => 'الإعدادات العامة للفندق',
+        'description' => 'الإعدادات العامة لـ Zentrum',
         'enable_booking' => 'تمكين الحجز؟',
         'maximum_number_of_guests' => 'الحد الأقصى لعدد الضيوف',
         'minimum_number_of_guests' => 'الحد الأدنى لعدد الضيوف',
@@ -34,7 +34,7 @@ return [
     ],
     'review' => [
         'title' => 'التقييمات',
-        'description' => 'إعدادات التقييم للفندق',
+        'description' => 'إعدادات التقييم لـ Zentrum',
         'enable_review_room' => 'تمكين التقييم؟',
         'reviews_per_page' => 'عدد التقييمات في الصفحة؟',
     ],

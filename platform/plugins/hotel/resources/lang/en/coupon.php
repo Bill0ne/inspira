@@ -33,8 +33,17 @@ return [
     'total' => 'Total',
     'toggle_coupon_form_text' => 'You have a coupon code?',
     'apply_coupon_code' => 'Apply',
+    'remove_coupon_code' => 'Remove coupon',
     'form' => [
         'create' => 'Create new coupon',
         'edit' => 'Edit ":name"',
+    ],
+    'buttons' => [
+        'remove' => 'Remove coupon',
+    ],
+    'messages' => [
+        'applied' => 'Applied coupon ":code" successfully!',
+        'removed' => 'Removed coupon ":code" successfully!',
+        'missing' => 'There is no coupon to remove yet.',
     ],
 ];

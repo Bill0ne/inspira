@@ -168,39 +168,27 @@
             @endif
                 @if($course->price)
                     @php
-                        $basePrice = $course->price;
-                        $dynamicPrice = $basePrice;
-                        if (is_plugin_active('price-configurator')) {
-                        $dynamicPrice = app(\Botble\PriceConfigurator\Services\PriceConfiguratorService::class)
-                            ->calculatePrice(
-                                $basePrice,
-                                \Botble\PriceConfigurator\Enums\TargetTypeEnum::COURSE,
-                                $course->id,
-                                auth('customer')->user() ?? null
-                            );
-                        }
-                        $displayBasePrice = $course->getPriceWithTax($basePrice);
-                        $displayDynamicPrice = $course->getPriceWithTax($dynamicPrice);
-                        $priceDifference = $displayBasePrice - $displayDynamicPrice;
+                        $pricing = course_price_breakdown($course, auth('customer')->user());
+                        $hasDiscount = $pricing['has_discount'];
                     @endphp
 
                     <div class="chip price-chip d-flex align-items-center">
-                        @if($dynamicPrice < $basePrice)
+                        @if($hasDiscount)
                             <span class="old-price text-decoration-line-through text-muted me-2">
-                {{ format_price($displayBasePrice) }}
+                {{ course_format_price($pricing['base_gross']) }}
             </span>
                             <span class="new-price text-success fw-bold">
-                {{ format_price($displayDynamicPrice) }}
+                {{ course_format_price($pricing['calculated_gross']) }}
             </span>
                         @else
-                            <span class="price fw-bold">{{ format_price($displayDynamicPrice) }}</span>
+                            <span class="price fw-bold">{{ course_format_price($pricing['calculated_gross']) }}</span>
                         @endif
                     </div>
 
-                    @if($dynamicPrice < $basePrice)
+                    @if($hasDiscount && abs($pricing['discount_gross']) > 0)
                         <div class="chip discount-info text-success small mt-1">
                             <i class="fas fa-tag me-1"></i>
-                            {{ __('You save :amount', ['amount' => format_price(abs($priceDifference))]) }}
+                            {{ __('You save :amount', ['amount' => course_format_price(abs($pricing['discount_gross']))]) }}
                         </div>
                     @endif
                 @endif

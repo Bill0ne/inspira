@@ -6,7 +6,9 @@ use Botble\Base\Enums\BaseStatusEnum;
 use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Hotel\Models\Booking;
 use Botble\Hotel\Models\Customer;
+use Botble\Hotel\Models\CustomerCardOrder;
 use Botble\Hotel\Services\BookingService;
+use Botble\Hotel\Services\CustomerCardPurchaseService;
 use Botble\Media\Facades\RvMedia;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Enums\PaymentStatusEnum;
@@ -85,6 +87,14 @@ class HookServiceProvider extends ServiceProvider
                         return app(\Botble\Hotel\Services\BookingService::class)
                             ->processBooking($orderId, $data['charge_id']);
 
+                    case CustomerCardOrder::class:
+                        if (! $orderId && empty($data['charge_id'])) {
+                            return null;
+                        }
+
+                        return app(CustomerCardPurchaseService::class)
+                            ->completeOrder($orderId, $data['charge_id'] ?? null);
+
                     default:
                         return null;
                 }
@@ -94,11 +104,73 @@ class HookServiceProvider extends ServiceProvider
         if (defined('PAYMENT_FILTER_PAYMENT_DATA')) {
             add_filter(PAYMENT_FILTER_PAYMENT_DATA, function (array $data, Request $request) {
                 $orderIds = (array) $request->input('order_id', []);
+                $orderType = Arr::get($data, 'order_type') ?: $request->input('order_type');
+
+                if ($orderType === 'customer_card') {
+                    $orderType = CustomerCardOrder::class;
+                }
+
+                if ($orderType === CustomerCardOrder::class) {
+                    $order = null;
+
+                    if (! empty($orderIds)) {
+                        $order = CustomerCardOrder::query()->with('template')->find(Arr::first($orderIds));
+                    }
+
+                    if ($order) {
+                        return array_merge($data, [
+                            'amount' => (float) $order->amount,
+                            'shipping_amount' => 0,
+                            'shipping_method' => null,
+                            'tax_amount' => 0,
+                            'discount_amount' => 0,
+                            'currency' => strtoupper(get_application_currency()->title),
+                            'order_id' => $orderIds,
+                            'description' => trans('plugins/payment::payment.payment_description', [
+                                'order_id' => Arr::first($orderIds),
+                                'site_url' => request()->getHost(),
+                            ]),
+                            'customer_id' => $order->customer_id,
+                            'customer_type' => Customer::class,
+                            'return_url' => $request->input('return_url', route('customer.cards')),
+                            'callback_url' => $request->input('callback_url', route('customer.cards')),
+                            'products' => [
+                                [
+                                    'id' => $order->card_template_id,
+                                    'name' => $order->template->name ?? 'Customer card',
+                                    'image' => null,
+                                    'price' => $order->amount,
+                                    'price_per_order' => $order->amount,
+                                    'qty' => 1,
+                                ],
+                            ],
+                            'orders' => [$order],
+                            'address' => [],
+                            'checkout_token' => session('checkout_token'),
+                            'order_type' => CustomerCardOrder::class,
+                        ]);
+                    }
+
+                    return array_merge($data, [
+                        'amount' => (float) $request->input('amount', Arr::get($data, 'amount', 0)),
+                        'currency' => strtoupper(get_application_currency()->title),
+                        'order_id' => $orderIds,
+                        'order_type' => CustomerCardOrder::class,
+                        'return_url' => $request->input('return_url', route('customer.cards')),
+                        'callback_url' => $request->input('callback_url', route('customer.cards')),
+                        'customer_id' => auth('customer')->check() ? auth('customer')->id() : null,
+                        'customer_type' => Customer::class,
+                        'products' => [],
+                        'orders' => [],
+                        'address' => [],
+                        'checkout_token' => session('checkout_token'),
+                    ]);
+                }
 
                 $booking = Booking::query()->find(Arr::first($orderIds));
 
                 if (! $booking) {
-                    return [];
+                    return $data;
                 }
 
                 $rooms = [
@@ -123,7 +195,7 @@ class HookServiceProvider extends ServiceProvider
                     'zip' => $booking->address->zip,
                 ];
 
-                return [
+                return array_merge($data, [
                     'amount' => (float) $booking->amount,
                     'shipping_amount' => 0,
                     'shipping_method' => null,
@@ -141,7 +213,7 @@ class HookServiceProvider extends ServiceProvider
                     'address' => $address,
                     'checkout_token' => session('checkout_token'),
                     'order_type' => \Botble\Hotel\Models\Booking::class,
-                ];
+                ]);
             }, 140, 2);
         }
 
@@ -170,6 +242,13 @@ class HookServiceProvider extends ServiceProvider
                     Booking::query()
                         ->where('payment_id', $payment->id)
                         ->update(['status' => BookingStatusEnum::PROCESSING]);
+
+                    CustomerCardOrder::query()
+                        ->where('payment_id', $payment->id)
+                        ->get()
+                        ->each(function (CustomerCardOrder $order) {
+                            app(CustomerCardPurchaseService::class)->finalizeOrder($order);
+                        });
                 }
             }, 123, 2);
         }
