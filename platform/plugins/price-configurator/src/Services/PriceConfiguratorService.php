@@ -19,6 +19,7 @@ use Botble\PriceConfigurator\Models\{
 };
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class PriceConfiguratorService
 {
@@ -48,6 +49,10 @@ class PriceConfiguratorService
 
     protected function getApplicableRules(TargetTypeEnum|string $targetType, int $targetId, ?Customer $customer): Collection
     {
+        if (! Schema::hasTable((new Tier())->getTable())) {
+            return collect();
+        }
+
         $now = Carbon::now();
 
         $tiers = Tier::query()
@@ -187,6 +192,10 @@ class PriceConfiguratorService
         $hours = max(0, $hours);
 
         if ($hours <= 0) {
+            return $price;
+        }
+
+        if (! Schema::hasTable((new QuantityDiscount())->getTable())) {
             return $price;
         }
 
