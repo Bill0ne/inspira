@@ -84,6 +84,7 @@ class CouponController extends BaseController
                     $sessionData['selected_services'] = $totals['selected_services'];
                     $sessionData['food_amount'] = $totals['food_amount'];
                     $sessionData['selected_foods'] = $totals['selected_foods'];
+                    $sessionData['mengenrabatt_amount'] = $totals['mengenrabatt_amount'];
                 }
             }
         }
@@ -150,6 +151,7 @@ class CouponController extends BaseController
                     $sessionData['food_amount'] = $totals['food_amount'];
                     $sessionData['selected_foods'] = $totals['selected_foods'];
                     $sessionData['coupon_amount'] = $totals['coupon_amount'];
+                    $sessionData['mengenrabatt_amount'] = $totals['mengenrabatt_amount'];
                 }
             }
         }
