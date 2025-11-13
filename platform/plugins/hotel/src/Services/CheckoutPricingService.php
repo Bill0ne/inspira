@@ -165,7 +165,12 @@ class CheckoutPricingService
 
         [$couponAmount, $coupon] = $this->determineCouponDiscount($couponCode, $amount);
 
-        $taxableAmount = max($amount - $couponAmount, 0);
+        $quantityDiscountAmount = $this->calculateQuantityDiscount(
+            $pricing['total_hours'],
+            $pricing['total_configured_price']
+        );
+
+        $taxableAmount = max($amount - $couponAmount - $quantityDiscountAmount, 0);
         $taxAmount = $room->tax->percentage * $taxableAmount / 100;
         $totalAmount = $taxableAmount + $taxAmount;
 
@@ -174,9 +179,44 @@ class CheckoutPricingService
             'discount_amount' => $couponAmount,
             'coupon_amount' => $couponAmount,
             'coupon' => $coupon,
+            'mengenrabatt_amount' => $quantityDiscountAmount,
             'tax_amount' => $taxAmount,
             'total_amount' => $totalAmount,
         ]);
+    }
+
+    protected function calculateQuantityDiscount(int $hours, float $price): float
+    {
+        if ($hours <= 0 || $price <= 0) {
+            return 0;
+        }
+
+        $discount = \Botble\PriceConfigurator\Models\QuantityDiscount::query()
+            ->where('status', 'active')
+            ->where('condition_type', 'quantity')
+            ->where(function ($q) use ($hours) {
+                $q->whereNull('range_min')
+                    ->orWhere('range_min', '<=', $hours);
+            })
+            ->where(function ($q) use ($hours) {
+                $q->whereNull('range_max')
+                    ->orWhere('range_max', '>=', $hours);
+            })
+            ->orderByDesc('priority')
+            ->orderByDesc('range_min')
+            ->first();
+
+        if (! $discount) {
+            return 0;
+        }
+
+        $value = (float) $discount->discount_value;
+
+        return match ($discount->discount_type) {
+            'percent' => $price * ($value / 100),
+            'absolute' => min($value, $price),
+            default => 0,
+        };
     }
 
     public function determineCouponDiscount(?string $couponCode, float $amountTotal): array

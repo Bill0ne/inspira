@@ -264,6 +264,16 @@ textarea.form-control{min-height:100px;}
         @if($extrasAmountDisplay > 0)
           <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($extrasAmountDisplay) }}</b></div>
         @endif
+        @php($hasCouponDiscount = ($couponAmount ?? 0) > 0)
+        <div class="kv coupon-line @if(! $hasCouponDiscount) d-none @endif">
+          <span>Rabatt (Coupon)</span>
+          <b class="discount-text">{{ $hasCouponDiscount ? '-' : '' }}{{ format_price($couponAmount ?? 0) }}</b>
+        </div>
+        @php($hasQuantityDiscount = ($mengenrabattAmount ?? 0) > 0)
+        <div class="kv mengenrabatt-line @if(! $hasQuantityDiscount) d-none @endif">
+          <span>Mengenrabatt</span>
+          <b class="quantity-discount-text">{{ $hasQuantityDiscount ? '-' : '' }}{{ format_price($mengenrabattAmount ?? 0) }}</b>
+        </div>
         <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
         <hr>
         <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>

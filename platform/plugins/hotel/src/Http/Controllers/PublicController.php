@@ -420,23 +420,43 @@ class PublicController extends Controller
         $slotSummaries = $pricing['slots'];
         $totalConfiguredPrice = $pricing['total_configured_price'];
 
-        $serviceAmount = Arr::get($sessionData, 'service_amount', 0);
-        $foodAmount = Arr::get($sessionData, 'food_amount', 0);
-        $couponAmount = Arr::get($sessionData, 'coupon_amount', 0);
         $couponCode   = Arr::get($sessionData, 'coupon_code');
         $checkoutData = HotelHelper::getCheckoutData();
 
+        $selectedServices = Arr::get($sessionData, 'selected_services', []);
+        $isEnabledFoodOrder = HotelHelper::isEnableFoodOrder();
+        $selectedFoods = $isEnabledFoodOrder ? Arr::get($sessionData, 'selected_foods', []) : [];
+
+        $totals = $this->checkoutPricingService->calculateTotals(
+            $room,
+            $slots,
+            $selectedServices,
+            $selectedFoods,
+            (int) $rooms,
+            $customer,
+            $couponCode
+        );
+
+        $serviceAmount = $totals['service_amount'];
+        $foodAmount = $totals['food_amount'];
+        $couponAmount = $totals['coupon_amount'];
+        $mengenrabattAmount = $totals['mengenrabatt_amount'];
+        $taxAmount = $totals['tax_amount'];
+        $totalAmount = $totals['amount'];
+        $total = $totals['total_amount'];
+        $coupon = $totals['coupon'];
+
+        if (! $coupon) {
+            $couponAmount = 0;
+        }
+
         $totalRoomPrice = $totalConfiguredPrice;
         $extrasAmount = $serviceAmount + $foodAmount;
-        $totalAmount = $totalRoomPrice + $extrasAmount;
-        $taxAmount = $room->tax->percentage * $totalAmount / 100;
-        $total = $totalAmount + $taxAmount - $couponAmount;
 
         $services = Service::query()->wherePublished()->get();
-        $isEnabledFoodOrder = HotelHelper::isEnableFoodOrder();
         $foods = $isEnabledFoodOrder ? Food::query()->wherePublished()->get() : collect();
-        $selectedServices = Arr::get($sessionData, 'selected_services', []);
-        $selectedFoods = $isEnabledFoodOrder ? Arr::get($sessionData, 'selected_foods', []) : [];
+        $selectedServices = $totals['selected_services'];
+        $selectedFoods = $isEnabledFoodOrder ? $totals['selected_foods'] : [];
 
         $displayStart = !empty($slotSummaries) ? collect($slotSummaries)->pluck('start_date')->filter()->sort()->first() : null;
         $displayEnd   = !empty($slotSummaries) ? collect($slotSummaries)->pluck('end_date')->filter()->sortDesc()->first() : null;
@@ -462,6 +482,7 @@ class PublicController extends Controller
                 'foods',
                 'totalRoomPrice',
                 'extrasAmount',
+                'mengenrabattAmount',
                 'token',
                 'displayStart',
                 'displayEnd',
@@ -552,6 +573,7 @@ class PublicController extends Controller
             'selected_foods' => $totals['selected_foods'],
             'coupon_amount' => $couponAmount,
             'coupon_code' => $couponCode,
+            'mengenrabatt_amount' => $totals['mengenrabatt_amount'],
         ]);
 
         // 🟢 Create booking record
@@ -740,6 +762,7 @@ class PublicController extends Controller
             'selected_foods' => $totals['selected_foods'],
             'coupon_amount' => $totals['coupon_amount'],
             'coupon_code' => $coupon ? $couponCode : null,
+            'mengenrabatt_amount' => $totals['mengenrabatt_amount'],
         ]);
 
         return $response->setData([
@@ -748,6 +771,10 @@ class PublicController extends Controller
             'sub_total'       => format_price($totals['amount']),
             'tax_amount'      => format_price($totals['tax_amount']),
             'discount_amount' => format_price($totals['discount_amount']),
+            'coupon_amount_formatted' => format_price($totals['coupon_amount']),
+            'coupon_amount_raw' => $totals['coupon_amount'],
+            'mengenrabatt_amount' => format_price($totals['mengenrabatt_amount']),
+            'mengenrabatt_amount_raw' => $totals['mengenrabatt_amount'],
         ]);
     }
 

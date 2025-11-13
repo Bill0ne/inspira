@@ -32,7 +32,26 @@
     function updateTotals(data) {
       if (!data || typeof data !== 'object') return;
       if ('sub_total' in data) $('.amount-text').text(data.sub_total);
-      if ('discount_amount' in data) $('.discount-text').text(data.discount_amount);
+      if ('coupon_amount_formatted' in data) {
+        var rawCoupon = parseFloat(data.coupon_amount_raw || 0);
+        var $couponLine = $('.coupon-line');
+        if ($couponLine.length) {
+          if (rawCoupon > 0) $couponLine.removeClass('d-none');
+          else $couponLine.addClass('d-none');
+          $('.discount-text').text('-' + data.coupon_amount_formatted);
+        }
+      } else if ('discount_amount' in data) {
+        $('.discount-text').text(data.discount_amount);
+      }
+      if ('mengenrabatt_amount' in data) {
+        var rawQuantity = parseFloat(data.mengenrabatt_amount_raw || 0);
+        var $quantityLine = $('.mengenrabatt-line');
+        if ($quantityLine.length) {
+          if (rawQuantity > 0) $quantityLine.removeClass('d-none');
+          else $quantityLine.addClass('d-none');
+          $('.quantity-discount-text').text((rawQuantity > 0 ? '-' : '') + data.mengenrabatt_amount);
+        }
+      }
       if ('tax_amount' in data) $('.tax-text').text(data.tax_amount);
       if ('total_amount' in data) $('.total-amount-text').text(data.total_amount);
       if ('amount_raw' in data) $('input[name=amount]').val(data.amount_raw);
