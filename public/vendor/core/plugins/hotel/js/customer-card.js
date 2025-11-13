@@ -81,14 +81,51 @@ $(() => {
         updateSummary()
     }
 
+    const csrfToken = () => $('meta[name="csrf-token"]').attr('content')
+
+    const toggleButton = ($button, isLoading) => {
+        if (!$button || !$button.length) {
+            return
+        }
+
+        $button.prop('disabled', !!isLoading)
+        $button.toggleClass('button-loading', !!isLoading)
+    }
+
     const request = (url, payload = {}, $trigger = null) => {
         if (! url) {
             return Promise.reject(new Error('Missing URL'))
         }
 
-        return $httpClient.make()
-            .withButtonLoading($trigger)
-            .post(url, payload)
+        const data = {
+            _token: csrfToken(),
+            ...payload,
+        }
+
+        if (window.Botble?.request) {
+            let client = window.Botble.request
+
+            if ($trigger && typeof client.withButtonLoading === 'function') {
+                client = client.withButtonLoading($trigger)
+            }
+
+            return client.post(url, data)
+        }
+
+        toggleButton($trigger, true)
+
+        if (window.axios) {
+            return window.axios.post(url, data).finally(() => toggleButton($trigger, false))
+        }
+
+        return $.ajax({
+            method: 'POST',
+            url,
+            data,
+            complete() {
+                toggleButton($trigger, false)
+            },
+        }).then((response) => ({ data: response }))
     }
 
     const applyRoute = window.customerCard && window.customerCard.routes && window.customerCard.routes.apply

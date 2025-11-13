@@ -46,8 +46,7 @@
     @php
         Theme::asset()
             ->container('footer')
-            ->add('payment-http-client', 'vendor/core/plugins/payment/js/http-client.js', ['jquery'])
-            ->add('hotel-customer-card-js', 'vendor/core/plugins/hotel/js/customer-card.js', ['payment-http-client']);
+            ->add('hotel-customer-card-js', 'vendor/core/plugins/hotel/js/customer-card.js', ['jquery']);
     @endphp
 
     @push('footer')

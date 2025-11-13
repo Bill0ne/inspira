@@ -38,7 +38,6 @@ class CustomerCardController extends BaseController
         $this->pageTitle(trans('plugins/hotel::customer-card.name'));
 
         Assets::addScriptsDirectly([
-            'vendor/core/plugins/payment/js/http-client.js',
             'vendor/core/plugins/hotel/js/customer-card.js',
         ]);
 
@@ -52,7 +51,6 @@ class CustomerCardController extends BaseController
         Assets::addScripts(['form-validation']);
 
         Assets::addScriptsDirectly([
-            'vendor/core/plugins/payment/js/http-client.js',
             'vendor/core/plugins/hotel/js/customer-card.js',
         ]);
 
@@ -98,7 +96,6 @@ class CustomerCardController extends BaseController
         Assets::addScripts(['form-validation']);
 
         Assets::addScriptsDirectly([
-            'vendor/core/plugins/payment/js/http-client.js',
             'vendor/core/plugins/hotel/js/customer-card.js',
         ]);
 

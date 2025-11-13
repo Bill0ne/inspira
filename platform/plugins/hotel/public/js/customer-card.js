@@ -104,28 +104,61 @@ $(() => {
      *  SHARED REQUEST WRAPPER
      * ----------------------------------------------------------
      */
-    const applyCustomerCard = (cardId, courseId = null, $trigger = null) => {
-        if (! CARD_CONFIG.routes?.apply) {
-            return Promise.reject(new Error('Missing apply route'))
+    const csrfToken = () => $('meta[name="csrf-token"]').attr('content')
+
+    const toggleButton = ($button, isLoading) => {
+        if (!$button || !$button.length) {
+            return
         }
 
-        return $httpClient.make()
-            .withButtonLoading($trigger)
-            .post(CARD_CONFIG.routes.apply, {
-                card_id: cardId,
-                course_id: courseId,
-            })
+        $button.prop('disabled', !!isLoading)
+        $button.toggleClass('button-loading', !!isLoading)
     }
 
-    const removeCustomerCard = ($trigger = null) => {
-        if (! CARD_CONFIG.routes?.remove) {
-            return Promise.reject(new Error('Missing remove route'))
+    const request = (url, payload = {}, $trigger = null) => {
+        if (! url) {
+            return Promise.reject(new Error('Missing URL'))
         }
 
-        return $httpClient.make()
-            .withButtonLoading($trigger)
-            .post(CARD_CONFIG.routes.remove)
+        const data = {
+            _token: csrfToken(),
+            ...payload,
+        }
+
+        if (window.Botble?.request) {
+            let client = window.Botble.request
+
+            if ($trigger && typeof client.withButtonLoading === 'function') {
+                client = client.withButtonLoading($trigger)
+            }
+
+            return client.post(url, data)
+        }
+
+        toggleButton($trigger, true)
+
+        if (window.axios) {
+            return window.axios.post(url, data).finally(() => toggleButton($trigger, false))
+        }
+
+        return $.ajax({
+            method: 'POST',
+            url,
+            data,
+            complete() {
+                toggleButton($trigger, false)
+            },
+        }).then((response) => ({ data: response }))
     }
+
+    const applyCustomerCard = (cardId, courseId = null, $trigger = null) =>
+        request(CARD_CONFIG.routes?.apply, {
+            card_id: cardId,
+            course_id: courseId,
+        }, $trigger)
+
+    const removeCustomerCard = ($trigger = null) =>
+        request(CARD_CONFIG.routes?.remove, {}, $trigger)
 
     CARD_CONFIG.applyCustomerCard = applyCustomerCard
     CARD_CONFIG.removeCustomerCard = removeCustomerCard
