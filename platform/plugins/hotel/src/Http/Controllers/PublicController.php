@@ -383,7 +383,9 @@ class PublicController extends Controller
 
         session([
             $token => $request->except(['_token']),
+            'hotel_checkout_token' => $token,
             'checkout_token' => $token,
+            'checkout_context' => \Botble\Hotel\Supports\HotelSupport::CONTEXT_HOTEL,
         ]);
 
         return $response->setNextUrl(route('public.booking.form', $token));
@@ -662,7 +664,7 @@ class PublicController extends Controller
 
         if ($token = $request->input('token')) {
             session()->forget($token);
-            session()->forget('checkout_token');
+            HotelHelper::clearCheckoutData();
         }
 
         if ($coupon) {

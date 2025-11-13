@@ -6,6 +6,7 @@ use Botble\Base\Http\Controllers\BaseController;
 use Botble\Base\Http\Responses\BaseHttpResponse;
 use Botble\Courses\Models\Course;
 use Botble\Hotel\Facades\HotelHelper;
+use Botble\Hotel\Supports\HotelSupport;
 use Botble\Hotel\Services\CouponService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -76,7 +77,7 @@ class CouponController extends BaseController
         $sessionData['coupon_amount'] = $discountAmount;
         $sessionData['course_id'] = $course->getKey();
 
-        HotelHelper::saveCheckoutData($sessionData);
+        HotelHelper::saveCheckoutData($sessionData, HotelSupport::CONTEXT_COURSE);
 
         return $this->response
             ->setData([
@@ -109,7 +110,7 @@ class CouponController extends BaseController
         $sessionData['coupon_code'] = null;
         $sessionData['coupon_amount'] = 0;
 
-        HotelHelper::saveCheckoutData($sessionData);
+        HotelHelper::saveCheckoutData($sessionData, HotelSupport::CONTEXT_COURSE);
 
         $data = [
             'coupon_code' => null,
@@ -155,7 +156,7 @@ class CouponController extends BaseController
 
     protected function resolveCourseFromCheckout(?int $courseId = null): array
     {
-        $sessionData = HotelHelper::getCheckoutData();
+        $sessionData = HotelHelper::getCheckoutData(null, HotelSupport::CONTEXT_COURSE);
 
         if (! $courseId) {
             $courseId = (int) Arr::get($sessionData, 'course_id');

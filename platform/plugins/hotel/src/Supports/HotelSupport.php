@@ -20,6 +20,10 @@ use Throwable;
 
 class HotelSupport
 {
+    public const CONTEXT_HOTEL = 'hotel';
+
+    public const CONTEXT_COURSE = 'course';
+
     public function isEnableEmailVerification(): bool
     {
         return (bool) $this->getSetting('verify_customer_email', 0);
@@ -201,17 +205,18 @@ class HotelSupport
         ];
     }
 
-    public function getCheckoutData(?string $key = null): mixed
+    public function getCheckoutData(?string $key = null, string $context = self::CONTEXT_HOTEL): mixed
     {
-        $checkoutToken = session('checkout_token');
+        $checkoutToken = $this->getCheckoutToken($context);
 
         if (! $checkoutToken) {
             $checkoutToken = Str::upper(Str::random(32));
-            session()->put('checkout_token', $checkoutToken);
+            $this->setCheckoutToken($context, $checkoutToken);
         }
 
         $sessionData = [];
-        if (session()->has($checkoutToken)) {
+
+        if ($checkoutToken && session()->has($checkoutToken)) {
             $sessionData = session($checkoutToken);
         }
 
@@ -222,20 +227,86 @@ class HotelSupport
         return $sessionData;
     }
 
-    public function saveCheckoutData(array $data): void
+    public function saveCheckoutData(array $data, string $context = self::CONTEXT_HOTEL): void
     {
-        $checkoutToken = session('checkout_token');
+        $checkoutToken = $this->getCheckoutToken($context);
 
         if (! $checkoutToken) {
             $checkoutToken = Str::upper(Str::random(32));
-            session()->put('checkout_token', $checkoutToken);
         }
 
-        $sessionData = $this->getCheckoutData();
+        $this->setCheckoutToken($context, $checkoutToken);
+
+        $sessionData = $this->getCheckoutData(null, $context);
 
         $data = array_merge($sessionData, $data);
 
         session()->put($checkoutToken, $data);
+    }
+
+    public function clearCheckoutData(?string $context = null): void
+    {
+        $contexts = $context ? [$context] : [self::CONTEXT_HOTEL, self::CONTEXT_COURSE];
+
+        foreach ($contexts as $ctx) {
+            $tokenKey = $this->resolveCheckoutTokenKey($ctx);
+            $token = session($tokenKey);
+
+            if ($token && session()->has($token)) {
+                session()->forget($token);
+            }
+
+            if ($tokenKey) {
+                session()->forget($tokenKey);
+            }
+
+            if (session('checkout_context') === $ctx) {
+                session()->forget('checkout_token');
+                session()->forget('checkout_context');
+            }
+        }
+
+        if (! $context) {
+            session()->forget('checkout_token');
+            session()->forget('checkout_context');
+        }
+    }
+
+    protected function getCheckoutToken(string $context): ?string
+    {
+        $tokenKey = $this->resolveCheckoutTokenKey($context);
+        $token = $tokenKey ? session($tokenKey) : null;
+
+        if ($token) {
+            return $token;
+        }
+
+        if (session('checkout_context') === $context) {
+            return session('checkout_token');
+        }
+
+        return null;
+    }
+
+    protected function setCheckoutToken(string $context, string $token): void
+    {
+        $tokenKey = $this->resolveCheckoutTokenKey($context);
+
+        if ($tokenKey) {
+            session()->put($tokenKey, $token);
+        }
+
+        session()->put('checkout_token', $token);
+        session()->put('checkout_context', $context);
+    }
+
+    protected function resolveCheckoutTokenKey(string $context): ?string
+    {
+        return match ($context) {
+            self::CONTEXT_COURSE => 'course_checkout_token',
+            self::CONTEXT_HOTEL => 'hotel_checkout_token',
+            default => null,
+        };
     }
 
     public function getDateFormat(): string

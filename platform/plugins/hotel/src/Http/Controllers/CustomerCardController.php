@@ -171,11 +171,12 @@ class CustomerCardController extends BaseController
         $unitsUsed = min($card->units_remaining, 1);
         $discount = $service->calculateDiscount($card, $course, $unitsUsed);
 
-        $data = HotelSupport::getCheckoutData() ?: [];
+        $context = $this->resolveCheckoutContext($request);
+        $data = HotelSupport::getCheckoutData(context: $context) ?: [];
         $data['customer_card_id'] = $card->getKey();
         $data['customer_card_discount'] = $discount;
         $data['customer_card_units_used'] = $unitsUsed;
-        HotelSupport::saveCheckoutData($data);
+        HotelSupport::saveCheckoutData($data, $context);
 
         return $this->httpResponse()
             ->setMessage(__('Karte angewendet.'))
@@ -187,11 +188,12 @@ class CustomerCardController extends BaseController
             ]);
     }
 
-    public function remove()
+    public function remove(Request $request)
     {
-        $data = HotelSupport::getCheckoutData() ?: [];
+        $context = $this->resolveCheckoutContext($request);
+        $data = HotelSupport::getCheckoutData(context: $context) ?: [];
         unset($data['customer_card_id'], $data['customer_card_discount'], $data['customer_card_units_used']);
-        HotelSupport::saveCheckoutData($data);
+        HotelSupport::saveCheckoutData($data, $context);
 
         return $this->httpResponse()
             ->setMessage(__('Karte entfernt.'))
@@ -267,5 +269,22 @@ class CustomerCardController extends BaseController
         return collect(CustomerCardTypeEnum::values())
             ->mapWithKeys(fn (CustomerCardTypeEnum $enum) => [$enum->getValue() => $enum->label()])
             ->all();
+    }
+
+    protected function resolveCheckoutContext(Request $request): string
+    {
+        if ($request->boolean('course_checkout') || $request->filled('course_id')) {
+            return HotelSupport::CONTEXT_COURSE;
+        }
+
+        if (session('checkout_context') === HotelSupport::CONTEXT_COURSE) {
+            return HotelSupport::CONTEXT_COURSE;
+        }
+
+        if (session()->has('course_checkout_token')) {
+            return HotelSupport::CONTEXT_COURSE;
+        }
+
+        return HotelSupport::CONTEXT_HOTEL;
     }
 }
