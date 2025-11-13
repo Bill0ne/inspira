@@ -25,6 +25,23 @@
   var isCourseCheckout = hasContext('course');
   var isHotelCheckout = hasContext('hotel');
 
+  function ensureCourseContext(action) {
+    if (isCourseCheckout || isHotelCheckout) {
+      return true;
+    }
+
+    var fallbackMessage = 'Checkout-Kontext konnte nicht ermittelt werden.';
+    if (action) {
+      fallbackMessage += ' (' + action + ')';
+    }
+
+    callTheme('showError', fallbackMessage, function (msg) {
+      if (win.alert) alert(msg);
+    });
+
+    return false;
+  }
+
   function getActiveContext(fallback) {
     if (fallback && hasContext(fallback)) return fallback;
     if (isCourseCheckout) return 'course';
