@@ -9,6 +9,7 @@ use Botble\Table\Columns\FormattedColumn;
 use Botble\Table\Columns\IdColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class TransferLogTable extends TableAbstract
 {
@@ -48,7 +49,14 @@ class TransferLogTable extends TableAbstract
                     ->title(trans('plugins/inspira-cancellation::cancellation.transfer.created_at')),
             ])
             ->queryUsing(function (Builder $query) {
-                return $query->with(['oldCustomer', 'newCustomer']);
+                return $query
+                    ->select([
+                        'insp_transfer_logs.*',
+                        'insp_transfer_logs.booking_id as booking_reference',
+                        DB::raw('NULL as old_customer'),
+                        DB::raw('NULL as new_customer'),
+                    ])
+                    ->with(['oldCustomer', 'newCustomer']);
             })
             ->removeAllActions()
             ->removeAllBulkActions();

@@ -13,6 +13,7 @@ use Botble\Table\Columns\IdColumn;
 use Botble\Table\Columns\StatusColumn;
 use Botble\Table\HeaderActions\CreateHeaderAction;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class CancellationRuleTable extends TableAbstract
 {
@@ -66,7 +67,9 @@ class CancellationRuleTable extends TableAbstract
             ])
             ->addBulkAction(DeleteBulkAction::make()->permission('inspira-cancellation.rules.destroy'))
             ->queryUsing(function (Builder $query) {
-                return $query->select(['id', 'type', 'from_days', 'to_days', 'refund_percent', 'active', 'created_at']);
+                return $query
+                    ->select(['id', 'type', 'from_days', 'to_days', 'refund_percent', 'active', 'created_at'])
+                    ->addSelect(DB::raw('NULL as range'));
             });
     }
 }
