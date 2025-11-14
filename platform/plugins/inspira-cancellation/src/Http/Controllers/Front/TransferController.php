@@ -27,7 +27,7 @@ class TransferController extends BaseController
             ->where('customer_id', auth('customer')->id())
             ->findOrFail($booking);
 
-        app(TransferService::class))->request($model, $type, $request->only([
+        app(TransferService::class)->request($model, $type, $request->only([
             'first_name',
             'last_name',
             'email',
