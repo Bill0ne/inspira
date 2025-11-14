@@ -10,6 +10,16 @@ return [
         'description' => 'Design reusable card bundles that customers can purchase and redeem during checkout.',
         'button_text' => 'Create card',
     ],
+    'assignments' => [
+        'title' => 'Assigned customer cards',
+    ],
+    'templates' => [
+        'title' => 'Customer card templates',
+    ],
+    'menu' => [
+        'assignments' => 'Customer cards',
+        'templates' => 'Create cards',
+    ],
     'types' => [
         '5er' => '5 units',
         '10er' => '10 units',

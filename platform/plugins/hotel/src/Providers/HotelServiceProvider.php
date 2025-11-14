@@ -311,8 +311,15 @@ class HotelServiceProvider extends ServiceProvider
                     'id' => 'cms-plugins-hotel-customer-cards',
                     'priority' => 12,
                     'parent_id' => 'cms-plugins-hotel',
-                    'name' => 'plugins/hotel::customer-card.name',
+                    'name' => 'plugins/hotel::customer-card.menu.assignments',
                     'route' => 'customer-cards.index',
+                ])
+                ->registerItem([
+                    'id' => 'cms-plugins-hotel-customer-card-templates',
+                    'priority' => 13,
+                    'parent_id' => 'cms-plugins-hotel',
+                    'name' => 'plugins/hotel::customer-card.menu.templates',
+                    'route' => 'customer-cards.templates',
                 ])
                 ->registerItem([
                     'id' => 'cms-plugins-booking',

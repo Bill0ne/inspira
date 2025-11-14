@@ -10,6 +10,16 @@ return [
         'description' => 'Konfigurieren Sie digitale Kartenpakete, die Kunden kaufen und im Checkout einsetzen können.',
         'button_text' => 'Karte anlegen',
     ],
+    'assignments' => [
+        'title' => 'Zugewiesene Kundenkarten',
+    ],
+    'templates' => [
+        'title' => 'Karten anlegen',
+    ],
+    'menu' => [
+        'assignments' => 'Kundenkarten',
+        'templates' => 'Karten anlegen',
+    ],
     'types' => [
         '5er' => '5er-Karte',
         '10er' => '10er-Karte',
