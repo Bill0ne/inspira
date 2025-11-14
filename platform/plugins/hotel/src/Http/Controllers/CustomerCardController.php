@@ -59,7 +59,7 @@ class CustomerCardController extends BaseController
             ->renderTable();
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $this->pageTitle(trans('plugins/hotel::customer-card.form.create'));
 
@@ -75,13 +75,16 @@ class CustomerCardController extends BaseController
             'type' => CustomerCardTypeEnum::CUSTOM,
         ]);
 
+        $showAssignmentForm = $request->boolean('assigned');
+
         return view('plugins/hotel::customer-cards.create', [
             'jsValidator' => $jsValidator,
             'card' => $card,
             'customers' => $this->getCustomersList(),
             'types' => $this->getTypes(),
             'isAssigned' => false,
-            'templates' => $this->getTemplatesList(),
+            'templates' => $showAssignmentForm ? $this->getTemplatesList() : collect(),
+            'showAssignmentForm' => $showAssignmentForm,
         ]);
     }
 

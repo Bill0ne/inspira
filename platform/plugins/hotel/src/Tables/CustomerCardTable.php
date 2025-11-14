@@ -227,7 +227,11 @@ public function ajax(): JsonResponse
 
     public function buttons(): array
     {
-        return $this->addCreateButton(route('customer-cards.create'), 'customer-cards.create');
+        $route = $this->assignedOnly
+            ? route('customer-cards.create', ['assigned' => 1])
+            : route('customer-cards.create');
+
+        return $this->addCreateButton($route, 'customer-cards.create');
     }
 
     public function html(): TableBuilder
