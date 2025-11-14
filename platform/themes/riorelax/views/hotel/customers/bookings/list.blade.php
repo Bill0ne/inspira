@@ -79,37 +79,6 @@
             gap: 10px;
         }
 
-        .booking-card-action--cancel,
-        .booking-card-action--transfer {
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-            color: inherit;
-            height: auto;
-            min-width: 0;
-            padding: 0;
-            width: auto;
-        }
-
-        .booking-card-action--cancel {
-            color: #c0392b;
-        }
-
-        .booking-card-action--transfer {
-            color: #1b7d43;
-        }
-
-        .booking-card-action--cancel:hover,
-        .booking-card-action--transfer:hover {
-            background-color: transparent;
-        }
-
-        .booking-card-action-icon {
-            display: block;
-            height: 22px;
-            width: 22px;
-        }
-
         .inspira-form-feedback {
             font-size: 14px;
             margin-bottom: 12px;
@@ -205,37 +174,29 @@
                                         @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
                                             <button
                                                 type="button"
-                                                class="booking-card-action booking-card-action--cancel"
+                                                class="booking-card-action"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#inspiraCancel-course-{{ $booking->getKey() }}"
                                                 title="{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}"
                                             >
-                                                <x-core::icon
-                                                    name="ti ti-circle-x"
-                                                    class="booking-card-action-icon"
-                                                    aria-hidden="true"
-                                                />
+                                                <i class="fal fa-times" aria-hidden="true"></i>
                                                 <span class="visually-hidden">{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}</span>
                                             </button>
 
                                             <button
                                                 type="button"
-                                                class="booking-card-action booking-card-action--transfer"
+                                                class="booking-card-action"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#inspiraTransfer-course-{{ $booking->getKey() }}"
                                                 title="{{ trans('plugins/inspira-cancellation::cancellation.frontend.replace') }}"
                                             >
-                                                <x-core::icon
-                                                    name="ti ti-arrows-exchange"
-                                                    class="booking-card-action-icon"
-                                                    aria-hidden="true"
-                                                />
+                                                <i class="fal fa-exchange-alt" aria-hidden="true"></i>
                                                 <span class="visually-hidden">{{ trans('plugins/inspira-cancellation::cancellation.frontend.replace') }}</span>
                                             </button>
                                         @endif
 
                                         <a class="booking-card-action" href="{{ $detailUrl }}" title="{{ __('Kursdetails') }}">
-                                            <i class="fal fa-calendar-day" aria-hidden="true"></i>
+                                            <i class="fal fa-eye" aria-hidden="true"></i>
                                             <span class="visually-hidden">{{ __('Kursdetails') }}</span>
                                         </a>
 
@@ -451,22 +412,18 @@
                                             @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
                                                 <button
                                                     type="button"
-                                                    class="booking-card-action booking-card-action--cancel"
+                                                    class="booking-card-action"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#inspiraCancel-room-{{ $booking->getKey() }}"
                                                     title="{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}"
                                                 >
-                                                    <x-core::icon
-                                                        name="ti ti-circle-x"
-                                                        class="booking-card-action-icon"
-                                                        aria-hidden="true"
-                                                    />
+                                                    <i class="fal fa-times" aria-hidden="true"></i>
                                                     <span class="visually-hidden">{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}</span>
                                                 </button>
                                             @endif
 
                                             <a class="booking-card-action" href="{{ route('customer.bookings.show', $booking->transaction_id) }}" title="{{ __('Details anzeigen') }}">
-                                                <i class="fal fa-calendar-day" aria-hidden="true"></i>
+                                                <i class="fal fa-eye" aria-hidden="true"></i>
                                                 <span class="visually-hidden">{{ __('Details anzeigen') }}</span>
                                             </a>
 
