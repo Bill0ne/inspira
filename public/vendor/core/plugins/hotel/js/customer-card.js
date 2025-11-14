@@ -81,6 +81,56 @@ $(() => {
         updateSummary()
     }
 
+    const $templateSelect = $('[data-bb-customer-card="template-select"]')
+
+    if ($templateSelect.length) {
+        const $summary = $('[data-bb-customer-card="template-summary"]')
+        const $placeholder = $('[data-bb-customer-card="template-placeholder"]')
+        const $name = $('[data-bb-customer-card="template-name"]')
+        const $type = $('[data-bb-customer-card="template-type"]')
+        const $basePrice = $('[data-bb-customer-card="template-base-price"]')
+        const $totalPrice = $('[data-bb-customer-card="template-total-price"]')
+        const $units = $('[data-bb-customer-card="template-units"]')
+        const $discount = $('[data-bb-customer-card="template-discount"]')
+        const $validUntil = $('[data-bb-customer-card="template-valid-until"]')
+        const $validInput = $('[name="valid_until"]')
+
+        const updateTemplateSummary = () => {
+            const $option = $templateSelect.find(':selected')
+            const templateId = Number($option.val()) || null
+
+            if (! templateId) {
+                $summary.hide()
+                $placeholder.show()
+                return
+            }
+
+            const basePrice = Number($option.data('base-price') || 0)
+            const totalUnits = Number($option.data('total-units') || 0)
+            const discountValue = Number($option.data('discount') || 0)
+            const totalPrice = Number($option.data('total-price') || 0)
+            const validUntil = $option.data('valid-until') || ''
+
+            $name.text($option.data('name') || '')
+            $type.text($option.data('type') || '')
+            $basePrice.text(`${formatPrice(basePrice)} × ${totalUnits}`)
+            $totalPrice.text(formatPrice(totalPrice))
+            $units.text(totalUnits ? Number(totalUnits).toLocaleString() : '—')
+            $discount.text(`${discountValue.toFixed(2)}%`)
+            $validUntil.text(validUntil || '—')
+
+            if (validUntil && $validInput.length) {
+                $validInput.val(validUntil)
+            }
+
+            $placeholder.hide()
+            $summary.show()
+        }
+
+        $templateSelect.on('change', updateTemplateSummary)
+        updateTemplateSummary()
+    }
+
     const csrfToken = () => $('meta[name="csrf-token"]').attr('content')
 
     const toggleButton = ($button, isLoading) => {
@@ -122,6 +172,36 @@ $(() => {
             method: 'POST',
             url,
             data,
+            complete() {
+                toggleButton($trigger, false)
+            },
+        }).then((response) => ({ data: response }))
+    }
+
+    const getRequest = (url, $trigger = null) => {
+        if (! url) {
+            return Promise.reject(new Error('Missing URL'))
+        }
+
+        if (window.Botble?.request) {
+            let client = window.Botble.request
+
+            if ($trigger && typeof client.withButtonLoading === 'function') {
+                client = client.withButtonLoading($trigger)
+            }
+
+            return client.get(url)
+        }
+
+        toggleButton($trigger, true)
+
+        if (window.axios) {
+            return window.axios.get(url).finally(() => toggleButton($trigger, false))
+        }
+
+        return $.ajax({
+            method: 'GET',
+            url,
             complete() {
                 toggleButton($trigger, false)
             },
@@ -341,8 +421,9 @@ $(() => {
     }
 
     $(document).on('click', usageSelector, function () {
-        const url = $(this).data('url')
-        const title = $(this).data('title') || t('table.usage_title', 'Kartenverwendung')
+        const $trigger = $(this)
+        const url = $trigger.data('url')
+        const title = $trigger.data('title') || t('table.usage_title', 'Kartenverwendung')
 
         if (! url) {
             return
@@ -357,8 +438,7 @@ $(() => {
 
         $modal.modal('show')
 
-        $httpClient.make()
-            .get(url)
+        getRequest(url, $trigger)
             .then(({ data }) => {
                 if (data.data && data.data.html) {
                     $modal.find('.modal-body').html(data.data.html)

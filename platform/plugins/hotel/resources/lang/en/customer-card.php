@@ -76,6 +76,15 @@ return [
         ],
         'template_hint' => 'Templates define the base configuration. Customers receive their personal copy when purchasing a card.',
         'assignment_hint' => 'Assigned to :customer • :remaining of :total units available.',
+        'assignment' => [
+            'template' => 'Select template',
+            'template_placeholder' => 'Please choose a template…',
+            'template_hint' => 'Pick a template to create a personalised card for the customer.',
+            'is_active' => 'Create as active card',
+            'empty_title' => 'No templates available',
+            'empty_description' => 'Create a template under “Create cards” before assigning it to a customer.',
+            'empty_action' => 'Open templates',
+        ],
     ],
     'messages' => [
         'select_card' => 'Please select a customer card to continue.',

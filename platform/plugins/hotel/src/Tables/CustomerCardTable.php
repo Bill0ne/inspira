@@ -125,21 +125,23 @@ public function ajax(): JsonResponse
         return Html::tag('span', $card->valid_until->toDateString(), ['class' => 'badge badge-success']);
     });
 
-    // USAGE BUTTON
-    $data->addColumn('usage', function (CustomerCard $card) {
-        return Html::tag(
-            'button',
-            trans('plugins/hotel::customer-card.table.view_usage'),
-            [
-                'class' => 'btn btn-outline-primary btn-sm',
-                'type' => 'button',
-                'data-bb-customer-card' => 'usage',
-                'data-card-id' => $card->getKey(),
-                'data-title' => $card->name,
-                'data-url' => route('customer-cards.usages', $card),
-            ]
-        );
-    });
+    if ($this->assignedOnly) {
+        // USAGE BUTTON
+        $data->addColumn('usage', function (CustomerCard $card) {
+            return Html::tag(
+                'button',
+                trans('plugins/hotel::customer-card.table.view_usage'),
+                [
+                    'class' => 'btn btn-outline-primary btn-sm',
+                    'type' => 'button',
+                    'data-bb-customer-card' => 'usage',
+                    'data-card-id' => $card->getKey(),
+                    'data-title' => $card->name,
+                    'data-url' => route('customer-cards.usages', $card),
+                ]
+            );
+        });
+    }
 
     // STATUS BADGE
     $data->addColumn('status', function (CustomerCard $card) {
@@ -214,16 +216,22 @@ public function ajax(): JsonResponse
             ->title(trans('plugins/hotel::customer-card.table.status'))
             ->alignLeft();
 
-        $columns[] = Column::make('usage')
-            ->title(trans('plugins/hotel::customer-card.table.view_usage'))
-            ->alignLeft();
+        if ($this->assignedOnly) {
+            $columns[] = Column::make('usage')
+                ->title(trans('plugins/hotel::customer-card.table.view_usage'))
+                ->alignLeft();
+        }
 
         return $columns;
     }
 
     public function buttons(): array
     {
-        return $this->addCreateButton(route('customer-cards.create'), 'customer-cards.create');
+        $route = $this->assignedOnly
+            ? route('customer-cards.create', ['assigned' => 1])
+            : route('customer-cards.create');
+
+        return $this->addCreateButton($route, 'customer-cards.create');
     }
 
     public function html(): TableBuilder

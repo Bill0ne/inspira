@@ -24,6 +24,15 @@ class CustomerCardRequest extends Request
 
     public function rules(): array
     {
+        if ($this->filled('template_id')) {
+            return [
+                'template_id' => ['required', 'integer', 'exists:ht_customer_cards,id'],
+                'assigned_to' => ['required', 'integer', 'exists:ht_customers,id'],
+                'valid_until' => ['nullable', 'date_format:' . BaseHelper::getDateFormat(), 'after:today'],
+                'is_active' => ['sometimes', 'boolean'],
+            ];
+        }
+
         return [
             'name' => ['required', 'string', 'max:191'],
             'type' => ['required', Rule::in(CustomerCardTypeEnum::values())],
