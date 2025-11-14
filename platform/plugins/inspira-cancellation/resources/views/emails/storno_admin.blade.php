@@ -7,4 +7,6 @@
 {{ trans('plugins/inspira-cancellation::cancellation.frontend.refund_percent', ['percent' => $refund_percent ?? '0']) }}
 {{ trans('plugins/inspira-cancellation::cancellation.frontend.policy_info') }}: {{ $rule_description ?? '' }}
 
+{{ trans('plugins/inspira-cancellation::cancellation.messages.cancellation_admin_followup') }}
+
 @endcomponent

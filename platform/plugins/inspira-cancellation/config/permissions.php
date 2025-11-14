@@ -11,6 +11,11 @@ return [
         'parent_flag' => 'plugin.inspira-cancellation',
     ],
     [
+        'name' => 'Rückerstattungen verwalten',
+        'flag' => 'inspira-cancellation.cancellations.manage',
+        'parent_flag' => 'inspira-cancellation.cancellations.index',
+    ],
+    [
         'name' => 'Regeln verwalten',
         'flag' => 'inspira-cancellation.rules.index',
         'parent_flag' => 'plugin.inspira-cancellation',
@@ -34,5 +39,10 @@ return [
         'name' => 'Ersatzteilnehmer',
         'flag' => 'inspira-cancellation.transfers.index',
         'parent_flag' => 'plugin.inspira-cancellation',
+    ],
+    [
+        'name' => 'Ersatzteilnehmer verwalten',
+        'flag' => 'inspira-cancellation.transfers.manage',
+        'parent_flag' => 'inspira-cancellation.transfers.index',
     ],
 ];

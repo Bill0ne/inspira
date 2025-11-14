@@ -42,6 +42,24 @@ Route::group(['namespace' => 'Botble\\InspiraCancellation\\Http\\Controllers'], 
                 'permission' => 'inspira-cancellation.cancellations.index',
             ]);
 
+            Route::post('cancellations/{cancellation}/approve', [
+                'as' => 'cancellations.approve',
+                'uses' => 'Admin\\CancellationController@approve',
+                'permission' => 'inspira-cancellation.cancellations.manage',
+            ]);
+
+            Route::post('cancellations/{cancellation}/mark-paid', [
+                'as' => 'cancellations.mark-paid',
+                'uses' => 'Admin\\CancellationController@markPaid',
+                'permission' => 'inspira-cancellation.cancellations.manage',
+            ]);
+
+            Route::post('cancellations/{cancellation}/reject', [
+                'as' => 'cancellations.reject',
+                'uses' => 'Admin\\CancellationController@reject',
+                'permission' => 'inspira-cancellation.cancellations.manage',
+            ]);
+
             /*
             |--------------------------------------------------------------------------
             | TRANSFERS – admin/inspira-cancellation/transfers
@@ -63,6 +81,18 @@ Route::group(['namespace' => 'Botble\\InspiraCancellation\\Http\\Controllers'], 
                 'as' => 'transfers.data',
                 'uses' => 'Admin\\TransferLogController@getData',
                 'permission' => 'inspira-cancellation.transfers.index',
+            ]);
+
+            Route::post('transfers/{transfer}/approve', [
+                'as' => 'transfers.approve',
+                'uses' => 'Admin\\TransferLogController@approve',
+                'permission' => 'inspira-cancellation.transfers.manage',
+            ]);
+
+            Route::post('transfers/{transfer}/reject', [
+                'as' => 'transfers.reject',
+                'uses' => 'Admin\\TransferLogController@reject',
+                'permission' => 'inspira-cancellation.transfers.manage',
             ]);
 
 

@@ -2,7 +2,11 @@
 
 namespace Botble\InspiraCancellation\Services;
 
+use Botble\Hotel\Models\Booking;
+use Botble\InspiraCancellation\Enums\TransferStatusEnum;
 use Botble\InspiraCancellation\Events\BookingTransferredEvent;
+use Botble\InspiraCancellation\Events\TransferRejectedEvent;
+use Botble\InspiraCancellation\Events\TransferRequestedEvent;
 use Botble\InspiraCancellation\Models\TransferLog;
 use Botble\Courses\Models\CourseBooking;
 use Botble\Hotel\Models\Customer;
@@ -13,15 +17,45 @@ use Illuminate\Support\Str;
 
 class TransferService
 {
-    public function transfer(Model $booking, string $type, array $payload): TransferLog
+    public function request(Model $booking, string $type, array $payload): TransferLog
     {
         $type = $this->normalizeType($type);
 
         return DB::transaction(function () use ($booking, $type, $payload) {
-            $customer = $this->resolveCustomer($payload);
+            $log = TransferLog::query()->create([
+                'booking_id' => $booking->getKey(),
+                'booking_type' => $type,
+                'old_customer_id' => $booking->customer_id,
+                'status' => TransferStatusEnum::PENDING,
+                'payload' => Arr::only($payload, [
+                    'first_name',
+                    'last_name',
+                    'email',
+                    'phone',
+                ]),
+                'requested_by' => $booking->customer_id,
+            ]);
 
-            $oldCustomerId = $booking->customer_id;
+            event(new TransferRequestedEvent($booking, $log, $payload));
+
+            return $log;
+        });
+    }
+
+    public function approve(TransferLog $log, ?int $userId = null): TransferLog
+    {
+        if ($log->status instanceof TransferStatusEnum && ! $log->status->equals(TransferStatusEnum::PENDING())) {
+            return $log;
+        }
+
+        return DB::transaction(function () use ($log, $userId) {
+            $booking = $this->resolveBookingFromLog($log);
+
             $oldCustomer = method_exists($booking, 'customer') ? $booking->customer()->first() : null;
+
+            $payload = $log->payload ?? [];
+
+            $customer = $this->resolveCustomer($payload);
 
             $booking->customer_id = $customer->getKey();
             $booking->save();
@@ -32,17 +66,42 @@ class TransferService
 
             $this->syncContactInformation($booking, $payload);
 
-            $log = TransferLog::query()->create([
-                'booking_id' => $booking->getKey(),
-                'booking_type' => $type,
-                'old_customer_id' => $oldCustomerId,
+            $log->forceFill([
                 'new_customer_id' => $customer->getKey(),
+                'status' => TransferStatusEnum::APPROVED,
+                'approved_at' => now(),
+                'approved_by' => $userId,
             ]);
 
-            event(new BookingTransferredEvent($booking, $customer, $oldCustomerId, $log, $oldCustomer?->email));
+            $log->save();
+
+            event(new BookingTransferredEvent($booking, $customer, $log->old_customer_id, $log, $oldCustomer?->email));
 
             return $log;
         });
+    }
+
+    public function reject(TransferLog $log, ?int $userId = null): TransferLog
+    {
+        if ($log->status instanceof TransferStatusEnum && ! $log->status->equals(TransferStatusEnum::PENDING())) {
+            return $log;
+        }
+
+        $log->forceFill([
+            'status' => TransferStatusEnum::REJECTED,
+            'approved_at' => now(),
+            'approved_by' => $userId,
+        ]);
+
+        $log->save();
+
+        $booking = $this->resolveBookingFromLog($log);
+
+        $customer = method_exists($booking, 'customer') ? $booking->customer()->first() : null;
+
+        event(new TransferRejectedEvent($booking, $log, $customer));
+
+        return $log;
     }
 
     protected function resolveCustomer(array $payload): Customer
@@ -60,6 +119,18 @@ class TransferService
         $customer->save();
 
         return $customer;
+    }
+
+    protected function resolveBookingFromLog(TransferLog $log): Model
+    {
+        return match ($log->booking_type) {
+            'room' => Booking::query()
+                ->with(['customer', 'address'])
+                ->findOrFail($log->booking_id),
+            default => CourseBooking::query()
+                ->with(['customer', 'address', 'session'])
+                ->findOrFail($log->booking_id),
+        };
     }
 
     protected function syncContactInformation(Model $booking, array $payload): void

@@ -10,7 +10,9 @@
 
 {{ trans('plugins/inspira-cancellation::cancellation.email.variables.booking_reference') }}: {{ $booking_reference ?? '' }}
 
-{{ trans('plugins/inspira-cancellation::cancellation.messages.cancellation_success') }}
+{{ trans('plugins/inspira-cancellation::cancellation.messages.cancellation_pending_manual_review') }}
+
+{{ trans('plugins/inspira-cancellation::cancellation.messages.cancellation_support_hint') }}
 
 {{ config('app.name') }}
 @endcomponent
