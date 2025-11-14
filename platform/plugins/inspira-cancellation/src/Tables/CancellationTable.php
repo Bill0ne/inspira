@@ -9,6 +9,7 @@ use Botble\Table\Columns\FormattedColumn;
 use Botble\Table\Columns\IdColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class CancellationTable extends TableAbstract
 {
@@ -16,7 +17,6 @@ class CancellationTable extends TableAbstract
     {
         $this
             ->model(Cancellation::class)
-            ->setAjaxUrl(route('inspira-cancellation.cancellations.list'))
             ->addColumns([
                 IdColumn::make(),
                 FormattedColumn::make('booking_reference')
@@ -56,7 +56,10 @@ class CancellationTable extends TableAbstract
                     ->title(trans('plugins/inspira-cancellation::cancellation.cancellation.created_at')),
             ])
             ->queryUsing(function (Builder $query) {
-                return $query->with('rule');
+                return $query
+                    ->select(['insp_cancellations.*'])
+                    ->addSelect(DB::raw('NULL as rule_description'))
+                    ->with('rule');
             })
             ->removeAllActions()
             ->removeAllBulkActions();
