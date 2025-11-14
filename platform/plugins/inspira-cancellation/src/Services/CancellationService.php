@@ -31,9 +31,16 @@ class CancellationService
 
         $total = $this->resolveTotalAmount($booking);
 
-        $percent = $rule?->refund_percent ?? 0;
+        $percent = $rule?->refund_percent;
+
+        if (is_null($percent)) {
+            $percent = 100;
+        }
+
         $refund = $total * ($percent / 100);
         $refund = round($refund, 2);
+
+        $fee = max(round($total - $refund, 2), 0);
 
         return [
             'type' => $type,
@@ -43,7 +50,7 @@ class CancellationService
             'refund_amount' => $refund,
             'refund_percent' => $percent,
             'total_amount' => $total,
-            'fee_amount' => max($total - $refund, 0),
+            'fee_amount' => $fee,
         ];
     }
 
@@ -59,7 +66,10 @@ class CancellationService
             'customer_id' => $booking->customer_id ?? Arr::get($context, 'customer_id'),
             'rule_id' => $rule?->getKey(),
             'refund_amount' => Arr::get($quote, 'refund_amount', 0),
+            'total_amount' => Arr::get($quote, 'total_amount', 0),
+            'fee_amount' => Arr::get($quote, 'fee_amount', 0),
             'refund_percent' => Arr::get($quote, 'refund_percent', 0),
+            'days_until_start' => Arr::get($quote, 'days_until_start'),
             'status' => Arr::get($context, 'status', 'pending'),
             'notes' => Arr::get($context, 'notes'),
         ]);

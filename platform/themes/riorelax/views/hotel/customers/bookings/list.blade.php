@@ -238,7 +238,7 @@
                                                     <span class="icon"><i class="fal fa-info-circle" aria-hidden="true"></i></span>
                                                     <div class="content">
                                                         {{ trans('plugins/inspira-cancellation::cancellation.frontend.guideline') }}<br>
-                                                        {{ $ruleDescription }}
+                                                        {{ $ruleDescription ?: trans('plugins/inspira-cancellation::cancellation.frontend.no_active_rule') }}
                                                     </div>
                                                 </div>
 
@@ -474,7 +474,7 @@
                                                     <span class="icon"><i class="fal fa-info-circle" aria-hidden="true"></i></span>
                                                     <div class="content">
                                                         {{ trans('plugins/inspira-cancellation::cancellation.frontend.guideline') }}<br>
-                                                        {{ $ruleDescription }}
+                                                        {{ $ruleDescription ?: trans('plugins/inspira-cancellation::cancellation.frontend.no_active_rule') }}
                                                     </div>
                                                 </div>
 
