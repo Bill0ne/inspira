@@ -9,6 +9,7 @@ use Botble\InspiraCancellation\Forms\CancellationRuleForm;
 use Botble\InspiraCancellation\Http\Requests\CancellationRuleRequest;
 use Botble\InspiraCancellation\Models\CancellationRule;
 use Botble\InspiraCancellation\Tables\CancellationRuleTable;
+use Illuminate\Http\JsonResponse;
 
 class CancellationRuleController extends BaseController
 {
@@ -25,7 +26,16 @@ class CancellationRuleController extends BaseController
     {
         $this->pageTitle(trans('plugins/inspira-cancellation::cancellation.rule.list'));
 
+        if (request()->ajax() || request()->expectsJson()) {
+            return $table->ajax();
+        }
+
         return $table->renderTable();
+    }
+
+    public function getData(CancellationRuleTable $table): JsonResponse
+    {
+        return $table->ajax();
     }
 
     public function create()

@@ -17,6 +17,10 @@ class TransferLogController extends BaseController
     {
         $this->pageTitle(trans('plugins/inspira-cancellation::cancellation.transfer.list'));
 
+        if (request()->ajax() || request()->expectsJson()) {
+            return $table->ajax();
+        }
+
         return $table->renderTable();
     }
 

@@ -19,6 +19,10 @@ class CancellationController extends BaseController
     {
         $this->pageTitle(trans('plugins/inspira-cancellation::cancellation.cancellation.list'));
 
+        if (request()->ajax() || request()->expectsJson()) {
+            return $table->ajax();
+        }
+
         return $table->renderTable();
     }
 
