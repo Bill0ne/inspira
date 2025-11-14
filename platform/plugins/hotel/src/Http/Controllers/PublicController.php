@@ -418,8 +418,6 @@ class PublicController extends Controller
         $pricing = $this->checkoutPricingService->calculateRoomPricing($room, $slots, (int) $rooms, $customer);
 
         $slotSummaries = $pricing['slots'];
-        $totalConfiguredPrice = $pricing['total_configured_price'];
-
         $couponCode   = Arr::get($sessionData, 'coupon_code');
         $checkoutData = HotelHelper::getCheckoutData();
 
@@ -445,12 +443,14 @@ class PublicController extends Controller
         $totalAmount = $totals['amount'];
         $total = $totals['total_amount'];
         $coupon = $totals['coupon'];
+        $roomBaseAmount = $totals['room_base_amount'];
+        $subtotalAfterDiscounts = $totals['subtotal_after_discounts'];
 
         if (! $coupon) {
             $couponAmount = 0;
         }
 
-        $totalRoomPrice = $totalConfiguredPrice;
+        $totalRoomPrice = $totals['room_discounted_amount'];
         $extrasAmount = $serviceAmount + $foodAmount;
 
         $services = Service::query()->wherePublished()->get();
@@ -483,6 +483,8 @@ class PublicController extends Controller
                 'totalRoomPrice',
                 'extrasAmount',
                 'mengenrabattAmount',
+                'roomBaseAmount',
+                'subtotalAfterDiscounts',
                 'token',
                 'displayStart',
                 'displayEnd',
@@ -775,6 +777,10 @@ class PublicController extends Controller
             'coupon_amount_raw' => $totals['coupon_amount'],
             'mengenrabatt_amount' => format_price($totals['mengenrabatt_amount']),
             'mengenrabatt_amount_raw' => $totals['mengenrabatt_amount'],
+            'room_base_amount_formatted' => format_price($totals['room_base_amount']),
+            'room_base_amount_raw' => $totals['room_base_amount'],
+            'subtotal_after_discounts_formatted' => format_price($totals['subtotal_after_discounts']),
+            'subtotal_after_discounts_raw' => $totals['subtotal_after_discounts'],
         ]);
     }
 

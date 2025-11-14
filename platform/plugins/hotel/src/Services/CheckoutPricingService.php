@@ -44,29 +44,36 @@ class CheckoutPricingService
                 'start_date' => $normalized['start_date'],
                 'end_date' => $normalized['end_date'],
                 'hours' => $normalized['hours'],
+                'minutes' => $normalized['minutes'],
                 'base_price' => $basePrice,
             ];
         }
 
         $totalBasePrice = array_sum(array_column($normalizedSlots, 'base_price'));
-        $totalHours = array_sum(array_column($normalizedSlots, 'hours'));
+        $totalMinutes = array_sum(array_column($normalizedSlots, 'minutes'));
+        $totalHours = $totalMinutes > 0 ? (int) ceil($totalMinutes / 60) : 0;
 
         $totalConfiguredPrice = $totalBasePrice;
+        $quantityDiscountAmount = 0;
 
         if ($totalBasePrice > 0 && function_exists('is_plugin_active') && is_plugin_active('price-configurator')) {
             $service = app('Botble\\PriceConfigurator\\Services\\PriceConfiguratorService');
 
             if ($service) {
                 try {
-                    $totalConfiguredPrice = $service->calculatePrice(
+                    $details = $service->calculatePriceWithDetails(
                         $totalBasePrice,
                         \Botble\PriceConfigurator\Enums\TargetTypeEnum::ROOM,
                         $room->id,
                         $customer,
                         max($totalHours, 1)
                     );
+
+                    $totalConfiguredPrice = $details['final_price'];
+                    $quantityDiscountAmount = $details['quantity_discount_amount'];
                 } catch (Throwable) {
                     $totalConfiguredPrice = $totalBasePrice;
+                    $quantityDiscountAmount = 0;
                 }
             }
         }
@@ -92,6 +99,7 @@ class CheckoutPricingService
             'total_configured_price' => $totalConfiguredPrice,
             'total_hours' => $totalHours,
             'rule_discount' => $ruleDiscount,
+            'quantity_discount_amount' => $quantityDiscountAmount,
         ];
     }
 
@@ -165,58 +173,27 @@ class CheckoutPricingService
 
         [$couponAmount, $coupon] = $this->determineCouponDiscount($couponCode, $amount);
 
-        $quantityDiscountAmount = $this->calculateQuantityDiscount(
-            $pricing['total_hours'],
-            $pricing['total_configured_price']
-        );
+        $quantityDiscountAmount = $pricing['quantity_discount_amount'] ?? 0;
 
-        $taxableAmount = max($amount - $couponAmount - $quantityDiscountAmount, 0);
+        $roomBaseAmount = $pricing['total_base_price'];
+        $roomDiscountedAmount = $pricing['total_configured_price'];
+
+        $taxableAmount = max($amount - $couponAmount, 0);
         $taxAmount = $room->tax->percentage * $taxableAmount / 100;
         $totalAmount = $taxableAmount + $taxAmount;
 
         return array_merge($pricing, $addonSummary, [
+            'room_base_amount' => $roomBaseAmount,
+            'room_discounted_amount' => $roomDiscountedAmount,
             'amount' => $amount,
             'discount_amount' => $couponAmount,
             'coupon_amount' => $couponAmount,
             'coupon' => $coupon,
             'mengenrabatt_amount' => $quantityDiscountAmount,
+            'subtotal_after_discounts' => $taxableAmount,
             'tax_amount' => $taxAmount,
             'total_amount' => $totalAmount,
         ]);
-    }
-
-    protected function calculateQuantityDiscount(int $hours, float $price): float
-    {
-        if ($hours <= 0 || $price <= 0) {
-            return 0;
-        }
-
-        $discount = \Botble\PriceConfigurator\Models\QuantityDiscount::query()
-            ->where('status', 'active')
-            ->where('condition_type', 'quantity')
-            ->where(function ($q) use ($hours) {
-                $q->whereNull('range_min')
-                    ->orWhere('range_min', '<=', $hours);
-            })
-            ->where(function ($q) use ($hours) {
-                $q->whereNull('range_max')
-                    ->orWhere('range_max', '>=', $hours);
-            })
-            ->orderByDesc('priority')
-            ->orderByDesc('range_min')
-            ->first();
-
-        if (! $discount) {
-            return 0;
-        }
-
-        $value = (float) $discount->discount_value;
-
-        return match ($discount->discount_type) {
-            'percent' => $price * ($value / 100),
-            'absolute' => min($value, $price),
-            default => 0,
-        };
     }
 
     public function determineCouponDiscount(?string $couponCode, float $amountTotal): array
@@ -280,10 +257,13 @@ class CheckoutPricingService
             $endDate = $startDate->copy()->addHour();
         }
 
+        $minutes = max(60, $startDate->diffInMinutes($endDate));
+
         return [
             'start_date' => $startDate,
             'end_date' => $endDate,
             'hours' => max(1, $endDate->diffInHours($startDate)),
+            'minutes' => $minutes,
         ];
     }
 

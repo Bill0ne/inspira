@@ -29,21 +29,52 @@ class PriceConfiguratorService
         ?Customer $customer = null,
         int $quantity = 1
     ): float {
+        $details = $this->calculatePriceWithDetails(
+            $basePrice,
+            $targetType,
+            $targetId,
+            $customer,
+            $quantity
+        );
+
+        return $details['final_price'];
+    }
+
+    public function calculatePriceWithDetails(
+        float $basePrice,
+        TargetTypeEnum|string $targetType,
+        int $targetId,
+        ?Customer $customer = null,
+        int $quantity = 1
+    ): array {
         $rules = $this->getApplicableRules($targetType, $targetId, $customer);
 
-        $price = $basePrice;
+        $priceAfterRules = $basePrice;
 
         if (! $rules->isEmpty()) {
             foreach ($rules as $rule) {
-                $price = $this->applyRule($price, $rule);
+                $priceAfterRules = $this->applyRule($priceAfterRules, $rule);
             }
         }
 
+        $quantityDiscountAmount = 0;
+        $finalPrice = $priceAfterRules;
+
         if ($targetType == TargetTypeEnum::ROOM) {
-            $price = $this->applyQuantityDiscount($price, $quantity);
+            $discountedPrice = $this->applyQuantityDiscount($priceAfterRules, $quantity);
+            $quantityDiscountAmount = max($priceAfterRules - $discountedPrice, 0);
+            $finalPrice = $discountedPrice;
         }
 
-        return max($price, 0);
+        $finalPrice = max($finalPrice, 0);
+
+        return [
+            'original_price' => $basePrice,
+            'price_after_rules' => $priceAfterRules,
+            'final_price' => $finalPrice,
+            'rules_discount_amount' => max($basePrice - $priceAfterRules, 0),
+            'quantity_discount_amount' => $quantityDiscountAmount,
+        ];
     }
 
     protected function getApplicableRules(TargetTypeEnum|string $targetType, int $targetId, ?Customer $customer): Collection

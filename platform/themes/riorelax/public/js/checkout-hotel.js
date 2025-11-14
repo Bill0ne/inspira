@@ -31,7 +31,8 @@
 
     function updateTotals(data) {
       if (!data || typeof data !== 'object') return;
-      if ('sub_total' in data) $('.amount-text').text(data.sub_total);
+      if ('room_base_amount_formatted' in data) $('.amount-text').text(data.room_base_amount_formatted);
+      else if ('sub_total' in data) $('.amount-text').text(data.sub_total);
       if ('coupon_amount_formatted' in data) {
         var rawCoupon = parseFloat(data.coupon_amount_raw || 0);
         var $couponLine = $('.coupon-line');
@@ -52,6 +53,7 @@
           $('.quantity-discount-text').text((rawQuantity > 0 ? '-' : '') + data.mengenrabatt_amount);
         }
       }
+      if ('subtotal_after_discounts_formatted' in data) $('.subtotal-text').text(data.subtotal_after_discounts_formatted);
       if ('tax_amount' in data) $('.tax-text').text(data.tax_amount);
       if ('total_amount' in data) $('.total-amount-text').text(data.total_amount);
       if ('amount_raw' in data) $('input[name=amount]').val(data.amount_raw);

@@ -28,8 +28,9 @@
     $endLabel24 = $displayEnd ? BaseHelper::formatDate($displayEnd, 'd.m.Y H:i') : null;
     $isLoggedIn = auth('customer')->check() || auth()->check();
 
-    $roomPriceDisplay = $totalRoomPrice ?? 0;
+    $roomPriceDisplay = $roomBaseAmount ?? 0;
     $extrasAmountDisplay = $extrasAmount ?? 0;
+    $subtotalAfterDiscountsDisplay = $subtotalAfterDiscounts ?? 0;
     session(['url.intended' => request()->fullUrl()]);
     $shouldStartRegister = old('register_customer') == 1;
 
@@ -274,6 +275,7 @@ textarea.form-control{min-height:100px;}
           <span>Mengenrabatt</span>
           <b class="quantity-discount-text">{{ $hasQuantityDiscount ? '-' : '' }}{{ format_price($mengenrabattAmount ?? 0) }}</b>
         </div>
+        <div class="kv subtotal-line"><span>Zwischensumme</span><b class="subtotal-text">{{ format_price($subtotalAfterDiscountsDisplay) }}</b></div>
         <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
         <hr>
         <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
