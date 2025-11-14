@@ -80,6 +80,7 @@ class CustomerCardController extends BaseController
             'card' => $card,
             'customers' => $this->getCustomersList(),
             'types' => $this->getTypes(),
+            'isAssigned' => false,
         ]);
     }
 
@@ -121,6 +122,7 @@ class CustomerCardController extends BaseController
             'jsValidator' => $jsValidator,
             'customers' => $this->getCustomersList(),
             'types' => $this->getTypes(),
+            'isAssigned' => (bool) $customerCard->assigned_to,
         ]);
     }
 

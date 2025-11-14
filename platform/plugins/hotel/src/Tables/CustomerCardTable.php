@@ -43,58 +43,63 @@ class CustomerCardTable extends TableAbstract
 
     public function ajax(): JsonResponse
     {
+        $service = app(CustomerCardService::class);
+
         $data = $this->table
             ->eloquent($this->query())
             ->editColumn('type', fn (CustomerCard $card) => $card->type?->label() ?? '—')
             ->editColumn('base_price', fn (CustomerCard $card) => format_price($card->base_price))
             ->editColumn('discount_percent', fn (CustomerCard $card) => number_format($card->discount_percent, 2) . '%')
-            ->editColumn('units_remaining', function (CustomerCard $card) {
-                return sprintf('%d / %d', $card->units_remaining, $card->units_total);
-            })
-            ->addColumn('purchase_price', function (CustomerCard $card) {
-                $price = app(CustomerCardService::class)->calculatePurchasePrice($card);
-
-                return format_price($price);
-            })
-            ->addColumn('active_assignments', function (CustomerCard $card) {
-                return sprintf('%d', (int) $card->active_assignments_count);
-            })
-            ->editColumn('name', function (CustomerCard $card) {
+            ->editColumn('name', function (CustomerCard $card) use ($service) {
                 $uidBadge = $card->uid
                     ? Html::tag('span', e($card->uid), ['class' => 'badge bg-success ms-2'])
                     : '';
 
-                $meta = trans('plugins/hotel::customer-card.table.units_remaining') . ': ' . sprintf('%d / %d', $card->units_remaining, $card->units_total);
+                $meta = $card->assigned_to
+                    ? trans('plugins/hotel::customer-card.table.assignment_meta', [
+                        'remaining' => number_format((float) $card->units_remaining, 0),
+                        'total' => number_format((float) $card->units_total, 0),
+                    ])
+                    : trans('plugins/hotel::customer-card.table.template_meta', [
+                        'units' => number_format((float) $card->units_total, 0),
+                        'price' => format_price($service->calculatePurchasePrice($card)),
+                    ]);
 
-                return Html::tag('div',
-                    Html::tag('div', e($card->name) . $uidBadge, [
-                        'style' => 'font-weight:600;color:#1e7d6d;margin-bottom:4px;',
-                    ]) .
-                    Html::tag('div', e($meta), [
-                        'style' => 'font-size:12px;color:#4b5c58;',
-                    ]),
-                    [
-                        'style' => 'background:#f3f8f7;border-radius:12px;padding:12px 16px;',
-                    ]
+                return Html::tag(
+                    'div',
+                    Html::tag('div', e($card->name) . $uidBadge, ['class' => 'fw-semibold text-success mb-1']) .
+                    Html::tag('div', e($meta), ['class' => 'text-muted small mb-0']),
+                    ['class' => 'bg-light rounded-3 p-3']
                 );
             })
             ->when($this->assignedOnly, function ($dataTable) {
-                return $dataTable->addColumn('assigned_to', function (CustomerCard $card) {
-                    $customer = $card->customer;
+                return $dataTable
+                    ->addColumn('units_remaining', function (CustomerCard $card) {
+                        return sprintf('%d / %d', $card->units_remaining, $card->units_total);
+                    })
+                    ->addColumn('assigned_to', function (CustomerCard $card) {
+                        $customer = $card->customer;
 
-                    if (! $customer) {
-                        return '&mdash;';
-                    }
+                        if (! $customer) {
+                            return '&mdash;';
+                        }
 
-                    $name = e($customer->name ?: $customer->email ?: '—');
-                    $email = $customer->email
-                        ? Html::tag('div', e($customer->email), ['class' => 'text-muted'])
-                        : '';
+                        $name = e($customer->name ?: $customer->email ?: '—');
+                        $email = $customer->email
+                            ? Html::tag('div', e($customer->email), ['class' => 'text-muted'])
+                            : '';
 
-                    return Html::tag('div', $name . $email, [
-                        'style' => 'line-height:1.35;',
-                    ]);
-                });
+                        return Html::tag('div', $name . $email, ['class' => 'lh-sm']);
+                    });
+            })
+            ->when(! $this->assignedOnly, function ($dataTable) use ($service) {
+                return $dataTable
+                    ->addColumn('purchase_price', function (CustomerCard $card) use ($service) {
+                        return format_price($service->calculatePurchasePrice($card));
+                    })
+                    ->addColumn('active_assignments', function (CustomerCard $card) {
+                        return sprintf('%d', (int) $card->active_assignments_count);
+                    });
             })
             ->editColumn('valid_until', function (CustomerCard $card) {
                 if (! $card->valid_until) {
@@ -164,22 +169,37 @@ class CustomerCardTable extends TableAbstract
             Column::make('type')->title(trans('plugins/hotel::customer-card.table.type'))->alignLeft(),
             Column::make('discount_percent')->title(trans('plugins/hotel::customer-card.table.discount'))->alignLeft(),
             Column::make('base_price')->title(trans('plugins/hotel::customer-card.table.base_price'))->alignLeft(),
-            Column::make('purchase_price')->title(trans('plugins/hotel::customer-card.table.purchase_price'))->alignLeft(),
         ];
 
         if ($this->assignedOnly) {
             $columns[] = Column::make('assigned_to')
                 ->title(trans('plugins/hotel::customer-card.table.assigned_to'))
                 ->alignLeft();
+
+            $columns[] = Column::make('units_remaining')
+                ->title(trans('plugins/hotel::customer-card.table.units_remaining'))
+                ->alignLeft();
+        } else {
+            $columns[] = Column::make('purchase_price')
+                ->title(trans('plugins/hotel::customer-card.table.purchase_price'))
+                ->alignLeft();
+
+            $columns[] = Column::make('active_assignments')
+                ->title(trans('plugins/hotel::customer-card.table.active_assignments'))
+                ->alignLeft();
         }
 
-        $columns = array_merge($columns, [
-            Column::make('units_remaining')->title(trans('plugins/hotel::customer-card.table.units_remaining'))->alignLeft(),
-            Column::make('active_assignments')->title(trans('plugins/hotel::customer-card.table.active_assignments'))->alignLeft(),
-            Column::make('valid_until')->title(trans('plugins/hotel::customer-card.table.valid_until'))->alignLeft(),
-            Column::make('status')->title(trans('plugins/hotel::customer-card.table.status'))->alignLeft(),
-            Column::make('usage')->title(trans('plugins/hotel::customer-card.table.view_usage'))->alignLeft(),
-        ]);
+        $columns[] = Column::make('valid_until')
+            ->title(trans('plugins/hotel::customer-card.table.valid_until'))
+            ->alignLeft();
+
+        $columns[] = Column::make('status')
+            ->title(trans('plugins/hotel::customer-card.table.status'))
+            ->alignLeft();
+
+        $columns[] = Column::make('usage')
+            ->title(trans('plugins/hotel::customer-card.table.view_usage'))
+            ->alignLeft();
 
         return $columns;
     }

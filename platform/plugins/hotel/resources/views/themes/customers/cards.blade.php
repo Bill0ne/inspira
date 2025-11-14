@@ -19,219 +19,7 @@
         $hasActiveCard = $hasActiveCard ?? false;
     @endphp
 
-    <style>
-        .inspira-card-hub {
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
-        }
-
-        .inspira-card-panel,
-        .inspira-card-offer,
-        .inspira-card-history {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            padding: 28px;
-        }
-
-        .inspira-card-panel__header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-        }
-
-        .inspira-card-panel__title {
-            font-size: 22px;
-            font-weight: 600;
-            margin: 0 0 4px;
-        }
-
-        .inspira-card-panel__subtitle {
-            color: #6c757d;
-            margin: 0;
-            font-size: 14px;
-        }
-
-        .inspira-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 6px 14px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .inspira-badge--success {
-            background: #e5f6f2;
-            color: #1e7d6d;
-        }
-
-        .inspira-badge--warning {
-            background: #fff4e6;
-            color: #c97a00;
-        }
-
-        .inspira-badge--danger {
-            background: #fdeaea;
-            color: #bb2d3b;
-        }
-
-        .inspira-badge--muted {
-            background: #f1f3f5;
-            color: #495057;
-        }
-
-        .inspira-card-panel__body {
-            margin-top: 24px;
-        }
-
-        .inspira-card-visual {
-            background: #f3f8f7;
-            border-radius: 18px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            min-height: 220px;
-        }
-
-        .inspira-card-visual__headline {
-            font-size: 20px;
-            font-weight: 600;
-            color: #1e7d6d;
-        }
-
-        .inspira-card-visual__uid {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: rgba(87, 142, 136, 0.1);
-            color: #1e7d6d;
-            margin-left: 8px;
-        }
-
-        .inspira-card-visual__owner {
-            font-size: 16px;
-            font-weight: 500;
-            color: #1f2d3d;
-        }
-
-        .inspira-card-visual__units,
-        .inspira-card-visual__meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-            color: #495057;
-        }
-
-        .inspira-card-panel__hint {
-            margin-top: 18px;
-            font-size: 13px;
-            color: #6c757d;
-        }
-
-        .inspira-card-market__header {
-            margin-bottom: 18px;
-        }
-
-        .inspira-card-market__title {
-            font-size: 22px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .inspira-card-market__description {
-            color: #6c757d;
-            margin: 0;
-        }
-
-        .inspira-card-offer {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            border: 1px solid #e9ecef;
-        }
-
-        .inspira-card-offer__head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .inspira-card-offer__name {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .inspira-card-offer__badge {
-            background: #578E88;
-            color: #fff;
-            padding: 4px 12px;
-            border-radius: 999px;
-            font-size: 12px;
-        }
-
-        .inspira-card-offer__list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            color: #495057;
-            font-size: 14px;
-        }
-
-        .inspira-card-offer__price {
-            font-size: 26px;
-            font-weight: 600;
-            color: #1e7d6d;
-        }
-
-        .inspira-card-offer .btn {
-            margin-top: auto;
-            font-weight: 600;
-        }
-
-        .inspira-card-market__empty {
-            padding: 24px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            color: #6c757d;
-        }
-
-        .inspira-card-history__header {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            gap: 12px;
-        }
-
-        .inspira-card-history__title {
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        @media (max-width: 991px) {
-            .inspira-card-panel,
-            .inspira-card-offer,
-            .inspira-card-history {
-                padding: 20px;
-            }
-        }
-    </style>
+    
 
     <div class="inspira-card-hub">
         <div class="row g-4 align-items-stretch">
@@ -294,19 +82,19 @@
                                     <div class="inspira-card-offer">
                                         <div class="inspira-card-offer__head">
                                             <h3 class="inspira-card-offer__name">{{ $card->name }}</h3>
-                                            <span class="inspira-card-offer__badge">-{{ number_format($card->discount_percent, 0) }}%</span>
+                                            <span class="inspira-card-offer__badge">-{{ number_format($card->discount_percent, 2) }}%</span>
                                         </div>
 
                                         <ul class="inspira-card-offer__list">
                                             <li>{{ trans('plugins/hotel::customer-card.purchase.units_included', ['units' => $card->units_total]) }}</li>
                                             <li>{{ trans('plugins/hotel::customer-card.purchase.base_price_each', ['price' => format_price($card->base_price)]) }}</li>
-                                            <li>{{ trans('plugins/hotel::customer-card.purchase.discount_note', ['percent' => number_format($card->discount_percent, 0)]) }}</li>
+                                            <li>{{ trans('plugins/hotel::customer-card.purchase.discount_note', ['percent' => number_format($card->discount_percent, 2)]) }}</li>
                                             <li>{{ trans('plugins/hotel::customer-card.purchase.valid_until_inline', ['date' => $card->valid_until ? $card->valid_until->translatedFormat('d.m.Y') : trans('plugins/hotel::customer-card.purchase.no_expiry')]) }}</li>
                                         </ul>
 
                                         <div>
                                             <div class="inspira-card-offer__price">{{ format_price($card->purchase_price ?? 0) }}</div>
-                                            <p class="mb-0 text-muted" style="font-size: 12px;">{{ trans('plugins/hotel::customer-card.purchase.price_hint') }}</p>
+                                            <p class="inspira-card-offer__hint text-muted mb-0">{{ trans('plugins/hotel::customer-card.purchase.price_hint') }}</p>
                                         </div>
 
                                         @if ($hasActiveCard)
@@ -330,11 +118,11 @@
         <div class="inspira-card-history">
             <div class="inspira-card-history__header">
                 <h3 class="inspira-card-history__title">{{ trans('plugins/hotel::customer-card.purchase.history_title') }}</h3>
-                <p class="text-muted mb-0" style="font-size: 13px;">{{ trans('plugins/hotel::customer-card.purchase.history_subtitle') }}</p>
+                <p class="inspira-card-note text-muted mb-0">{{ trans('plugins/hotel::customer-card.purchase.history_subtitle') }}</p>
             </div>
 
             @if ($usages->isEmpty())
-                <p class="mb-0 text-muted">{{ trans('plugins/hotel::customer-card.purchase.history_empty') }}</p>
+                <p class="inspira-card-note text-muted mb-0">{{ trans('plugins/hotel::customer-card.purchase.history_empty') }}</p>
             @else
                 <div class="table-responsive">
                     <table class="table table-striped align-middle mb-0">

@@ -21,6 +21,8 @@ class CustomerDashboardController
     {
         $user = auth('customer')->user();
 
+        Theme::asset()->add('hotel-customer-card-style', 'vendor/core/plugins/hotel/css/customer-card.css', ['customer-style']);
+
         $cards = CustomerCard::query()
             ->where('assigned_to', $user->getKey())
             ->orderByDesc('updated_at')

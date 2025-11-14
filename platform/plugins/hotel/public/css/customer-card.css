@@ -1,0 +1,204 @@
+.inspira-card-hub {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.inspira-card-panel,
+.inspira-card-offer,
+.inspira-card-history {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    padding: 28px;
+}
+
+.inspira-card-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.inspira-card-panel__title {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 4px;
+}
+
+.inspira-card-panel__subtitle {
+    color: #6c757d;
+    margin: 0;
+    font-size: 14px;
+}
+
+.inspira-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.inspira-badge--success {
+    background: #e5f6f2;
+    color: #1e7d6d;
+}
+
+.inspira-badge--warning {
+    background: #fff4e6;
+    color: #c97a00;
+}
+
+.inspira-badge--danger {
+    background: #fdeaea;
+    color: #bb2d3b;
+}
+
+.inspira-badge--muted {
+    background: #f1f3f5;
+    color: #495057;
+}
+
+.inspira-card-panel__body {
+    margin-top: 24px;
+}
+
+.inspira-card-visual {
+    background: #f3f8f7;
+    border-radius: 18px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 220px;
+}
+
+.inspira-card-visual__headline {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e7d6d;
+}
+
+.inspira-card-visual__uid {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(87, 142, 136, 0.1);
+    color: #1e7d6d;
+    margin-left: 8px;
+}
+
+.inspira-card-panel__hint {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.inspira-card-market__header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.inspira-card-market__title {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.inspira-card-market__description {
+    color: #6c757d;
+    margin: 0;
+}
+
+.inspira-card-offer {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    height: 100%;
+}
+
+.inspira-card-offer__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.inspira-card-offer__name {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.inspira-card-offer__badge {
+    background: rgba(30, 125, 109, 0.1);
+    color: #1e7d6d;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.inspira-card-offer__list {
+    padding-left: 20px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.inspira-card-offer__price {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e7d6d;
+}
+
+.inspira-card-offer .btn {
+    margin-top: auto;
+    font-weight: 600;
+}
+
+.inspira-card-offer__hint,
+.inspira-card-note {
+    font-size: 13px;
+}
+
+.inspira-card-text-xs {
+    font-size: 12px;
+}
+
+.inspira-card-market__empty {
+    padding: 24px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    color: #6c757d;
+}
+
+.inspira-card-history__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.inspira-card-history__title {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+@media (max-width: 991px) {
+    .inspira-card-panel,
+    .inspira-card-offer,
+    .inspira-card-history {
+        padding: 20px;
+    }
+}
