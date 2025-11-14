@@ -32,6 +32,15 @@
     function updateTotals(data) {
       if (!data || typeof data !== 'object') return;
       if ('sub_total' in data) $('.amount-text').text(data.sub_total);
+      if ('room_amount_before_discount' in data) {
+        $('.room-subtotal-text').text(data.room_amount_before_discount);
+        var rawRoomSubtotal = parseFloat(data.room_amount_before_discount_raw || 0);
+        var $roomSubtotalLine = $('.room-subtotal-line');
+        if ($roomSubtotalLine.length) {
+          if (rawRoomSubtotal > 0) $roomSubtotalLine.removeClass('d-none');
+          else $roomSubtotalLine.addClass('d-none');
+        }
+      }
       if ('coupon_amount_formatted' in data) {
         var rawCoupon = parseFloat(data.coupon_amount_raw || 0);
         var $couponLine = $('.coupon-line');
@@ -46,9 +55,15 @@
       if ('mengenrabatt_amount' in data) {
         var rawQuantity = parseFloat(data.mengenrabatt_amount_raw || 0);
         var $quantityLine = $('.mengenrabatt-line');
+        var $roomSubtotalLine = $('.room-subtotal-line');
         if ($quantityLine.length) {
-          if (rawQuantity > 0) $quantityLine.removeClass('d-none');
-          else $quantityLine.addClass('d-none');
+          if (rawQuantity > 0) {
+            $quantityLine.removeClass('d-none');
+            if ($roomSubtotalLine.length) $roomSubtotalLine.removeClass('d-none');
+          } else {
+            $quantityLine.addClass('d-none');
+            if ($roomSubtotalLine.length) $roomSubtotalLine.addClass('d-none');
+          }
           $('.quantity-discount-text').text((rawQuantity > 0 ? '-' : '') + data.mengenrabatt_amount);
         }
       }

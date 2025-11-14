@@ -29,6 +29,7 @@
     $isLoggedIn = auth('customer')->check() || auth()->check();
 
     $roomPriceDisplay = $totalRoomPrice ?? 0;
+    $roomSubtotalBeforeDiscount = $roomSubtotalBeforeDiscount ?? ($roomPriceDisplay + ($mengenrabattAmount ?? 0));
     $extrasAmountDisplay = $extrasAmount ?? 0;
     session(['url.intended' => request()->fullUrl()]);
     $shouldStartRegister = old('register_customer') == 1;
@@ -237,15 +238,19 @@ textarea.form-control{min-height:100px;}
       </div>
       <div class="ticket__col ticket__totals">
         <h5 class="title">Gesamtpreis</h5>
-        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($roomPriceDisplay) }}</b></div>
-        @if($extrasAmountDisplay > 0)
-          <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($extrasAmountDisplay) }}</b></div>
-        @endif
         @php($hasQuantityDiscount = ($mengenrabattAmount ?? 0) > 0)
+        <div class="kv room-subtotal-line @if(! $hasQuantityDiscount) d-none @endif">
+          <span>Zwischensumme</span>
+          <b class="room-subtotal-text">{{ format_price($roomSubtotalBeforeDiscount) }}</b>
+        </div>
         <div class="kv mengenrabatt-line @if(! $hasQuantityDiscount) d-none @endif">
           <span>Mengenrabatt</span>
           <b class="quantity-discount-text">{{ $hasQuantityDiscount ? '-' : '' }}{{ format_price($mengenrabattAmount ?? 0) }}</b>
         </div>
+        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($roomPriceDisplay) }}</b></div>
+        @if($extrasAmountDisplay > 0)
+          <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($extrasAmountDisplay) }}</b></div>
+        @endif
         <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
         <hr>
         <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>

@@ -175,6 +175,8 @@ class CheckoutPricingService
 
         $quantityDiscountAmount = $pricing['quantity_discount_amount'] ?? 0;
 
+        $roomAmountBeforeQuantityDiscount = max($pricing['total_configured_price'] + $quantityDiscountAmount, 0);
+
         $taxableAmount = max($amount - $couponAmount, 0);
         $taxAmount = $room->tax->percentage * $taxableAmount / 100;
         $totalAmount = $taxableAmount + $taxAmount;
@@ -185,6 +187,7 @@ class CheckoutPricingService
             'coupon_amount' => $couponAmount,
             'coupon' => $coupon,
             'mengenrabatt_amount' => $quantityDiscountAmount,
+            'room_amount_before_discount' => $roomAmountBeforeQuantityDiscount,
             'tax_amount' => $taxAmount,
             'total_amount' => $totalAmount,
         ]);
