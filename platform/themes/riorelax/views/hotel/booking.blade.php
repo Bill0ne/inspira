@@ -131,29 +131,6 @@ textarea.form-control{min-height:100px;}
 /* ==== Alert Box ==== */
 .form-alert{display:none;margin:0 0 16px;padding:12px 16px;border-radius:6px;background:#fff3f3;color:#b71c1c;font-size:14px;border:1px solid #f1b4b4;}
 
-/* ==== Coupon ==== */
-.coupon-wrapper{background:#F9F9F9;border:1px solid var(--gray);border-radius:8px;padding:20px;margin-bottom:24px;}
-.coupon-wrapper label{font-weight:500;}
-.coupon-wrapper .coupon-box{display:flex;flex-direction:column;gap:14px;}
-.coupon-wrapper .coupon-form{margin:0;}
-.coupon-wrapper .coupon-feedback{border-radius:8px;padding:16px 18px;}
-.coupon-wrapper .coupon-feedback .btn{color:#17463f;font-weight:600;}
-.coupon-wrapper .coupon-input-group{display:flex;align-items:stretch;gap:12px;}
-.coupon-wrapper .coupon-input-group>.form-control{flex:1 1 auto;min-width:200px;border-radius:6px;}
-.coupon-wrapper .coupon-input-group>.btn{flex:0 0 auto;padding:12px 22px;font-weight:600;border-radius:6px;}
-.coupon-wrapper .apply-coupon-code{background:var(--mint)!important;color:#fff!important;border:none!important;}
-.coupon-wrapper .btn-remove-coupon{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:1px solid rgba(87,142,136,0.35);background:#fff;color:#b23a48;font-weight:600;transition:all .2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
-.coupon-wrapper .btn-remove-coupon:hover{background:#fff5f5;color:#922b21;border-color:rgba(178,58,72,0.45);box-shadow:0 4px 12px rgba(0,0,0,0.08);}
-.coupon-wrapper .btn-remove-coupon svg{width:16px;height:16px;}
-@media(max-width:768px){
-  .coupon-wrapper{padding:18px;}
-}
-@media(max-width:575px){
-  .coupon-wrapper .coupon-input-group{flex-direction:column;gap:10px;}
-  .coupon-wrapper .coupon-input-group>.form-control{min-width:0;width:100%;}
-  .coupon-wrapper .coupon-input-group>.btn{width:100%;padding:12px;font-size:14px;}
-  .coupon-wrapper .toggle-coupon-form{font-size:14px;}
-}
 
 /* ==== Payment ==== */
 .list_payment_method{border:1px solid var(--gray);border-radius:8px;margin-bottom:20px;overflow:hidden;}
@@ -264,11 +241,6 @@ textarea.form-control{min-height:100px;}
         @if($extrasAmountDisplay > 0)
           <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($extrasAmountDisplay) }}</b></div>
         @endif
-        @php($hasCouponDiscount = ($couponAmount ?? 0) > 0)
-        <div class="kv coupon-line @if(! $hasCouponDiscount) d-none @endif">
-          <span>Rabatt (Coupon)</span>
-          <b class="discount-text">{{ $hasCouponDiscount ? '-' : '' }}{{ format_price($couponAmount ?? 0) }}</b>
-        </div>
         @php($hasQuantityDiscount = ($mengenrabattAmount ?? 0) > 0)
         <div class="kv mengenrabatt-line @if(! $hasQuantityDiscount) d-none @endif">
           <span>Mengenrabatt</span>
@@ -483,12 +455,6 @@ textarea.form-control{min-height:100px;}
           @endif
           <div><span>Zimmer</span>{{ $rooms }}</div>
           <div><span>Erwachsene</span>{{ $adults }}</div>
-        </div>
-
-        <div class="coupon-wrapper" id="hotelCouponBox" data-checkout-context="hotel">
-          @if ($isHotelCheckout)
-            @include('plugins/hotel::coupons.partials.form')
-          @endif
         </div>
 
         @if (is_plugin_active('payment') && ($defaultPaymentMethod = PaymentMethods::getDefaultMethod()) && get_payment_setting('status', $defaultPaymentMethod))

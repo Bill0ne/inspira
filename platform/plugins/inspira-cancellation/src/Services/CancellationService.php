@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CancellationService
@@ -91,25 +92,36 @@ class CancellationService
 
         $days = $days ?? Carbon::now()->diffInDays($startDate, false);
 
-        return CancellationRule::query()
+        $rules = CancellationRule::query()
             ->where('type', $type)
             ->where('active', true)
             ->orderBy('order')
-            ->get()
-            ->first(function (CancellationRule $rule) use ($days) {
-                $from = $rule->from_days;
-                $to = $rule->to_days;
+            ->get();
 
-                if (! is_null($from) && $days < $from) {
-                    return false;
-                }
+        $matching = $rules->filter(function (CancellationRule $rule) use ($days) {
+            $from = $rule->from_days;
+            $to = $rule->to_days;
 
-                if (! is_null($to) && $days > $to) {
-                    return false;
-                }
+            if (! is_null($from) && $days < $from) {
+                return false;
+            }
 
-                return true;
-            });
+            if (! is_null($to) && $days > $to) {
+                return false;
+            }
+
+            return true;
+        })->values();
+
+        if ($matching->count() > 1) {
+            Log::warning('Multiple cancellation rules matched the same interval.', [
+                'type' => $type,
+                'days' => $days,
+                'rule_ids' => $matching->pluck('id')->all(),
+            ]);
+        }
+
+        return $matching->first();
     }
 
     protected function resolveStartDate(string $type, Model $booking): ?CarbonInterface
