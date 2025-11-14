@@ -14,6 +14,14 @@ return [
         'description' => 'Beschreibung',
         'active' => 'Aktiv',
         'order' => 'Reihenfolge',
+        'validation' => [
+            'from_integer' => 'Der Wert für „Von Tagen“ muss eine ganze Zahl sein.',
+            'to_integer' => 'Der Wert für „Bis Tagen“ muss eine ganze Zahl sein.',
+            'from_min' => 'Der Wert für „Von Tagen“ darf nicht negativ sein.',
+            'to_min' => 'Der Wert für „Bis Tagen“ darf nicht negativ sein.',
+            'invalid_range' => 'Der Wert für „Von Tagen“ muss kleiner oder gleich dem Wert für „Bis Tagen“ sein.',
+            'overlap' => 'Für diesen Typ existiert bereits eine aktive Regel (ID :rule), die sich mit dem angegebenen Zeitraum überschneidet.',
+        ],
     ],
     'cancellation' => [
         'list' => 'Stornierungen',

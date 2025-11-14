@@ -14,6 +14,14 @@ return [
         'description' => 'Description',
         'active' => 'Active',
         'order' => 'Order',
+        'validation' => [
+            'from_integer' => 'The "From days" value must be an integer.',
+            'to_integer' => 'The "To days" value must be an integer.',
+            'from_min' => 'The "From days" value must be at least 0.',
+            'to_min' => 'The "To days" value must be at least 0.',
+            'invalid_range' => 'The "From days" value must be less than or equal to the "To days" value.',
+            'overlap' => 'Another active cancellation rule (ID :rule) overlaps with the provided range.',
+        ],
     ],
     'cancellation' => [
         'list' => 'Cancellations',
