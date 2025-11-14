@@ -25,27 +25,33 @@ class CancellationRuleTable extends TableAbstract
                 FormattedColumn::make('type')
                     ->title(trans('plugins/inspira-cancellation::cancellation.rule.type'))
                     ->alignStart()
-                    ->getValueUsing(function (FormattedColumn $column) {
+                    ->getValueUsing(function (FormattedColumn $column, $value) {
                         return match ($column->getItem()->type) {
                             'course' => trans('plugins/courses::courses.course.name'),
                             'room' => trans('plugins/hotel::booking.room'),
-                            default => $column->getItem()->type,
+                            default => $column->getItem()->type ?? $value,
                         };
                     }),
                 FormattedColumn::make('range')
                     ->title(trans('plugins/inspira-cancellation::cancellation.rule.from_days'))
                     ->alignStart()
-                    ->getValueUsing(function (FormattedColumn $column) {
+                    ->getValueUsing(function (FormattedColumn $column, $value) {
                         $item = $column->getItem();
                         $from = is_null($item->from_days) ? '0' : $item->from_days;
                         $to = is_null($item->to_days) ? '∞' : $item->to_days;
 
-                        return sprintf('%s – %s', $from, $to);
+                        $range = sprintf('%s – %s', $from, $to);
+
+                        return $range !== '' ? $range : $value;
                     }),
                 FormattedColumn::make('refund_percent')
                     ->title(trans('plugins/inspira-cancellation::cancellation.rule.refund_percent'))
                     ->alignCenter()
-                    ->getValueUsing(fn (FormattedColumn $column) => $column->getItem()->refund_percent . '%'),
+                    ->getValueUsing(function (FormattedColumn $column, $value) {
+                        $percent = $column->getItem()->refund_percent ?? $value;
+
+                        return is_null($percent) ? $value : $percent . '%';
+                    }),
                 StatusColumn::make('active')
                     ->title(trans('plugins/inspira-cancellation::cancellation.rule.active')),
                 CreatedAtColumn::make(),
