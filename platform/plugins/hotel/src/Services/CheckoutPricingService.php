@@ -44,12 +44,14 @@ class CheckoutPricingService
                 'start_date' => $normalized['start_date'],
                 'end_date' => $normalized['end_date'],
                 'hours' => $normalized['hours'],
+                'minutes' => $normalized['minutes'],
                 'base_price' => $basePrice,
             ];
         }
 
         $totalBasePrice = array_sum(array_column($normalizedSlots, 'base_price'));
-        $totalHours = array_sum(array_column($normalizedSlots, 'hours'));
+        $totalMinutes = array_sum(array_column($normalizedSlots, 'minutes'));
+        $totalHours = $totalMinutes > 0 ? (int) ceil($totalMinutes / 60) : 0;
 
         $totalConfiguredPrice = $totalBasePrice;
         $quantityDiscountAmount = 0;
@@ -249,10 +251,13 @@ class CheckoutPricingService
             $endDate = $startDate->copy()->addHour();
         }
 
+        $minutes = max(60, $startDate->diffInMinutes($endDate));
+
         return [
             'start_date' => $startDate,
             'end_date' => $endDate,
             'hours' => max(1, $endDate->diffInHours($startDate)),
+            'minutes' => $minutes,
         ];
     }
 
