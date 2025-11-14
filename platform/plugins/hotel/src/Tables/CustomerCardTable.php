@@ -133,12 +133,15 @@ class CustomerCardTable extends TableAbstract
     public function query(): Relation|Builder|QueryBuilder
     {
         $query = $this->getModel()->query()
-            ->select(['ht_customer_cards.*'])
-            ->when($this->assignedOnly, function ($query) {
-                $query->whereNotNull('assigned_to')->with(['customer']);
-            }, function ($query) {
-                $query->whereNull('assigned_to');
-            })
+            ->select(['ht_customer_cards.*']);
+
+        if ($this->assignedOnly) {
+            $query->whereNotNull('assigned_to')->with(['customer']);
+        } else {
+            $query->whereNull('assigned_to');
+        }
+
+        $query
             ->withCount([
                 'orders as active_assignments_count' => function ($relation) {
                     $relation
