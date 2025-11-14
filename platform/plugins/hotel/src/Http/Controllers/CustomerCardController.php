@@ -35,13 +35,28 @@ class CustomerCardController extends BaseController
 
     public function index(CustomerCardTable $table)
     {
-        $this->pageTitle(trans('plugins/hotel::customer-card.name'));
+        $this->pageTitle(trans('plugins/hotel::customer-card.assignments.title'));
 
         Assets::addScriptsDirectly([
             'vendor/core/plugins/hotel/js/customer-card.js',
         ]);
 
-        return $table->renderTable();
+        return $table
+            ->showAssignedOnly()
+            ->renderTable();
+    }
+
+    public function templates(CustomerCardTable $table)
+    {
+        $this->pageTitle(trans('plugins/hotel::customer-card.templates.title'));
+
+        Assets::addScriptsDirectly([
+            'vendor/core/plugins/hotel/js/customer-card.js',
+        ]);
+
+        return $table
+            ->showAssignedOnly(false)
+            ->renderTable();
     }
 
     public function create()
