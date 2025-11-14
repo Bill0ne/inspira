@@ -81,6 +81,7 @@ class CustomerCardController extends BaseController
             'customers' => $this->getCustomersList(),
             'types' => $this->getTypes(),
             'isAssigned' => false,
+            'templates' => $this->getTemplatesList(),
         ]);
     }
 
@@ -88,14 +89,32 @@ class CustomerCardController extends BaseController
     {
         $data = $request->validated();
 
-        $data['valid_until'] = $this->parseValidUntil($request);
-        $data['is_active'] = $request->boolean('is_active');
-        $data['is_single_purchase'] = $request->boolean('is_single_purchase');
-        $data['assigned_to'] = $request->filled('assigned_to') ? (int) $request->input('assigned_to') : null;
-        $data['created_by'] = $request->user()->getKey();
-        $data['units_remaining'] = (int) Arr::get($data, 'units_total', 0);
+        if ($request->filled('template_id')) {
+            $template = CustomerCard::query()
+                ->whereNull('assigned_to')
+                ->findOrFail((int) $request->input('template_id'));
 
-        $card = CustomerCard::query()->create($data);
+            $card = $template->replicate();
+            $card->fill([
+                'uid' => null,
+                'assigned_to' => (int) $request->input('assigned_to'),
+                'valid_until' => $this->parseValidUntil($request) ?? $template->valid_until,
+                'is_active' => $request->boolean('is_active', true),
+                'created_by' => $request->user()->getKey(),
+            ]);
+
+            $card->units_remaining = $template->units_total;
+            $card->save();
+        } else {
+            $data['valid_until'] = $this->parseValidUntil($request);
+            $data['is_active'] = $request->boolean('is_active');
+            $data['is_single_purchase'] = $request->boolean('is_single_purchase');
+            $data['assigned_to'] = $request->filled('assigned_to') ? (int) $request->input('assigned_to') : null;
+            $data['created_by'] = $request->user()->getKey();
+            $data['units_remaining'] = (int) Arr::get($data, 'units_total', 0);
+
+            $card = CustomerCard::query()->create($data);
+        }
 
         event(new CreatedContentEvent(CUSTOMER_CARD_MODULE_SCREEN_NAME, $request, $card));
 
@@ -291,6 +310,14 @@ class CustomerCardController extends BaseController
         return collect(CustomerCardTypeEnum::values())
             ->mapWithKeys(fn (CustomerCardTypeEnum $enum) => [$enum->getValue() => $enum->label()])
             ->all();
+    }
+
+    protected function getTemplatesList()
+    {
+        return CustomerCard::query()
+            ->whereNull('assigned_to')
+            ->orderBy('name')
+            ->get();
     }
 
     protected function resolveCheckoutContext(Request $request): string

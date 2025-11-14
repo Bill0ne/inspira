@@ -76,6 +76,15 @@ return [
         ],
         'template_hint' => 'Vorlagen definieren die Grundeinstellungen. Beim Kauf erhält der Kunde automatisch seine eigene Karte.',
         'assignment_hint' => 'Zugewiesen an :customer • :remaining von :total Einheiten verfügbar.',
+        'assignment' => [
+            'template' => 'Vorlage auswählen',
+            'template_placeholder' => 'Bitte wählen Sie eine Vorlage aus …',
+            'template_hint' => 'Wählen Sie eine Vorlage aus, um eine persönliche Karte für den Kunden zu erstellen.',
+            'is_active' => 'Als aktive Karte anlegen',
+            'empty_title' => 'Keine Vorlagen verfügbar',
+            'empty_description' => 'Legen Sie zunächst unter „Karten anlegen“ eine Vorlage an, um sie einem Kunden zuweisen zu können.',
+            'empty_action' => 'Zu den Vorlagen',
+        ],
     ],
     'messages' => [
         'select_card' => 'Bitte wählen Sie eine Kundenkarte aus.',
