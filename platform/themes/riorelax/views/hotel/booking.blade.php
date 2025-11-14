@@ -11,7 +11,6 @@
     Theme::set('pageTitle', '');
     Theme::set('breadcrumb', false);
     Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
-    Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
     Theme::asset()->container('footer')->usePath()->add('checkout-hotel', 'js/checkout-hotel.js', ['jquery']);
 
     if (is_plugin_active('payment')) {
