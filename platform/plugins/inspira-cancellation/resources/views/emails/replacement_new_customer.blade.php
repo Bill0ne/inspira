@@ -4,8 +4,7 @@
 {{ trans('plugins/inspira-cancellation::cancellation.email.variables.booking_reference') }}: {{ $booking_reference ?? '' }}
 {{ trans('plugins/inspira-cancellation::cancellation.email.variables.booking_type') }}: {{ $booking_type ?? '' }}
 
-{{ trans('plugins/inspira-cancellation::cancellation.email.variables.new_customer_name') }}: {{ $new_customer_name ?? '' }}
-{{ trans('plugins/inspira-cancellation::cancellation.email.variables.new_customer_email') }}: {{ $new_customer_email ?? '' }}
+{{ trans('plugins/inspira-cancellation::cancellation.messages.replacement_welcome', ['name' => $new_customer_name ?? '']) }}
 
-{{ trans('plugins/inspira-cancellation::cancellation.messages.replacement_success') }}
+{{ trans('plugins/inspira-cancellation::cancellation.messages.replacement_support_hint') }}
 @endcomponent

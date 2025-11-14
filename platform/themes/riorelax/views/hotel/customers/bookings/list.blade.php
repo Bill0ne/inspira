@@ -4,8 +4,9 @@
     <style>
         .inspira-modal .modal-content {
             border-radius: 18px;
-            border: none;
-            box-shadow: 0 22px 60px rgba(0, 0, 0, 0.16);
+            border: 1px solid rgba(87, 142, 136, 0.18);
+            background: linear-gradient(135deg, #ffffff 0%, #f6fbfa 100%);
+            box-shadow: 0 18px 36px rgba(24, 50, 46, 0.12);
         }
 
         .inspira-modal .modal-header {
@@ -18,13 +19,14 @@
         }
 
         .inspira-policy-alert {
-            background: rgba(87, 142, 136, 0.12);
-            border-radius: 12px;
-            padding: 16px;
+            background: rgba(87, 142, 136, 0.1);
+            border-radius: 14px;
+            padding: 18px;
             margin-bottom: 18px;
             display: flex;
             gap: 12px;
             align-items: flex-start;
+            border: 1px solid rgba(87, 142, 136, 0.18);
         }
 
         .inspira-policy-alert .icon {
@@ -47,10 +49,11 @@
         }
 
         .inspira-refund-card {
-            background: #f8faf9;
-            border-radius: 12px;
-            padding: 14px;
-            border: 1px solid rgba(87, 142, 136, 0.1);
+            background: #f9fbfb;
+            border-radius: 14px;
+            padding: 16px;
+            border: 1px solid rgba(87, 142, 136, 0.14);
+            box-shadow: 0 10px 24px rgba(87, 142, 136, 0.09);
         }
 
         .inspira-refund-card .label {
@@ -68,10 +71,11 @@
         }
 
         .inspira-modal .form-check {
-            background: rgba(255, 181, 71, 0.12);
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-bottom: 18px;
+            background: rgba(255, 181, 71, 0.08);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 181, 71, 0.2);
         }
 
         .inspira-modal .modal-footer {
@@ -266,6 +270,11 @@
                                                     </p>
                                                 @endif
 
+                                                <p class="text-muted small mb-3">
+                                                    <i class="fal fa-shield-check me-2" aria-hidden="true"></i>
+                                                    {{ trans('plugins/inspira-cancellation::cancellation.messages.cancellation_pending_manual_review') }}
+                                                </p>
+
                                                 <form
                                                     class="inspira-action-form js-cancellation-form"
                                                     action="{{ route('customer.bookings.cancel', ['course', $booking->getKey()]) }}"
@@ -318,6 +327,11 @@
                                                     <span class="icon"><i class="fal fa-info-circle" aria-hidden="true"></i></span>
                                                     <div class="content">{{ trans('plugins/inspira-cancellation::cancellation.frontend.replacement_intro') }}</div>
                                                 </div>
+
+                                                <p class="text-muted small mb-3">
+                                                    <i class="fal fa-user-shield me-2" aria-hidden="true"></i>
+                                                    {{ trans('plugins/inspira-cancellation::cancellation.messages.replacement_pending') }}
+                                                </p>
 
                                                 <form
                                                     class="inspira-action-form js-transfer-form"
@@ -496,6 +510,11 @@
                                                     </p>
                                                 @endif
 
+                                                <p class="text-muted small mb-3">
+                                                    <i class="fal fa-shield-check me-2" aria-hidden="true"></i>
+                                                    {{ trans('plugins/inspira-cancellation::cancellation.messages.cancellation_pending_manual_review') }}
+                                                </p>
+
                                                 <form
                                                     class="inspira-action-form js-cancellation-form"
                                                     action="{{ route('customer.bookings.cancel', ['room', $booking->getKey()]) }}"
@@ -560,7 +579,7 @@
 
             const handleSubmit = (form) => {
                 const successMessage = form.classList.contains('js-transfer-form')
-                    ? @json(trans('plugins/inspira-cancellation::cancellation.messages.replacement_success'))
+                    ? @json(trans('plugins/inspira-cancellation::cancellation.messages.replacement_pending'))
                     : @json(trans('plugins/inspira-cancellation::cancellation.messages.cancellation_success'));
 
                 form.addEventListener('submit', async (event) => {
