@@ -33,7 +33,7 @@ class CancellationRuleTable extends TableAbstract
                             default => $column->getItem()->type ?? $value,
                         };
                     }),
-                FormattedColumn::make('range')
+                FormattedColumn::make('range_display')
                     ->title(trans('plugins/inspira-cancellation::cancellation.rule.from_days'))
                     ->alignStart()
                     ->getValueUsing(function (FormattedColumn $column, $value) {
@@ -69,7 +69,7 @@ class CancellationRuleTable extends TableAbstract
             ->queryUsing(function (Builder $query) {
                 return $query
                     ->select(['id', 'type', 'from_days', 'to_days', 'refund_percent', 'active', 'created_at'])
-                    ->addSelect(DB::raw('NULL as range'));
+                    ->addSelect(DB::raw('NULL as range_display'));
             });
     }
 }
