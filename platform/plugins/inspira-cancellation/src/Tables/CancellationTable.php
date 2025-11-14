@@ -11,6 +11,7 @@ use Botble\Table\Columns\FormattedColumn;
 use Botble\Table\Columns\IdColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Route;
 
 class CancellationTable extends TableAbstract
 {
@@ -19,6 +20,29 @@ class CancellationTable extends TableAbstract
         $this
             ->model(Cancellation::class)
             ->addActions([
+                ConditionalAction::make('view-booking')
+                    ->label(trans('plugins/inspira-cancellation::cancellation.actions.view_booking'))
+                    ->icon('ti ti-eye')
+                    ->color('secondary')
+                    ->url(function (ConditionalAction $action) {
+                        $item = $action->getItem();
+
+                        return match ($item->booking_type) {
+                            'course' => Route::has('course-booking.edit') ? route('course-booking.edit', $item->booking_id) : null,
+                            'room' => Route::has('booking.edit') ? route('booking.edit', $item->booking_id) : null,
+                            default => null,
+                        };
+                    })
+                    ->displayIf(function (ConditionalAction $action) {
+                        $item = $action->getItem();
+
+                        return match ($item->booking_type) {
+                            'course' => Route::has('course-booking.edit'),
+                            'room' => Route::has('booking.edit'),
+                            default => false,
+                        };
+                    })
+                    ->anyPermissions(['course-booking.edit', 'booking.edit']),
                 ConditionalAction::make('approve')
                     ->label(trans('plugins/inspira-cancellation::cancellation.actions.approve'))
                     ->icon('ti ti-check')
@@ -73,6 +97,30 @@ class CancellationTable extends TableAbstract
                             default => $column->getItem()->booking_type ?? $value,
                         };
                     }),
+                FormattedColumn::make('customer_name')
+                    ->title(trans('plugins/inspira-cancellation::cancellation.cancellation.customer_name'))
+                    ->alignStart()
+                    ->getValueUsing(function (FormattedColumn $column) {
+                        $customer = $column->getItem()->customer;
+
+                        if (! $customer) {
+                            return null;
+                        }
+
+                        return trim(implode(' ', array_filter([$customer->first_name, $customer->last_name]))) ?: $customer->email;
+                    }),
+                FormattedColumn::make('customer_phone')
+                    ->title(trans('plugins/inspira-cancellation::cancellation.cancellation.customer_phone'))
+                    ->alignStart()
+                    ->getValueUsing(function (FormattedColumn $column) {
+                        $customer = $column->getItem()->customer;
+
+                        return $customer?->phone ?: trans('plugins/inspira-cancellation::cancellation.messages.not_provided');
+                    }),
+                FormattedColumn::make('total_amount')
+                    ->title(trans('plugins/inspira-cancellation::cancellation.cancellation.total_amount'))
+                    ->alignEnd()
+                    ->getValueUsing(fn (FormattedColumn $column, $value) => format_price($column->getItem()->total_amount ?? $value)),
                 FormattedColumn::make('refund_amount')
                     ->title(trans('plugins/inspira-cancellation::cancellation.cancellation.refund'))
                     ->alignEnd()
@@ -84,6 +132,22 @@ class CancellationTable extends TableAbstract
                         $percent = $column->getItem()->refund_percent ?? $value;
 
                         return is_null($percent) ? $value : $percent . '%';
+                    }),
+                FormattedColumn::make('fee_amount')
+                    ->title(trans('plugins/inspira-cancellation::cancellation.cancellation.fee_amount'))
+                    ->alignEnd()
+                    ->getValueUsing(fn (FormattedColumn $column, $value) => format_price($column->getItem()->fee_amount ?? $value)),
+                FormattedColumn::make('days_until_start')
+                    ->title(trans('plugins/inspira-cancellation::cancellation.cancellation.days_until_start'))
+                    ->alignCenter()
+                    ->getValueUsing(function (FormattedColumn $column, $value) {
+                        $days = $column->getItem()->days_until_start ?? $value;
+
+                        if (is_null($days)) {
+                            return '–';
+                        }
+
+                        return trans('plugins/inspira-cancellation::cancellation.frontend.days_until_start', ['days' => $days]);
                     }),
                 FormattedColumn::make('rule_description')
                     ->title(trans('plugins/inspira-cancellation::cancellation.rule.description'))

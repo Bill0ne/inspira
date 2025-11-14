@@ -19,7 +19,10 @@ class Cancellation extends BaseModel
         'customer_id',
         'rule_id',
         'refund_amount',
+        'total_amount',
+        'fee_amount',
         'refund_percent',
+        'days_until_start',
         'status',
         'notes',
         'approved_at',
@@ -30,7 +33,10 @@ class Cancellation extends BaseModel
 
     protected $casts = [
         'refund_amount' => 'float',
+        'total_amount' => 'float',
+        'fee_amount' => 'float',
         'refund_percent' => 'int',
+        'days_until_start' => 'int',
         'status' => CancellationStatusEnum::class,
         'approved_at' => 'datetime',
         'refunded_at' => 'datetime',
