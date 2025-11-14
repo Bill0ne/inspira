@@ -12,6 +12,7 @@ use Botble\Table\Columns\CreatedAtColumn;
 use Botble\Table\Columns\EmailColumn;
 use Botble\Table\Columns\IdColumn;
 use Botble\Table\Columns\NameColumn;
+use Botble\Table\Supports\Builder as TableBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -121,6 +122,14 @@ class CustomerTable extends TableAbstract
     public function buttons(): array
     {
         return $this->addCreateButton(route('customer.create'), 'customer.create');
+    }
+
+    public function html(): TableBuilder
+    {
+        return parent::html()->ajax([
+            'url' => $this->getAjaxUrl(),
+            'method' => 'GET',
+        ]);
     }
 
     public function bulkActions(): array

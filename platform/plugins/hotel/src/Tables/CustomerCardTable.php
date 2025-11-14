@@ -11,6 +11,7 @@ use Botble\Table\Actions\EditAction;
 use Botble\Table\BulkActions\DeleteBulkAction;
 use Botble\Table\Columns\Column;
 use Botble\Table\Columns\IdColumn;
+use Botble\Table\Supports\Builder as TableBuilder;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -186,6 +187,14 @@ class CustomerCardTable extends TableAbstract
     public function buttons(): array
     {
         return $this->addCreateButton(route('customer-cards.create'), 'customer-cards.create');
+    }
+
+    public function html(): TableBuilder
+    {
+        return parent::html()->ajax([
+            'url' => $this->getAjaxUrl(),
+            'method' => 'GET',
+        ]);
     }
 
     public function bulkActions(): array
