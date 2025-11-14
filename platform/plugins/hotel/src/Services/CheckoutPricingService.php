@@ -52,21 +52,26 @@ class CheckoutPricingService
         $totalHours = array_sum(array_column($normalizedSlots, 'hours'));
 
         $totalConfiguredPrice = $totalBasePrice;
+        $quantityDiscountAmount = 0;
 
         if ($totalBasePrice > 0 && function_exists('is_plugin_active') && is_plugin_active('price-configurator')) {
             $service = app('Botble\\PriceConfigurator\\Services\\PriceConfiguratorService');
 
             if ($service) {
                 try {
-                    $totalConfiguredPrice = $service->calculatePrice(
+                    $details = $service->calculatePriceWithDetails(
                         $totalBasePrice,
                         \Botble\PriceConfigurator\Enums\TargetTypeEnum::ROOM,
                         $room->id,
                         $customer,
                         max($totalHours, 1)
                     );
+
+                    $totalConfiguredPrice = $details['final_price'];
+                    $quantityDiscountAmount = $details['quantity_discount_amount'];
                 } catch (Throwable) {
                     $totalConfiguredPrice = $totalBasePrice;
+                    $quantityDiscountAmount = 0;
                 }
             }
         }
@@ -92,6 +97,7 @@ class CheckoutPricingService
             'total_configured_price' => $totalConfiguredPrice,
             'total_hours' => $totalHours,
             'rule_discount' => $ruleDiscount,
+            'quantity_discount_amount' => $quantityDiscountAmount,
         ];
     }
 
@@ -165,12 +171,9 @@ class CheckoutPricingService
 
         [$couponAmount, $coupon] = $this->determineCouponDiscount($couponCode, $amount);
 
-        $quantityDiscountAmount = $this->calculateQuantityDiscount(
-            $pricing['total_hours'],
-            $pricing['total_configured_price']
-        );
+        $quantityDiscountAmount = $pricing['quantity_discount_amount'] ?? 0;
 
-        $taxableAmount = max($amount - $couponAmount - $quantityDiscountAmount, 0);
+        $taxableAmount = max($amount - $couponAmount, 0);
         $taxAmount = $room->tax->percentage * $taxableAmount / 100;
         $totalAmount = $taxableAmount + $taxAmount;
 
@@ -183,40 +186,6 @@ class CheckoutPricingService
             'tax_amount' => $taxAmount,
             'total_amount' => $totalAmount,
         ]);
-    }
-
-    protected function calculateQuantityDiscount(int $hours, float $price): float
-    {
-        if ($hours <= 0 || $price <= 0) {
-            return 0;
-        }
-
-        $discount = \Botble\PriceConfigurator\Models\QuantityDiscount::query()
-            ->where('status', 'active')
-            ->where('condition_type', 'quantity')
-            ->where(function ($q) use ($hours) {
-                $q->whereNull('range_min')
-                    ->orWhere('range_min', '<=', $hours);
-            })
-            ->where(function ($q) use ($hours) {
-                $q->whereNull('range_max')
-                    ->orWhere('range_max', '>=', $hours);
-            })
-            ->orderByDesc('priority')
-            ->orderByDesc('range_min')
-            ->first();
-
-        if (! $discount) {
-            return 0;
-        }
-
-        $value = (float) $discount->discount_value;
-
-        return match ($discount->discount_type) {
-            'percent' => $price * ($value / 100),
-            'absolute' => min($value, $price),
-            default => 0,
-        };
     }
 
     public function determineCouponDiscount(?string $couponCode, float $amountTotal): array
