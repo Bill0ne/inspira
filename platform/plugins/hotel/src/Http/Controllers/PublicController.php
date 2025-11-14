@@ -441,6 +441,7 @@ class PublicController extends Controller
         $foodAmount = $totals['food_amount'];
         $couponAmount = $totals['coupon_amount'];
         $mengenrabattAmount = $totals['mengenrabatt_amount'];
+        $roomAmountBeforeDiscount = $totals['room_amount_before_discount'];
         $taxAmount = $totals['tax_amount'];
         $totalAmount = $totals['amount'];
         $total = $totals['total_amount'];
@@ -451,6 +452,7 @@ class PublicController extends Controller
         }
 
         $totalRoomPrice = $totalConfiguredPrice;
+        $roomSubtotalBeforeDiscount = $roomAmountBeforeDiscount;
         $extrasAmount = $serviceAmount + $foodAmount;
 
         $services = Service::query()->wherePublished()->get();
@@ -482,6 +484,7 @@ class PublicController extends Controller
                 'foods',
                 'totalRoomPrice',
                 'extrasAmount',
+                'roomSubtotalBeforeDiscount',
                 'mengenrabattAmount',
                 'token',
                 'displayStart',
@@ -775,6 +778,8 @@ class PublicController extends Controller
             'coupon_amount_raw' => $totals['coupon_amount'],
             'mengenrabatt_amount' => format_price($totals['mengenrabatt_amount']),
             'mengenrabatt_amount_raw' => $totals['mengenrabatt_amount'],
+            'room_amount_before_discount' => format_price($totals['room_amount_before_discount']),
+            'room_amount_before_discount_raw' => $totals['room_amount_before_discount'],
         ]);
     }
 
