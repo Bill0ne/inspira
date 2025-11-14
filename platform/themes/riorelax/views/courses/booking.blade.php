@@ -376,53 +376,35 @@ textarea.form-control{min-height:100px;}
       {{-- Step 3 --}}
       <div class="step-panel" data-step="3">
         <div id="formAlertStep3" class="form-alert"></div>
-        @php
-          $hasAvailableCustomerCards = $availableCards->isNotEmpty();
-        @endphp
-        <div class="checkout-action-card mb-3">
-          <div class="checkout-action-card__header">
-            <div>
-              <span class="checkout-action-card__eyebrow">Kundenkarte</span>
-              <h5 class="checkout-action-card__title">Kundenkarte anwenden</h5>
+        @if ($availableCards->isNotEmpty())
+          <div class="checkout-action-card mb-3">
+            <div class="checkout-action-card__header">
+              <div>
+                <span class="checkout-action-card__eyebrow">Kundenkarte</span>
+                <h5 class="checkout-action-card__title">Kundenkarte anwenden</h5>
+              </div>
+            </div>
+            <div class="checkout-action-form">
+              <label class="form-label checkout-action-label" for="customer_card_select">Kundenkarte auswählen</label>
+              <div class="checkout-action-controls">
+                <select id="customer_card_select" class="form-select checkout-action-select" data-course="{{ $course->id }}">
+                  <option value="">Keine Karte auswählen</option>
+                  @foreach ($availableCards as $card)
+                    <option value="{{ $card->id }}" @selected($selectedCard && $selectedCard->id === $card->id)>
+                      {{ $card->name }}@if ($card->uid) — {{ $card->uid }}@endif
+                    </option>
+                  @endforeach
+                </select>
+                <button class="checkout-action-button checkout-action-button--primary" type="button" data-bb-customer-card="apply">Anwenden</button>
+                <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
+              </div>
+            </div>
+            <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
+              <span>Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong></span>
+              <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
             </div>
           </div>
-          <div class="checkout-action-form">
-            <label class="form-label checkout-action-label" for="customer_card_select">Kundenkarte auswählen</label>
-            <div class="checkout-action-controls">
-              <select id="customer_card_select"
-                      class="form-select checkout-action-select"
-                      data-course="{{ $course->id }}"
-                      @if (! $hasAvailableCustomerCards) disabled @endif>
-                <option value="">
-                  {{ $hasAvailableCustomerCards ? 'Keine Karte auswählen' : 'Keine Kundenkarte verfügbar' }}
-                </option>
-                @foreach ($availableCards as $card)
-                  <option value="{{ $card->id }}" @selected($selectedCard && $selectedCard->id === $card->id)>
-                    {{ $card->name }}@if ($card->uid) — {{ $card->uid }}@endif
-                  </option>
-                @endforeach
-              </select>
-              <button class="checkout-action-button checkout-action-button--primary"
-                      type="button"
-                      data-bb-customer-card="apply"
-                      @if (! $hasAvailableCustomerCards) disabled @endif>
-                Anwenden
-              </button>
-              <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}"
-                      data-bb-customer-card="remove"
-                      type="button">
-                Entfernen
-              </button>
-            </div>
-            @unless ($hasAvailableCustomerCards)
-              <p class="mb-0 text-muted" style="font-size: 13px;">{{ trans('plugins/hotel::customer-card.purchase.no_active_hint') }}</p>
-            @endunless
-          </div>
-          <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
-            <span>Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong></span>
-            <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
-          </div>
-        </div>
+        @endif
         <div class="coupon-wrapper" id="courseCouponBox" data-checkout-context="course">
           @if ($isCourseCheckout)
             @include('plugins/courses::coupons.partials.form')
