@@ -8,6 +8,7 @@ use Botble\Table\Columns\CreatedAtColumn;
 use Botble\Table\Columns\FormattedColumn;
 use Botble\Table\Columns\IdColumn;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 
 class CancellationTable extends TableAbstract
 {
@@ -15,6 +16,7 @@ class CancellationTable extends TableAbstract
     {
         $this
             ->model(Cancellation::class)
+            ->setAjaxUrl(route('inspira-cancellation.cancellations.list'))
             ->addColumns([
                 IdColumn::make(),
                 FormattedColumn::make('booking_reference')
@@ -58,5 +60,12 @@ class CancellationTable extends TableAbstract
             })
             ->removeAllActions()
             ->removeAllBulkActions();
+    }
+
+    public function ajax(): JsonResponse
+    {
+        return $this->toJson(
+            $this->table->eloquent($this->query())
+        );
     }
 }

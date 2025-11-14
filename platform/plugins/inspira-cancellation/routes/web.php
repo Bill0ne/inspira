@@ -30,6 +30,12 @@ Route::group(['namespace' => 'Botble\\InspiraCancellation\\Http\\Controllers'], 
                 'permission' => 'inspira-cancellation.cancellations.index',
             ]);
 
+            Route::get('cancellations/list', [
+                'as' => 'cancellations.list',
+                'uses' => 'Admin\\CancellationController@list',
+                'permission' => 'inspira-cancellation.cancellations.index',
+            ]);
+
             Route::post('cancellations', [
                 'as' => 'cancellations.data',
                 'uses' => 'Admin\\CancellationController@getData',
@@ -44,6 +50,12 @@ Route::group(['namespace' => 'Botble\\InspiraCancellation\\Http\\Controllers'], 
             Route::get('transfers', [
                 'as' => 'transfers.index',
                 'uses' => 'Admin\\TransferLogController@index',
+                'permission' => 'inspira-cancellation.transfers.index',
+            ]);
+
+            Route::get('transfers/list', [
+                'as' => 'transfers.list',
+                'uses' => 'Admin\\TransferLogController@list',
                 'permission' => 'inspira-cancellation.transfers.index',
             ]);
 
