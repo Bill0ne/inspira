@@ -16,7 +16,6 @@ class TransferLogTable extends TableAbstract
     {
         $this
             ->model(TransferLog::class)
-            ->setAjaxUrl(route('inspira-cancellation.transfers.list'))
             ->addColumns([
                 IdColumn::make(),
                 FormattedColumn::make('booking_reference')

@@ -16,7 +16,6 @@ class CancellationTable extends TableAbstract
     {
         $this
             ->model(Cancellation::class)
-            ->setAjaxUrl(route('inspira-cancellation.cancellations.list'))
             ->addColumns([
                 IdColumn::make(),
                 FormattedColumn::make('booking_reference')
