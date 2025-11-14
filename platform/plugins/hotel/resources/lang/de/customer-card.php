@@ -35,6 +35,8 @@ return [
         'valid_until' => 'Gültig bis',
         'assigned_to' => 'Zugewiesen an',
         'active_assignments' => 'Aktiv im Einsatz',
+        'template_meta' => ':units Einheiten • Gesamtwert :price',
+        'assignment_meta' => ':remaining von :total Einheiten verfügbar',
         'status' => 'Status',
         'usage_title' => 'Kartenverwendung',
         'view_usage' => 'Verwendung',
@@ -72,6 +74,8 @@ return [
             'placeholder' => 'Preis, Einheiten und Rabatt ausfüllen, um den Gesamtpreis zu berechnen.',
             'discount_label' => 'Rabatt angewendet',
         ],
+        'template_hint' => 'Vorlagen definieren die Grundeinstellungen. Beim Kauf erhält der Kunde automatisch seine eigene Karte.',
+        'assignment_hint' => 'Zugewiesen an :customer • :remaining von :total Einheiten verfügbar.',
     ],
     'messages' => [
         'select_card' => 'Bitte wählen Sie eine Kundenkarte aus.',

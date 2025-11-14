@@ -35,6 +35,8 @@ return [
         'valid_until' => 'Valid until',
         'assigned_to' => 'Assigned to',
         'active_assignments' => 'Active assignments',
+        'template_meta' => ':units units • Total value :price',
+        'assignment_meta' => ':remaining of :total units remaining',
         'status' => 'Status',
         'usage_title' => 'Card usage',
         'view_usage' => 'Usage',
@@ -72,6 +74,8 @@ return [
             'placeholder' => 'Fill in price, units and discount to calculate the total.',
             'discount_label' => 'discount applied',
         ],
+        'template_hint' => 'Templates define the base configuration. Customers receive their personal copy when purchasing a card.',
+        'assignment_hint' => 'Assigned to :customer • :remaining of :total units available.',
     ],
     'messages' => [
         'select_card' => 'Please select a customer card to continue.',

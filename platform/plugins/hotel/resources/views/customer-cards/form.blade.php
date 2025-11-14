@@ -1,3 +1,9 @@
+@php
+    $isAssigned = $isAssigned ?? (bool) $card->assigned_to;
+    $assignedCustomer = $card->customer;
+    $assignedCustomerName = $assignedCustomer?->name ?: $assignedCustomer?->email;
+@endphp
+
 <div class="row">
     <div class="col-lg-8">
         <x-core::card>
@@ -66,6 +72,25 @@
                     </div>
                     <span class="badge badge-pill badge-primary" data-bb-customer-card="summary-total"></span>
                 </div>
+
+                @if (! $isAssigned)
+                    <div class="alert alert-secondary mb-0">
+                        {{ trans('plugins/hotel::customer-card.form.template_hint') }}
+                    </div>
+                @else
+                    <div class="alert alert-info d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-0">
+                        <div>
+                            <strong>{{ trans('plugins/hotel::customer-card.form.assignment_hint', [
+                                'customer' => $assignedCustomerName ?? trans('plugins/hotel::customer-card.form.fields.not_assigned'),
+                                'remaining' => number_format((float) $card->units_remaining, 0),
+                                'total' => number_format((float) $card->units_total, 0),
+                            ]) }}</strong>
+                        </div>
+                        @if ($card->uid)
+                            <span class="badge bg-success">{{ $card->uid }}</span>
+                        @endif
+                    </div>
+                @endif
             </x-core::card.body>
         </x-core::card>
     </div>
@@ -79,12 +104,14 @@
                     :value="old('valid_until', optional($card->valid_until)->format(BaseHelper::getDateFormat()))"
                 />
 
-                <x-core::form.select
-                    :label="trans('plugins/hotel::customer-card.form.fields.assigned_to')"
-                    name="assigned_to"
-                    :options="['' => trans('plugins/hotel::customer-card.form.fields.not_assigned')] + $customers"
-                    :value="old('assigned_to', $card->assigned_to)"
-                />
+                @if ($isAssigned || old('assigned_to'))
+                    <x-core::form.select
+                        :label="trans('plugins/hotel::customer-card.form.fields.assigned_to')"
+                        name="assigned_to"
+                        :options="['' => trans('plugins/hotel::customer-card.form.fields.not_assigned')] + $customers"
+                        :value="old('assigned_to', $card->assigned_to)"
+                    />
+                @endif
 
                 <x-core::form.select
                     :label="trans('plugins/hotel::customer-card.form.fields.is_single_purchase')"
