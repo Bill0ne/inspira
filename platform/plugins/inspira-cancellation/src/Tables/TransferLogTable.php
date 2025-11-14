@@ -19,31 +19,29 @@ class TransferLogTable extends TableAbstract
                 IdColumn::make(),
                 FormattedColumn::make('booking_reference')
                     ->title(trans('plugins/inspira-cancellation::cancellation.cancellation.booking'))
-                    ->getValueUsing(function (FormattedColumn $column) {
-                        return $column->getItem()->booking_id;
-                    }),
+                    ->getValueUsing(fn (FormattedColumn $column, $value) => $column->getItem()->booking_id ?? $value),
                 FormattedColumn::make('booking_type')
                     ->title(trans('plugins/inspira-cancellation::cancellation.email.variables.booking_type'))
-                    ->getValueUsing(function (FormattedColumn $column) {
+                    ->getValueUsing(function (FormattedColumn $column, $value) {
                         return match ($column->getItem()->booking_type) {
                             'course' => trans('plugins/courses::courses.course.name'),
                             'room' => trans('plugins/hotel::booking.room'),
-                            default => $column->getItem()->booking_type,
+                            default => $column->getItem()->booking_type ?? $value,
                         };
                     }),
                 FormattedColumn::make('old_customer')
                     ->title(trans('plugins/inspira-cancellation::cancellation.transfer.old_customer'))
-                    ->getValueUsing(function (FormattedColumn $column) {
+                    ->getValueUsing(function (FormattedColumn $column, $value) {
                         $customer = $column->getItem()->oldCustomer;
 
-                        return $customer?->email;
+                        return $customer?->email ?? $value;
                     }),
                 FormattedColumn::make('new_customer')
                     ->title(trans('plugins/inspira-cancellation::cancellation.transfer.new_customer'))
-                    ->getValueUsing(function (FormattedColumn $column) {
+                    ->getValueUsing(function (FormattedColumn $column, $value) {
                         $customer = $column->getItem()->newCustomer;
 
-                        return $customer?->email;
+                        return $customer?->email ?? $value;
                     }),
                 CreatedAtColumn::make()
                     ->title(trans('plugins/inspira-cancellation::cancellation.transfer.created_at')),

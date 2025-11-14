@@ -77,7 +77,7 @@ class CustomerCardService
         return $course ? (bool) $course->accept_customer_card : false;
     }
 
-    public function calculateDiscount(CustomerCard $card, ?Course $course, int $units = 1): float
+    public function calculateDiscount(CustomerCard $card, ?Course $course, int $units = 1, ?float $courseNetPrice = null): float
     {
         $availableUnits = max($card->units_remaining, 0);
 
@@ -86,7 +86,7 @@ class CustomerCardService
         }
 
         $units = max(1, min($units, $availableUnits));
-        $coursePrice = $course ? (float) $course->price : 0.0;
+        $coursePrice = $courseNetPrice ?? ($course ? (float) $course->price : 0.0);
 
         if ($coursePrice <= 0) {
             $unitValue = 0;

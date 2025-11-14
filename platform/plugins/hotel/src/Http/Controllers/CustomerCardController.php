@@ -35,13 +35,28 @@ class CustomerCardController extends BaseController
 
     public function index(CustomerCardTable $table)
     {
-        $this->pageTitle(trans('plugins/hotel::customer-card.name'));
+        $this->pageTitle(trans('plugins/hotel::customer-card.assignments.title'));
 
         Assets::addScriptsDirectly([
             'vendor/core/plugins/hotel/js/customer-card.js',
         ]);
 
-        return $table->renderTable();
+        return $table
+            ->showAssignedOnly()
+            ->renderTable();
+    }
+
+    public function templates(CustomerCardTable $table)
+    {
+        $this->pageTitle(trans('plugins/hotel::customer-card.templates.title'));
+
+        Assets::addScriptsDirectly([
+            'vendor/core/plugins/hotel/js/customer-card.js',
+        ]);
+
+        return $table
+            ->showAssignedOnly(false)
+            ->renderTable();
     }
 
     public function create()
@@ -166,7 +181,15 @@ class CustomerCardController extends BaseController
 
         $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
         $unitsUsed = min($card->units_remaining, 1);
-        $discount = $service->calculateDiscount($card, $course, $unitsUsed);
+
+        $coursePricing = 0.0;
+
+        if ($course) {
+            $pricing = $course->resolvePricing(auth('customer')->user());
+            $coursePricing = (float) Arr::get($pricing, 'calculated_net', $course->getCourseTotalPrice());
+        }
+
+        $discount = $service->calculateDiscount($card, $course, $unitsUsed, $coursePricing);
 
         $context = $this->resolveCheckoutContext($request);
         $data = HotelSupport::getCheckoutData(context: $context) ?: [];

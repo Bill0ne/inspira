@@ -273,6 +273,10 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
         });
 
         Route::group(['prefix' => 'customer-cards', 'as' => 'customer-cards.'], function (): void {
+            Route::get('templates', [CustomerCardController::class, 'templates'])
+                ->name('templates')
+                ->permission('customer-cards.index');
+
             Route::get('{customer_card}/usages', [CustomerCardController::class, 'usages'])
                 ->name('usages')
                 ->permission('customer-cards.index');
