@@ -166,7 +166,15 @@ class CustomerCardController extends BaseController
 
         $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
         $unitsUsed = min($card->units_remaining, 1);
-        $discount = $service->calculateDiscount($card, $course, $unitsUsed);
+
+        $coursePricing = 0.0;
+
+        if ($course) {
+            $pricing = $course->resolvePricing(auth('customer')->user());
+            $coursePricing = (float) Arr::get($pricing, 'calculated_net', $course->getCourseTotalPrice());
+        }
+
+        $discount = $service->calculateDiscount($card, $course, $unitsUsed, $coursePricing);
 
         $context = $this->resolveCheckoutContext($request);
         $data = HotelSupport::getCheckoutData(context: $context) ?: [];
