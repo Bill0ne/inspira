@@ -41,100 +41,117 @@ class CustomerCardTable extends TableAbstract
         return $this;
     }
 
-    public function ajax(): JsonResponse
-    {
-        $service = app(CustomerCardService::class);
+public function ajax(): JsonResponse
+{
+    $service = app(CustomerCardService::class);
 
-        $data = $this->table
-            ->eloquent($this->query())
-            ->editColumn('type', fn (CustomerCard $card) => $card->type?->label() ?? '—')
-            ->editColumn('base_price', fn (CustomerCard $card) => format_price($card->base_price))
-            ->editColumn('discount_percent', fn (CustomerCard $card) => number_format($card->discount_percent, 2) . '%')
-            ->editColumn('name', function (CustomerCard $card) use ($service) {
-                $uidBadge = $card->uid
-                    ? Html::tag('span', e($card->uid), ['class' => 'badge bg-success ms-2'])
-                    : '';
+    $data = $this->table
+        ->eloquent($this->query())
+        ->editColumn('type', fn (CustomerCard $card) => $card->type?->label() ?? '—')
+        ->editColumn('base_price', fn (CustomerCard $card) => format_price($card->base_price))
+        ->editColumn('discount_percent', fn (CustomerCard $card) => number_format($card->discount_percent, 2) . '%')
+        ->editColumn('name', function (CustomerCard $card) use ($service) {
+            $uidBadge = $card->uid
+                ? Html::tag('span', e($card->uid), ['class' => 'badge bg-success ms-2'])
+                : '';
 
-                $meta = $card->assigned_to
-                    ? trans('plugins/hotel::customer-card.table.assignment_meta', [
-                        'remaining' => number_format((float) $card->units_remaining, 0),
-                        'total' => number_format((float) $card->units_total, 0),
-                    ])
-                    : trans('plugins/hotel::customer-card.table.template_meta', [
-                        'units' => number_format((float) $card->units_total, 0),
-                        'price' => format_price($service->calculatePurchasePrice($card)),
-                    ]);
-
-                return Html::tag(
-                    'div',
-                    Html::tag('div', e($card->name) . $uidBadge, ['class' => 'fw-semibold text-success mb-1']) .
-                    Html::tag('div', e($meta), ['class' => 'text-muted small mb-0']),
-                    ['class' => 'bg-light rounded-3 p-3']
-                );
-            })
-            ->when($this->assignedOnly, function ($dataTable) {
-                return $dataTable
-                    ->addColumn('units_remaining', function (CustomerCard $card) {
-                        return sprintf('%d / %d', $card->units_remaining, $card->units_total);
-                    })
-                    ->addColumn('assigned_to', function (CustomerCard $card) {
-                        $customer = $card->customer;
-
-                        if (! $customer) {
-                            return '&mdash;';
-                        }
-
-                        $name = e($customer->name ?: $customer->email ?: '—');
-                        $email = $customer->email
-                            ? Html::tag('div', e($customer->email), ['class' => 'text-muted'])
-                            : '';
-
-                        return Html::tag('div', $name . $email, ['class' => 'lh-sm']);
-                    });
-            })
-            ->when(! $this->assignedOnly, function ($dataTable) use ($service) {
-                return $dataTable
-                    ->addColumn('purchase_price', function (CustomerCard $card) use ($service) {
-                        return format_price($service->calculatePurchasePrice($card));
-                    })
-                    ->addColumn('active_assignments', function (CustomerCard $card) {
-                        return sprintf('%d', (int) $card->active_assignments_count);
-                    });
-            })
-            ->editColumn('valid_until', function (CustomerCard $card) {
-                if (! $card->valid_until) {
-                    return '&mdash;';
-                }
-
-                if ($card->valid_until->isPast()) {
-                    return Html::tag('span', $card->valid_until->toDateString(), ['class' => 'badge badge-danger']);
-                }
-
-                if ($card->valid_until->diffInDays(now()) <= 7) {
-                    return Html::tag('span', $card->valid_until->toDateString(), ['class' => 'badge badge-warning']);
-                }
-
-                return Html::tag('span', $card->valid_until->toDateString(), ['class' => 'badge badge-success']);
-            })
-            ->addColumn('usage', function (CustomerCard $card) {
-                return Html::tag('button', trans('plugins/hotel::customer-card.table.view_usage'), [
-                    'class' => 'btn btn-outline-primary btn-sm',
-                    'type' => 'button',
-                    'data-bb-customer-card' => 'usage',
-                    'data-card-id' => $card->getKey(),
-                    'data-title' => $card->name,
-                    'data-url' => route('customer-cards.usages', $card),
+            $meta = $card->assigned_to
+                ? trans('plugins/hotel::customer-card.table.assignment_meta', [
+                    'remaining' => number_format((float) $card->units_remaining, 0),
+                    'total' => number_format((float) $card->units_total, 0),
+                ])
+                : trans('plugins/hotel::customer-card.table.template_meta', [
+                    'units' => number_format((float) $card->units_total, 0),
+                    'price' => format_price($service->calculatePurchasePrice($card)),
                 ]);
-            })
-            ->addColumn('status', function (CustomerCard $card) {
-                $label = $card->status_label;
-                $color = $card->status_color ?? $card->getStatusColorAttribute();
 
-                return Html::tag('span', $label, ['class' => 'badge badge-' . $color]);
-            });
+            return Html::tag(
+                'div',
+                Html::tag('div', e($card->name) . $uidBadge, ['class' => 'fw-semibold text-success mb-1'])
+                . Html::tag('div', e($meta), ['class' => 'text-muted small mb-0']),
+                ['class' => 'bg-light rounded-3 p-3']
+            );
+        });
 
-        return $this->toJson($data);
+    // ADD MODE-SPECIFIC COLUMNS (assigned / template)
+    if ($this->assignedOnly) {
+
+        // Assigned mode columns
+        $data->addColumn('units_remaining', function (CustomerCard $card) {
+            return sprintf('%d / %d', $card->units_remaining, $card->units_total);
+        });
+
+        $data->addColumn('assigned_to', function (CustomerCard $card) {
+            $customer = $card->customer;
+
+            if (! $customer) {
+                return '&mdash;';
+            }
+
+            $name = e($customer->name ?: $customer->email ?: '—');
+            $email = $customer->email
+                ? Html::tag('div', e($customer->email), ['class' => 'text-muted'])
+                : '';
+
+            return Html::tag('div', $name . $email, ['class' => 'lh-sm']);
+        });
+
+    } else {
+
+        // Template mode columns
+        $data->addColumn('purchase_price', function (CustomerCard $card) use ($service) {
+            return format_price($service->calculatePurchasePrice($card));
+        });
+
+        $data->addColumn('active_assignments', function (CustomerCard $card) {
+            return sprintf('%d', (int) $card->active_assignments_count);
+        });
     }
+
+    // VALID UNTIL COLUMN
+    $data->editColumn('valid_until', function (CustomerCard $card) {
+        if (! $card->valid_until) {
+            return '&mdash;';
+        }
+
+        if ($card->valid_until->isPast()) {
+            return Html::tag('span', $card->valid_until->toDateString(), ['class' => 'badge badge-danger']);
+        }
+
+        if ($card->valid_until->diffInDays(now()) <= 7) {
+            return Html::tag('span', $card->valid_until->toDateString(), ['class' => 'badge badge-warning']);
+        }
+
+        return Html::tag('span', $card->valid_until->toDateString(), ['class' => 'badge badge-success']);
+    });
+
+    // USAGE BUTTON
+    $data->addColumn('usage', function (CustomerCard $card) {
+        return Html::tag(
+            'button',
+            trans('plugins/hotel::customer-card.table.view_usage'),
+            [
+                'class' => 'btn btn-outline-primary btn-sm',
+                'type' => 'button',
+                'data-bb-customer-card' => 'usage',
+                'data-card-id' => $card->getKey(),
+                'data-title' => $card->name,
+                'data-url' => route('customer-cards.usages', $card),
+            ]
+        );
+    });
+
+    // STATUS BADGE
+    $data->addColumn('status', function (CustomerCard $card) {
+        $label = $card->status_label;
+        $color = $card->status_color ?? $card->getStatusColorAttribute();
+
+        return Html::tag('span', $label, ['class' => 'badge badge-' . $color]);
+    });
+
+    return $this->toJson($data);
+}
+
 
     public function query(): Relation|Builder|QueryBuilder
     {
