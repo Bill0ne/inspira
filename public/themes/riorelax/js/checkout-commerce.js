@@ -6,27 +6,24 @@
   'use strict';
   if (!$) return;
 
-  var contextRoots = {
-    course: document.querySelector('[data-checkout-context="course"]'),
-    hotel: document.querySelector('[data-checkout-context="hotel"]')
-  };
+  function getContextRoot(context) {
+    if (!context) return null;
+    return document.querySelector('[data-checkout-context="' + context + '"]');
+  }
 
   function hasContext(context) {
-    if (!contextRoots[context]) return false;
+    var root = getContextRoot(context) || document;
     if (context === 'course') {
-      return !!document.querySelector('input[name="course_id"]');
+      return !!root.querySelector('input[name="course_id"]') || !!document.querySelector('input[name="course_id"]');
     }
     if (context === 'hotel') {
-      return !!document.querySelector('input[name="room_id"]');
+      return !!root.querySelector('input[name="room_id"]') || !!document.querySelector('input[name="room_id"]');
     }
     return false;
   }
 
-  var isCourseCheckout = hasContext('course');
-  var isHotelCheckout = hasContext('hotel');
-
   function ensureCourseContext(action) {
-    if (isCourseCheckout || isHotelCheckout) {
+    if (hasContext('course') || hasContext('hotel')) {
       return true;
     }
 
@@ -44,8 +41,8 @@
 
   function getActiveContext(fallback) {
     if (fallback && hasContext(fallback)) return fallback;
-    if (isCourseCheckout) return 'course';
-    if (isHotelCheckout) return 'hotel';
+    if (hasContext('course')) return 'course';
+    if (hasContext('hotel')) return 'hotel';
     return null;
   }
 
@@ -55,10 +52,7 @@
       if (el.hasAttribute('data-checkout-context')) {
         var type = el.getAttribute('data-checkout-context');
         if (type && hasContext(type)) {
-          var root = contextRoots[type];
-          if (!root) {
-            return null;
-          }
+          var root = getContextRoot(type) || el;
           return {
             type: type,
             root: root,
@@ -74,7 +68,7 @@
 
   function ensureContextRoot(context) {
     var ctx = getActiveContext(context);
-    return ctx ? contextRoots[ctx] : null;
+    return ctx ? getContextRoot(ctx) : null;
   }
 
   function getCouponContainer(context) {
@@ -107,7 +101,7 @@
     if (!data || typeof data !== 'object') return;
     var ctx = getActiveContext(context);
     if (!ctx) return;
-    var root = contextRoots[ctx] || document;
+    var root = getContextRoot(ctx) || document;
     var $root = $(root);
     // Auch 0-Werte übernehmen (deshalb 'in' statt truthy)
     if ('sub_total'      in data) $root.find('.amount-text').text(data.sub_total);
@@ -119,14 +113,16 @@
 
   function getSharedPayload(context) {
     var payload = {};
-    if (context === 'course' && isCourseCheckout) {
-      var courseInput = document.querySelector('input[name="course_id"]');
+    if (context === 'course' || !context) {
+      var courseRoot = getContextRoot('course') || document;
+      var courseInput = courseRoot.querySelector('input[name="course_id"]') || document.querySelector('input[name="course_id"]');
       if (courseInput && courseInput.value) {
         payload.course_id = courseInput.value;
       }
     }
-    if (context === 'hotel' && isHotelCheckout) {
-      var roomInput = document.querySelector('input[name="room_id"]');
+    if (context === 'hotel' || !context) {
+      var roomRoot = getContextRoot('hotel') || document;
+      var roomInput = roomRoot.querySelector('input[name="room_id"]') || document.querySelector('input[name="room_id"]');
       if (roomInput && roomInput.value) {
         payload.room_id = roomInput.value;
       }
@@ -190,7 +186,7 @@
   function reloadPaymentList(context) {
     var ctx = getActiveContext(context);
     if (!ctx) return $.Deferred().resolve();
-    var root = contextRoots[ctx] || document;
+    var root = getContextRoot(ctx) || document;
     var $list = $(root).find('.payment-checkout-form .list_payment_method');
     if (!$list.length) return $.Deferred().resolve();
 
@@ -209,19 +205,31 @@
   }
 
   // Expose für andere Module (Hotel-Recalc ruft das auf)
-  win.CheckoutCommerce = {
+  var checkoutApi = {
     updateTotals: updateTotals,
-    reloadPaymentList: reloadPaymentList,
-    isCourseCheckout: isCourseCheckout,
-    isHotelCheckout: isHotelCheckout
+    reloadPaymentList: reloadPaymentList
   };
+
+  Object.defineProperties(checkoutApi, {
+    isCourseCheckout: {
+      get: function () {
+        return hasContext('course');
+      },
+    },
+    isHotelCheckout: {
+      get: function () {
+        return hasContext('hotel');
+      },
+    },
+  });
+
+  win.CheckoutCommerce = checkoutApi;
 
   $(document)
     .on('click', '.toggle-coupon-form', function (e) {
       var ctx = resolveContext(e.target);
       if (!ctx) return;
-      if (ctx.type === 'course' && !isCourseCheckout) return;
-      if (ctx.type === 'hotel' && !isHotelCheckout) return;
+      if (!hasContext(ctx.type)) return;
       ctx.$box.find('.coupon-form').toggle('fast');
     })
     .on('click', '.apply-coupon-code', function (e) {
@@ -230,8 +238,7 @@
       var $btn = $(e.currentTarget);
       var ctx = resolveContext(e.currentTarget);
       if (!ctx) return;
-      if (ctx.type === 'course' && !isCourseCheckout) return;
-      if (ctx.type === 'hotel' && !isHotelCheckout) return;
+      if (!hasContext(ctx.type)) return;
       var url  = $btn.data('url');
       var $codeInput = ctx.$box.find('input[name=coupon_code]');
       var code = ($codeInput.val() || '').trim();
@@ -291,8 +298,7 @@
       var $btn = $(e.currentTarget);
       var ctx = resolveContext(e.currentTarget);
       if (!ctx) return;
-      if (ctx.type === 'course' && !isCourseCheckout) return;
-      if (ctx.type === 'hotel' && !isHotelCheckout) return;
+      if (!hasContext(ctx.type)) return;
       var url  = $btn.data('url');
       if (!url) return;
 
