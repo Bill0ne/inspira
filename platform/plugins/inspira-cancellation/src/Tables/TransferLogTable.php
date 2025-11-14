@@ -8,6 +8,7 @@ use Botble\Table\Columns\CreatedAtColumn;
 use Botble\Table\Columns\FormattedColumn;
 use Botble\Table\Columns\IdColumn;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 
 class TransferLogTable extends TableAbstract
 {
@@ -15,6 +16,7 @@ class TransferLogTable extends TableAbstract
     {
         $this
             ->model(TransferLog::class)
+            ->setAjaxUrl(route('inspira-cancellation.transfers.list'))
             ->addColumns([
                 IdColumn::make(),
                 FormattedColumn::make('booking_reference')
@@ -51,5 +53,12 @@ class TransferLogTable extends TableAbstract
             })
             ->removeAllActions()
             ->removeAllBulkActions();
+    }
+
+    public function ajax(): JsonResponse
+    {
+        return $this->toJson(
+            $this->table->eloquent($this->query())
+        );
     }
 }
