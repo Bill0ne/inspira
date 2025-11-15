@@ -4,32 +4,14 @@ $(() => {
      *  BOTBLE FALLBACK (NEU)
      * ----------------------------------------------------------
      * Stellt sicher, dass im Frontend (Checkout) das Script läuft,
-     * auch wenn window.Botble NICHT existiert. Wir versuchen zuerst
-     * die RiorelaxTheme-Helfer zu verwenden und fallen erst danach
-     * auf die Konsole zurück.
+     * auch wenn window.Botble NICHT existiert.
      * ----------------------------------------------------------
      */
-    const theme = window.RiorelaxTheme || {}
-
-    window.Botble = window.Botble || {}
-
-    const ensureBotbleMethod = (method, fallback) => {
-        if (typeof window.Botble[method] === 'function') {
-            return
-        }
-
-        if (typeof theme[method] === 'function') {
-            window.Botble[method] = (...args) => theme[method](...args)
-
-            return
-        }
-
-        window.Botble[method] = fallback
-    }
-
-    ensureBotbleMethod('showSuccess', (msg) => console.log('Success:', msg))
-    ensureBotbleMethod('showError', (msg) => console.error('Error:', msg))
-    ensureBotbleMethod('handleError', (err) => console.error('Request error:', err))
+    window.Botble = window.Botble || {
+        showSuccess: (msg) => console.log('Success:', msg),
+        showError: (msg) => console.error('Error:', msg),
+        handleError: (err) => console.error('Request error:', err),
+    };
 
     const CARD_CONFIG = window.customerCard = window.customerCard || {}
     CARD_CONFIG.routes = CARD_CONFIG.routes || {}
@@ -384,7 +366,9 @@ $(() => {
                     $cardInput.val(cardId)
                     $removeButton.removeClass('d-none')
 
-                    $(document).trigger('customer-card.applied', data)
+                    $(document).trigger('customer-card.applied', {
+                        discount: Number(payload.raw_discount || 0),
+                    })
                 })
                 .catch((error) => {
                     window.Botble.handleError(error)
@@ -405,41 +389,11 @@ $(() => {
                     $removeButton.addClass('d-none')
                     $cardInput.val('')
                     updateTotals(0)
-                    $(document).trigger('customer-card.removed', data)
+                    $(document).trigger('customer-card.removed', {})
                 })
                 .catch((error) => {
                     window.Botble.handleError(error)
                 })
-        })
-
-        $(document).on('customer-card.totals-updated', (event, payload = {}) => {
-            const discountRaw = Number(payload.card_discount_raw || 0)
-            const formattedDiscount = payload.card_discount_display_plain || null
-
-            if (typeof payload.total_before_card_raw !== 'undefined') {
-                $totalInput.data('original-total', Number(payload.total_before_card_raw))
-            }
-
-            if (typeof payload.minimum_fee_raw !== 'undefined') {
-                $totalInput.data('minimum-fee', Number(payload.minimum_fee_raw || 0))
-            }
-
-            if (typeof payload.minimum_threshold !== 'undefined') {
-                $totalInput.data('minimum-threshold', Number(payload.minimum_threshold) || 0)
-            }
-
-            if ($infoBox.length && Number($cardInput.val())) {
-                $infoBox
-                    .toggleClass('d-none', discountRaw <= 0)
-                    .find('[data-bb-customer-card="discount"]')
-                    .text(formattedDiscount || formatPrice(discountRaw))
-            }
-
-            if (discountRaw > 0) {
-                $removeButton.removeClass('d-none')
-            }
-
-            updateTotals(discountRaw, formattedDiscount)
         })
     }
 
