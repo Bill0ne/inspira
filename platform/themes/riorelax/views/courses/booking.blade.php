@@ -33,28 +33,43 @@
 @endphp
 
 @if ($isCourseCheckout)
-    @push('header')
-        <script>
-            window.customerCard = window.customerCard || {};
-            window.customerCard.currency = '{{ get_application_currency()->symbol }}';
-            window.customerCard.routes = {
-                apply: '{{ route('ajax.customer-card.apply') }}',
-                remove: '{{ route('ajax.customer-card.remove') }}',
-            };
-            window.trans = window.trans || {};
-            window.trans.customerCard = {{ Js::from(trans('plugins/hotel::customer-card')) }};
-        </script>
-    @endpush
-
     @php
+        $customerCardConfig = Js::from([
+            'currency' => get_application_currency()->symbol,
+            'routes' => [
+                'apply' => route('ajax.customer-card.apply'),
+                'remove' => route('ajax.customer-card.remove'),
+            ],
+        ]);
+
+        $customerCardTranslations = Js::from(trans('plugins/hotel::customer-card'));
+
         Theme::asset()
             ->container('footer')
-            ->add('hotel-customer-card-js', 'vendor/core/plugins/hotel/js/customer-card.js', ['jquery']);
-    @endphp
+            ->writeScript(
+                'riorelax-customer-card-config',
+                <<<SCRIPT
+window.customerCard = Object.assign({}, window.customerCard || {}, {$customerCardConfig});
+window.trans = window.trans || {};
+window.trans.customerCard = Object.assign({}, window.trans.customerCard || {}, {$customerCardTranslations});
+SCRIPT
+            );
 
-    @push('footer')
-        <script src="{{ Theme::asset()->url('js/customer-card.js') }}"></script>
-    @endpush
+        Theme::asset()
+            ->container('footer')
+            ->usePath()
+            ->add('hotel-customer-card-js', 'vendor/core/plugins/hotel/js/customer-card.js', ['riorelax-customer-card-config']);
+
+        Theme::asset()
+            ->container('footer')
+            ->usePath()
+            ->add('riorelax-customer-card-js', 'js/customer-card.js', ['hotel-customer-card-js']);
+
+        Theme::asset()
+            ->container('footer')
+            ->usePath()
+            ->add('riorelax-course-checkout', 'js/course-checkout.js', ['checkout-commerce']);
+    @endphp
 @endif
 
 <style>
