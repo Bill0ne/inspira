@@ -216,6 +216,10 @@ class Course extends BaseModel
             return;
         }
 
+        if (! $this->hasExpiredStatusSupport()) {
+            return;
+        }
+
         $hasUpcomingSessions = $this->hasUpcomingSessions();
 
         if (
@@ -232,6 +236,11 @@ class Course extends BaseModel
             $this->forceFill(['status' => BaseStatusEnum::PUBLISHED])->saveQuietly();
             $this->status = BaseStatusEnum::PUBLISHED();
         }
+    }
+
+    protected function hasExpiredStatusSupport(): bool
+    {
+        return defined(BaseStatusEnum::class . '::EXPIRED');
     }
 
     protected function shouldAutomaticallyExpire(?bool $hasUpcomingSessions = null): bool
