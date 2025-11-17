@@ -1,39 +1,81 @@
 @php
+    /**
+     * ----------------------------------------------------------------------
+     *  GLOBAL INITIALISIERUNG (ALLE VARIABLEN, DIE SPÄTER BENÖTIGT WERDEN)
+     * ----------------------------------------------------------------------
+     */
+
     Theme::asset()->container('header')->usePath()->add('jquery', 'plugins/jquery.min.js');
-@endphp
 
-@if (is_plugin_active('payment'))
-    <link rel="stylesheet" href="{{ asset('vendor/core/plugins/payment/css/payment.css') }}?v=1.0.6">
-    @php
-        Theme::asset()->container('header')->add('payment-js', 'vendor/core/plugins/payment/js/payment.js');
-    @endphp
-    {!! apply_filters(PAYMENT_FILTER_HEADER_ASSETS, null) !!}
-@endif
+    // Zahlung aktiv?
+    $paymentActive = is_plugin_active('payment');
 
-@php
+    // Checkout-Kontext (wichtig für Scripts und Template)
+    $isCourseCheckout = Route::is('public.course.*');
+
+    // Start- & Enddatum (Fehler-Ursache war fehlende Definition!)
+    $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
+    $endLabel24   = $session->end_date
+        ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i')
+        : null;
+
+    // Daten für Formular-Prefill
+    $contactValues = [
+        'first_name' => old('first_name', data_get($checkoutData ?? [], 'first_name', optional($customer)->first_name)),
+        'last_name'  => old('last_name',  data_get($checkoutData ?? [], 'last_name',  optional($customer)->last_name)),
+        'email'      => old('email',      data_get($checkoutData ?? [], 'email',      optional($customer)->email)),
+        'phone'      => old('phone',      data_get($checkoutData ?? [], 'phone',      optional($customer)->phone)),
+        'country'    => old('country',    data_get($checkoutData ?? [], 'country',    optional($customer)->country)),
+        'state'      => old('state',      data_get($checkoutData ?? [], 'state',      optional($customer)->state)),
+        'city'       => old('city',       data_get($checkoutData ?? [], 'city',       optional($customer)->city)),
+        'address'    => old('address',    data_get($checkoutData ?? [], 'address',    optional($customer)->address)),
+        'zip'        => old('zip',        data_get($checkoutData ?? [], 'zip',        optional($customer)->zip)),
+    ];
+
+    $prefillPayload = collect($contactValues)
+        ->filter(fn ($value) => !blank($value))
+        ->map(fn ($value) => (string) $value)
+        ->all();
+
+    // Start-Step (Gast / Login / Registrierung)
+    $shouldStartRegister = old('register_customer') == 1;
+
+    // Kundenkarten
+    $availableCards      = $availableCards      ?? collect();
+    $selectedCard        = $selectedCard        ?? null;
+    $cardDiscount        = $cardDiscount        ?? 0;
+    $totalAfterDiscount  = $totalAfterDiscount  ?? $total;
+
+    // Page Meta
     Theme::set('pageTitle', '');
     Theme::set('breadcrumb', false);
 
-    // WICHTIG: Diese Variable wird später im Blade benutzt!
-    $isCourseCheckout = Route::is('public.course.*');
+    /**
+     * ----------------------------------------------------------------------
+     *  ASSET LADEN – LOGISCHE SCRIPT-REIHENFOLGE (KEINE KONFLIKTE!)
+     * ----------------------------------------------------------------------
+     */
 
-    // Core Checkout (immer)
+    // 1) Core Checkout (Stepper, Form, Navigation)
     Theme::asset()
         ->container('footer')
         ->usePath()
         ->add('checkout-core', 'js/checkout-core.js');
 
+
     if ($isCourseCheckout) {
 
+        // 2) Coupon / Payment (EINZIGE Quelle!)
         Theme::asset()
             ->container('footer')
             ->usePath()
             ->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
 
+        // 3) Kundenkarte: JS-Konfiguration
         $customerCardConfig = Js::from([
             'currency' => get_application_currency()->symbol,
             'routes' => [
-                'apply' => route('ajax.customer-card.apply'),
+                'apply'  => route('ajax.customer-card.apply'),
                 'remove' => route('ajax.customer-card.remove'),
             ],
         ]);
@@ -51,6 +93,7 @@ window.trans.customerCard = Object.assign({}, window.trans.customerCard || {}, {
 SCRIPT
             );
 
+        // 4) Vendor Customer Card (Business Logic)
         Theme::asset()
             ->container('footer')
             ->add(
@@ -59,6 +102,7 @@ SCRIPT
                 ['riorelax-customer-card-config']
             );
 
+        // 5) Theme Customer Card (UI Ebene)
         Theme::asset()
             ->container('footer')
             ->usePath()
@@ -68,6 +112,7 @@ SCRIPT
                 ['vendor-hotel-customer-card']
             );
 
+        // 6) Course Checkout (Recalc, Payment reload)
         Theme::asset()
             ->container('footer')
             ->usePath()
@@ -78,6 +123,16 @@ SCRIPT
             );
     }
 @endphp
+
+
+@if ($paymentActive)
+    <link rel="stylesheet" href="{{ asset('vendor/core/plugins/payment/css/payment.css') }}?v=1.0.6">
+    @php
+        Theme::asset()->container('header')->add('payment-js', 'vendor/core/plugins/payment/js/payment.js');
+    @endphp
+    {!! apply_filters(PAYMENT_FILTER_HEADER_ASSETS, null) !!}
+@endif
+
 
 {{-- STYLE SECTION UNVERÄNDERT – KOMPLETT --}}
 <style>
