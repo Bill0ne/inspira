@@ -69,14 +69,12 @@ class CourseTable extends TableAbstract
                     ->getValueUsing(function (StatusColumn $column, $value) {
                         $course = $column->getItem();
 
+                        if (! $value instanceof BaseStatusEnum && $value !== null) {
+                            $value = (new BaseStatusEnum())->make($value);
+                        }
+
                         if ($course instanceof Course && $course->isPast()) {
-                            if (
-                                Course::hasExpiredStatusSupport()
-                                && $value instanceof BaseStatusEnum
-                                && $value->equals(BaseStatusEnum::PUBLISHED())
-                            ) {
-                                return BaseStatusEnum::EXPIRED();
-                            }
+                            return BaseStatusEnum::EXPIRED();
                         }
 
                         return $value;
