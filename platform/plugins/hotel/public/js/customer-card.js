@@ -231,14 +231,24 @@ $(() => {
         }).then((response) => ({ data: response }))
     }
 
+    const initialRoutes = Object.assign({}, CARD_CONFIG.routes || {})
+
+    const getRoute = (key) => {
+        if (CARD_CONFIG.routes && CARD_CONFIG.routes[key]) {
+            return CARD_CONFIG.routes[key]
+        }
+
+        return initialRoutes[key]
+    }
+
     const applyCustomerCard = (cardId, courseId = null, $trigger = null) =>
-        request(CARD_CONFIG.routes?.apply, {
+        request(getRoute('apply'), {
             card_id: cardId,
             course_id: courseId,
         }, $trigger)
 
     const removeCustomerCard = ($trigger = null) =>
-        request(CARD_CONFIG.routes?.remove, {}, $trigger)
+        request(getRoute('remove'), {}, $trigger)
 
     CARD_CONFIG.applyCustomerCard = applyCustomerCard
     CARD_CONFIG.removeCustomerCard = removeCustomerCard
