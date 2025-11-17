@@ -225,7 +225,13 @@
 
   win.CheckoutCommerce = checkoutApi;
 
-  $(document)
+  var $document = $(document)
+
+  $document.off('click', '.toggle-coupon-form')
+  $document.off('click', '.apply-coupon-code')
+  $document.off('click', '.remove-coupon-code')
+
+  $document
     .on('click', '.toggle-coupon-form', function (e) {
       var ctx = resolveContext(e.target);
       if (!ctx) return;

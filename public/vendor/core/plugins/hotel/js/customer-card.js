@@ -208,15 +208,26 @@ $(() => {
         }).then((response) => ({ data: response }))
     }
 
-    const applyRoute = window.customerCard && window.customerCard.routes && window.customerCard.routes.apply
-    const removeRoute = window.customerCard && window.customerCard.routes && window.customerCard.routes.remove
+    const resolveRoute = (key, fallback = null) => {
+        if (window.customerCard && window.customerCard.routes && window.customerCard.routes[key]) {
+            return window.customerCard.routes[key]
+        }
 
-    const applyCustomerCard = (cardId, courseId = null, $trigger = null) => request(applyRoute, {
+        return fallback
+    }
+
+    const defaultApplyRoute = resolveRoute('apply')
+    const defaultRemoveRoute = resolveRoute('remove')
+
+    const getApplyRoute = () => resolveRoute('apply', defaultApplyRoute)
+    const getRemoveRoute = () => resolveRoute('remove', defaultRemoveRoute)
+
+    const applyCustomerCard = (cardId, courseId = null, $trigger = null) => request(getApplyRoute(), {
         card_id: cardId,
         course_id: courseId,
     }, $trigger)
 
-    const removeCustomerCard = ($trigger = null) => request(removeRoute, {}, $trigger)
+    const removeCustomerCard = ($trigger = null) => request(getRemoveRoute(), {}, $trigger)
 
     window.customerCard = window.customerCard || {}
     window.customerCard.applyCustomerCard = applyCustomerCard
