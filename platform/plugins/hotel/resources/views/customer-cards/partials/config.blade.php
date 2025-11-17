@@ -12,4 +12,5 @@
     window.customerCard = window.customerCard || {};
     window.customerCard.currency = "{{ get_application_currency()->symbol }}";
     window.customerCard.routes = Object.assign({}, window.customerCard.routes || {}, {!! Js::from($routes) !!});
+    window.customerCard.isAuthenticated = {{ auth('customer')->check() ? 'true' : 'false' }};
 </script>

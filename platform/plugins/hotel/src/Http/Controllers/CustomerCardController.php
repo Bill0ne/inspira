@@ -196,11 +196,32 @@ class CustomerCardController extends BaseController
 
     public function apply(Request $request, CustomerCardService $service)
     {
-        $card = $service->getValidCard((int) $request->input('card_id'), auth('customer')->id());
-        $courseId = (int) $request->input('course_id');
+        $customerId = auth('customer')->id();
 
-        if (! $card || ! $service->isApplicable($card, $courseId)) {
-            return $this->httpResponse()->setError()->setMessage(__('Ungültige Karte'));
+        if (! $customerId) {
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setMessage(trans('plugins/hotel::customer-card.messages.login_required'));
+        }
+
+        $card = $service->getValidCard((int) $request->input('card_id'), $customerId);
+
+        if (! $card) {
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setMessage(trans('plugins/hotel::customer-card.messages.card_not_found'));
+        }
+
+        $context = $this->resolveCheckoutContext($request);
+        $courseId = $this->resolveCourseId($request, $context);
+
+        if (! $service->isApplicable($card, $courseId)) {
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setMessage(trans('plugins/hotel::customer-card.messages.card_unavailable'));
         }
 
         $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
@@ -215,7 +236,6 @@ class CustomerCardController extends BaseController
 
         $discount = $service->calculateDiscount($card, $course, $unitsUsed, $coursePricing);
 
-        $context = $this->resolveCheckoutContext($request);
         $data = HotelSupport::getCheckoutData(context: $context) ?: [];
         $data['customer_card_id'] = $card->getKey();
         $data['customer_card_discount'] = $discount;
@@ -338,5 +358,20 @@ class CustomerCardController extends BaseController
         }
 
         return HotelSupport::CONTEXT_HOTEL;
+    }
+
+    protected function resolveCourseId(Request $request, string $context): ?int
+    {
+        $courseId = (int) $request->input('course_id');
+
+        if ($courseId) {
+            return $courseId;
+        }
+
+        if ($context === HotelSupport::CONTEXT_COURSE) {
+            $courseId = (int) (HotelSupport::getCheckoutData('course_id', HotelSupport::CONTEXT_COURSE) ?? 0);
+        }
+
+        return $courseId ?: null;
     }
 }

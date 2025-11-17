@@ -89,6 +89,10 @@ return [
     'messages' => [
         'select_card' => 'Please select a customer card to continue.',
         'loading' => 'Loading…',
+        'login_required' => 'Please sign in first.',
+        'route_unavailable' => 'The customer card service is currently unavailable.',
+        'card_not_found' => 'The selected card could not be found or is no longer active.',
+        'card_unavailable' => 'This card cannot be used for the selected course.',
     ],
     'invoice' => [
         'discount_line' => 'Customer card discount: :card',

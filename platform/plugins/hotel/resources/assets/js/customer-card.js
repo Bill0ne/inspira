@@ -34,6 +34,7 @@ $(() => {
 
     CARD_CONFIG.routes = CARD_CONFIG.routes || {};
     CARD_CONFIG.course_checkout = CARD_CONFIG.course_checkout || false;
+    CARD_CONFIG.isAuthenticated = CARD_CONFIG.isAuthenticated || false;
 
     const t = (path, fallback = '') => {
         const segments = path.split('.');
@@ -58,6 +59,30 @@ $(() => {
     const toggleButton = ($button, isLoading) => {
         if (!$button || !$button.length) return;
         $button.prop('disabled', !!isLoading).toggleClass('button-loading', !!isLoading);
+    };
+
+    const isCustomerAuthenticated = () => !!CARD_CONFIG.isAuthenticated;
+
+    const ensureRouteAvailable = (routeKey = null) => {
+        if (!routeKey) {
+            return true;
+        }
+
+        if (CARD_CONFIG.routes && CARD_CONFIG.routes[routeKey]) {
+            return true;
+        }
+
+        window.Botble.showError(t('messages.route_unavailable', 'Der Kundenkarten-Service ist aktuell nicht verfügbar.'));
+        return false;
+    };
+
+    const ensureCustomerIsAuthenticated = () => {
+        if (isCustomerAuthenticated()) {
+            return true;
+        }
+
+        window.Botble.showError(t('messages.login_required', 'Bitte zuerst einloggen.'));
+        return false;
     };
 
     /* ----------------------------------------------------------
@@ -252,6 +277,10 @@ $(() => {
                 return;
             }
 
+            if (!ensureCustomerIsAuthenticated() || !ensureRouteAvailable('apply')) {
+                return;
+            }
+
             applyCustomerCard(cardId, courseId, $(this))
                 .then(({ data }) => {
                     window.Botble.showSuccess(data.message);
@@ -276,6 +305,10 @@ $(() => {
         /* REMOVE ------------------------------------------------- */
         $removeButton.on('click', function (e) {
             e.preventDefault();
+
+            if (!ensureRouteAvailable('remove')) {
+                return;
+            }
 
             removeCustomerCard($(this), courseId)
                 .then(({ data }) => {
