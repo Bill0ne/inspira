@@ -104,11 +104,11 @@
     var root = getContextRoot(ctx) || document;
     var $root = $(root);
     // Auch 0-Werte übernehmen (deshalb 'in' statt truthy)
-    if ('sub_total'      in data) $root.find('.amount-text').text(data.sub_total);
-    if ('discount_amount'in data) $root.find('.discount-text').text(data.discount_amount);
-    if ('tax_amount'     in data) $root.find('.tax-text').text(data.tax_amount);
-    if ('total_amount'   in data) $root.find('.total-amount-text').text(data.total_amount);
-    if ('amount_raw'     in data) $root.find('input[name=amount]').val(data.amount_raw);
+    if ('sub_total'       in data) $root.find('.amount-text').text(data.sub_total);
+    if ('discount_amount' in data) $root.find('.discount-text').text(data.discount_amount);
+    if ('tax_amount'      in data) $root.find('.tax-text').text(data.tax_amount);
+    if ('total_amount'    in data) $root.find('.total-amount-text').text(data.total_amount);
+    if ('amount_raw'      in data) $root.find('input[name=amount]').val(data.amount_raw);
   }
 
   function getSharedPayload(context) {
@@ -225,11 +225,12 @@
 
   win.CheckoutCommerce = checkoutApi;
 
-  var $document = $(document)
+  var $document = $(document);
 
-  $document.off('click', '.toggle-coupon-form')
-  $document.off('click', '.apply-coupon-code')
-  $document.off('click', '.remove-coupon-code')
+  // Sicherstellen, dass wir Events nur einmal binden
+  $document.off('click', '.toggle-coupon-form');
+  $document.off('click', '.apply-coupon-code');
+  $document.off('click', '.remove-coupon-code');
 
   $document
     .on('click', '.toggle-coupon-form', function (e) {
@@ -279,7 +280,7 @@
         }
 
         callTheme('showSuccess', message || 'Gutschein angewendet.');
-        updateTotals(data);
+        updateTotals(data, ctx.type);
         if (data && typeof data.coupon_code !== 'undefined') {
           ctx.$box.find('input[name=coupon_hidden]').val(data.coupon_code || '');
           if (data.coupon_code) {
@@ -288,6 +289,12 @@
         }
         refreshCouponBox(data && data.coupon_view, ctx.type);
         reloadPaymentList(ctx.type);
+
+        // Event für andere Module (z.B. course-checkout.js)
+        $(document).trigger('coupon.applied', {
+          context: ctx.type,
+          response: res,
+        });
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
@@ -330,7 +337,7 @@
         }
 
         callTheme('showSuccess', message || 'Gutschein entfernt.');
-        updateTotals(data);
+        updateTotals(data, ctx.type);
         if (data && typeof data.coupon_code !== 'undefined') {
           ctx.$box.find('input[name=coupon_hidden]').val('');
           if (!data.coupon_code) {
@@ -339,6 +346,12 @@
         }
         refreshCouponBox(data && data.coupon_view, ctx.type);
         reloadPaymentList(ctx.type);
+
+        // Event für andere Module
+        $(document).trigger('coupon.removed', {
+          context: ctx.type,
+          response: res,
+        });
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
