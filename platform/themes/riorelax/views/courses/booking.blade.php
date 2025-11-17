@@ -1,7 +1,7 @@
 @php
     /**
      * ----------------------------------------------------------------------
-     *  GLOBAL INITIALISIERUNG (ALLE VARIABLEN, DIE SPÄTER BENÖTIGT WERDEN)
+     *  GLOBAL INITIALISIERUNG (ALLE VARIABLEN FÜR SPÄTER)
      * ----------------------------------------------------------------------
      */
 
@@ -10,16 +10,16 @@
     // Zahlung aktiv?
     $paymentActive = is_plugin_active('payment');
 
-    // Checkout-Kontext (wichtig für Scripts und Template)
+    // Checkout-Kontext (Kurs-Checkout)
     $isCourseCheckout = Route::is('public.course.*');
 
-    // Start- & Enddatum (Fehler-Ursache war fehlende Definition!)
+    // Start- & Enddatum
     $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
     $endLabel24   = $session->end_date
         ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i')
         : null;
 
-    // Daten für Formular-Prefill
+    // Kontakt-Felder (für Prefill)
     $contactValues = [
         'first_name' => old('first_name', data_get($checkoutData ?? [], 'first_name', optional($customer)->first_name)),
         'last_name'  => old('last_name',  data_get($checkoutData ?? [], 'last_name',  optional($customer)->last_name)),
@@ -32,46 +32,46 @@
         'zip'        => old('zip',        data_get($checkoutData ?? [], 'zip',        optional($customer)->zip)),
     ];
 
+    // Nur gefüllte Felder für Prefill übernehmen
     $prefillPayload = collect($contactValues)
         ->filter(fn ($value) => !blank($value))
         ->map(fn ($value) => (string) $value)
         ->all();
 
-    // Start-Step (Gast / Login / Registrierung)
+    // Start-Modus
     $shouldStartRegister = old('register_customer') == 1;
 
     // Kundenkarten
-    $availableCards      = $availableCards      ?? collect();
-    $selectedCard        = $selectedCard        ?? null;
-    $cardDiscount        = $cardDiscount        ?? 0;
-    $totalAfterDiscount  = $totalAfterDiscount  ?? $total;
+    $availableCards     = $availableCards     ?? collect();
+    $selectedCard       = $selectedCard       ?? null;
+    $cardDiscount       = $cardDiscount       ?? 0;
+    $totalAfterDiscount = $totalAfterDiscount ?? $total;
 
-    // Page Meta
+    // Meta
     Theme::set('pageTitle', '');
     Theme::set('breadcrumb', false);
 
     /**
      * ----------------------------------------------------------------------
-     *  ASSET LADEN – LOGISCHE SCRIPT-REIHENFOLGE (KEINE KONFLIKTE!)
+     *  SCRIPTS: SAUBERE, FEHLERFREIE, RICHTIGE REIHENFOLGE
      * ----------------------------------------------------------------------
      */
 
-    // 1) Core Checkout (Stepper, Form, Navigation)
+    // 1) CORE CHECKOUT – Stepper, Navigation
     Theme::asset()
         ->container('footer')
         ->usePath()
         ->add('checkout-core', 'js/checkout-core.js');
 
-
     if ($isCourseCheckout) {
 
-        // 2) Coupon / Payment (EINZIGE Quelle!)
+        // 2) Coupon / Payment Reload
         Theme::asset()
             ->container('footer')
             ->usePath()
             ->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
 
-        // 3) Kundenkarte: JS-Konfiguration
+        // 3) Customer Card Config
         $customerCardConfig = Js::from([
             'currency' => get_application_currency()->symbol,
             'routes' => [
@@ -93,7 +93,7 @@ window.trans.customerCard = Object.assign({}, window.trans.customerCard || {}, {
 SCRIPT
             );
 
-        // 4) Vendor Customer Card (Business Logic)
+        // 4) Vendor Card Logic
         Theme::asset()
             ->container('footer')
             ->add(
@@ -102,7 +102,7 @@ SCRIPT
                 ['riorelax-customer-card-config']
             );
 
-        // 5) Theme Customer Card (UI Ebene)
+        // 5) Theme Customer Card UI
         Theme::asset()
             ->container('footer')
             ->usePath()
@@ -112,7 +112,7 @@ SCRIPT
                 ['vendor-hotel-customer-card']
             );
 
-        // 6) Course Checkout (Recalc, Payment reload)
+        // 6) Course Checkout Final Logic
         Theme::asset()
             ->container('footer')
             ->usePath()
@@ -134,7 +134,6 @@ SCRIPT
 @endif
 
 
-{{-- STYLE SECTION UNVERÄNDERT – KOMPLETT --}}
 <style>
 :root{--mint:#578E88;--gray:#E5E7EB;--ink:#17463F;}
 body > header.header-area,
@@ -269,376 +268,293 @@ textarea.form-control{min-height:100px;}
 
 
 <div class="checkout-topbar">
-  <a class="checkout-topbar__link" href="{{ route('public.courses') }}" aria-label="Zurück zur Übersicht">
-    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M9.5 3.5 5 8l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </a>
-  <span>Zurück zur Übersicht</span>
+    <a class="checkout-topbar__link" href="{{ route('public.courses') }}" aria-label="Zurück zur Übersicht">
+        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9.5 3.5 5 8l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </a>
+    <span>Zurück zur Übersicht</span>
 </div>
-
-
-
-
-@php
-  $contactValues = [
-      'first_name' => old('first_name', data_get($checkoutData ?? [], 'first_name', optional($customer)->first_name)),
-      'last_name' => old('last_name', data_get($checkoutData ?? [], 'last_name', optional($customer)->last_name)),
-      'email' => old('email', data_get($checkoutData ?? [], 'email', optional($customer)->email)),
-      'phone' => old('phone', data_get($checkoutData ?? [], 'phone', optional($customer)->phone)),
-      'country' => old('country', data_get($checkoutData ?? [], 'country', optional($customer)->country)),
-      'state' => old('state', data_get($checkoutData ?? [], 'state', optional($customer)->state)),
-      'city' => old('city', data_get($checkoutData ?? [], 'city', optional($customer)->city)),
-      'address' => old('address', data_get($checkoutData ?? [], 'address', optional($customer)->address)),
-      'zip' => old('zip', data_get($checkoutData ?? [], 'zip', optional($customer)->zip)),
-  ];
-
-  $prefillPayload = collect($contactValues)
-      ->filter(fn ($value) => !blank($value))
-      ->map(fn ($value) => is_string($value) ? $value : (string) $value)
-      ->all();
-@endphp
-
 
 
 
 @if ($isCourseCheckout)
 <section class="checkout-booking-page checkout-fw" data-checkout-context="course">
-  <div class="container pt-120 pb-40 checkout-booking">
+    <div class="container pt-120 pb-40 checkout-booking">
 
-
-    {{-- TICKET HEADER --}}
-    <div class="ticket">
-      <div class="ticket__col ticket__media">
-        <img src="{{ RvMedia::getImageUrl($course->thumbnail, default: RvMedia::getDefaultImage()) }}" alt="{{ $course->name }}">
-      </div>
-      <div class="ticket__col ticket__details">
-        <h5 class="title">Ihre Reservierung</h5>
-        <div class="kv"><span>{{ $course->name }}</span></div>
-        <div class="kv"><span>Startdatum</span><b>{{ $startLabel24 }}</b></div>
-        @if($endLabel24)
-          <div class="kv"><span>Enddatum</span><b>{{ $endLabel24 }}</b></div>
-        @endif
-      </div>
-      <div class="ticket__col ticket__totals">
-        <h5 class="title">Gesamtpreis</h5>
-        @php
-          $configuratorNet = $priceBreakdown['configurator_net'] ?? 0;
-          $showConfiguratorRow = abs($configuratorNet) > 0.00001;
-          $configuratorPrefix = $configuratorNet > 0 ? '+' : ($configuratorNet < 0 ? '-' : '');
-        @endphp
-        <div class="kv"><span>Originalpreis</span><b>{{ course_format_price($priceBreakdown['base_net'] ?? 0) }}</b></div>
-        <div class="kv price-configurator-row {{ $showConfiguratorRow ? '' : 'd-none' }}">
-          <span>Preis Konfigurator</span>
-          <b class="configurator-text">
-            @if($configuratorPrefix)
-              {{ $configuratorPrefix }}{{ course_format_price(abs($configuratorNet)) }}
-            @else
-              {{ course_format_price(0) }}
-            @endif
-          </b>
-        </div>
-        <div class="kv"><span>Steuern</span><b class="tax-text">{{ course_format_price($priceBreakdown['calculated_tax'] ?? 0) }}</b></div>
-        <div class="kv"><span>Bruttopreis</span><b class="amount-text">{{ course_format_price($priceBreakdown['calculated_gross'] ?? 0) }}</b></div>
-        <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $couponAmount > 0 ? '-' : '' }}{{ course_format_price($couponAmount) }}</b></div>
-        <div class="kv card-discount-row {{ $cardDiscount > 0 ? '' : 'd-none' }}"><span>Kartenrabatt</span><b class="card-discount-text">-{{ course_format_price($cardDiscount) }}</b></div>
-        <div class="kv minimum-fee-row {{ $minimumOnlinePaymentFee > 0 ? '' : 'd-none' }}"><span>Mindestgebühr (Online-Zahlung)</span><b class="minimum-fee-text">{{ course_format_price($minimumOnlinePaymentFee) }}</b></div>
-        <hr>
-        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ course_format_price($finalTotal) }}</b></div>
-      </div>
-    </div>
-
-
-    {{-- STEPPER --}}
-    <div class="stepper-wrap">
-      <div id="stepTitle">Allgemeine Informationen</div>
-      <div class="stepper">
-        <div class="dot active" data-step-dot="1"></div>
-        <div class="line" data-step-line="1"></div>
-        <div class="dot" data-step-dot="2"></div>
-        <div class="line" data-step-line="2"></div>
-        <div class="dot" data-step-dot="3"></div>
-      </div>
-    </div>
-
-
-
-    {{-- FORMULAR --}}
-    <form
-      action="{{ route('public.course.booking.checkout') }}"
-      method="POST"
-      id="bookingForm"
-      class="payment-checkout-form"
-      data-checkout-context="course"
-      data-start-step="{{ $customer->id ? 2 : 1 }}"
-      data-storage-key="course-checkout"
-      data-start-register="{{ $shouldStartRegister ? '1' : '0' }}"
-      data-prefill='@json($prefillPayload)'
-    >
-
-      @csrf
-
-      <input type="hidden" name="token" value="{{ $token }}">
-      <input
-        type="hidden"
-        name="amount"
-        value="{{ number_format($finalTotal, 2, '.', '') }}"
-        data-total
-        data-original-total="{{ number_format($total, 2, '.', '') }}"
-        data-active-discount="{{ number_format($cardDiscount, 2, '.', '') }}"
-        data-minimum-fee="{{ number_format($minimumOnlinePaymentFee, 2, '.', '') }}"
-        data-minimum-threshold="{{ number_format($minimumOnlinePaymentThreshold, 2, '.', '') }}"
-      >
-
-      <input type="hidden" name="course_id" value="{{ $course->id }}">
-      <input type="hidden" name="session_id" value="{{ $session->id }}">
-      <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
-      <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
-      <input type="hidden" name="register_customer" value="{{ old('register_customer', 0) }}" id="register_customer_flag">
-      <input type="hidden" name="customer_card_id" value="{{ $selectedCard?->getKey() }}" data-customer-card-input>
-
-
-
-
-      {{-- STEP 1 --}}
-      <div class="step-panel active" data-step="1">
-        <div id="formAlertStep1" class="form-alert"></div>
-
-        @if ($customer->id)
-          <p>Angemeldet als <b>{{ $customer->name ?? $customer->email }}</b></p>
-          <div class="btnrow">
-            <a href="{{ url()->previous() }}" class="btnX btn-outline-mint">Abbrechen</a>
-            <button type="button" class="btnX btn-mint" data-next>Weiter</button>
-          </div>
-
-        @else
-          <p>Wie möchtest du fortfahren?</p>
-
-          <div class="btnrow" data-register-actions>
-            <button type="button" class="btnX btn-mint" data-next>Als Gast buchen</button>
-            <button type="button" class="btnX btn-outline-mint" data-open-login>Einloggen</button>
-            <button type="button" class="btnX btn-outline-mint" data-toggle-register>Registrieren</button>
-          </div>
-
-          <div class="register-box {{ $shouldStartRegister ? '' : 'd-none' }}" data-register-box>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label>Vorname *</label>
-                <input type="text" name="register_first_name" class="form-control" value="{{ old('first_name') }}" autocomplete="given-name">
-              </div>
-              <div class="col-md-6">
-                <label>Nachname *</label>
-                <input type="text" name="register_last_name" class="form-control" value="{{ old('last_name') }}" autocomplete="family-name">
-              </div>
-              <div class="col-md-12">
-                <label>E-Mail *</label>
-                <input type="email" name="register_email" class="form-control" value="{{ old('email') }}" autocomplete="email">
-              </div>
-              <div class="col-md-6">
-                <label>Passwort *</label>
-                <input type="password" name="password" class="form-control" autocomplete="new-password">
-              </div>
-              <div class="col-md-6">
-                <label>Passwort bestätigen *</label>
-                <input type="password" name="password_confirmation" class="form-control" autocomplete="new-password">
-              </div>
+        {{-- TICKET HEADER --}}
+        <div class="ticket">
+            <div class="ticket__col ticket__media">
+                <img src="{{ RvMedia::getImageUrl($course->thumbnail, default: RvMedia::getDefaultImage()) }}" alt="{{ $course->name }}">
             </div>
-
-            <div class="btnrow mt-3">
-              <button type="button" class="btnX btn-outline-mint" data-cancel-register>Abbrechen</button>
-              <button type="button" class="btnX btn-mint" data-register-next>Weiter</button>
+            <div class="ticket__col ticket__details">
+                <h5 class="title">Ihre Reservierung</h5>
+                <div class="kv"><span>{{ $course->name }}</span></div>
+                <div class="kv"><span>Startdatum</span><b>{{ $startLabel24 }}</b></div>
+                @if($endLabel24)
+                    <div class="kv"><span>Enddatum</span><b>{{ $endLabel24 }}</b></div>
+                @endif
             </div>
-
-          </div>
-        @endif
-      </div>
-
-
-
-
-      {{-- STEP 2 --}}
-      <div class="step-panel" data-step="2">
-        <div id="formAlertStep2" class="form-alert"></div>
-
-        <p>Pflichtfelder sind mit * gekennzeichnet</p>
-
-        <div class="row">
-          <div class="col-md-6 mb-3"><label>Vorname *</label><input id="txt-first_name" name="first_name" class="form-control" value="{{ $contactValues['first_name'] }}" required></div>
-          <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" value="{{ $contactValues['last_name'] }}" required></div>
-          <div class="col-md-6 mb-3"><label>E-Mail *</label><input id="txt-email" name="email" class="form-control" type="email" value="{{ $contactValues['email'] }}" required></div>
-          <div class="col-md-6 mb-3"><label>Telefon *</label><input id="txt-phone" name="phone" class="form-control" value="{{ $contactValues['phone'] }}" required></div>
-          <div class="col-md-6 mb-3"><label>Land</label><input id="txt-country" name="country" class="form-control" value="{{ $contactValues['country'] }}"></div>
-          <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input id="txt-state" name="state" class="form-control" value="{{ $contactValues['state'] }}"></div>
-          <div class="col-md-6 mb-3"><label>Stadt</label><input id="txt-city" name="city" class="form-control" value="{{ $contactValues['city'] }}"></div>
-          <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control" value="{{ $contactValues['address'] }}"></div>
-          <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control" value="{{ $contactValues['zip'] }}"></div>
+            <div class="ticket__col ticket__totals">
+                <h5 class="title">Gesamtpreis</h5>
+                @php
+                    $configuratorNet = $priceBreakdown['configurator_net'] ?? 0;
+                    $showConfiguratorRow = abs($configuratorNet) > 0.00001;
+                    $configuratorPrefix = $configuratorNet > 0 ? '+' : ($configuratorNet < 0 ? '-' : '');
+                @endphp
+                <div class="kv"><span>Originalpreis</span><b>{{ course_format_price($priceBreakdown['base_net'] ?? 0) }}</b></div>
+                <div class="kv price-configurator-row {{ $showConfiguratorRow ? '' : 'd-none' }}">
+                    <span>Preis Konfigurator</span>
+                    <b class="configurator-text">
+                        @if($configuratorPrefix)
+                            {{ $configuratorPrefix }}{{ course_format_price(abs($configuratorNet)) }}
+                        @else
+                            {{ course_format_price(0) }}
+                        @endif
+                    </b>
+                </div>
+                <div class="kv"><span>Steuern</span><b class="tax-text">{{ course_format_price($priceBreakdown['calculated_tax'] ?? 0) }}</b></div>
+                <div class="kv"><span>Bruttopreis</span><b class="amount-text">{{ course_format_price($priceBreakdown['calculated_gross'] ?? 0) }}</b></div>
+                <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $couponAmount > 0 ? '-' : '' }}{{ course_format_price($couponAmount) }}</b></div>
+                <div class="kv card-discount-row {{ $cardDiscount > 0 ? '' : 'd-none' }}"><span>Kartenrabatt</span><b class="card-discount-text">-{{ course_format_price($cardDiscount) }}</b></div>
+                <div class="kv minimum-fee-row {{ $minimumOnlinePaymentFee > 0 ? '' : 'd-none' }}"><span>Mindestgebühr (Online-Zahlung)</span><b class="minimum-fee-text">{{ course_format_price($minimumOnlinePaymentFee) }}</b></div>
+                <hr>
+                <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ course_format_price($finalTotal) }}</b></div>
+            </div>
         </div>
 
-        <div class="mb-3">
-          <label>Anfragen</label>
-          <textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas...">{{ old('requests') }}</textarea>
+
+        {{-- STEPPER --}}
+        <div class="stepper-wrap">
+            <div id="stepTitle">Allgemeine Informationen</div>
+            <div class="stepper">
+                <div class="dot active" data-step-dot="1"></div>
+                <div class="line" data-step-line="1"></div>
+                <div class="dot" data-step-dot="2"></div>
+                <div class="line" data-step-line="2"></div>
+                <div class="dot" data-step-dot="3"></div>
+            </div>
         </div>
 
-        <div class="btnrow">
-          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
-          <button type="button" class="btnX btn-mint" data-next>Weiter</button>
-        </div>
-      </div>
 
+        {{-- FORMULAR --}}
+        <form
+            action="{{ route('public.course.booking.checkout') }}"
+            method="POST"
+            id="bookingForm"
+            class="payment-checkout-form"
+            data-checkout-context="course"
+            data-start-step="{{ $customer->id ? 2 : 1 }}"
+            data-storage-key="course-checkout"
+            data-start-register="{{ $shouldStartRegister ? '1' : '0' }}"
+            data-prefill='@json($prefillPayload)'>
+            @csrf
 
-
-
-      {{-- STEP 3 --}}
-      <div class="step-panel" data-step="3">
-        <div id="formAlertStep3" class="form-alert"></div>
-
-        @php
-          $hasAvailableCustomerCards = $availableCards->isNotEmpty();
-        @endphp
-
-        {{-- KUNDENKARTE --}}
-        <div class="checkout-action-card mb-3">
-          <div class="checkout-action-card__header">
-            <div>
-              <span class="checkout-action-card__eyebrow">Kundenkarte</span>
-              <h5 class="checkout-action-card__title">Kundenkarte anwenden</h5>
-            </div>
-          </div>
-
-          <div class="checkout-action-form">
-            <label class="form-label checkout-action-label" for="customer_card_select">Kundenkarte auswählen</label>
-
-            <div class="checkout-action-controls">
-
-              <select id="customer_card_select"
-                      class="form-select checkout-action-select"
-                      data-course="{{ $course->id }}"
-                      @if (! $hasAvailableCustomerCards) disabled @endif
-              >
-                <option value="">
-                  {{ $hasAvailableCustomerCards ? 'Keine Karte auswählen' : 'Keine Kundenkarte verfügbar' }}
-                </option>
-
-                @foreach ($availableCards as $card)
-                  <option value="{{ $card->id }}" @selected($selectedCard && $selectedCard->id === $card->id)>
-                    {{ $card->name }}@if ($card->uid) — {{ $card->uid }}@endif
-                  </option>
-                @endforeach
-
-              </select>
-
-
-              <button class="checkout-action-button checkout-action-button--primary"
-                      type="button"
-                      data-bb-customer-card="apply"
-                      @if (! $hasAvailableCustomerCards) disabled @endif
-              >
-                Anwenden
-              </button>
-
-              <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}"
-                      data-bb-customer-card="remove"
-                      type="button"
-              >
-                Entfernen
-              </button>
-
-            </div>
-
-            @unless ($hasAvailableCustomerCards)
-              <p class="mb-0 text-muted" style="font-size: 13px;">
-                {{ trans('plugins/hotel::customer-card.purchase.no_active_hint') }}
-              </p>
-            @endunless
-          </div>
-
-          <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}"
-               data-bb-customer-card="info">
-            <span>
-              Kartenrabatt:
-              <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong>
-            </span>
-
-            <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}"
-                    data-bb-customer-card="remove"
-                    type="button"
+            <input type="hidden" name="token" value="{{ $token }}">
+            <input
+                type="hidden"
+                name="amount"
+                value="{{ number_format($finalTotal, 2, '.', '') }}"
+                data-total
+                data-original-total="{{ number_format($total, 2, '.', '') }}"
+                data-active-discount="{{ number_format($cardDiscount, 2, '.', '') }}"
+                data-minimum-fee="{{ number_format($minimumOnlinePaymentFee, 2, '.', '') }}"
+                data-minimum-threshold="{{ number_format($minimumOnlinePaymentThreshold, 2, '.', '') }}"
             >
-              Entfernen
-            </button>
-          </div>
-        </div>
+            <input type="hidden" name="course_id" value="{{ $course->id }}">
+            <input type="hidden" name="session_id" value="{{ $session->id }}">
+            <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
+            <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
+            <input type="hidden" name="register_customer" value="{{ old('register_customer', 0) }}" id="register_customer_flag">
+            <input type="hidden" name="customer_card_id" value="{{ $selectedCard?->getKey() }}" data-customer-card-input>
 
 
-
-        {{-- COUPON --}}
-        <div class="coupon-wrapper" id="courseCouponBox" data-checkout-context="course">
-          @if ($isCourseCheckout)
-            @include('plugins/courses::coupons.partials.form')
-          @endif
-        </div>
-
-
-
-        {{-- PAYMENT METHOD --}}
-        <label>Zahlungsmethode</label>
-
-        <ul class="list-group list_payment_method">
-          {!! apply_filters(PAYMENT_FILTER_ADDITIONAL_PAYMENT_METHODS, null, [
-              'amount' => $total,
-              'currency' => strtoupper(get_application_currency()->title),
-              'name' => $course->name,
-              'selected' => PaymentMethods::getSelectedMethod(),
-              'default' => PaymentMethods::getDefaultMethod(),
-              'selecting' => PaymentMethods::getSelectingMethod(),
-          ]) !!}
-
-          {!! PaymentMethods::render() !!}
-        </ul>
-
-
-        <label class="d-flex align-items-center gap-2">
-          <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))>
-          <span>
-            Allgemeine Geschäftsbedingungen *
-            <a href="https://stage.inspira-zentrum.de/de/term-and-conditions"
-               target="_blank"
-               rel="noopener"
-               style="color:#578E88;font-weight:600;text-decoration:underline;">
-              (AGB öffnen)
-            </a>
-          </span>
-        </label>
-
-        <div class="btnrow">
-          <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
-          <button type="submit" class="btnX btn-mint payment-checkout-btn" data-processing-text="Wird verarbeitet..." data-error-header="Fehler">Abschließen</button>
-        </div>
-
-      </div> {{-- END STEP 3 --}}
-    </form>
-
+            {{-- STEP 1 --}}
+            <div class="step-panel active" data-step="1">
+                <div id="formAlertStep1" class="form-alert"></div>
+                @if ($customer->id)
+                    <p>Angemeldet als <b>{{ $customer->name ?? $customer->email }}</b></p>
+                    <div class="btnrow">
+                        <a href="{{ url()->previous() }}" class="btnX btn-outline-mint">Abbrechen</a>
+                        <button type="button" class="btnX btn-mint" data-next>Weiter</button>
+                    </div>
+                @else
+                    <p>Wie möchtest du fortfahren?</p>
+                    <div class="btnrow" data-register-actions>
+                        <button type="button" class="btnX btn-mint" data-next>Als Gast buchen</button>
+                        <button type="button" class="btnX btn-outline-mint" data-open-login>Einloggen</button>
+                        <button type="button" class="btnX btn-outline-mint" data-toggle-register>Registrieren</button>
+                    </div>
+                    <div class="register-box {{ $shouldStartRegister ? '' : 'd-none' }}" data-register-box>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label>Vorname *</label>
+                                <input type="text" name="register_first_name" class="form-control" value="{{ old('first_name') }}" autocomplete="given-name">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Nachname *</label>
+                                <input type="text" name="register_last_name" class="form-control" value="{{ old('last_name') }}" autocomplete="family-name">
+                            </div>
+                            <div class="col-md-12">
+                                <label>E-Mail *</label>
+                                <input type="email" name="register_email" class="form-control" value="{{ old('email') }}" autocomplete="email">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Passwort *</label>
+                                <input type="password" name="password" class="form-control" autocomplete="new-password">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Passwort bestätigen *</label>
+                                <input type="password" name="password_confirmation" class="form-control" autocomplete="new-password">
+                            </div>
+                        </div>
+                        <div class="btnrow mt-3">
+                            <button type="button" class="btnX btn-outline-mint" data-cancel-register>Abbrechen</button>
+                            <button type="button" class="btnX btn-mint" data-register-next>Weiter</button>
+                        </div>
+                    </div>
+                @endif
+            </div>
 
 
+            {{-- STEP 2 --}}
+            <div class="step-panel" data-step="2">
+                <div id="formAlertStep2" class="form-alert"></div>
+                <p>Pflichtfelder sind mit * gekennzeichnet</p>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label>Vorname *</label><input id="txt-first_name" name="first_name" class="form-control" value="{{ $contactValues['first_name'] }}" required></div>
+                    <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" value="{{ $contactValues['last_name'] }}" required></div>
+                    <div class="col-md-6 mb-3"><label>E-Mail *</label><input id="txt-email" name="email" class="form-control" type="email" value="{{ $contactValues['email'] }}" required></div>
+                    <div class="col-md-6 mb-3"><label>Telefon *</label><input id="txt-phone" name="phone" class="form-control" value="{{ $contactValues['phone'] }}" required></div>
+                    <div class="col-md-6 mb-3"><label>Land</label><input id="txt-country" name="country" class="form-control" value="{{ $contactValues['country'] }}"></div>
+                    <div class="col-md-6 mb-3"><label>Bundesland / Provinz</label><input id="txt-state" name="state" class="form-control" value="{{ $contactValues['state'] }}"></div>
+                    <div class="col-md-6 mb-3"><label>Stadt</label><input id="txt-city" name="city" class="form-control" value="{{ $contactValues['city'] }}"></div>
+                    <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control" value="{{ $contactValues['address'] }}"></div>
+                    <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control" value="{{ $contactValues['zip'] }}"></div>
+                </div>
+                <div class="mb-3">
+                    <label>Anfragen</label>
+                    <textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas...">{{ old('requests') }}</textarea>
+                </div>
+                <div class="btnrow">
+                    <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
+                    <button type="button" class="btnX btn-mint" data-next>Weiter</button>
+                </div>
+            </div>
 
-    {{-- STORNOBOX --}}
-    @if ($cancellation = theme_option('cancellation'))
-      <div class="cxl-accordion">
-        <details>
-          <summary>Stornierungsbedingungen</summary>
-          <div class="cxl-body">{!! BaseHelper::clean($cancellation) !!}</div>
-        </details>
-      </div>
-    @endif
 
+            {{-- STEP 3 --}}
+            <div class="step-panel" data-step="3">
+                <div id="formAlertStep3" class="form-alert"></div>
+                @php
+                    $hasAvailableCustomerCards = $availableCards->isNotEmpty();
+                @endphp
 
-  </div>
+                {{-- KUNDENKARTE --}}
+                <div class="checkout-action-card mb-3">
+                    <div class="checkout-action-card__header">
+                        <div>
+                            <span class="checkout-action-card__eyebrow">Kundenkarte</span>
+                            <h5 class="checkout-action-card__title">Kundenkarte anwenden</h5>
+                        </div>
+                    </div>
+                    <div class="checkout-action-form">
+                        <label class="form-label checkout-action-label" for="customer_card_select">Kundenkarte auswählen</label>
+                        <div class="checkout-action-controls">
+                            <select id="customer_card_select"
+                                    class="form-select checkout-action-select"
+                                    data-course="{{ $course->id }}"
+                                    @if (! $hasAvailableCustomerCards) disabled @endif>
+                                <option value="">
+                                    {{ $hasAvailableCustomerCards ? 'Keine Karte auswählen' : 'Keine Kundenkarte verfügbar' }}
+                                </option>
+                                @foreach ($availableCards as $card)
+                                    <option value="{{ $card->id }}" @selected($selectedCard && $selectedCard->id === $card->id)>
+                                        {{ $card->name }}@if ($card->uid) — {{ $card->uid }}@endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button class="checkout-action-button checkout-action-button--primary"
+                                    type="button"
+                                    data-bb-customer-card="apply"
+                                    @if (! $hasAvailableCustomerCards) disabled @endif>
+                                Anwenden
+                            </button>
+                            <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}"
+                                    data-bb-customer-card="remove"
+                                    type="button">
+                                Entfernen
+                            </button>
+                        </div>
+                        @unless ($hasAvailableCustomerCards)
+                            <p class="mb-0 text-muted" style="font-size: 13px;">
+                                {{ trans('plugins/hotel::customer-card.purchase.no_active_hint') }}
+                            </p>
+                        @endunless
+                    </div>
+                    <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
+                        <span>Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong></span>
+                        <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
+                    </div>
+                </div>
+
+                {{-- COUPON --}}
+                <div class="coupon-wrapper" id="courseCouponBox" data-checkout-context="course">
+                    @if ($isCourseCheckout)
+                        @include('plugins/courses::coupons.partials.form')
+                    @endif
+                </div>
+
+                {{-- PAYMENT METHOD --}}
+                <label>Zahlungsmethode</label>
+                <ul class="list-group list_payment_method">
+                    {!! apply_filters(PAYMENT_FILTER_ADDITIONAL_PAYMENT_METHODS, null, [
+                        'amount' => $total,
+                        'currency' => strtoupper(get_application_currency()->title),
+                        'name' => $course->name,
+                        'selected' => PaymentMethods::getSelectedMethod(),
+                        'default' => PaymentMethods::getDefaultMethod(),
+                        'selecting' => PaymentMethods::getSelectingMethod(),
+                    ]) !!}
+                    {!! PaymentMethods::render() !!}
+                </ul>
+
+                <label class="d-flex align-items-center gap-2">
+                    <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))>
+                    <span>
+                        Allgemeine&nbsp;Geschäftsbedingungen&nbsp;*
+                        <a href="https://stage.inspira-zentrum.de/de/term-and-conditions"
+                           target="_blank"
+                           rel="noopener"
+                           style="color:#578E88;font-weight:600;text-decoration:underline;">
+                            (AGB&nbsp;öffnen)
+                        </a>
+                    </span>
+                </label>
+
+                <div class="btnrow">
+                    <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
+                    <button type="submit" class="btnX btn-mint payment-checkout-btn" data-processing-text="Wird verarbeitet..." data-error-header="Fehler">Abschließen</button>
+                </div>
+            </div>
+        </form>
+
+        {{-- STORNOBOX --}}
+        @if ($cancellation = theme_option('cancellation'))
+            <div class="cxl-accordion">
+                <details>
+                    <summary>Stornierungsbedingungen</summary>
+                    <div class="cxl-body">{!! BaseHelper::clean($cancellation) !!}</div>
+                </details>
+            </div>
+        @endif
+
+    </div>
 </section>
 
 {!! Theme::partial('checkout.login-modal', ['redirectUrl' => request()->fullUrl()]) !!}
 
-
 @if (is_plugin_active('payment'))
-  {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
+    {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
 @endif
-
 @endif
