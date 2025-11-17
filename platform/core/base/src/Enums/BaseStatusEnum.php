@@ -10,12 +10,14 @@ use Illuminate\Support\HtmlString;
  * @method static BaseStatusEnum DRAFT()
  * @method static BaseStatusEnum PUBLISHED()
  * @method static BaseStatusEnum PENDING()
+ * @method static BaseStatusEnum EXPIRED()
  */
 class BaseStatusEnum extends Enum
 {
     public const PUBLISHED = 'published';
     public const DRAFT = 'draft';
     public const PENDING = 'pending';
+    public const EXPIRED = 'expired';
 
     public static $langPath = 'core/base::enums.statuses';
 
@@ -25,6 +27,7 @@ class BaseStatusEnum extends Enum
             self::DRAFT => Html::tag('span', self::DRAFT()->label(), ['class' => 'badge bg-secondary text-secondary-fg']),
             self::PENDING => Html::tag('span', self::PENDING()->label(), ['class' => 'badge bg-warning text-warning-fg']),
             self::PUBLISHED => Html::tag('span', self::PUBLISHED()->label(), ['class' => 'badge bg-success text-success-fg']),
+            self::EXPIRED => Html::tag('span', self::EXPIRED()->label(), ['class' => 'badge bg-danger text-danger-fg']),
             default => parent::toHtml(),
         };
     }
