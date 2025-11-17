@@ -13,27 +13,24 @@
 @php
     Theme::set('pageTitle', '');
     Theme::set('breadcrumb', false);
-    Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
+
+    // 1) CORE CHECKOUT
+    Theme::asset()
+        ->container('footer')
+        ->usePath()
+        ->add('checkout-core', 'js/checkout-core.js');
 
     $isCourseCheckoutRoute = Route::is('public.course.*');
 
     if ($isCourseCheckoutRoute) {
-        Theme::asset()->container('footer')->usePath()->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
-    }
-    $startLabel24 = BaseHelper::formatDate($session->start_date, 'd.m.Y H:i');
-    $endLabel24   = $session->end_date ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i') : null;
 
-    session(['url.intended' => request()->fullUrl()]);
-    $shouldStartRegister = old('register_customer') == 1;
-    $availableCards = $availableCards ?? collect();
-    $selectedCard = $selectedCard ?? null;
-    $cardDiscount = $cardDiscount ?? 0;
-    $totalAfterDiscount = $totalAfterDiscount ?? $total;
-    $isCourseCheckout = ! isset($room);
-@endphp
+        // 2) COUPON + PAYMENT ENGINE (einzige Instanz)
+        Theme::asset()
+            ->container('footer')
+            ->usePath()
+            ->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
 
-@if ($isCourseCheckout)
-    @php
+        // CUSTOMER CARD CONFIG
         $customerCardConfig = Js::from([
             'currency' => get_application_currency()->symbol,
             'routes' => [
@@ -53,24 +50,41 @@ window.customerCard = Object.assign({}, window.customerCard || {}, {$customerCar
 window.trans = window.trans || {};
 window.trans.customerCard = Object.assign({}, window.trans.customerCard || {}, {$customerCardTranslations});
 SCRIPT
+        );
+
+        // 3) VENDOR CUSTOMER-CARD BUSINESS LOGIC
+        Theme::asset()
+            ->container('footer')
+            ->add(
+                'vendor-hotel-customer-card',
+                'vendor/core/plugins/hotel/js/customer-card.js',
+                ['riorelax-customer-card-config']
             );
 
-        Theme::asset()
-            ->container('footer')
-            ->add('hotel-customer-card-js', 'vendor/core/plugins/hotel/js/customer-card.js', ['riorelax-customer-card-config']);
-
+        // 4) THEME UI CUSTOMER CARD
         Theme::asset()
             ->container('footer')
             ->usePath()
-            ->add('riorelax-customer-card-js', 'js/customer-card.js', ['hotel-customer-card-js']);
+            ->add(
+                'theme-customer-card',
+                'js/customer-card.js',
+                ['vendor-hotel-customer-card']
+            );
 
+        // 5) COURSE CHECKOUT (Payment reload + Listener)
         Theme::asset()
             ->container('footer')
             ->usePath()
-            ->add('riorelax-course-checkout', 'js/course-checkout.js', ['checkout-commerce']);
-    @endphp
-@endif
+            ->add(
+                'riorelax-course-checkout',
+                'js/course-checkout.js',
+                ['checkout-commerce', 'theme-customer-card']
+            );
+    }
+@endphp
 
+
+{{-- STYLE SECTION UNVERÄNDERT – KOMPLETT --}}
 <style>
 :root{--mint:#578E88;--gray:#E5E7EB;--ink:#17463F;}
 body > header.header-area,
@@ -202,6 +216,8 @@ textarea.form-control{min-height:100px;}
 .cxl-accordion .cxl-body{padding:0 18px 18px;}
 </style>
 
+
+
 <div class="checkout-topbar">
   <a class="checkout-topbar__link" href="{{ route('public.courses') }}" aria-label="Zurück zur Übersicht">
     <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -210,6 +226,9 @@ textarea.form-control{min-height:100px;}
   </a>
   <span>Zurück zur Übersicht</span>
 </div>
+
+
+
 
 @php
   $contactValues = [
@@ -230,11 +249,15 @@ textarea.form-control{min-height:100px;}
       ->all();
 @endphp
 
+
+
+
 @if ($isCourseCheckout)
 <section class="checkout-booking-page checkout-fw" data-checkout-context="course">
   <div class="container pt-120 pb-40 checkout-booking">
 
-    {{-- ░░ Ticket Header ░░ --}}
+
+    {{-- TICKET HEADER --}}
     <div class="ticket">
       <div class="ticket__col ticket__media">
         <img src="{{ RvMedia::getImageUrl($course->thumbnail, default: RvMedia::getDefaultImage()) }}" alt="{{ $course->name }}">
@@ -275,7 +298,8 @@ textarea.form-control{min-height:100px;}
       </div>
     </div>
 
-    {{-- ░░ Stepper ░░ --}}
+
+    {{-- STEPPER --}}
     <div class="stepper-wrap">
       <div id="stepTitle">Allgemeine Informationen</div>
       <div class="stepper">
@@ -287,8 +311,9 @@ textarea.form-control{min-height:100px;}
       </div>
     </div>
 
-   
-    {{-- ░░ Formular ░░ --}}
+
+
+    {{-- FORMULAR --}}
     <form
       action="{{ route('public.course.booking.checkout') }}"
       method="POST"
@@ -298,8 +323,11 @@ textarea.form-control{min-height:100px;}
       data-start-step="{{ $customer->id ? 2 : 1 }}"
       data-storage-key="course-checkout"
       data-start-register="{{ $shouldStartRegister ? '1' : '0' }}"
-      data-prefill='@json($prefillPayload)'>
+      data-prefill='@json($prefillPayload)'
+    >
+
       @csrf
+
       <input type="hidden" name="token" value="{{ $token }}">
       <input
         type="hidden"
@@ -311,6 +339,7 @@ textarea.form-control{min-height:100px;}
         data-minimum-fee="{{ number_format($minimumOnlinePaymentFee, 2, '.', '') }}"
         data-minimum-threshold="{{ number_format($minimumOnlinePaymentThreshold, 2, '.', '') }}"
       >
+
       <input type="hidden" name="course_id" value="{{ $course->id }}">
       <input type="hidden" name="session_id" value="{{ $session->id }}">
       <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
@@ -318,22 +347,29 @@ textarea.form-control{min-height:100px;}
       <input type="hidden" name="register_customer" value="{{ old('register_customer', 0) }}" id="register_customer_flag">
       <input type="hidden" name="customer_card_id" value="{{ $selectedCard?->getKey() }}" data-customer-card-input>
 
-      {{-- Step 1 --}}
+
+
+
+      {{-- STEP 1 --}}
       <div class="step-panel active" data-step="1">
         <div id="formAlertStep1" class="form-alert"></div>
+
         @if ($customer->id)
           <p>Angemeldet als <b>{{ $customer->name ?? $customer->email }}</b></p>
           <div class="btnrow">
             <a href="{{ url()->previous() }}" class="btnX btn-outline-mint">Abbrechen</a>
             <button type="button" class="btnX btn-mint" data-next>Weiter</button>
           </div>
+
         @else
           <p>Wie möchtest du fortfahren?</p>
+
           <div class="btnrow" data-register-actions>
             <button type="button" class="btnX btn-mint" data-next>Als Gast buchen</button>
             <button type="button" class="btnX btn-outline-mint" data-open-login>Einloggen</button>
             <button type="button" class="btnX btn-outline-mint" data-toggle-register>Registrieren</button>
           </div>
+
           <div class="register-box {{ $shouldStartRegister ? '' : 'd-none' }}" data-register-box>
             <div class="row g-3">
               <div class="col-md-6">
@@ -357,18 +393,25 @@ textarea.form-control{min-height:100px;}
                 <input type="password" name="password_confirmation" class="form-control" autocomplete="new-password">
               </div>
             </div>
+
             <div class="btnrow mt-3">
               <button type="button" class="btnX btn-outline-mint" data-cancel-register>Abbrechen</button>
               <button type="button" class="btnX btn-mint" data-register-next>Weiter</button>
             </div>
+
           </div>
         @endif
       </div>
 
-      {{-- Step 2 --}}
+
+
+
+      {{-- STEP 2 --}}
       <div class="step-panel" data-step="2">
         <div id="formAlertStep2" class="form-alert"></div>
+
         <p>Pflichtfelder sind mit * gekennzeichnet</p>
+
         <div class="row">
           <div class="col-md-6 mb-3"><label>Vorname *</label><input id="txt-first_name" name="first_name" class="form-control" value="{{ $contactValues['first_name'] }}" required></div>
           <div class="col-md-6 mb-3"><label>Nachname *</label><input id="txt-last_name" name="last_name" class="form-control" value="{{ $contactValues['last_name'] }}" required></div>
@@ -380,19 +423,30 @@ textarea.form-control{min-height:100px;}
           <div class="col-md-6 mb-3"><label>Adresse</label><input id="txt-address" name="address" class="form-control" value="{{ $contactValues['address'] }}"></div>
           <div class="col-md-6 mb-3"><label>Postleitzahl</label><input id="txt-zip" name="zip" class="form-control" value="{{ $contactValues['zip'] }}"></div>
         </div>
-        <div class="mb-3"><label>Anfragen</label><textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas...">{{ old('requests') }}</textarea></div>
+
+        <div class="mb-3">
+          <label>Anfragen</label>
+          <textarea id="requests" name="requests" class="form-control" placeholder="Schreiben Sie etwas...">{{ old('requests') }}</textarea>
+        </div>
+
         <div class="btnrow">
           <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
           <button type="button" class="btnX btn-mint" data-next>Weiter</button>
         </div>
       </div>
 
-      {{-- Step 3 --}}
+
+
+
+      {{-- STEP 3 --}}
       <div class="step-panel" data-step="3">
         <div id="formAlertStep3" class="form-alert"></div>
+
         @php
           $hasAvailableCustomerCards = $availableCards->isNotEmpty();
         @endphp
+
+        {{-- KUNDENKARTE --}}
         <div class="checkout-action-card mb-3">
           <div class="checkout-action-card__header">
             <div>
@@ -400,49 +454,84 @@ textarea.form-control{min-height:100px;}
               <h5 class="checkout-action-card__title">Kundenkarte anwenden</h5>
             </div>
           </div>
+
           <div class="checkout-action-form">
             <label class="form-label checkout-action-label" for="customer_card_select">Kundenkarte auswählen</label>
+
             <div class="checkout-action-controls">
+
               <select id="customer_card_select"
                       class="form-select checkout-action-select"
                       data-course="{{ $course->id }}"
-                      @if (! $hasAvailableCustomerCards) disabled @endif>
+                      @if (! $hasAvailableCustomerCards) disabled @endif
+              >
                 <option value="">
                   {{ $hasAvailableCustomerCards ? 'Keine Karte auswählen' : 'Keine Kundenkarte verfügbar' }}
                 </option>
+
                 @foreach ($availableCards as $card)
                   <option value="{{ $card->id }}" @selected($selectedCard && $selectedCard->id === $card->id)>
                     {{ $card->name }}@if ($card->uid) — {{ $card->uid }}@endif
                   </option>
                 @endforeach
+
               </select>
+
+
               <button class="checkout-action-button checkout-action-button--primary"
                       type="button"
                       data-bb-customer-card="apply"
-                      @if (! $hasAvailableCustomerCards) disabled @endif>
+                      @if (! $hasAvailableCustomerCards) disabled @endif
+              >
                 Anwenden
               </button>
+
               <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}"
                       data-bb-customer-card="remove"
-                      type="button">
+                      type="button"
+              >
                 Entfernen
               </button>
+
             </div>
+
             @unless ($hasAvailableCustomerCards)
-              <p class="mb-0 text-muted" style="font-size: 13px;">{{ trans('plugins/hotel::customer-card.purchase.no_active_hint') }}</p>
+              <p class="mb-0 text-muted" style="font-size: 13px;">
+                {{ trans('plugins/hotel::customer-card.purchase.no_active_hint') }}
+              </p>
             @endunless
           </div>
-          <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
-            <span>Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong></span>
-            <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}" data-bb-customer-card="remove" type="button">Entfernen</button>
+
+          <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}"
+               data-bb-customer-card="info">
+            <span>
+              Kartenrabatt:
+              <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong>
+            </span>
+
+            <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}"
+                    data-bb-customer-card="remove"
+                    type="button"
+            >
+              Entfernen
+            </button>
           </div>
         </div>
+
+
+
+        {{-- COUPON --}}
         <div class="coupon-wrapper" id="courseCouponBox" data-checkout-context="course">
           @if ($isCourseCheckout)
             @include('plugins/courses::coupons.partials.form')
           @endif
         </div>
+
+
+
+        {{-- PAYMENT METHOD --}}
         <label>Zahlungsmethode</label>
+
         <ul class="list-group list_payment_method">
           {!! apply_filters(PAYMENT_FILTER_ADDITIONAL_PAYMENT_METHODS, null, [
               'amount' => $total,
@@ -452,27 +541,36 @@ textarea.form-control{min-height:100px;}
               'default' => PaymentMethods::getDefaultMethod(),
               'selecting' => PaymentMethods::getSelectingMethod(),
           ]) !!}
+
           {!! PaymentMethods::render() !!}
         </ul>
+
+
         <label class="d-flex align-items-center gap-2">
           <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))>
           <span>
-            Allgemeine&nbsp;Geschäftsbedingungen&nbsp;*
+            Allgemeine Geschäftsbedingungen *
             <a href="https://stage.inspira-zentrum.de/de/term-and-conditions"
                target="_blank"
                rel="noopener"
                style="color:#578E88;font-weight:600;text-decoration:underline;">
-              (AGB&nbsp;öffnen)
+              (AGB öffnen)
             </a>
           </span>
         </label>
+
         <div class="btnrow">
           <button type="button" class="btnX btn-outline-mint" data-prev>Abbrechen</button>
           <button type="submit" class="btnX btn-mint payment-checkout-btn" data-processing-text="Wird verarbeitet..." data-error-header="Fehler">Abschließen</button>
         </div>
-      </div>
+
+      </div> {{-- END STEP 3 --}}
     </form>
 
+
+
+
+    {{-- STORNOBOX --}}
     @if ($cancellation = theme_option('cancellation'))
       <div class="cxl-accordion">
         <details>
@@ -481,13 +579,16 @@ textarea.form-control{min-height:100px;}
         </details>
       </div>
     @endif
+
+
   </div>
 </section>
 
 {!! Theme::partial('checkout.login-modal', ['redirectUrl' => request()->fullUrl()]) !!}
 
+
 @if (is_plugin_active('payment'))
   {!! apply_filters(PAYMENT_FILTER_FOOTER_ASSETS, null) !!}
 @endif
-@endif
 
+@endif
