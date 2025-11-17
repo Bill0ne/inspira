@@ -61,7 +61,7 @@
     Theme::asset()
         ->container('footer')
         ->usePath()
-        ->add('checkout-core', 'js/checkout-core.js');
+        ->add('checkout-core', 'js/checkout-core.js', [], [], riorelax_theme_asset_version('js/checkout-core.js'));
 
     if ($isCourseCheckout) {
 
@@ -69,7 +69,13 @@
         Theme::asset()
             ->container('footer')
             ->usePath()
-            ->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
+            ->add(
+                'checkout-commerce',
+                'js/checkout-commerce.js',
+                ['jquery'],
+                [],
+                riorelax_theme_asset_version('js/checkout-commerce.js')
+            );
 
         // 3) Customer Card Config
         $customerCardConfig = Js::from([
@@ -102,7 +108,9 @@ SCRIPT
             ->add(
                 'vendor-hotel-customer-card',
                 'vendor/core/plugins/hotel/js/customer-card.js',
-                ['riorelax-customer-card-config']
+                ['riorelax-customer-card-config'],
+                [],
+                inspira_asset_version('vendor/core/plugins/hotel/js/customer-card.js')
             );
 
         // 5) Theme Customer Card UI
@@ -112,7 +120,9 @@ SCRIPT
             ->add(
                 'theme-customer-card',
                 'js/customer-card.js',
-                ['vendor-hotel-customer-card']
+                ['vendor-hotel-customer-card'],
+                [],
+                riorelax_theme_asset_version('js/customer-card.js')
             );
 
         // 6) Course Checkout Final Logic
@@ -122,7 +132,9 @@ SCRIPT
             ->add(
                 'riorelax-course-checkout',
                 'js/course-checkout.js',
-                ['checkout-commerce', 'theme-customer-card']
+                ['checkout-commerce', 'theme-customer-card'],
+                [],
+                riorelax_theme_asset_version('js/course-checkout.js')
             );
     }
 @endphp

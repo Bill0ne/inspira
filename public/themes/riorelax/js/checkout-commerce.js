@@ -46,19 +46,34 @@
     return null;
   }
 
+  function createContextObject(type, fallbackRoot) {
+    if (!type) return null;
+    var root = getContextRoot(type) || fallbackRoot;
+    if (!root) return null;
+    var selector = type === 'hotel' ? '#hotelCouponBox' : '#courseCouponBox';
+    var target = root.querySelector(selector);
+    if (!target) {
+      target = root.querySelector('.coupon-wrapper');
+    }
+    return {
+      type: type,
+      root: root,
+      $root: $(root),
+      $box: $(target || [])
+    };
+  }
+
   function resolveContext(element) {
     var el = element && element.nodeType ? element : null;
     while (el) {
+      if (el.nodeType !== 1) {
+        el = el.parentElement || el.parentNode;
+        continue;
+      }
       if (el.hasAttribute('data-checkout-context')) {
         var type = el.getAttribute('data-checkout-context');
         if (type && hasContext(type)) {
-          var root = getContextRoot(type) || el;
-          return {
-            type: type,
-            root: root,
-            $root: $(root),
-            $box: $(type === 'course' ? root.querySelector('#courseCouponBox') : root.querySelector('#hotelCouponBox'))
-          };
+          return createContextObject(type, el);
         }
       }
       el = el.parentElement;
@@ -80,6 +95,57 @@
       target = root.querySelector('.coupon-wrapper');
     }
     return $(target || []);
+  }
+
+  var COUPON_STATE_ATTR = 'data-coupon-open';
+  var COUPON_OPEN_CLASS = 'coupon-form-open';
+
+  function getStoredCouponState(ctx) {
+    if (!ctx || !ctx.root) return null;
+    var attr = ctx.root.getAttribute(COUPON_STATE_ATTR);
+    if (attr === 'true') return true;
+    if (attr === 'false') return false;
+    return null;
+  }
+
+  function setStoredCouponState(ctx, isOpen) {
+    if (!ctx || !ctx.root) return;
+    ctx.root.setAttribute(COUPON_STATE_ATTR, isOpen ? 'true' : 'false');
+  }
+
+  function applyCouponFormState(ctx, isOpen, options) {
+    if (!ctx || !ctx.$box || !ctx.$box.length) return;
+    var $form = ctx.$box.find('.coupon-form');
+    if (!$form.length) return;
+
+    var targetState = typeof isOpen === 'boolean' ? isOpen : getStoredCouponState(ctx);
+    if (typeof targetState !== 'boolean') {
+      targetState = $form.is(':visible');
+    }
+
+    var animate = options && options.animate;
+    if (animate) {
+      $form.stop(true, true);
+      if (targetState) {
+        $form.slideDown('fast');
+      } else {
+        $form.slideUp('fast');
+      }
+    } else {
+      $form.toggle(targetState);
+    }
+
+    ctx.$box.toggleClass(COUPON_OPEN_CLASS, !!targetState);
+    setStoredCouponState(ctx, targetState);
+    return targetState;
+  }
+
+  function restoreCouponFormState(context) {
+    var ctxType = getActiveContext(context);
+    if (!ctxType) return;
+    var ctx = createContextObject(ctxType);
+    if (!ctx) return;
+    applyCouponFormState(ctx);
   }
 
   function getCsrf() {
@@ -104,11 +170,11 @@
     var root = getContextRoot(ctx) || document;
     var $root = $(root);
     // Auch 0-Werte übernehmen (deshalb 'in' statt truthy)
-    if ('sub_total'      in data) $root.find('.amount-text').text(data.sub_total);
-    if ('discount_amount'in data) $root.find('.discount-text').text(data.discount_amount);
-    if ('tax_amount'     in data) $root.find('.tax-text').text(data.tax_amount);
-    if ('total_amount'   in data) $root.find('.total-amount-text').text(data.total_amount);
-    if ('amount_raw'     in data) $root.find('input[name=amount]').val(data.amount_raw);
+    if ('sub_total'       in data) $root.find('.amount-text').text(data.sub_total);
+    if ('discount_amount' in data) $root.find('.discount-text').text(data.discount_amount);
+    if ('tax_amount'      in data) $root.find('.tax-text').text(data.tax_amount);
+    if ('total_amount'    in data) $root.find('.total-amount-text').text(data.total_amount);
+    if ('amount_raw'      in data) $root.find('input[name=amount]').val(data.amount_raw);
   }
 
   function getSharedPayload(context) {
@@ -136,14 +202,20 @@
     if (!ctx) return;
     var $container = getCouponContainer(ctx);
     if (!$container.length) return;
+    var ctxInfo = createContextObject(ctx);
+    if (ctxInfo) {
+      ctxInfo.$box = $container;
+    }
 
     if (typeof html === 'string') {
       $container.html(html);
-      var $form = $container.find('.coupon-form');
-      if ($form.length) {
+      if (ctxInfo) {
         var hasApplied = $container.find('.coupon-feedback').length > 0;
-        if (hasApplied) {
-          $form.show();
+        var storedState = getStoredCouponState(ctxInfo);
+        if (hasApplied && typeof storedState !== 'boolean') {
+          applyCouponFormState(ctxInfo, true);
+        } else {
+          applyCouponFormState(ctxInfo);
         }
       }
       return;
@@ -207,7 +279,8 @@
   // Expose für andere Module (Hotel-Recalc ruft das auf)
   var checkoutApi = {
     updateTotals: updateTotals,
-    reloadPaymentList: reloadPaymentList
+    reloadPaymentList: reloadPaymentList,
+    restoreCouponFormState: restoreCouponFormState
   };
 
   Object.defineProperties(checkoutApi, {
@@ -227,16 +300,20 @@
 
   var $document = $(document);
 
+  // Sicherstellen, dass wir Events nur einmal binden
   $document.off('click', '.toggle-coupon-form');
   $document.off('click', '.apply-coupon-code');
   $document.off('click', '.remove-coupon-code');
 
   $document
     .on('click', '.toggle-coupon-form', function (e) {
-      var ctx = resolveContext(e.target);
+      var ctx = resolveContext(e.currentTarget);
       if (!ctx) return;
       if (!hasContext(ctx.type)) return;
-      ctx.$box.find('.coupon-form').toggle('fast');
+      var $form = ctx.$box.find('.coupon-form');
+      if (!$form.length) return;
+      var willOpen = !$form.is(':visible');
+      applyCouponFormState(ctx, willOpen, { animate: true });
     })
     .on('click', '.apply-coupon-code', function (e) {
       e.preventDefault();
@@ -279,7 +356,7 @@
         }
 
         callTheme('showSuccess', message || 'Gutschein angewendet.');
-        updateTotals(data);
+        updateTotals(data, ctx.type);
         if (data && typeof data.coupon_code !== 'undefined') {
           ctx.$box.find('input[name=coupon_hidden]').val(data.coupon_code || '');
           if (data.coupon_code) {
@@ -288,6 +365,12 @@
         }
         refreshCouponBox(data && data.coupon_view, ctx.type);
         reloadPaymentList(ctx.type);
+
+        // Event für andere Module (z.B. course-checkout.js)
+        $(document).trigger('coupon.applied', {
+          context: ctx.type,
+          response: res,
+        });
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
@@ -330,7 +413,7 @@
         }
 
         callTheme('showSuccess', message || 'Gutschein entfernt.');
-        updateTotals(data);
+        updateTotals(data, ctx.type);
         if (data && typeof data.coupon_code !== 'undefined') {
           ctx.$box.find('input[name=coupon_hidden]').val('');
           if (!data.coupon_code) {
@@ -339,6 +422,12 @@
         }
         refreshCouponBox(data && data.coupon_view, ctx.type);
         reloadPaymentList(ctx.type);
+
+        // Event für andere Module
+        $(document).trigger('coupon.removed', {
+          context: ctx.type,
+          response: res,
+        });
       })
       .fail(function (err) {
         callTheme('handleError', err, function () {
