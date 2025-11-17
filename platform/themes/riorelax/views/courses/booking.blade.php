@@ -76,6 +76,7 @@
             'currency' => get_application_currency()->symbol,
             'courseId' => $course->getKey(),
             'course_checkout' => true,
+            'isAuthenticated' => auth('customer')->check(),
             'routes' => [
                 'apply'  => route('ajax.customer-card.apply'),
                 'remove' => route('ajax.customer-card.remove'),
@@ -450,6 +451,8 @@ textarea.form-control{min-height:100px;}
                 <div id="formAlertStep3" class="form-alert"></div>
                 @php
                     $hasAvailableCustomerCards = $availableCards->isNotEmpty();
+                    $customerIsGuest = auth('customer')->guest();
+                    $cardControlsDisabled = $customerIsGuest || ! $hasAvailableCustomerCards;
                 @endphp
 
                 {{-- KUNDENKARTE --}}
@@ -466,7 +469,7 @@ textarea.form-control{min-height:100px;}
                             <select id="customer_card_select"
                                     class="form-select checkout-action-select"
                                     data-course="{{ $course->id }}"
-                                    @if (! $hasAvailableCustomerCards) disabled @endif>
+                                    @if ($cardControlsDisabled) disabled aria-disabled="true" @endif>
                                 <option value="">
                                     {{ $hasAvailableCustomerCards ? 'Keine Karte auswählen' : 'Keine Kundenkarte verfügbar' }}
                                 </option>
@@ -479,20 +482,25 @@ textarea.form-control{min-height:100px;}
                             <button class="checkout-action-button checkout-action-button--primary"
                                     type="button"
                                     data-bb-customer-card="apply"
-                                    @if (! $hasAvailableCustomerCards) disabled @endif>
+                                    @if ($cardControlsDisabled) disabled aria-disabled="true" @endif>
                                 Anwenden
                             </button>
                             <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}"
                                     data-bb-customer-card="remove"
-                                    type="button">
+                                    type="button"
+                                    @if ($customerIsGuest) disabled aria-disabled="true" @endif>
                                 Entfernen
                             </button>
                         </div>
-                        @unless ($hasAvailableCustomerCards)
+                        @if ($customerIsGuest)
+                            <p class="mb-0 text-muted" style="font-size: 13px;">
+                                {{ trans('plugins/hotel::customer-card.messages.login_required') }}
+                            </p>
+                        @elseif (! $hasAvailableCustomerCards)
                             <p class="mb-0 text-muted" style="font-size: 13px;">
                                 {{ trans('plugins/hotel::customer-card.purchase.no_active_hint') }}
                             </p>
-                        @endunless
+                        @endif
                     </div>
                     <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
                         <span>Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong></span>

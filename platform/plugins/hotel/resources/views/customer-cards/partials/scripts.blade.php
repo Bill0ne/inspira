@@ -15,6 +15,7 @@
                 apply: '{{ route('ajax.customer-card.apply') }}',
                 remove: '{{ route('ajax.customer-card.remove') }}',
             };
+            window.customerCard.isAuthenticated = {{ auth('customer')->check() ? 'true' : 'false' }};
             window.trans = window.trans || {};
             window.trans.customerCard = {{ Js::from(trans('plugins/hotel::customer-card')) }};
         </script>

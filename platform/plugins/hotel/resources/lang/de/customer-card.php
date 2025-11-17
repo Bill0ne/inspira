@@ -89,6 +89,10 @@ return [
     'messages' => [
         'select_card' => 'Bitte wählen Sie eine Kundenkarte aus.',
         'loading' => 'Lade Daten…',
+        'login_required' => 'Bitte zuerst einloggen.',
+        'route_unavailable' => 'Der Kundenkarten-Service ist aktuell nicht verfügbar.',
+        'card_not_found' => 'Diese Karte wurde nicht gefunden oder ist nicht mehr aktiv.',
+        'card_unavailable' => 'Diese Karte kann für diesen Kurs nicht verwendet werden.',
     ],
     'invoice' => [
         'discount_line' => 'Rabatt über Kundenkarte: :card',
