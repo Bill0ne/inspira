@@ -73,7 +73,11 @@ class CourseTable extends TableAbstract
                             $value = (new BaseStatusEnum())->make($value);
                         }
 
-                        if ($course instanceof Course && $course->isPast()) {
+                        if (
+                            $course instanceof Course
+                            && $course->isPast()
+                            && Course::hasExpiredStatusSupport()
+                        ) {
                             return BaseStatusEnum::EXPIRED();
                         }
 
