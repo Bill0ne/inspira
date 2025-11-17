@@ -147,6 +147,12 @@ $(document).ready(function () {
                         .done(({ error: refreshError, message: refreshMessage, data: refreshData }) => {
                             if (!refreshError && refreshData) {
                                 $orderBox.html(refreshData);
+                                if (
+                                    window.CheckoutCommerce &&
+                                    typeof window.CheckoutCommerce.restoreCouponFormState === 'function'
+                                ) {
+                                    window.CheckoutCommerce.restoreCouponFormState('course');
+                                }
                             } else if (refreshError && window.RiorelaxTheme) {
                                 window.RiorelaxTheme.showError(refreshMessage);
                             }
