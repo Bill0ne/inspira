@@ -2,13 +2,16 @@
 
 namespace Botble\Courses\Tables;
 
+use Botble\Base\Enums\BaseStatusEnum;
 use Botble\Base\Facades\Assets;
 use Botble\Base\Facades\BaseHelper;
 use Botble\Courses\Models\CourseSession;
+use Botble\Courses\Models\Instructor;
 use Botble\Courses\Services\CoursePerformanceService;
 use Botble\Media\Facades\RvMedia;
 use Botble\Table\Abstracts\TableAbstract;
 use Botble\Table\BulkActions\DeleteBulkAction;
+use Botble\Table\BulkChanges\SelectBulkChange;
 use Botble\Table\Columns\FormattedColumn;
 use Botble\Table\Columns\IdColumn;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +25,7 @@ class CourseSessionTable extends TableAbstract
         // WICHTIG: Initialisiert u. a. den Teilnehmer-Dialog (.view-participants-btn)
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
         $this->hasOperations = false;
+        $this->defaultSortColumnName = 'course_sessions.start_date';
 
         $this
             ->model(CourseSession::class)
@@ -52,6 +56,14 @@ class CourseSessionTable extends TableAbstract
                     ->escape(false)
                     ->getValueUsing(fn ($col) => $this->renderCategory($col->getItem())),
 
+                // Status
+                FormattedColumn::make('course_status')
+                    ->title('Status')
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->escape(false)
+                    ->getValueUsing(fn ($col) => $this->renderCourseStatus($col->getItem())),
+
                 // Preis
                 FormattedColumn::make('price')
                     ->title('Preis')
@@ -70,7 +82,9 @@ class CourseSessionTable extends TableAbstract
                 // Datum
                 FormattedColumn::make('date')
                     ->title('Datum')
-                    ->orderable(false)
+                    ->data('date')
+                    ->name('course_sessions.start_date')
+                    ->orderable(true)
                     ->searchable(false)
                     ->escape(false)
                     ->getValueUsing(fn ($col) => $this->renderDate($col->getItem())),
@@ -94,6 +108,21 @@ class CourseSessionTable extends TableAbstract
             ->addBulkActions([
                 DeleteBulkAction::make()->permission('course-sessions.destroy'),
             ])
+            ->addFilters([
+                SelectBulkChange::make()
+                    ->name('course_status')
+                    ->title('Status')
+                    ->choices(BaseStatusEnum::labels()),
+                SelectBulkChange::make()
+                    ->name('instructor_id')
+                    ->title('Coach')
+                    ->choices(
+                        Instructor::query()
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->all()
+                    ),
+            ])
             ->queryUsing(function (Builder $query) {
                 return $query
                     ->with(['course.category:id,name', 'course.instructor:id,name'])
@@ -109,6 +138,25 @@ class CourseSessionTable extends TableAbstract
                         'available_seats', // pro Sitzungs-Record (kann NULL für unlimited sein)
                         'created_at',
                     ]);
+            })
+            ->onFilterQuery(function ($query, $key, $operator, $value) {
+                if (! $value) {
+                    return false;
+                }
+
+                if ($key === 'course_status') {
+                    return $query->whereHas('course', function ($subQuery) use ($value) {
+                        $subQuery->where('status', $value);
+                    });
+                }
+
+                if ($key === 'instructor_id') {
+                    return $query->whereHas('course', function ($subQuery) use ($value) {
+                        $subQuery->where('instructor_id', $value);
+                    });
+                }
+
+                return false;
             });
     }
 
@@ -165,6 +213,17 @@ HTML;
     {
         $price = $session->course?->price;
         return $price ? format_price($price) : '—';
+    }
+
+    protected function renderCourseStatus(CourseSession $session): string
+    {
+        $status = $session->course?->status;
+
+        if (! $status instanceof BaseStatusEnum) {
+            return '—';
+        }
+
+        return (string) $status->toHtml();
     }
 
     // 10 SVG-Stühle; Füllung basierend auf gebucht vs. maxSeats (oder Prozent bei „unlimited“)
