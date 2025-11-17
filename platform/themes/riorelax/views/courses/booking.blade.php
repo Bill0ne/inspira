@@ -14,23 +14,22 @@
     Theme::set('pageTitle', '');
     Theme::set('breadcrumb', false);
 
-    // 1) CORE CHECKOUT
+    // WICHTIG: Diese Variable wird später im Blade benutzt!
+    $isCourseCheckout = Route::is('public.course.*');
+
+    // Core Checkout (immer)
     Theme::asset()
         ->container('footer')
         ->usePath()
         ->add('checkout-core', 'js/checkout-core.js');
 
-    $isCourseCheckoutRoute = Route::is('public.course.*');
+    if ($isCourseCheckout) {
 
-    if ($isCourseCheckoutRoute) {
-
-        // 2) COUPON + PAYMENT ENGINE (einzige Instanz)
         Theme::asset()
             ->container('footer')
             ->usePath()
             ->add('checkout-commerce', 'js/checkout-commerce.js', ['jquery']);
 
-        // CUSTOMER CARD CONFIG
         $customerCardConfig = Js::from([
             'currency' => get_application_currency()->symbol,
             'routes' => [
@@ -50,9 +49,8 @@ window.customerCard = Object.assign({}, window.customerCard || {}, {$customerCar
 window.trans = window.trans || {};
 window.trans.customerCard = Object.assign({}, window.trans.customerCard || {}, {$customerCardTranslations});
 SCRIPT
-        );
+            );
 
-        // 3) VENDOR CUSTOMER-CARD BUSINESS LOGIC
         Theme::asset()
             ->container('footer')
             ->add(
@@ -61,7 +59,6 @@ SCRIPT
                 ['riorelax-customer-card-config']
             );
 
-        // 4) THEME UI CUSTOMER CARD
         Theme::asset()
             ->container('footer')
             ->usePath()
@@ -71,7 +68,6 @@ SCRIPT
                 ['vendor-hotel-customer-card']
             );
 
-        // 5) COURSE CHECKOUT (Payment reload + Listener)
         Theme::asset()
             ->container('footer')
             ->usePath()
@@ -82,7 +78,6 @@ SCRIPT
             );
     }
 @endphp
-
 
 {{-- STYLE SECTION UNVERÄNDERT – KOMPLETT --}}
 <style>
