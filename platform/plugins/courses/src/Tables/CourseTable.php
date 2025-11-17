@@ -2,6 +2,7 @@
 
 namespace Botble\Courses\Tables;
 
+use Botble\Base\Enums\BaseStatusEnum;
 use Botble\Courses\Models\Course;
 use Botble\Table\Abstracts\TableAbstract;
 use Botble\Table\Actions\DeleteAction;
@@ -63,7 +64,21 @@ class CourseTable extends TableAbstract
                 FormattedColumn::make('end_date')
                     ->title(trans('plugins/courses::courses.course.end_date')),
                 CreatedAtColumn::make(),
-                StatusColumn::make()->title(trans('core/base::tables.status')),
+                StatusColumn::make()
+                    ->title(trans('core/base::tables.status'))
+                    ->getValueUsing(function (StatusColumn $column, $value) {
+                        $course = $column->getItem();
+
+                        if (! $value instanceof BaseStatusEnum && $value !== null) {
+                            $value = (new BaseStatusEnum())->make($value);
+                        }
+
+                        if ($course instanceof Course && $course->isPast()) {
+                            return BaseStatusEnum::EXPIRED();
+                        }
+
+                        return $value;
+                    }),
             ])
             ->addBulkActions([
                 DeleteBulkAction::make()->permission('course.destroy'),
