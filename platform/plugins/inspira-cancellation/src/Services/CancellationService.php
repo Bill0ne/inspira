@@ -74,26 +74,49 @@ class CancellationService
             'notes' => Arr::get($context, 'notes'),
         ]);
 
-        if ($booking instanceof Booking || $booking instanceof CourseBooking) {
-            $originalStatus = $booking->getOriginal('status');
-
-            $booking->status = BookingStatusEnum::CANCELLED;
-            $booking->save();
-
-            if ($originalStatus !== BookingStatusEnum::CANCELLED) {
-                if ($booking instanceof Booking) {
-                    event(new BookingStatusChanged($originalStatus, $booking));
-                }
-
-                if ($booking instanceof CourseBooking) {
-                    CourseBookingChangedStatus::dispatch($originalStatus, $booking);
-                }
-            }
-        }
-
         event(new BookingCancelledEvent($booking, $cancellation, $quote));
 
         return $cancellation;
+    }
+
+    public function markBookingAsCancelled(Cancellation $cancellation): ?Model
+    {
+        $type = $this->normalizeType($cancellation->booking_type);
+
+        $booking = $this->resolveBookingForCancellation($type, $cancellation->booking_id);
+
+        if (! $booking) {
+            return null;
+        }
+
+        $originalStatus = $booking->getOriginal('status');
+
+        if ($originalStatus instanceof BookingStatusEnum) {
+            $originalStatus = $originalStatus->getValue();
+        }
+
+        $currentStatus = $booking->status instanceof BookingStatusEnum
+            ? $booking->status->getValue()
+            : $booking->status;
+
+        if ($currentStatus === BookingStatusEnum::CANCELLED) {
+            return $booking;
+        }
+
+        $booking->status = BookingStatusEnum::CANCELLED;
+        $booking->save();
+
+        if ($originalStatus !== BookingStatusEnum::CANCELLED) {
+            if ($booking instanceof Booking) {
+                event(new BookingStatusChanged($originalStatus, $booking));
+            }
+
+            if ($booking instanceof CourseBooking) {
+                CourseBookingChangedStatus::dispatch($originalStatus, $booking);
+            }
+        }
+
+        return $booking;
     }
 
     public function findRuleFor(string $type, CarbonInterface $startDate, ?int $days = null): ?CancellationRule
@@ -168,5 +191,14 @@ class CancellationService
         $type = Str::lower($type);
 
         return in_array($type, ['course', 'room'], true) ? $type : 'course';
+    }
+
+    protected function resolveBookingForCancellation(string $type, int $bookingId): ?Model
+    {
+        return match ($type) {
+            'course' => CourseBooking::query()->find($bookingId),
+            'room' => Booking::query()->find($bookingId),
+            default => null,
+        };
     }
 }

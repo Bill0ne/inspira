@@ -9,6 +9,7 @@ use Botble\InspiraCancellation\Events\CancellationRefundApprovedEvent;
 use Botble\InspiraCancellation\Events\CancellationRefundPaidEvent;
 use Botble\InspiraCancellation\Events\CancellationRejectedEvent;
 use Botble\InspiraCancellation\Models\Cancellation;
+use Botble\InspiraCancellation\Services\CancellationService;
 use Botble\InspiraCancellation\Tables\CancellationTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -36,7 +37,11 @@ class CancellationController extends BaseController
         return $this->list($table);
     }
 
-    public function approve(Cancellation $cancellation, BaseHttpResponse $response): BaseHttpResponse
+    public function approve(
+        Cancellation $cancellation,
+        CancellationService $cancellationService,
+        BaseHttpResponse $response
+    ): BaseHttpResponse
     {
         $this->ensureStatus($cancellation, [
             CancellationStatusEnum::PENDING,
@@ -48,6 +53,8 @@ class CancellationController extends BaseController
             'approved_at' => now(),
             'approved_by' => Auth::id(),
         ])->save();
+
+        $cancellationService->markBookingAsCancelled($cancellation);
 
         event(new CancellationRefundApprovedEvent($cancellation));
 

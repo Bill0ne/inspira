@@ -96,6 +96,7 @@ return [
         'refund_percent' => ':percent% refund',
         'refund_amount' => 'Refund amount',
         'fee_amount' => 'Cancellation fee',
+        'fee_percent' => 'Cancellation fee %',
         'days_until_start' => ':days days before start',
         'policy_info' => 'According to the selected rule',
         'guideline' => 'Cancellations up to 7 days before the start are free of charge. After that, staggered fees apply.',
@@ -105,6 +106,10 @@ return [
         'notes_placeholder' => 'Add a short note for our team (optional).',
         'confirm_transfer' => 'Confirm transfer',
         'error_message' => 'Something went wrong. Please try again.',
+        'rule_between' => 'Applies between :from and :to days before the start.',
+        'rule_from' => 'Applies from :from days before the start.',
+        'rule_to' => 'Applies up to :to days before the start.',
+        'rule_open' => 'Applies at any time before the start.',
     ],
     'email' => [
         'title' => 'Cancellation & replacement emails',

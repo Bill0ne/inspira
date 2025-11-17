@@ -96,6 +96,7 @@ return [
         'refund_percent' => ':percent% Rückerstattung',
         'refund_amount' => 'Rückerstattung',
         'fee_amount' => 'Stornogebühr',
+        'fee_percent' => 'Stornogebühr %',
         'days_until_start' => ':days Tage vor Beginn',
         'policy_info' => 'Gemäß ausgewählter Stornoregel',
         'guideline' => 'Bei Stornierungen bis 7 Tage vor Beginn ist der Vorgang kostenfrei. Danach fallen gestaffelte Gebühren an.',
@@ -105,6 +106,10 @@ return [
         'notes_placeholder' => 'Fügen Sie eine optionale Notiz für unser Team hinzu.',
         'confirm_transfer' => 'Übertragung bestätigen',
         'error_message' => 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+        'rule_between' => 'Gilt für Stornierungen zwischen :from und :to Tagen vor Beginn.',
+        'rule_from' => 'Gilt ab :from Tagen vor Beginn.',
+        'rule_to' => 'Gilt bis :to Tage vor Beginn.',
+        'rule_open' => 'Gilt jederzeit vor Beginn.',
     ],
     'email' => [
         'title' => 'E-Mail-Vorlagen für Storno & Ersatz',
