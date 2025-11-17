@@ -216,7 +216,7 @@ class Course extends BaseModel
             return;
         }
 
-        if (! $this->hasExpiredStatusSupport()) {
+        if (! static::hasExpiredStatusSupport()) {
             return;
         }
 
@@ -238,7 +238,7 @@ class Course extends BaseModel
         }
     }
 
-    protected function hasExpiredStatusSupport(): bool
+    public static function hasExpiredStatusSupport(): bool
     {
         return defined(BaseStatusEnum::class . '::EXPIRED');
     }
