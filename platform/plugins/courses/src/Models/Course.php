@@ -51,6 +51,17 @@ class Course extends BaseModel
         'accept_customer_card' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::retrieved(function (Course $course) {
+            $course->syncAutomaticStatus();
+        });
+
+        static::saved(function (Course $course) {
+            $course->syncAutomaticStatus();
+        });
+    }
+
     public function instructor()
     {
         return $this->belongsTo(Instructor::class, 'instructor_id');
@@ -190,6 +201,58 @@ class Course extends BaseModel
     public function sessions(): HasMany
     {
         return $this->hasMany(CourseSession::class, 'course_id');
+    }
+
+    public function hasUpcomingSessions(): bool
+    {
+        return $this->sessions()
+            ->where('end_date', '>', Carbon::now())
+            ->exists();
+    }
+
+    public function syncAutomaticStatus(): void
+    {
+        if (! $this->exists || ! $this->status instanceof BaseStatusEnum) {
+            return;
+        }
+
+        $hasUpcomingSessions = $this->hasUpcomingSessions();
+
+        if (
+            $this->status->equals(BaseStatusEnum::PUBLISHED())
+            && $this->shouldAutomaticallyExpire($hasUpcomingSessions)
+        ) {
+            $this->forceFill(['status' => BaseStatusEnum::EXPIRED])->saveQuietly();
+            $this->status = BaseStatusEnum::EXPIRED();
+
+            return;
+        }
+
+        if ($this->status->equals(BaseStatusEnum::EXPIRED()) && $hasUpcomingSessions) {
+            $this->forceFill(['status' => BaseStatusEnum::PUBLISHED])->saveQuietly();
+            $this->status = BaseStatusEnum::PUBLISHED();
+        }
+    }
+
+    protected function shouldAutomaticallyExpire(?bool $hasUpcomingSessions = null): bool
+    {
+        $hasUpcomingSessions ??= $this->hasUpcomingSessions();
+
+        if ($hasUpcomingSessions) {
+            return false;
+        }
+
+        $hadSessions = $this->sessions()->exists();
+
+        if ($hadSessions) {
+            return true;
+        }
+
+        if ($this->end_date instanceof Carbon) {
+            return $this->end_date->lte(Carbon::now());
+        }
+
+        return false;
     }
 
     public function isPast(): bool

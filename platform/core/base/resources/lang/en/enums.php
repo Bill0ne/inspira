@@ -5,6 +5,7 @@ return [
         'draft' => 'Draft',
         'pending' => 'Pending',
         'published' => 'Published',
+        'expired' => 'Expired',
     ],
     'system_updater_steps' => [
         'download' => 'Download update files',
