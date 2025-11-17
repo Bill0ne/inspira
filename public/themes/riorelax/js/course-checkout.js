@@ -158,10 +158,7 @@ $(document).ready(function () {
     window.RioRelaxCourseCheckout = window.RioRelaxCourseCheckout || {};
     window.RioRelaxCourseCheckout.refreshCourseCoupon = refreshCourseCoupon;
 
-    // Toggle coupon form
     $(document)
-        .on('click', '.toggle-coupon-form', () => $('.coupon-form').toggle('fast'))
-
         // Apply coupon
         .on('click', '.apply-coupon-code', (e) => {
             e.preventDefault();

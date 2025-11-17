@@ -57,7 +57,6 @@ SCRIPT
 
         Theme::asset()
             ->container('footer')
-            ->usePath()
             ->add('hotel-customer-card-js', 'vendor/core/plugins/hotel/js/customer-card.js', ['riorelax-customer-card-config']);
 
         Theme::asset()
