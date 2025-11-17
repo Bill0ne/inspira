@@ -42,7 +42,13 @@ $(document).ready(function () {
                 coupon_code: couponCode,
             },
         })
-            .done(({ error, message, data }) => {
+            .done((response = {}) => {
+                const error = response.error;
+                const message = response.message;
+                const data = response && typeof response.data === 'object'
+                    ? response.data
+                    : {};
+
                 if (error) {
                     if (window.RiorelaxTheme) {
                         window.RiorelaxTheme.showError(message);
@@ -58,22 +64,24 @@ $(document).ready(function () {
                 const $minimumFeeText = $('.minimum-fee-text');
                 const $cardInfoBox = $('[data-bb-customer-card="info"]');
                 const $cardInfoDiscount = $cardInfoBox.find('[data-bb-customer-card="discount"]');
-                const cardDiscountRaw = Number(data.card_discount_raw || 0);
-                const minimumFeeRaw = Number(data.minimum_fee_raw || 0);
+                const cardDiscountRaw = Number(
+                    data.card_discount_raw ?? data.card_discount_ref ?? 0
+                );
+                const minimumFeeRaw = Number(data.minimum_fee_raw ?? 0);
 
                 // Hidden Inputs & Data-Attribute aktualisieren
                 $totalInput
-                    .val(data.amount_raw)
-                    .data('original-total', Number(data.total_before_card_raw || data.amount_raw))
+                    .val(data.amount_raw ?? $totalInput.val())
+                    .data('original-total', Number(data.total_before_card_raw || data.amount_raw || 0))
                     .data('active-discount', cardDiscountRaw)
                     .data('minimum-fee', minimumFeeRaw)
                     .data('minimum-threshold', Number(data.minimum_threshold || 0));
 
                 // Sidebar-Werte
-                $('.total-amount-text').text(data.total_amount);
-                $('.amount-text').text(data.sub_total);
-                $('.discount-text').text(data.discount_amount);
-                $('.tax-text').text(data.tax_amount);
+                $('.total-amount-text').text(data.total_amount ?? '');
+                $('.amount-text').text(data.sub_total ?? '');
+                $('.discount-text').text(data.discount_amount ?? '');
+                $('.tax-text').text(data.tax_amount ?? '');
 
                 if ($cardDiscountRow.length) {
                     if (cardDiscountRaw > 0) {

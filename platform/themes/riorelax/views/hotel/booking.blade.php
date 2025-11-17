@@ -10,8 +10,20 @@
 @php
     Theme::set('pageTitle', '');
     Theme::set('breadcrumb', false);
-    Theme::asset()->container('footer')->usePath()->add('checkout-core', 'js/checkout-core.js');
-    Theme::asset()->container('footer')->usePath()->add('checkout-hotel', 'js/checkout-hotel.js', ['jquery']);
+    Theme::asset()
+        ->container('footer')
+        ->usePath()
+        ->add('checkout-core', 'js/checkout-core.js', [], [], riorelax_theme_asset_version('js/checkout-core.js'));
+    Theme::asset()
+        ->container('footer')
+        ->usePath()
+        ->add(
+            'checkout-hotel',
+            'js/checkout-hotel.js',
+            ['jquery'],
+            [],
+            riorelax_theme_asset_version('js/checkout-hotel.js')
+        );
 
     if (is_plugin_active('payment')) {
         Theme::asset()
