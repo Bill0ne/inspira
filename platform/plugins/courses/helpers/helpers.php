@@ -6,13 +6,7 @@ use Botble\Hotel\Models\Customer;
 if (! function_exists('course_truncate_price')) {
     function course_truncate_price(float $price, int $decimals = 2): float
     {
-        $factor = 10 ** $decimals;
-
-        if ($price >= 0) {
-            return floor($price * $factor) / $factor;
-        }
-
-        return ceil($price * $factor) / $factor;
+        return round($price, $decimals, PHP_ROUND_HALF_UP);
     }
 }
 
