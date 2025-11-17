@@ -55,17 +55,7 @@ class CourseTable extends TableAbstract
                     ->getValueUsing(function (FormattedColumn $column) {
                         return $column->getItem()->sessions()->count();
                     })->searchable(false),
-                FormattedColumn::make('past_course')
-                    ->title('Ablaufstatus')
-                    ->getValueUsing(function (FormattedColumn $column) {
-                        $isPast = $column->getItem()->isPast();
-                        $class = $isPast ? 'badge bg-danger text-danger-fg' : 'badge bg-primary text-primary-fg';
-                        $text = $isPast ? 'Abgelaufen' : 'Aktiv';
-
-                        return "<span class=\"$class\">$text</span>";
-                    })
-                    ->html(),// Important: allow HTML rendering
-        FormattedColumn::make('duration')
+                FormattedColumn::make('duration')
                     ->title(trans('plugins/courses::courses.course.duration'))
                     ->getValueUsing(fn (FormattedColumn $column) => $column->getItem()->duration ?? '—'),
                 FormattedColumn::make('start_date')
@@ -73,7 +63,7 @@ class CourseTable extends TableAbstract
                 FormattedColumn::make('end_date')
                     ->title(trans('plugins/courses::courses.course.end_date')),
                 CreatedAtColumn::make(),
-                StatusColumn::make(),
+                StatusColumn::make()->title(trans('core/base::tables.status')),
             ])
             ->addBulkActions([
                 DeleteBulkAction::make()->permission('course.destroy'),
