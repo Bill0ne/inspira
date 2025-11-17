@@ -256,9 +256,13 @@ $(document).ready(function () {
         })
     }
 
-    $(document)
-        .on('click', '.toggle-coupon-form', () => $(document).find('.coupon-form').toggle('fast'))
-        .on('click', '.apply-coupon-code', (e) => {
+    const $document = $(document)
+    const hasScopedCheckoutContext = document.querySelector('[data-checkout-context]')
+
+    if (!hasScopedCheckoutContext) {
+        $document
+            .on('click', '.toggle-coupon-form', () => $document.find('.coupon-form').toggle('fast'))
+            .on('click', '.apply-coupon-code', (e) => {
             e.preventDefault()
 
             const slots = []
@@ -329,8 +333,8 @@ $(document).ready(function () {
                     $button.removeClass('button-loading')
                 }
             })
-        })
-        .on('click', '.remove-coupon-code', (e) => {
+            })
+            .on('click', '.remove-coupon-code', (e) => {
             e.preventDefault()
 
             const $button = $(e.currentTarget)
@@ -362,5 +366,6 @@ $(document).ready(function () {
                     $button.removeClass('button-loading')
                 },
             })
-        })
+            })
+    }
 })

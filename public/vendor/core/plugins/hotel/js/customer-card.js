@@ -1,6 +1,11 @@
 $(() => {
     /**
-     * BOTBLE FALLBACK
+     * ----------------------------------------------------------
+     *  BOTBLE FALLBACK (NEU)
+     * ----------------------------------------------------------
+     * Stellt sicher, dass im Frontend (Checkout) das Script läuft,
+     * auch wenn window.Botble NICHT existiert.
+     * ----------------------------------------------------------
      */
     window.Botble = window.Botble || {
         showSuccess: (msg) => console.log('Success:', msg),
@@ -8,33 +13,36 @@ $(() => {
         handleError: (err) => console.error('Request error:', err),
     };
 
-    const CARD_CONFIG = window.customerCard = window.customerCard || {};
-    CARD_CONFIG.routes = CARD_CONFIG.routes || {};
+    const CARD_CONFIG = window.customerCard = window.customerCard || {}
+    CARD_CONFIG.routes = CARD_CONFIG.routes || {}
+    CARD_CONFIG.course_checkout = CARD_CONFIG.course_checkout || false
 
     const t = (path, fallback = '') => {
-        const segments = path.split('.');
-        let current = window.trans && window.trans.customerCard;
+        const segments = path.split('.')
+        let current = window.trans && window.trans.customerCard
 
         for (const segment of segments) {
             if (! current || typeof current !== 'object' || !(segment in current)) {
-                return fallback;
+                return fallback
             }
 
-            current = current[segment];
+            current = current[segment]
         }
 
-        return current ?? fallback;
-    };
+        return current ?? fallback
+    }
 
     const formatPrice = (amount) => {
-        const value = Number(amount || 0);
-        return `${CARD_CONFIG.currency || ''}${value.toFixed(2)}`;
-    };
+        const value = Number(amount || 0)
+        return `${CARD_CONFIG.currency || ''}${value.toFixed(2)}`
+    }
 
-    const $adminForm = $(document).find('form.customer-card-form');
+    const $adminForm = $(document).find('form.customer-card-form')
 
     /**
-     * ADMIN MODE – FORM SYNC
+     * ----------------------------------------------------------
+     *  ADMIN MODE – FORM SYNC
+     * ----------------------------------------------------------
      */
     if ($adminForm.length) {
         const selectors = {
@@ -44,142 +52,144 @@ $(() => {
             summaryText: '[data-bb-customer-card="summary-text"]',
             summaryTotal: '[data-bb-customer-card="summary-total"]',
             type: '[data-bb-customer-card-select="type"]',
-        };
+        }
 
         const syncUnitsByType = (type) => {
             if (type === '5er' || type === '10er') {
-                const units = type === '5er' ? 5 : 10;
-                $adminForm.find(selectors.units).val(units);
+                const units = type === '5er' ? 5 : 10
+                $adminForm.find(selectors.units).val(units)
             }
-        };
+        }
 
         const updateSummary = () => {
-            const basePrice = parseFloat($adminForm.find(selectors.basePrice).val()) || 0;
-            const discount = parseFloat($adminForm.find(selectors.discount).val()) || 0;
-            const units = parseInt($adminForm.find(selectors.units).val(), 10) || 0;
+            const basePrice = parseFloat($adminForm.find(selectors.basePrice).val()) || 0
+            const discount = parseFloat($adminForm.find(selectors.discount).val()) || 0
+            const units = parseInt($adminForm.find(selectors.units).val(), 10) || 0
 
             if (! basePrice || ! units) {
-                $adminForm.find(selectors.summaryText).text(t('form.summary.placeholder'));
-                $adminForm.find(selectors.summaryTotal).text('');
-                return;
+                $adminForm.find(selectors.summaryText).text(t('form.summary.placeholder'))
+                $adminForm.find(selectors.summaryTotal).text('')
+                return
             }
 
-            const gross = basePrice * units;
-            const discountAmount = gross * Math.min(Math.max(discount, 0), 100) / 100;
-            const net = gross - discountAmount;
+            const gross = basePrice * units
+            const discountAmount = gross * Math.min(Math.max(discount, 0), 100) / 100
+            const net = gross - discountAmount
 
             $adminForm
                 .find(selectors.summaryText)
-                .text(`${formatPrice(gross)} → ${formatPrice(net)}`);
+                .text(`${formatPrice(gross)} → ${formatPrice(net)}`)
 
             $adminForm
                 .find(selectors.summaryTotal)
-                .text(`${discount.toFixed(2)}% ${t('form.summary.discount_label')}`);
-        };
+                .text(`${discount.toFixed(2)}% ${t('form.summary.discount_label')}`)
+        }
 
         $adminForm
             .on('change', selectors.type, (event) => {
-                syncUnitsByType(event.currentTarget.value);
-                updateSummary();
+                syncUnitsByType(event.currentTarget.value)
+                updateSummary()
             })
             .on('keyup change', [
                 selectors.basePrice,
                 selectors.discount,
                 selectors.units,
-            ].join(','), updateSummary);
+            ].join(','), updateSummary)
 
-        syncUnitsByType($adminForm.find(selectors.type).val());
-        updateSummary();
+        syncUnitsByType($adminForm.find(selectors.type).val())
+        updateSummary()
     }
 
-    const $templateSelect = $('[data-bb-customer-card="template-select"]');
+    const $templateSelect = $('[data-bb-customer-card="template-select"]')
 
     if ($templateSelect.length) {
-        const $summary = $('[data-bb-customer-card="template-summary"]');
-        const $placeholder = $('[data-bb-customer-card="template-placeholder"]');
-        const $name = $('[data-bb-customer-card="template-name"]');
-        const $type = $('[data-bb-customer-card="template-type"]');
-        const $basePrice = $('[data-bb-customer-card="template-base-price"]');
-        const $totalPrice = $('[data-bb-customer-card="template-total-price"]');
-        const $units = $('[data-bb-customer-card="template-units"]');
-        const $discount = $('[data-bb-customer-card="template-discount"]');
-        const $validUntil = $('[data-bb-customer-card="template-valid-until"]');
-        const $validInput = $('[name="valid_until"]');
+        const $summary = $('[data-bb-customer-card="template-summary"]')
+        const $placeholder = $('[data-bb-customer-card="template-placeholder"]')
+        const $name = $('[data-bb-customer-card="template-name"]')
+        const $type = $('[data-bb-customer-card="template-type"]')
+        const $basePrice = $('[data-bb-customer-card="template-base-price"]')
+        const $totalPrice = $('[data-bb-customer-card="template-total-price"]')
+        const $units = $('[data-bb-customer-card="template-units"]')
+        const $discount = $('[data-bb-customer-card="template-discount"]')
+        const $validUntil = $('[data-bb-customer-card="template-valid-until"]')
+        const $validInput = $('[name="valid_until"]')
 
         const updateTemplateSummary = () => {
-            const $option = $templateSelect.find(':selected');
-            const templateId = Number($option.val()) || null;
+            const $option = $templateSelect.find(':selected')
+            const templateId = Number($option.val()) || null
 
             if (! templateId) {
-                $summary.hide();
-                $placeholder.show();
-                return;
+                $summary.hide()
+                $placeholder.show()
+                return
             }
 
-            const basePrice = Number($option.data('base-price') || 0);
-            const totalUnits = Number($option.data('total-units') || 0);
-            const discountValue = Number($option.data('discount') || 0);
-            const totalPrice = Number($option.data('total-price') || 0);
-            const validUntil = $option.data('valid-until') || '';
+            const basePrice = Number($option.data('base-price') || 0)
+            const totalUnits = Number($option.data('total-units') || 0)
+            const discountValue = Number($option.data('discount') || 0)
+            const totalPrice = Number($option.data('total-price') || 0)
+            const validUntil = $option.data('valid-until') || ''
 
-            $name.text($option.data('name') || '');
-            $type.text($option.data('type') || '');
-            $basePrice.text(`${formatPrice(basePrice)} × ${totalUnits}`);
-            $totalPrice.text(formatPrice(totalPrice));
-            $units.text(totalUnits ? Number(totalUnits).toLocaleString() : '—');
-            $discount.text(`${discountValue.toFixed(2)}%`);
-            $validUntil.text(validUntil || '—');
+            $name.text($option.data('name') || '')
+            $type.text($option.data('type') || '')
+            $basePrice.text(`${formatPrice(basePrice)} × ${totalUnits}`)
+            $totalPrice.text(formatPrice(totalPrice))
+            $units.text(totalUnits ? Number(totalUnits).toLocaleString() : '—')
+            $discount.text(`${discountValue.toFixed(2)}%`)
+            $validUntil.text(validUntil || '—')
 
             if (validUntil && $validInput.length) {
-                $validInput.val(validUntil);
+                $validInput.val(validUntil)
             }
 
-            $placeholder.hide();
-            $summary.show();
-        };
+            $placeholder.hide()
+            $summary.show()
+        }
 
-        $templateSelect.on('change', updateTemplateSummary);
-        updateTemplateSummary();
+        $templateSelect.on('change', updateTemplateSummary)
+        updateTemplateSummary()
     }
 
     /**
-     * SHARED REQUEST WRAPPER
+     * ----------------------------------------------------------
+     *  SHARED REQUEST WRAPPER
+     * ----------------------------------------------------------
      */
-    const csrfToken = () => $('meta[name="csrf-token"]').attr('content');
+    const csrfToken = () => $('meta[name="csrf-token"]').attr('content')
 
     const toggleButton = ($button, isLoading) => {
         if (!$button || !$button.length) {
-            return;
+            return
         }
 
-        $button.prop('disabled', !!isLoading);
-        $button.toggleClass('button-loading', !!isLoading);
-    };
+        $button.prop('disabled', !!isLoading)
+        $button.toggleClass('button-loading', !!isLoading)
+    }
 
     const request = (url, payload = {}, $trigger = null) => {
         if (! url) {
-            return Promise.reject(new Error('Missing URL'));
+            return Promise.reject(new Error('Missing URL'))
         }
 
         const data = {
             _token: csrfToken(),
             ...payload,
-        };
-
-        if (window.Botble?.request) {
-            let client = window.Botble.request;
-
-            if ($trigger && typeof client.withButtonLoading === 'function') {
-                client = client.withButtonLoading($trigger);
-            }
-
-            return client.post(url, data);
         }
 
-        toggleButton($trigger, true);
+        if (window.Botble?.request) {
+            let client = window.Botble.request
+
+            if ($trigger && typeof client.withButtonLoading === 'function') {
+                client = client.withButtonLoading($trigger)
+            }
+
+            return client.post(url, data)
+        }
+
+        toggleButton($trigger, true)
 
         if (window.axios) {
-            return window.axios.post(url, data).finally(() => toggleButton($trigger, false));
+            return window.axios.post(url, data).finally(() => toggleButton($trigger, false))
         }
 
         return $.ajax({
@@ -187,242 +197,250 @@ $(() => {
             url,
             data,
             complete() {
-                toggleButton($trigger, false);
+                toggleButton($trigger, false)
             },
-        }).then((response) => ({ data: response }));
-    };
+        }).then((response) => ({ data: response }))
+    }
 
     const getRequest = (url, $trigger = null) => {
         if (! url) {
-            return Promise.reject(new Error('Missing URL'));
+            return Promise.reject(new Error('Missing URL'))
         }
 
         if (window.Botble?.request) {
-            let client = window.Botble.request;
+            let client = window.Botble.request
 
             if ($trigger && typeof client.withButtonLoading === 'function') {
-                client = client.withButtonLoading($trigger);
+                client = client.withButtonLoading($trigger)
             }
 
-            return client.get(url);
+            return client.get(url)
         }
 
-        toggleButton($trigger, true);
+        toggleButton($trigger, true)
 
         if (window.axios) {
-            return window.axios.get(url).finally(() => toggleButton($trigger, false));
+            return window.axios.get(url).finally(() => toggleButton($trigger, false))
         }
 
         return $.ajax({
             method: 'GET',
             url,
             complete() {
-                toggleButton($trigger, false);
+                toggleButton($trigger, false)
             },
-        }).then((response) => ({ data: response }));
-    };
+        }).then((response) => ({ data: response }))
+    }
 
-    const initialRoutes = Object.assign({}, CARD_CONFIG.routes || {});
+    const resolveCoursePayload = (courseId = null) => {
+        const payload = {}
+        const configuredId = Number(courseId || CARD_CONFIG.courseId || CARD_CONFIG.course_id || 0)
+
+        if (configuredId) {
+            payload.course_id = configuredId
+        }
+
+        if (payload.course_id || CARD_CONFIG.course_checkout) {
+            payload.course_checkout = true
+        }
+
+        return payload
+    }
+
+    const initialRoutes = Object.assign({}, CARD_CONFIG.routes || {})
 
     const getRoute = (key) => {
         if (CARD_CONFIG.routes && CARD_CONFIG.routes[key]) {
-            return CARD_CONFIG.routes[key];
+            return CARD_CONFIG.routes[key]
         }
 
-        return initialRoutes[key];
-    };
+        return initialRoutes[key]
+    }
 
     const applyCustomerCard = (cardId, courseId = null, $trigger = null) =>
         request(getRoute('apply'), {
             card_id: cardId,
-            course_id: courseId,
-        }, $trigger);
+            ...resolveCoursePayload(courseId),
+        }, $trigger)
 
-    const removeCustomerCard = ($trigger = null) =>
-        request(getRoute('remove'), {}, $trigger);
+    const removeCustomerCard = ($trigger = null, courseId = null) =>
+        request(getRoute('remove'), resolveCoursePayload(courseId), $trigger)
 
-    CARD_CONFIG.applyCustomerCard = applyCustomerCard;
-    CARD_CONFIG.removeCustomerCard = removeCustomerCard;
+    CARD_CONFIG.applyCustomerCard = applyCustomerCard
+    CARD_CONFIG.removeCustomerCard = removeCustomerCard
 
     /**
-     * FRONTEND CHECKOUT MODE
+     * ----------------------------------------------------------
+     *  FRONTEND CHECKOUT MODE
+     * ----------------------------------------------------------
      */
-    const $cardSelect = $('#customer_card_select');
+    const $cardSelect = $('#customer_card_select')
 
     if ($cardSelect.length) {
-        const $applyButton = $('[data-bb-customer-card="apply"]');
-        const $removeButton = $('[data-bb-customer-card="remove"]');
-        const $infoBox = $('[data-bb-customer-card="info"]');
-        const $totalInput = $('[data-total]');
-        const $cardInput = $('[data-customer-card-input]');
-        const $discountRow = $('.card-discount-row');
-        const $discountText = $('.card-discount-text');
-        const $minimumFeeRow = $('.minimum-fee-row');
-        const $minimumFeeText = $('.minimum-fee-text');
-        const $totalAmountText = $('.total-amount-text');
+        const $applyButton = $('[data-bb-customer-card="apply"]')
+        const $removeButton = $('[data-bb-customer-card="remove"]')
+        const $infoBox = $('[data-bb-customer-card="info"]')
+        const $totalInput = $('[data-total]')
+        const $cardInput = $('[data-customer-card-input]')
+        const $discountRow = $('.card-discount-row')
+        const $discountText = $('.card-discount-text')
+        const $minimumFeeRow = $('.minimum-fee-row')
+        const $minimumFeeText = $('.minimum-fee-text')
+        const $totalAmountText = $('.total-amount-text')
 
-        // Wichtig: Course vs. Hotel unterscheiden
-        const isCourseCheckout = !!document.querySelector('[data-checkout-context="course"]');
+        const fallbackCourseId = Number(CARD_CONFIG.courseId || CARD_CONFIG.course_id || 0) || null
+        const courseId = Number($cardSelect.data('course')) || fallbackCourseId
 
-        const courseId = Number($cardSelect.data('course')) || null;
+        if (courseId && ! CARD_CONFIG.courseId) {
+            CARD_CONFIG.courseId = courseId
+        }
+
+        if (courseId) {
+            CARD_CONFIG.course_checkout = true
+        }
 
         const getOriginalTotal = () => {
-            const storedValue = $totalInput.data('original-total');
+            const storedValue = $totalInput.data('original-total')
 
             if (storedValue !== undefined && storedValue !== null && storedValue !== '') {
-                return Number(storedValue);
+                return Number(storedValue)
             }
 
-            const currentTotal = Number($totalInput.val()) || 0;
-            const activeDiscount = Number($totalInput.data('active-discount') || 0);
-            const minimumFee = Number($totalInput.data('minimum-fee') || 0);
+            const currentTotal = Number($totalInput.val()) || 0
+            const activeDiscount = Number($totalInput.data('active-discount') || 0)
+            const minimumFee = Number($totalInput.data('minimum-fee') || 0)
 
-            const base = currentTotal + activeDiscount - minimumFee;
+            const base = currentTotal + activeDiscount - minimumFee
 
-            $totalInput.data('original-total', base);
+            $totalInput.data('original-total', base)
 
-            return base;
-        };
+            return base
+        }
 
         const updateTotals = (discountValue = 0, formattedDiscount = null) => {
-            // Im Course-Checkout übernimmt das Backend + course-checkout.js die komplette Berechnung.
-            if (isCourseCheckout) {
-                // Hier nur optional die Sichtbarkeit der Rabattzeile steuern,
-                // die konkreten Beträge kommen dann von /course/ajax/calculate-amount.
-                if ($discountRow.length) {
-                    if (discountValue > 0) {
-                        $discountRow.removeClass('d-none');
-                    } else {
-                        $discountRow.addClass('d-none');
-                    }
-                }
-                return;
-            }
-
-            const baseTotal = getOriginalTotal();
-            let nextTotal = Math.max(baseTotal - Number(discountValue || 0), 0);
-            const threshold = Number($totalInput.data('minimum-threshold') || 0);
-            let minimumFee = 0;
+            const baseTotal = getOriginalTotal()
+            let nextTotal = Math.max(baseTotal - Number(discountValue || 0), 0)
+            const threshold = Number($totalInput.data('minimum-threshold') || 0)
+            let minimumFee = 0
 
             if (nextTotal > 0 && threshold > 0 && nextTotal < threshold) {
-                minimumFee = parseFloat((threshold - nextTotal).toFixed(2));
-                nextTotal = parseFloat((nextTotal + minimumFee).toFixed(2));
+                minimumFee = parseFloat((threshold - nextTotal).toFixed(2))
+                nextTotal = parseFloat((nextTotal + minimumFee).toFixed(2))
             } else {
-                nextTotal = parseFloat(nextTotal.toFixed(2));
+                nextTotal = parseFloat(nextTotal.toFixed(2))
             }
 
             $totalInput
                 .val(nextTotal.toFixed(2))
                 .data('active-discount', Number(discountValue || 0))
-                .data('minimum-fee', minimumFee);
+                .data('minimum-fee', minimumFee)
 
             if ($discountRow.length) {
                 if (discountValue > 0) {
-                    $discountRow.removeClass('d-none');
+                    $discountRow.removeClass('d-none')
                     if (formattedDiscount) {
-                        $discountText.text(`-${formattedDiscount.replace(/^[-]/, '')}`);
+                        $discountText.text(`-${formattedDiscount.replace(/^[-]/, '')}`)
                     } else {
-                        $discountText.text(`-${formatPrice(discountValue)}`);
+                        $discountText.text(`-${formatPrice(discountValue)}`)
                     }
                 } else {
-                    $discountRow.addClass('d-none');
-                    $discountText.text(`-${formatPrice(0)}`);
+                    $discountRow.addClass('d-none')
+                    $discountText.text(`-${formatPrice(0)}`)
                 }
             }
 
             if ($minimumFeeRow.length) {
                 if (minimumFee > 0) {
-                    $minimumFeeRow.removeClass('d-none');
+                    $minimumFeeRow.removeClass('d-none')
                     if ($minimumFeeText.length) {
-                        $minimumFeeText.text(formatPrice(minimumFee));
+                        $minimumFeeText.text(formatPrice(minimumFee))
                     }
                 } else {
-                    $minimumFeeRow.addClass('d-none');
+                    $minimumFeeRow.addClass('d-none')
                     if ($minimumFeeText.length) {
-                        $minimumFeeText.text(formatPrice(0));
+                        $minimumFeeText.text(formatPrice(0))
                     }
                 }
             }
 
-            $totalAmountText.text(formatPrice(nextTotal));
-        };
-
-        if (Number($cardInput.val())) {
-            $removeButton.removeClass('d-none');
+            $totalAmountText.text(formatPrice(nextTotal))
         }
 
-        updateTotals(Number($totalInput.data('active-discount') || 0));
+        if (Number($cardInput.val())) {
+            $removeButton.removeClass('d-none')
+        }
+
+        updateTotals(Number($totalInput.data('active-discount') || 0))
 
         /**
          * APPLY CARD
          */
         $applyButton.on('click', function (event) {
-            event.preventDefault();
+            event.preventDefault()
 
-            const cardId = Number($cardSelect.val());
+            const cardId = Number($cardSelect.val())
 
             if (! cardId) {
-                window.Botble.showError(t('messages.select_card'));
-                return;
+                window.Botble.showError(t('messages.select_card'))
+                return
             }
 
             applyCustomerCard(cardId, courseId, $(this))
                 .then(({ data }) => {
-                    window.Botble.showSuccess(data.message);
+                    window.Botble.showSuccess(data.message)
 
-                    const payload = data?.data || {};
+                    const payload = data?.data || {}
 
                     if (payload.discount) {
                         $infoBox
                             .removeClass('d-none')
-                            .find('[data-bb-customer-card="discount"]').text(payload.discount);
+                            .find('[data-bb-customer-card="discount"]').text(payload.discount)
                     }
 
-                    updateTotals(Number(payload.raw_discount || 0), payload.discount);
-                    $cardInput.val(cardId);
-                    $removeButton.removeClass('d-none');
+                    updateTotals(Number(payload.raw_discount || 0), payload.discount)
+                    $cardInput.val(cardId)
+                    $removeButton.removeClass('d-none')
 
-                    // Globales Event – Course-Checkout hört darauf und macht Recalc
                     $(document).trigger('customer-card.applied', {
                         discount: Number(payload.raw_discount || 0),
-                        payload,
-                    });
+                    })
                 })
                 .catch((error) => {
-                    window.Botble.handleError(error);
-                });
-        });
+                    window.Botble.handleError(error)
+                })
+        })
 
         /**
          * REMOVE CARD
          */
         $removeButton.on('click', function (event) {
-            event.preventDefault();
+            event.preventDefault()
 
-            removeCustomerCard($(this))
+            removeCustomerCard($(this), courseId)
                 .then(({ data }) => {
-                    window.Botble.showSuccess(data.message);
-                    $infoBox.addClass('d-none');
-                    $cardSelect.val('');
-                    $removeButton.addClass('d-none');
-                    $cardInput.val('');
-                    updateTotals(0);
-
-                    $(document).trigger('customer-card.removed', {});
+                    window.Botble.showSuccess(data.message)
+                    $infoBox.addClass('d-none')
+                    $cardSelect.val('')
+                    $removeButton.addClass('d-none')
+                    $cardInput.val('')
+                    updateTotals(0)
+                    $(document).trigger('customer-card.removed', {})
                 })
                 .catch((error) => {
-                    window.Botble.handleError(error);
-                });
-        });
+                    window.Botble.handleError(error)
+                })
+        })
     }
 
     /**
-     * USAGE MODAL
+     * ----------------------------------------------------------
+     *  USAGE MODAL
+     * ----------------------------------------------------------
      */
-    const usageSelector = '[data-bb-customer-card="usage"]';
+    const usageSelector = '[data-bb-customer-card="usage"]'
 
     const ensureUsageModal = () => {
-        let $modal = $('#customer-card-usage-modal');
+        let $modal = $('#customer-card-usage-modal')
 
         if (! $modal.length) {
             $modal = $(
@@ -439,41 +457,41 @@ $(() => {
                         </div>
                     </div>
                 </div>`
-            );
+            )
 
-            $('body').append($modal);
+            $('body').append($modal)
         }
 
-        return $modal;
-    };
+        return $modal
+    }
 
     $(document).on('click', usageSelector, function () {
-        const $trigger = $(this);
-        const url = $trigger.data('url');
-        const title = $trigger.data('title') || t('table.usage_title', 'Kartenverwendung');
+        const $trigger = $(this)
+        const url = $trigger.data('url')
+        const title = $trigger.data('title') || t('table.usage_title', 'Kartenverwendung')
 
         if (! url) {
-            return;
+            return
         }
 
-        const $modal = ensureUsageModal();
+        const $modal = ensureUsageModal()
 
-        $modal.find('.modal-title').text(title);
+        $modal.find('.modal-title').text(title)
         $modal
             .find('.modal-body')
-            .html(`<div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>`);
+            .html(`<div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>`)
 
-        $modal.modal('show');
+        $modal.modal('show')
 
         getRequest(url, $trigger)
             .then(({ data }) => {
                 if (data?.data?.html) {
-                    $modal.find('.modal-body').html(data.data.html);
+                    $modal.find('.modal-body').html(data.data.html)
                 }
             })
             .catch((error) => {
-                $modal.modal('hide');
-                window.Botble.handleError(error);
-            });
-    });
-});
+                $modal.modal('hide')
+                window.Botble.handleError(error)
+            })
+    })
+})
