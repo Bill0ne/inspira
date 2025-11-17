@@ -7,6 +7,11 @@
             <div class="col-lg-8">
                 <div class="blog-details-wrap">
                     <div class="details__content pb-30">
+                        @if ($post->image)
+                            <div class="details__thumb mb-30">
+                                <img src="{{ RvMedia::getImageUrl($post->image, 'large', false, RvMedia::getDefaultImage()) }}" alt="{{ $post->name }}">
+                            </div>
+                        @endif
                         <h2>{{ $post->name }}</h2>
                         <div class="meta-info">
                             <ul>
