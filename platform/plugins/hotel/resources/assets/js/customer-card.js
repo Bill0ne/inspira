@@ -33,6 +33,7 @@ $(() => {
     window.customerCard = CARD_CONFIG;
 
     CARD_CONFIG.routes = CARD_CONFIG.routes || {};
+    CARD_CONFIG.course_checkout = CARD_CONFIG.course_checkout || false;
 
     const t = (path, fallback = '') => {
         const segments = path.split('.');
@@ -76,11 +77,30 @@ $(() => {
         return client.post(url, data);
     };
 
-    const applyCustomerCard = (cardId, courseId = null, $trigger = null) =>
-        request(CARD_CONFIG.routes.apply, { card_id: cardId, course_id: courseId }, $trigger);
+    const resolveCoursePayload = (courseId = null) => {
+        const payload = {};
+        const configuredId = Number(courseId || CARD_CONFIG.courseId || CARD_CONFIG.course_id || 0);
 
-    const removeCustomerCard = ($trigger = null) =>
-        request(CARD_CONFIG.routes.remove, {}, $trigger);
+        if (configuredId) {
+            payload.course_id = configuredId;
+        }
+
+        if (payload.course_id || CARD_CONFIG.course_checkout) {
+            payload.course_checkout = true;
+        }
+
+        return payload;
+    };
+
+    const applyCustomerCard = (cardId, courseId = null, $trigger = null) =>
+        request(
+            CARD_CONFIG.routes.apply,
+            { card_id: cardId, ...resolveCoursePayload(courseId) },
+            $trigger,
+        );
+
+    const removeCustomerCard = ($trigger = null, courseId = null) =>
+        request(CARD_CONFIG.routes.remove, resolveCoursePayload(courseId), $trigger);
 
     CARD_CONFIG.applyCustomerCard = applyCustomerCard;
     CARD_CONFIG.removeCustomerCard = removeCustomerCard;
@@ -156,7 +176,16 @@ $(() => {
         const $minimumFeeText = $('.minimum-fee-text');
         const $totalAmountText = $('.total-amount-text');
 
-        const courseId = Number($cardSelect.data('course')) || null;
+        const fallbackCourseId = Number(CARD_CONFIG.courseId || CARD_CONFIG.course_id || 0) || null;
+        const courseId = Number($cardSelect.data('course')) || fallbackCourseId;
+
+        if (courseId && !CARD_CONFIG.courseId) {
+            CARD_CONFIG.courseId = courseId;
+        }
+
+        if (courseId) {
+            CARD_CONFIG.course_checkout = true;
+        }
 
         const getOriginalTotal = () => {
             const stored = $totalInput.data('original-total');
@@ -248,7 +277,7 @@ $(() => {
         $removeButton.on('click', function (e) {
             e.preventDefault();
 
-            removeCustomerCard($(this))
+            removeCustomerCard($(this), courseId)
                 .then(({ data }) => {
                     window.Botble.showSuccess(data.message);
 

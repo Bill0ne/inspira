@@ -74,6 +74,8 @@
         // 3) Customer Card Config
         $customerCardConfig = Js::from([
             'currency' => get_application_currency()->symbol,
+            'courseId' => $course->getKey(),
+            'course_checkout' => true,
             'routes' => [
                 'apply'  => route('ajax.customer-card.apply'),
                 'remove' => route('ajax.customer-card.remove'),
