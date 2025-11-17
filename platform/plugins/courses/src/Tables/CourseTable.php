@@ -70,7 +70,11 @@ class CourseTable extends TableAbstract
                         $course = $column->getItem();
 
                         if ($course instanceof Course && $course->isPast()) {
-                            if ($value instanceof BaseStatusEnum && $value->equals(BaseStatusEnum::PUBLISHED())) {
+                            if (
+                                Course::hasExpiredStatusSupport()
+                                && $value instanceof BaseStatusEnum
+                                && $value->equals(BaseStatusEnum::PUBLISHED())
+                            ) {
                                 return BaseStatusEnum::EXPIRED();
                             }
                         }
