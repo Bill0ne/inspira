@@ -218,11 +218,13 @@
                                 @php
                                     $cancelModalId = 'inspiraCancel-course-' . $booking->getKey();
                                     $transferModalId = 'inspiraTransfer-course-' . $booking->getKey();
-                                    $ruleDescription = $cancellationQuote['rule']->description ?? null;
+                                    $activeRule = $cancellationQuote['rule'] ?? null;
+                                    $ruleDescription = $activeRule->description ?? null;
                                     $refundAmount = $cancellationQuote['refund_amount'] ?? 0;
                                     $refundPercent = $cancellationQuote['refund_percent'] ?? 0;
                                     $feeAmount = $cancellationQuote['fee_amount'] ?? 0;
                                     $daysUntilStart = $cancellationQuote['days_until_start'] ?? null;
+                                    $feePercent = max(0, min(100, 100 - (int) $refundPercent));
                                 @endphp
 
                                 <div class="modal fade inspira-modal" id="{{ $cancelModalId }}" tabindex="-1" aria-hidden="true">
@@ -261,12 +263,31 @@
                                                         <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.fee_amount') }}</div>
                                                         <div class="value">{{ format_price($feeAmount) }}</div>
                                                     </div>
+                                                    <div class="inspira-refund-card">
+                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.fee_percent') }}</div>
+                                                        <div class="value">{{ $feePercent }}%</div>
+                                                    </div>
                                                 </div>
 
                                                 @if (! is_null($daysUntilStart))
                                                     <p class="text-muted small mb-3">
                                                         <i class="fal fa-calendar-day me-2" aria-hidden="true"></i>
                                                         {{ trans('plugins/inspira-cancellation::cancellation.frontend.days_until_start', ['days' => $daysUntilStart]) }}
+                                                    </p>
+                                                @endif
+
+                                                @if ($activeRule)
+                                                    <p class="text-muted small mb-3">
+                                                        <i class="fal fa-clipboard-list me-2" aria-hidden="true"></i>
+                                                        @if (! is_null($activeRule->from_days) && ! is_null($activeRule->to_days))
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_between', ['from' => $activeRule->from_days, 'to' => $activeRule->to_days]) }}
+                                                        @elseif (! is_null($activeRule->from_days))
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_from', ['from' => $activeRule->from_days]) }}
+                                                        @elseif (! is_null($activeRule->to_days))
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_to', ['to' => $activeRule->to_days]) }}
+                                                        @else
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_open') }}
+                                                        @endif
                                                     </p>
                                                 @endif
 
@@ -454,11 +475,13 @@
                             @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
                                 @php
                                     $cancelModalId = 'inspiraCancel-room-' . $booking->getKey();
-                                    $ruleDescription = $cancellationQuote['rule']->description ?? null;
+                                    $activeRule = $cancellationQuote['rule'] ?? null;
+                                    $ruleDescription = $activeRule->description ?? null;
                                     $refundAmount = $cancellationQuote['refund_amount'] ?? 0;
                                     $refundPercent = $cancellationQuote['refund_percent'] ?? 0;
                                     $feeAmount = $cancellationQuote['fee_amount'] ?? 0;
                                     $daysUntilStart = $cancellationQuote['days_until_start'] ?? null;
+                                    $feePercent = max(0, min(100, 100 - (int) $refundPercent));
                                 @endphp
 
                                 <div class="modal fade inspira-modal" id="{{ $cancelModalId }}" tabindex="-1" aria-hidden="true">
@@ -501,12 +524,31 @@
                                                         <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.fee_amount') }}</div>
                                                         <div class="value">{{ format_price($feeAmount) }}</div>
                                                     </div>
+                                                    <div class="inspira-refund-card">
+                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.fee_percent') }}</div>
+                                                        <div class="value">{{ $feePercent }}%</div>
+                                                    </div>
                                                 </div>
 
                                                 @if (! is_null($daysUntilStart))
                                                     <p class="text-muted small mb-3">
                                                         <i class="fal fa-calendar-day me-2" aria-hidden="true"></i>
                                                         {{ trans('plugins/inspira-cancellation::cancellation.frontend.days_until_start', ['days' => $daysUntilStart]) }}
+                                                    </p>
+                                                @endif
+
+                                                @if ($activeRule)
+                                                    <p class="text-muted small mb-3">
+                                                        <i class="fal fa-clipboard-list me-2" aria-hidden="true"></i>
+                                                        @if (! is_null($activeRule->from_days) && ! is_null($activeRule->to_days))
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_between', ['from' => $activeRule->from_days, 'to' => $activeRule->to_days]) }}
+                                                        @elseif (! is_null($activeRule->from_days))
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_from', ['from' => $activeRule->from_days]) }}
+                                                        @elseif (! is_null($activeRule->to_days))
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_to', ['to' => $activeRule->to_days]) }}
+                                                        @else
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_open') }}
+                                                        @endif
                                                     </p>
                                                 @endif
 
