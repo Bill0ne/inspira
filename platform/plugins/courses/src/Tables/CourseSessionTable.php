@@ -25,7 +25,7 @@ class CourseSessionTable extends TableAbstract
         // WICHTIG: Initialisiert u. a. den Teilnehmer-Dialog (.view-participants-btn)
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
         $this->hasOperations = false;
-        $this->defaultSortColumnName = 'start_date';
+        $this->defaultSortColumnName = 'course_sessions.start_date';
 
         $this
             ->model(CourseSession::class)
@@ -82,7 +82,8 @@ class CourseSessionTable extends TableAbstract
                 // Datum
                 FormattedColumn::make('date')
                     ->title('Datum')
-                    ->name('start_date')
+                    ->data('date')
+                    ->name('course_sessions.start_date')
                     ->orderable(true)
                     ->searchable(false)
                     ->escape(false)
