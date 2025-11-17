@@ -257,8 +257,14 @@ class Course extends BaseModel
             return true;
         }
 
+        $now = Carbon::now();
+
         if ($this->end_date instanceof Carbon) {
-            return $this->end_date->lte(Carbon::now());
+            return $this->end_date->lte($now);
+        }
+
+        if ($this->start_date instanceof Carbon) {
+            return $this->start_date->lte($now);
         }
 
         return false;
