@@ -137,7 +137,10 @@ class CourseSessionTable extends TableAbstract
                         'end_date',
                         'available_seats', // pro Sitzungs-Record (kann NULL für unlimited sein)
                         'created_at',
-                    ]);
+                    ])
+                    // DataTables benötigt eine tatsächliche Daten-Spalte „date“, da die
+                    // FormattedColumn weiter oben ->data('date') registriert.
+                    ->addSelect(['course_sessions.start_date as date']);
             })
             ->onFilterQuery(function ($query, $key, $operator, $value) {
                 if (! $value) {
