@@ -15,6 +15,35 @@ use Botble\Hotel\Forms\AmenityForm;
 use Botble\Media\Facades\RvMedia;
 use Botble\Page\Forms\PageForm;
 use Botble\SimpleSlider\Forms\SimpleSliderItemForm;
+use Illuminate\Support\Facades\File;
+
+if (! function_exists('inspira_asset_version')) {
+    function inspira_asset_version(string $relativePath): string
+    {
+        static $versions = [];
+
+        $normalizedPath = ltrim($relativePath, '/');
+
+        if (isset($versions[$normalizedPath])) {
+            return $versions[$normalizedPath];
+        }
+
+        $fullPath = public_path($normalizedPath);
+
+        if (File::exists($fullPath)) {
+            return $versions[$normalizedPath] = (string) File::lastModified($fullPath);
+        }
+
+        return $versions[$normalizedPath] = (string) config('core.base.general.asset_version', time());
+    }
+}
+
+if (! function_exists('riorelax_theme_asset_version')) {
+    function riorelax_theme_asset_version(string $relativePath): string
+    {
+        return inspira_asset_version('themes/riorelax/' . ltrim($relativePath, '/'));
+    }
+}
 
 if (!class_exists('Theme\\Rlorenak\\Helpers\\FilterHelper') && class_exists('Theme\\Riorelax\\Helpers\\FilterHelper')) {
     class_alias(
