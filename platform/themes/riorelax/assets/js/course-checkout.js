@@ -42,7 +42,13 @@ $(document).ready(function () {
                 coupon_code: couponCode,
             },
         })
-            .done(({ error, message, data }) => {
+            .done((response = {}) => {
+                const error = response.error;
+                const message = response.message;
+                const data = response && typeof response.data === 'object'
+                    ? response.data
+                    : {};
+
                 if (error) {
                     if (window.RiorelaxTheme) {
                         window.RiorelaxTheme.showError(message);
@@ -58,22 +64,57 @@ $(document).ready(function () {
                 const $minimumFeeText = $('.minimum-fee-text');
                 const $cardInfoBox = $('[data-bb-customer-card="info"]');
                 const $cardInfoDiscount = $cardInfoBox.find('[data-bb-customer-card="discount"]');
-                const cardDiscountRaw = Number(data.card_discount_raw || 0);
-                const minimumFeeRaw = Number(data.minimum_fee_raw || 0);
+
+                const previousAmountRaw = Number($totalInput.val() || 0);
+                const previousOriginalTotal = Number(
+                    $totalInput.data('original-total') || previousAmountRaw
+                );
+                const previousActiveDiscount = Number(
+                    $totalInput.data('active-discount') || 0
+                );
+                const previousMinimumFee = Number($totalInput.data('minimum-fee') || 0);
+                const previousMinimumThreshold = Number(
+                    $totalInput.data('minimum-threshold') || 0
+                );
+
+                const hasCardDiscountResponse =
+                    Object.prototype.hasOwnProperty.call(data, 'card_discount_raw') ||
+                    Object.prototype.hasOwnProperty.call(data, 'card_discount_ref');
+                const hasMinimumFeeResponse =
+                    Object.prototype.hasOwnProperty.call(data, 'minimum_fee_raw');
+
+                const nextAmountRaw =
+                    typeof data.amount_raw !== 'undefined' ? data.amount_raw : previousAmountRaw;
+                const nextOriginalTotal =
+                    typeof data.total_before_card_raw !== 'undefined'
+                        ? Number(data.total_before_card_raw)
+                        : typeof data.amount_raw !== 'undefined'
+                          ? Number(data.amount_raw)
+                          : previousOriginalTotal;
+                const cardDiscountRaw = hasCardDiscountResponse
+                    ? Number(data.card_discount_raw ?? data.card_discount_ref ?? 0)
+                    : previousActiveDiscount;
+                const minimumFeeRaw = hasMinimumFeeResponse
+                    ? Number(data.minimum_fee_raw ?? 0)
+                    : previousMinimumFee;
+                const minimumThreshold =
+                    typeof data.minimum_threshold !== 'undefined'
+                        ? Number(data.minimum_threshold)
+                        : previousMinimumThreshold;
 
                 // Hidden Inputs & Data-Attribute aktualisieren
                 $totalInput
-                    .val(data.amount_raw)
-                    .data('original-total', Number(data.total_before_card_raw || data.amount_raw))
+                    .val(nextAmountRaw)
+                    .data('original-total', nextOriginalTotal)
                     .data('active-discount', cardDiscountRaw)
                     .data('minimum-fee', minimumFeeRaw)
-                    .data('minimum-threshold', Number(data.minimum_threshold || 0));
+                    .data('minimum-threshold', minimumThreshold);
 
                 // Sidebar-Werte
-                $('.total-amount-text').text(data.total_amount);
-                $('.amount-text').text(data.sub_total);
-                $('.discount-text').text(data.discount_amount);
-                $('.tax-text').text(data.tax_amount);
+                $('.total-amount-text').text(data.total_amount ?? '');
+                $('.amount-text').text(data.sub_total ?? '');
+                $('.discount-text').text(data.discount_amount ?? '');
+                $('.tax-text').text(data.tax_amount ?? '');
 
                 if ($cardDiscountRow.length) {
                     if (cardDiscountRaw > 0) {
