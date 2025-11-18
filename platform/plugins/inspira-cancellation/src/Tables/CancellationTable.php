@@ -4,17 +4,28 @@ namespace Botble\InspiraCancellation\Tables;
 
 use Botble\InspiraCancellation\Enums\CancellationStatusEnum;
 use Botble\InspiraCancellation\Models\Cancellation;
+use Botble\InspiraCancellation\Services\CancellationRefundService;
 use Botble\InspiraCancellation\Tables\Actions\ConditionalAction;
 use Botble\Table\Abstracts\TableAbstract;
 use Botble\Table\Columns\CreatedAtColumn;
 use Botble\Table\Columns\FormattedColumn;
 use Botble\Table\Columns\IdColumn;
+use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
+use Yajra\DataTables\DataTables;
 
 class CancellationTable extends TableAbstract
 {
+    public function __construct(
+        DataTables $table,
+        UrlGenerator $urlGenerator,
+        protected CancellationRefundService $refundService
+    ) {
+        parent::__construct($table, $urlGenerator);
+    }
+
     public function setup(): void
     {
         $this
@@ -67,6 +78,18 @@ class CancellationTable extends TableAbstract
                     ->confirmationModalMessage(trans('plugins/inspira-cancellation::cancellation.actions.mark_paid_confirm'))
                     ->confirmationModalButton(trans('plugins/inspira-cancellation::cancellation.actions.mark_paid'))
                     ->displayIf(fn (ConditionalAction $action) => $this->shouldShowMarkPaid($action)),
+                ConditionalAction::make('stripe-paid')
+                    ->label(trans('plugins/inspira-cancellation::cancellation.actions.stripe_paid'))
+                    ->icon('ti ti-brand-stripe')
+                    ->color('info')
+                    ->action('POST')
+                    ->route('inspira-cancellation.cancellations.stripe-refund')
+                    ->permission('inspira-cancellation.cancellations.manage')
+                    ->confirmation()
+                    ->confirmationModalTitle(trans('plugins/inspira-cancellation::cancellation.actions.stripe_paid_title'))
+                    ->confirmationModalMessage(trans('plugins/inspira-cancellation::cancellation.actions.stripe_paid_confirm'))
+                    ->confirmationModalButton(trans('plugins/inspira-cancellation::cancellation.actions.stripe_paid'))
+                    ->displayIf(fn (ConditionalAction $action) => $this->shouldShowStripeRefund($action)),
                 ConditionalAction::make('reject')
                     ->label(trans('plugins/inspira-cancellation::cancellation.actions.reject'))
                     ->icon('ti ti-x')
@@ -223,5 +246,20 @@ class CancellationTable extends TableAbstract
             CancellationStatusEnum::PENDING,
             CancellationStatusEnum::PENDING_REFUND,
         ], true);
+    }
+
+    protected function shouldShowStripeRefund(ConditionalAction $action): bool
+    {
+        $item = $action->getItem();
+
+        if (! $item instanceof Cancellation) {
+            return false;
+        }
+
+        if (! $this->shouldShowMarkPaid($action)) {
+            return false;
+        }
+
+        return $this->refundService->canProcessStripeRefund($item);
     }
 }
