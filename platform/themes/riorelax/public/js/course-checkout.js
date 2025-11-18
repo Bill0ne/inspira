@@ -42,7 +42,13 @@ $(document).ready(function () {
                 coupon_code: couponCode,
             },
         })
-            .done(({ error, message, data }) => {
+            .done((response = {}) => {
+                const error = response.error;
+                const message = response.message;
+                const data = response && response.data && typeof response.data === 'object'
+                    ? response.data
+                    : {};
+
                 if (error) {
                     if (window.RiorelaxTheme) {
                         window.RiorelaxTheme.showError(message);
