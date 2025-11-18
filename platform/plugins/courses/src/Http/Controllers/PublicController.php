@@ -477,7 +477,9 @@ class PublicController extends Controller
                 $appliedCoupon->increment('total_used');
             }
 
-            app(CourseBookingService::class)->processBooking($booking->getKey());
+            $courseBookingService = app(CourseBookingService::class);
+            $courseBookingService->processBooking($booking->getKey());
+            $courseBookingService->finalizeCustomerCardUsage($booking->refresh());
 
             if ($token = $request->input('token')) {
                 session()->forget($token);
