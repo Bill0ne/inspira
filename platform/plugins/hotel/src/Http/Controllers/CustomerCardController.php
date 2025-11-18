@@ -231,7 +231,11 @@ class CustomerCardController extends BaseController
 
         if ($course) {
             $pricing = $course->resolvePricing(auth('customer')->user());
-            $coursePricing = (float) Arr::get($pricing, 'calculated_net', $course->getCourseTotalPrice());
+            $coursePricing = (float) Arr::get(
+                $pricing,
+                'calculated_gross',
+                $course->getPriceWithTax($course->getCourseTotalPrice())
+            );
         }
 
         $discount = $service->calculateDiscount($card, $course, $unitsUsed, $coursePricing);
