@@ -70,6 +70,7 @@ class CustomerCardController extends BaseController
         ]);
 
         $jsValidator = JsValidator::formRequest(CustomerCardRequest::class);
+
         $card = new CustomerCard([
             'is_active' => true,
             'type' => CustomerCardTypeEnum::CUSTOM,
@@ -186,7 +187,10 @@ class CustomerCardController extends BaseController
     public function assignToCustomer(CustomerCard $customerCard, int $customerId)
     {
         $customer = Customer::query()->findOrFail($customerId);
-        $customerCard->update(['assigned_to' => $customer->getKey()]);
+
+        $customerCard->update([
+            'assigned_to' => $customer->getKey(),
+        ]);
 
         return $this
             ->httpResponse()
@@ -240,17 +244,17 @@ class CustomerCardController extends BaseController
 
         $discount = $service->calculateDiscount($card, $course, $unitsUsed, $coursePricing);
 
-$hotelSupport = app(\Botble\Hotel\Supports\HotelSupport::class);
-$data = $hotelSupport->getCheckoutData(context: $context) ?: [];
+        $hotelSupport = app(HotelSupport::class);
+        $data = $hotelSupport->getCheckoutData(context: $context) ?: [];
 
-$data['customer_card_id'] = $card->getKey();
-$data['customer_card_discount'] = $discount;
-$data['customer_card_units_used'] = $unitsUsed;
+        $data['customer_card_id'] = $card->getKey();
+        $data['customer_card_discount'] = $discount;
+        $data['customer_card_units_used'] = $unitsUsed;
 
-$hotelSupport->saveCheckoutData($data, $context);
+        $hotelSupport->saveCheckoutData($data, $context);
 
-
-        return $this->httpResponse()
+        return $this
+            ->httpResponse()
             ->setMessage(__('Karte angewendet.'))
             ->setData([
                 'discount' => format_price($discount),
@@ -263,15 +267,20 @@ $hotelSupport->saveCheckoutData($data, $context);
     public function remove(Request $request)
     {
         $context = $this->resolveCheckoutContext($request);
-$hotelSupport = app(\Botble\Hotel\Supports\HotelSupport::class);
-$data = $hotelSupport->getCheckoutData(context: $context) ?: [];
 
-unset($data['customer_card_id'], $data['customer_card_discount'], $data['customer_card_units_used']);
+        $hotelSupport = app(HotelSupport::class);
+        $data = $hotelSupport->getCheckoutData(context: $context) ?: [];
 
-$hotelSupport->saveCheckoutData($data, $context);
+        unset(
+            $data['customer_card_id'],
+            $data['customer_card_discount'],
+            $data['customer_card_units_used']
+        );
 
+        $hotelSupport->saveCheckoutData($data, $context);
 
-        return $this->httpResponse()
+        return $this
+            ->httpResponse()
             ->setMessage(__('Karte entfernt.'))
             ->setData([
                 'discount' => format_price(0),
@@ -310,7 +319,10 @@ $hotelSupport->saveCheckoutData($data, $context);
             ->get();
 
         return $response->setData([
-            'html' => view('plugins/hotel::customer-cards.partials.usages', compact('customerCard', 'usages', 'orders'))->render(),
+            'html' => view(
+                'plugins/hotel::customer-cards.partials.usages',
+                compact('customerCard', 'usages', 'orders')
+            )->render(),
         ]);
     }
 
@@ -320,7 +332,10 @@ $hotelSupport->saveCheckoutData($data, $context);
             return null;
         }
 
-        return Carbon::createFromFormat(BaseHelper::getDateFormat(), $request->input('valid_until'));
+        return Carbon::createFromFormat(
+            BaseHelper::getDateFormat(),
+            $request->input('valid_until')
+        );
     }
 
     protected function getCustomersList(): array
@@ -381,9 +396,11 @@ $hotelSupport->saveCheckoutData($data, $context);
         }
 
         if ($context === HotelSupport::CONTEXT_COURSE) {
-            $hotelSupport = app(\Botble\Hotel\Supports\HotelSupport::class);
-$courseId = (int) ($hotelSupport->getCheckoutData('course_id', HotelSupport::CONTEXT_COURSE) ?? 0);
+            $hotelSupport = app(HotelSupport::class);
 
+            $courseId = (int) (
+                $hotelSupport->getCheckoutData('course_id', HotelSupport::CONTEXT_COURSE) ?? 0
+            );
         }
 
         return $courseId ?: null;
