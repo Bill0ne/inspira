@@ -240,11 +240,15 @@ class CustomerCardController extends BaseController
 
         $discount = $service->calculateDiscount($card, $course, $unitsUsed, $coursePricing);
 
-        $data = HotelSupport::getCheckoutData(context: $context) ?: [];
-        $data['customer_card_id'] = $card->getKey();
-        $data['customer_card_discount'] = $discount;
-        $data['customer_card_units_used'] = $unitsUsed;
-        HotelSupport::saveCheckoutData($data, $context);
+$hotelSupport = app(\Botble\Hotel\Supports\HotelSupport::class);
+$data = $hotelSupport->getCheckoutData(context: $context) ?: [];
+
+$data['customer_card_id'] = $card->getKey();
+$data['customer_card_discount'] = $discount;
+$data['customer_card_units_used'] = $unitsUsed;
+
+HotelSupport::saveCheckoutData($data, $context);
+
 
         return $this->httpResponse()
             ->setMessage(__('Karte angewendet.'))
@@ -259,9 +263,13 @@ class CustomerCardController extends BaseController
     public function remove(Request $request)
     {
         $context = $this->resolveCheckoutContext($request);
-        $data = HotelSupport::getCheckoutData(context: $context) ?: [];
-        unset($data['customer_card_id'], $data['customer_card_discount'], $data['customer_card_units_used']);
-        HotelSupport::saveCheckoutData($data, $context);
+$hotelSupport = app(\Botble\Hotel\Supports\HotelSupport::class);
+$data = $hotelSupport->getCheckoutData(context: $context) ?: [];
+
+unset($data['customer_card_id'], $data['customer_card_discount'], $data['customer_card_units_used']);
+
+HotelSupport::saveCheckoutData($data, $context);
+
 
         return $this->httpResponse()
             ->setMessage(__('Karte entfernt.'))
@@ -373,7 +381,9 @@ class CustomerCardController extends BaseController
         }
 
         if ($context === HotelSupport::CONTEXT_COURSE) {
-            $courseId = (int) (HotelSupport::getCheckoutData('course_id', HotelSupport::CONTEXT_COURSE) ?? 0);
+            $hotelSupport = app(\Botble\Hotel\Supports\HotelSupport::class);
+$courseId = (int) ($hotelSupport->getCheckoutData('course_id', HotelSupport::CONTEXT_COURSE) ?? 0);
+
         }
 
         return $courseId ?: null;
