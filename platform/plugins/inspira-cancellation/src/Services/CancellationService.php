@@ -119,6 +119,13 @@ class CancellationService
         return $booking;
     }
 
+    public function getBookingForCancellation(Cancellation $cancellation): ?Model
+    {
+        $type = $this->normalizeType($cancellation->booking_type);
+
+        return $this->resolveBookingForCancellation($type, $cancellation->booking_id);
+    }
+
     public function findRuleFor(string $type, CarbonInterface $startDate, ?int $days = null): ?CancellationRule
     {
         $type = $this->normalizeType($type);

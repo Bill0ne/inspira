@@ -5,6 +5,7 @@ namespace Botble\Stripe\Services\Abstracts;
 use Botble\Payment\Services\Traits\PaymentErrorTrait;
 use Botble\Stripe\Supports\StripeHelper;
 use Exception;
+use Illuminate\Support\Arr;
 use Stripe\Charge;
 use Stripe\Exception\ApiConnectionException;
 use Stripe\Exception\ApiErrorException;
@@ -123,10 +124,13 @@ abstract class StripePaymentAbstract
             ]);
 
             if ($response->status == 'succeeded') {
+                $data = $response->toArray();
+                $data['_refund_id'] = Arr::get($data, 'id');
+
                 return [
                     'error' => false,
                     'message' => $response->status,
-                    'data' => $response->toArray(),
+                    'data' => $data,
                 ];
             }
 

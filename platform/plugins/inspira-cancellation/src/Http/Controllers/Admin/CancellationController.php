@@ -9,10 +9,12 @@ use Botble\InspiraCancellation\Events\CancellationRefundApprovedEvent;
 use Botble\InspiraCancellation\Events\CancellationRefundPaidEvent;
 use Botble\InspiraCancellation\Events\CancellationRejectedEvent;
 use Botble\InspiraCancellation\Models\Cancellation;
+use Botble\InspiraCancellation\Services\CancellationRefundService;
 use Botble\InspiraCancellation\Services\CancellationService;
 use Botble\InspiraCancellation\Tables\CancellationTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
 
 class CancellationController extends BaseController
 {
@@ -76,6 +78,34 @@ class CancellationController extends BaseController
         event(new CancellationRefundPaidEvent($cancellation));
 
         return $response->setMessage(trans('plugins/inspira-cancellation::cancellation.actions.mark_paid_success'));
+    }
+
+    public function stripeRefund(
+        Cancellation $cancellation,
+        CancellationRefundService $refundService,
+        BaseHttpResponse $response
+    ): BaseHttpResponse {
+        $this->ensureStatus($cancellation, [
+            CancellationStatusEnum::APPROVED,
+        ]);
+
+        $result = $refundService->processStripeRefund($cancellation);
+
+        if (Arr::get($result, 'error')) {
+            return $response
+                ->setError()
+                ->setMessage(Arr::get($result, 'message'));
+        }
+
+        $cancellation->forceFill([
+            'status' => CancellationStatusEnum::PAID,
+            'refunded_at' => now(),
+            'refunded_by' => Auth::id(),
+        ])->save();
+
+        event(new CancellationRefundPaidEvent($cancellation));
+
+        return $response->setMessage(trans('plugins/inspira-cancellation::cancellation.actions.stripe_paid_success'));
     }
 
     public function reject(Cancellation $cancellation, BaseHttpResponse $response): BaseHttpResponse

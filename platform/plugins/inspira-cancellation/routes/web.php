@@ -54,6 +54,12 @@ Route::group(['namespace' => 'Botble\\InspiraCancellation\\Http\\Controllers'], 
                 'permission' => 'inspira-cancellation.cancellations.manage',
             ]);
 
+            Route::post('cancellations/{cancellation}/stripe-refund', [
+                'as' => 'cancellations.stripe-refund',
+                'uses' => 'Admin\\CancellationController@stripeRefund',
+                'permission' => 'inspira-cancellation.cancellations.manage',
+            ]);
+
             Route::post('cancellations/{cancellation}/reject', [
                 'as' => 'cancellations.reject',
                 'uses' => 'Admin\\CancellationController@reject',
