@@ -266,11 +266,11 @@ class PublicController extends Controller
         $totalAfterDiscount = course_truncate_price($totalAfterDiscountRaw);
         $minimumOnlinePaymentFee = 0.0;
 
-        if ($totalAfterDiscountRaw > 0 && $totalAfterDiscountRaw < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
-            $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscountRaw);
+        if ($totalAfterDiscount > 0 && $totalAfterDiscount < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
+            $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscount);
         }
 
-        $finalTotal = course_truncate_price($totalAfterDiscountRaw + $minimumOnlinePaymentFee);
+        $finalTotal = course_truncate_price($totalAfterDiscount + $minimumOnlinePaymentFee);
         $minimumOnlinePaymentThreshold = self::MINIMUM_ONLINE_PAYMENT_AMOUNT;
 
         return Theme::scope(
@@ -429,11 +429,11 @@ class PublicController extends Controller
             $amountDue = course_truncate_price($amountDueRaw);
             $minimumOnlinePaymentFee = 0.0;
 
-            if ($amountDueRaw > 0 && $amountDueRaw < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
-                $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $amountDueRaw);
+            if ($amountDue > 0 && $amountDue < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
+                $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $amountDue);
             }
 
-            $amountDue = course_truncate_price($amountDueRaw + $minimumOnlinePaymentFee);
+            $amountDue = course_truncate_price($amountDue + $minimumOnlinePaymentFee);
 
             $booking->amount = $amountDue;
             $booking->sub_total = $amount;
@@ -672,11 +672,11 @@ class PublicController extends Controller
         $totalAfterDiscount = course_truncate_price($totalAfterDiscountRaw);
         $minimumOnlinePaymentFee = 0.0;
 
-        if ($totalAfterDiscountRaw > 0 && $totalAfterDiscountRaw < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
-            $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscountRaw);
+        if ($totalAfterDiscount > 0 && $totalAfterDiscount < self::MINIMUM_ONLINE_PAYMENT_AMOUNT) {
+            $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscount);
         }
 
-        $finalTotal = course_truncate_price($totalAfterDiscountRaw + $minimumOnlinePaymentFee);
+        $finalTotal = course_truncate_price($totalAfterDiscount + $minimumOnlinePaymentFee);
 
         $priceBreakdown = course_price_breakdown($course, Auth::guard('customer')->user());
 
