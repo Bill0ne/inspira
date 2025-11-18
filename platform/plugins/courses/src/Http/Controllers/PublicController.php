@@ -205,6 +205,7 @@ class PublicController extends Controller
         $session = CourseSession::query()->findOrFail(Arr::get($sessionData, 'session_id'));
 
         $pricing = $course->resolvePricing($customer);
+        $courseGrossPrice = (float) ($pricing['calculated_gross'] ?? $course->getPriceWithTax($course->getCourseTotalPrice()));
         $priceBreakdown = course_price_breakdown($course, $customer);
 
         $amountNetRaw = (float) ($pricing['calculated_net'] ?? 0);
@@ -241,7 +242,8 @@ class PublicController extends Controller
 
                 if ($selectedCard) {
                     $storedDiscount = (float) data_get($checkoutData, 'customer_card_discount', 0);
-                    $cardDiscount = $storedDiscount ?: $customerCardService->calculateDiscount($selectedCard, $course, $cardUnitsUsed);
+                    $cardDiscount = $storedDiscount
+                        ?: $customerCardService->calculateDiscount($selectedCard, $course, $cardUnitsUsed, $courseGrossPrice);
                     $cardDiscount = min($cardDiscount, $totalRaw);
                     $cardDiscount = course_truncate_price($cardDiscount);
 
@@ -387,6 +389,7 @@ class PublicController extends Controller
             $booking->fill($request->input());
 
             $pricing = $course->resolvePricing(Auth::guard('customer')->user());
+            $courseGrossPrice = (float) ($pricing['calculated_gross'] ?? $course->getPriceWithTax($course->getCourseTotalPrice()));
             $basePrice = course_truncate_price((float) ($pricing['base_net'] ?? 0));
             $amountNetRaw = (float) ($pricing['calculated_net'] ?? 0);
             $amount = course_truncate_price($amountNetRaw);
@@ -412,7 +415,12 @@ class PublicController extends Controller
             $effectiveCardDiscount = 0;
 
             if ($customerCard) {
-                $calculatedDiscount = $customerCardService->calculateDiscount($customerCard, $course, $cardUnitsUsed);
+                $calculatedDiscount = $customerCardService->calculateDiscount(
+                    $customerCard,
+                    $course,
+                    $cardUnitsUsed,
+                    $courseGrossPrice
+                );
                 $effectiveCardDiscount = min($cardDiscount ?: $calculatedDiscount, $grossTotalRaw);
                 $effectiveCardDiscount = course_truncate_price($effectiveCardDiscount);
             }
@@ -604,6 +612,12 @@ class PublicController extends Controller
         CustomerCardService $customerCardService
     ) {
         $course = Course::query()->findOrFail($request->input('course_id'));
+        $pricingDetails = $course->resolvePricing(Auth::guard('customer')->user());
+        $courseGrossPrice = (float) Arr::get(
+            $pricingDetails,
+            'calculated_gross',
+            $course->getPriceWithTax($course->getCourseTotalPrice())
+        );
 
         [$amountNetRaw, $couponAmountNet] = $this->calculateBookingAmount($course, $request->input('coupon_code'));
 
@@ -628,7 +642,12 @@ class PublicController extends Controller
 
         if ($selectedCard) {
             $storedDiscount = (float) Arr::get($sessionData, 'customer_card_discount', 0);
-            $calculatedDiscount = $customerCardService->calculateDiscount($selectedCard, $course, $cardUnitsUsed);
+            $calculatedDiscount = $customerCardService->calculateDiscount(
+                $selectedCard,
+                $course,
+                $cardUnitsUsed,
+                $courseGrossPrice
+            );
             $cardDiscount = min($storedDiscount ?: $calculatedDiscount, $totalAmountRaw);
             $cardDiscount = course_truncate_price($cardDiscount);
 
