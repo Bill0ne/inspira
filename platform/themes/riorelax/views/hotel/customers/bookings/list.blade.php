@@ -105,6 +105,10 @@
             <p class="customer-card-subtitle">{{ __('Behalten Sie jede Buchung im Blick – inklusive Status, Zeitplan und Rechnungszugriff.') }}</p>
         </div>
 
+        @php
+            $inspiraCancellationEnabled = class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class);
+        @endphp
+
         <div class="customer-card-body">
             @if ($bookings->count() > 0)
                 <div class="booking-card-list">
@@ -112,7 +116,20 @@
                         @php
                             $type = $item['type'];
                             $booking = $item['model'];
-                            $statusClass = 'booking-status--' . \Illuminate\Support\Str::slug($booking->status->getValue());
+                            $meta = $item['meta'] ?? [];
+                            $statusMeta = $meta['status'] ?? [];
+                            $statusLabel = $statusMeta['label']
+                                ?? ($booking->status instanceof \Botble\Hotel\Enums\BookingStatusEnum
+                                    ? $booking->status->label()
+                                    : (string) $booking->status);
+                            $statusSlug = $statusMeta['slug']
+                                ?? ($booking->status instanceof \Botble\Hotel\Enums\BookingStatusEnum
+                                    ? $booking->status->getValue()
+                                    : (string) $booking->status);
+                            $statusClass = 'booking-status--' . \Illuminate\Support\Str::slug($statusSlug ?: 'status');
+                            $actions = $meta['actions'] ?? [];
+                            $canCancel = (bool) ($actions['canCancel'] ?? false);
+                            $canTransfer = (bool) ($actions['canTransfer'] ?? false);
                             $invoice = $booking->invoice;
                             $invoiceId = $invoice instanceof \Illuminate\Database\Eloquent\Model
                                 ? $invoice->getKey()
@@ -134,9 +151,11 @@
                                 $start = $session?->start_date ? \Carbon\Carbon::parse($session->start_date)->format('d.m.Y H:i') : null;
                                 $end = $session?->end_date ? \Carbon\Carbon::parse($session->end_date)->format('d.m.Y H:i') : null;
                                 $detailUrl = $courseUrl ?? route('customer.bookings');
-                                  $cancellationQuote = class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class)
-                                      ? \Botble\InspiraCancellation\Facades\InspiraCancellation::getCancellationQuote('course', $booking)
-                                      : null;
+                                $cancellationQuote = null;
+
+                                if ($inspiraCancellationEnabled && ($canCancel || $canTransfer)) {
+                                    $cancellationQuote = \Botble\InspiraCancellation\Facades\InspiraCancellation::getCancellationQuote('course', $booking);
+                                }
                             @endphp
 
                             <article class="booking-card booking-card--course">
@@ -154,7 +173,7 @@
                                             @endif
                                         </h3>
 
-                                        <span class="booking-status {{ $statusClass }}">{{ $booking->status->label() }}</span>
+                                        <span class="booking-status {{ $statusClass }}">{{ $statusLabel }}</span>
                                     </div>
 
                                     @if ($subtitle)
@@ -175,7 +194,7 @@
                                     <div class="booking-card-price">{{ format_price($booking->amount) }}</div>
 
                                     <div class="booking-card-actions">
-                                        @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
+                                        @if ($inspiraCancellationEnabled && $canCancel)
                                             <button
                                                 type="button"
                                                 class="booking-card-action"
@@ -186,7 +205,9 @@
                                                 <i class="fal fa-times" aria-hidden="true"></i>
                                                 <span class="visually-hidden">{{ trans('plugins/inspira-cancellation::cancellation.frontend.cancel') }}</span>
                                             </button>
+                                        @endif
 
+                                        @if ($inspiraCancellationEnabled && $canTransfer)
                                             <button
                                                 type="button"
                                                 class="booking-card-action"
@@ -214,10 +235,9 @@
                                 </div>
                             </article>
 
-                            @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
+                            @if ($inspiraCancellationEnabled && $canCancel)
                                 @php
                                     $cancelModalId = 'inspiraCancel-course-' . $booking->getKey();
-                                    $transferModalId = 'inspiraTransfer-course-' . $booking->getKey();
                                     $activeRule = $cancellationQuote['rule'] ?? null;
                                     $ruleDescription = $activeRule->description ?? null;
                                     $refundAmount = $cancellationQuote['refund_amount'] ?? 0;
@@ -239,6 +259,7 @@
                                                 <div class="inspira-policy-alert">
                                                     <span class="icon"><i class="fal fa-info-circle" aria-hidden="true"></i></span>
                                                     <div class="content">
+                                                        {{ trans('plugins/inspira-cancellation::cancellation.frontend.replacement_intro') }}<br>
                                                         {{ trans('plugins/inspira-cancellation::cancellation.frontend.guideline') }}<br>
                                                         {{ $ruleDescription ?: trans('plugins/inspira-cancellation::cancellation.frontend.no_active_rule') }}
                                                     </div>
@@ -335,6 +356,20 @@
                                     </div>
                                 </div>
 
+                            @endif
+
+                            @if ($inspiraCancellationEnabled && $canTransfer)
+                                @php
+                                    $transferModalId = 'inspiraTransfer-course-' . $booking->getKey();
+                                    $activeRule = $cancellationQuote['rule'] ?? null;
+                                    $ruleDescription = $activeRule->description ?? null;
+                                    $refundAmount = $cancellationQuote['refund_amount'] ?? 0;
+                                    $refundPercent = $cancellationQuote['refund_percent'] ?? 0;
+                                    $feeAmount = $cancellationQuote['fee_amount'] ?? 0;
+                                    $daysUntilStart = $cancellationQuote['days_until_start'] ?? null;
+                                    $feePercent = max(0, min(100, 100 - (int) $refundPercent));
+                                @endphp
+
                                 <div class="modal fade inspira-modal" id="{{ $transferModalId }}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered modal-lg">
                                         <div class="modal-content">
@@ -346,8 +381,53 @@
                                             <div class="modal-body">
                                                 <div class="inspira-policy-alert">
                                                     <span class="icon"><i class="fal fa-info-circle" aria-hidden="true"></i></span>
-                                                    <div class="content">{{ trans('plugins/inspira-cancellation::cancellation.frontend.replacement_intro') }}</div>
+                                                    <div class="content">
+                                                        {{ trans('plugins/inspira-cancellation::cancellation.frontend.replacement_intro') }}<br>
+                                                        {{ trans('plugins/inspira-cancellation::cancellation.frontend.guideline') }}<br>
+                                                        {{ $ruleDescription ?: trans('plugins/inspira-cancellation::cancellation.frontend.no_active_rule') }}
+                                                    </div>
                                                 </div>
+
+                                                <div class="inspira-refund-summary">
+                                                    <div class="inspira-refund-card">
+                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.refund_amount') }}</div>
+                                                        <div class="value">{{ format_price($refundAmount) }}</div>
+                                                    </div>
+                                                    <div class="inspira-refund-card">
+                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.rule.refund_percent') }}</div>
+                                                        <div class="value">{{ $refundPercent }}%</div>
+                                                    </div>
+                                                    <div class="inspira-refund-card">
+                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.fee_amount') }}</div>
+                                                        <div class="value">{{ format_price($feeAmount) }}</div>
+                                                    </div>
+                                                    <div class="inspira-refund-card">
+                                                        <div class="label">{{ trans('plugins/inspira-cancellation::cancellation.frontend.fee_percent') }}</div>
+                                                        <div class="value">{{ $feePercent }}%</div>
+                                                    </div>
+                                                </div>
+
+                                                @if (! is_null($daysUntilStart))
+                                                    <p class="text-muted small mb-3">
+                                                        <i class="fal fa-calendar-day me-2" aria-hidden="true"></i>
+                                                        {{ trans('plugins/inspira-cancellation::cancellation.frontend.days_until_start', ['days' => $daysUntilStart]) }}
+                                                    </p>
+                                                @endif
+
+                                                @if ($activeRule)
+                                                    <p class="text-muted small mb-3">
+                                                        <i class="fal fa-clipboard-list me-2" aria-hidden="true"></i>
+                                                        @if (! is_null($activeRule->from_days) && ! is_null($activeRule->to_days))
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_between', ['from' => $activeRule->from_days, 'to' => $activeRule->to_days]) }}
+                                                        @elseif (! is_null($activeRule->from_days))
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_from', ['from' => $activeRule->from_days]) }}
+                                                        @elseif (! is_null($activeRule->to_days))
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_to', ['to' => $activeRule->to_days]) }}
+                                                        @else
+                                                            {{ trans('plugins/inspira-cancellation::cancellation.frontend.rule_open') }}
+                                                        @endif
+                                                    </p>
+                                                @endif
 
                                                 <p class="text-muted small mb-3">
                                                     <i class="fal fa-user-shield me-2" aria-hidden="true"></i>
@@ -398,14 +478,16 @@
                                 $hasRoom = $roomRelation && $roomRelation->exists;
                                 $roomName = $hasRoom ? $roomRelation->name : ($booking->room->name ?? $booking->room->room_name);
                                 $roomUrl = $hasRoom ? $roomRelation->url : null;
-                                  $roomImage = $hasRoom ? $roomRelation->image : $booking->room->room_image;
-                                  $category = $hasRoom ? optional($roomRelation->category)->name : null;
-                                  $start = $booking->room->start_date ? \Carbon\Carbon::parse($booking->room->start_date)->format('d.m.Y H:i') : null;
-                                  $end = $booking->room->end_date ? \Carbon\Carbon::parse($booking->room->end_date)->format('d.m.Y H:i') : null;
-                                  $cancellationQuote = class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class)
-                                      ? \Botble\InspiraCancellation\Facades\InspiraCancellation::getCancellationQuote('room', $booking)
-                                      : null;
-                              @endphp
+                                $roomImage = $hasRoom ? $roomRelation->image : $booking->room->room_image;
+                                $category = $hasRoom ? optional($roomRelation->category)->name : null;
+                                $start = $booking->room->start_date ? \Carbon\Carbon::parse($booking->room->start_date)->format('d.m.Y H:i') : null;
+                                $end = $booking->room->end_date ? \Carbon\Carbon::parse($booking->room->end_date)->format('d.m.Y H:i') : null;
+                                $cancellationQuote = null;
+
+                                if ($inspiraCancellationEnabled && $canCancel) {
+                                    $cancellationQuote = \Botble\InspiraCancellation\Facades\InspiraCancellation::getCancellationQuote('room', $booking);
+                                }
+                            @endphp
 
                             <article class="booking-card booking-card--room">
                                 <div class="booking-card-media">
@@ -422,7 +504,7 @@
                                             @endif
                                         </h3>
 
-                                        <span class="booking-status {{ $statusClass }}">{{ $booking->status->label() }}</span>
+                                        <span class="booking-status {{ $statusClass }}">{{ $statusLabel }}</span>
                                     </div>
 
                                     @if ($category)
@@ -444,7 +526,7 @@
                                         <div class="booking-card-price">{{ format_price($booking->amount) }}</div>
 
                                         <div class="booking-card-actions">
-                                            @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
+                                            @if ($inspiraCancellationEnabled && $canCancel)
                                                 <button
                                                     type="button"
                                                     class="booking-card-action"
@@ -472,7 +554,7 @@
                                 </div>
                             </article>
 
-                            @if (class_exists(\Botble\InspiraCancellation\Facades\InspiraCancellation::class))
+                            @if ($inspiraCancellationEnabled && $canCancel)
                                 @php
                                     $cancelModalId = 'inspiraCancel-room-' . $booking->getKey();
                                     $activeRule = $cancellationQuote['rule'] ?? null;
