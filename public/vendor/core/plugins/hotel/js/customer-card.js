@@ -229,6 +229,22 @@ $(() => {
         }).then((response) => ({ data: response }))
     }
 
+    const triggerCustomerCardEvent = (eventName, detail = {}) => {
+        $(document).trigger(eventName, detail)
+
+        if (window.document && typeof window.CustomEvent === 'function') {
+            window.document.dispatchEvent(new CustomEvent(eventName, { detail }))
+        }
+
+        if (
+            eventName === 'customer-card.removed' &&
+            window.RioRelaxCourseCheckout &&
+            typeof window.RioRelaxCourseCheckout.refreshCourseCoupon === 'function'
+        ) {
+            window.RioRelaxCourseCheckout.refreshCourseCoupon()
+        }
+    }
+
     const getRequest = (url, $trigger = null) => {
         if (! url) {
             return Promise.reject(new Error('Missing URL'))
@@ -432,7 +448,7 @@ $(() => {
                     $cardInput.val(cardId)
                     $removeButton.removeClass('d-none')
 
-                    $(document).trigger('customer-card.applied', {
+                    triggerCustomerCardEvent('customer-card.applied', {
                         discount: Number(payload.raw_discount || 0),
                     })
                 })
@@ -459,7 +475,7 @@ $(() => {
                     $removeButton.addClass('d-none')
                     $cardInput.val('')
                     updateTotals(0)
-                    $(document).trigger('customer-card.removed', {})
+                    triggerCustomerCardEvent('customer-card.removed', {})
                 })
                 .catch((error) => {
                     window.Botble.handleError(error)
