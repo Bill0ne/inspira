@@ -61,34 +61,43 @@ class CourseBookingService
             }
         }
 
-        if (
-            $courseBooking->status === BookingStatusEnum::PROCESSING
-            && $courseBooking->customer_card_id
-            && $courseBooking->customer_card_units_used > 0
-            && ! $courseBooking->customer_card_consumed_at
-        ) {
-            $card = CustomerCard::query()->find($courseBooking->customer_card_id);
-
-            if ($card && $courseBooking->customer_id && $card->assigned_to !== $courseBooking->customer_id) {
-                $card = null;
-            }
-
-            if ($card) {
-                app(CustomerCardService::class)->consumeUnits(
-                    $card,
-                    null,
-                    $courseBooking->course,
-                    $courseBooking->customer_card_units_used,
-                    $courseBooking->customer_card_discount
-                );
-
-                $courseBooking->customer_card_consumed_at = now();
-                $courseBooking->save();
-            }
-        }
+        $this->finalizeCustomerCardUsage($courseBooking);
 
         CourseBookingCreated::dispatch($courseBooking);
 
         return $courseBooking;
+    }
+
+    public function finalizeCustomerCardUsage(CourseBooking $courseBooking): void
+    {
+        if (
+            $courseBooking->status !== BookingStatusEnum::PROCESSING
+            || ! $courseBooking->customer_card_id
+            || $courseBooking->customer_card_units_used <= 0
+            || $courseBooking->customer_card_consumed_at
+        ) {
+            return;
+        }
+
+        $card = CustomerCard::query()->find($courseBooking->customer_card_id);
+
+        if ($card && $courseBooking->customer_id && $card->assigned_to !== $courseBooking->customer_id) {
+            $card = null;
+        }
+
+        if (! $card) {
+            return;
+        }
+
+        app(CustomerCardService::class)->consumeUnits(
+            $card,
+            null,
+            $courseBooking->course,
+            $courseBooking->customer_card_units_used,
+            (float) $courseBooking->customer_card_discount
+        );
+
+        $courseBooking->customer_card_consumed_at = now();
+        $courseBooking->save();
     }
 }
