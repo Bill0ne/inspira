@@ -45,9 +45,10 @@ $(document).ready(function () {
             .done((response = {}) => {
                 const error = response.error;
                 const message = response.message;
-                const data = response && typeof response.data === 'object'
-                    ? response.data
-                    : {};
+                const data =
+                    response && response.data && typeof response.data === 'object'
+                        ? response.data
+                        : {};
 
                 if (error) {
                     if (window.RiorelaxTheme) {
