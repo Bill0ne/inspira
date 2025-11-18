@@ -102,6 +102,22 @@ $(() => {
         return client.post(url, data);
     };
 
+    const triggerCustomerCardEvent = (eventName, detail = {}) => {
+        $(document).trigger(eventName, detail);
+
+        if (window.document && typeof window.CustomEvent === 'function') {
+            window.document.dispatchEvent(new CustomEvent(eventName, { detail }));
+        }
+
+        if (
+            eventName === 'customer-card.removed' &&
+            window.RioRelaxCourseCheckout &&
+            typeof window.RioRelaxCourseCheckout.refreshCourseCoupon === 'function'
+        ) {
+            window.RioRelaxCourseCheckout.refreshCourseCoupon();
+        }
+    };
+
     const resolveCoursePayload = (courseId = null) => {
         const payload = {};
         const configuredId = Number(courseId || CARD_CONFIG.courseId || CARD_CONFIG.course_id || 0);
@@ -295,7 +311,7 @@ $(() => {
                     $cardInput.val(cardId);
                     $removeButton.removeClass('d-none');
 
-                    $(document).trigger('customer-card.applied', {
+                    triggerCustomerCardEvent('customer-card.applied', {
                         discount: Number(payload.raw_discount || 0),
                     });
                 })
@@ -321,7 +337,7 @@ $(() => {
 
                     updateTotals(0);
 
-                    $(document).trigger('customer-card.removed', {});
+                    triggerCustomerCardEvent('customer-card.removed', {});
                 })
                 .catch(window.Botble.handleError);
         });
