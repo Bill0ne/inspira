@@ -247,7 +247,7 @@ $data['customer_card_id'] = $card->getKey();
 $data['customer_card_discount'] = $discount;
 $data['customer_card_units_used'] = $unitsUsed;
 
-HotelSupport::saveCheckoutData($data, $context);
+$hotelSupport->saveCheckoutData($data, $context);
 
 
         return $this->httpResponse()
@@ -268,7 +268,7 @@ $data = $hotelSupport->getCheckoutData(context: $context) ?: [];
 
 unset($data['customer_card_id'], $data['customer_card_discount'], $data['customer_card_units_used']);
 
-HotelSupport::saveCheckoutData($data, $context);
+$hotelSupport->saveCheckoutData($data, $context);
 
 
         return $this->httpResponse()
