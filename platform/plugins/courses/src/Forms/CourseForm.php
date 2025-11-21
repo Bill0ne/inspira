@@ -168,7 +168,7 @@ if ($course && $course->getKey()) {
                 $form->add('accept_customer_card', OnOffField::class,
                     OnOffFieldOption::make()
                         ->label(trans('plugins/hotel::customer-card.form.fields.accept_customer_card'))
-                        ->checked((bool) ($form->getModel()?->accept_customer_card ?? false))
+                        ->checked((bool) ($form->getModel()?->accept_customer_card ?? true))
                         ->wrapperAttributes(['class' => 'form-group col-md-6'])
                 );
             })
