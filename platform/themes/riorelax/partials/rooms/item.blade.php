@@ -1,9 +1,11 @@
 @php
     $margin = $margin ?? false;
-    $isLoggedIn = auth('customer')->check() || auth()->check();
-    $configuredPrice = $isLoggedIn ? HotelHelper::getRoomConfiguredPrice($room) : null;
+    $canShowRoomPrices = HotelHelper::canShowRoomPrices();
+    $configuredPrice = $canShowRoomPrices ? HotelHelper::getRoomConfiguredPrice($room) : null;
     $displayPriceDiffers = false;
     $priceUnitLabel = __('hour_lowercase');
+    $priceInquiryText = HotelHelper::getRoomPriceInquiryText();
+    $priceInquiryUrl = 'https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf';
 
     /* === Fallback-Bild === */
     $image = $room->images && count($room->images) > 0
@@ -172,24 +174,24 @@
 
   {{-- === Footer === --}}
   <div class="room-footer">
-    @if ($isLoggedIn)
+    @if ($canShowRoomPrices)
       <div class="room-price">
         <span class="room-price__value">{{ __(':price / :unit', ['price' => format_price($configuredPrice), 'unit' => $priceUnitLabel]) }}</span>
       </div>
     @else
-      <div class="room-price room-price--placeholder">{{ __('Preis nach Login') }}</div>
+      <div class="room-price room-price--placeholder">{!! $priceInquiryText !!}</div>
     @endif
 
     @if (HotelHelper::isBookingEnabled())
       <a
-        href="{{ $isLoggedIn
+        href="{{ $canShowRoomPrices
             ? $room->url . '?start_date=' . BaseHelper::stringify(request()->query('start_date', $startDate)) . '&end_date=' . BaseHelper::stringify(request()->query('end_date', $endDate))
-            : 'https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf' }}"
+            : $priceInquiryUrl }}"
         class="btn-room-cart"
         onclick="event.stopPropagation()"
       >
         <i class="fal fa-calendar-check me-2"></i>
-        {{ $isLoggedIn ? __('Jetzt buchen') : __('Anfragen') }}
+        {{ $canShowRoomPrices ? __('Jetzt buchen') : __('Anfragen') }}
       </a>
     @endif
 

@@ -30,6 +30,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static string getBookingNumber(string|int $id)
  * @method static array getBookingDateFormatOptions()
  * @method static bool isEnableFoodOrder()
+ * @method static bool canShowRoomPrices(?\Botble\Hotel\Models\Customer $customer = null)
+ * @method static string getRoomPriceInquiryText()
  * @method static float getRoomConfiguredPrice(\Botble\Hotel\Models\Room $room, \Botble\Hotel\Models\Customer|null $customer = null, int $quantity = 1)
  * @method static \Botble\Hotel\Models\Customer | null getCurrentCustomer()
  * @see \Botble\Hotel\Supports\HotelSupport
