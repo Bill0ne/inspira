@@ -35,16 +35,22 @@ class TierRequest extends Request
 
     protected function parseDate(string $value): ?Carbon
     {
-        foreach (['Y-m-d H:i:s', 'Y-m-d H:i', 'd.m.Y H:i', 'd.m.Y H:i:s'] as $format) {
-            $parsed = Carbon::createFromFormat($format, $value);
+        $normalized = trim($value);
 
-            if ($parsed !== false) {
+        foreach (['Y-m-d H:i:s', 'Y-m-d H:i', 'd.m.Y H:i', 'd.m.Y H:i:s'] as $format) {
+            try {
+                $parsed = Carbon::createFromFormat($format, $normalized);
+            } catch (\Throwable) {
+                $parsed = false;
+            }
+
+            if ($parsed !== false && $parsed->format($format) === $normalized) {
                 return $parsed;
             }
         }
 
         try {
-            return Carbon::parse($value);
+            return Carbon::parse($normalized);
         } catch (\Throwable) {
             return null;
         }
