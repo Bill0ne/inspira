@@ -5,6 +5,7 @@ namespace Botble\Courses\Tables;
 use Botble\Base\Enums\BaseStatusEnum;
 use Botble\Base\Facades\Assets;
 use Botble\Base\Facades\BaseHelper;
+use Botble\Courses\Models\Course;
 use Botble\Courses\Models\CourseSession;
 use Botble\Courses\Models\Instructor;
 use Botble\Courses\Services\CoursePerformanceService;
@@ -220,7 +221,25 @@ HTML;
 
     protected function renderCourseStatus(CourseSession $session): string
     {
-        $status = $session->course?->status;
+        $course = $session->course;
+
+        if (! $course) {
+            return '—';
+        }
+
+        $status = $course->status;
+
+        if (! $status instanceof BaseStatusEnum && $status !== null) {
+            $status = (new BaseStatusEnum())->make($status);
+        }
+
+        if (
+            $course instanceof Course
+            && $course->isPast()
+            && Course::hasExpiredStatusSupport()
+        ) {
+            $status = BaseStatusEnum::EXPIRED();
+        }
 
         if (! $status instanceof BaseStatusEnum) {
             return '—';
