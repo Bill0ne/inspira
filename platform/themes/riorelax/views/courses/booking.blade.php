@@ -544,7 +544,7 @@ textarea.form-control{min-height:100px;}
                     <input type="checkbox" id="terms_conditions" name="terms_conditions" value="1" @checked(old('terms_conditions'))>
                     <span>
                         Allgemeine&nbsp;Geschäftsbedingungen&nbsp;*
-                        <a href="https://stage.inspira-zentrum.de/de/term-and-conditions"
+                        <a href="https://inspira-zentrum.net/de/term-and-conditions"
                            target="_blank"
                            rel="noopener"
                            style="color:#578E88;font-weight:600;text-decoration:underline;">
