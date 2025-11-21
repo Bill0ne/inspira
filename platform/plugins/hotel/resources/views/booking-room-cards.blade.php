@@ -1,3 +1,8 @@
+@php
+    $canShowRoomPrices = \Botble\Hotel\Facades\HotelHelper::canShowRoomPrices();
+    $priceInquiryText = \Botble\Hotel\Facades\HotelHelper::getRoomPriceInquiryText();
+@endphp
+
 <div class="row mt-3">
     @foreach($rooms as $room)
         <div class="col-md-4 mb-3">
@@ -6,7 +11,7 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ $room->name }}</h5>
                     <p class="card-text">
-                        <strong>{{ trans('plugins/hotel::booking.price') }}:</strong> {!! $room->price_html !!}
+                        <strong>{{ trans('plugins/hotel::booking.price') }}:</strong> {!! $canShowRoomPrices ? $room->price_html : $priceInquiryText !!}
                     </p>
                     <p class="card-text">
                         <strong>{{ trans('plugins/hotel::booking.max_adults') }}:</strong> {{ $room->max_adults }}

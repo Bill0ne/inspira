@@ -39,6 +39,9 @@
     $startLabel24 = $displayStart ? BaseHelper::formatDate($displayStart, 'd.m.Y H:i') : null;
     $endLabel24 = $displayEnd ? BaseHelper::formatDate($displayEnd, 'd.m.Y H:i') : null;
     $isLoggedIn = auth('customer')->check() || auth()->check();
+    $canShowRoomPrices = HotelHelper::canShowRoomPrices();
+    $priceInquiryText = HotelHelper::getRoomPriceInquiryText();
+    $priceInquiryUrl = 'https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf';
 
     $roomPriceDisplay = $totalRoomPrice ?? 0;
     $roomSubtotalBeforeDiscount = $roomSubtotalBeforeDiscount ?? ($roomPriceDisplay + ($mengenrabattAmount ?? 0));
@@ -253,19 +256,23 @@ textarea.form-control{min-height:100px;}
         @php($hasQuantityDiscount = ($mengenrabattAmount ?? 0) > 0)
         <div class="kv room-subtotal-line @if(! $hasQuantityDiscount) d-none @endif">
           <span>Zwischensumme</span>
-          <b class="room-subtotal-text">{{ format_price($roomSubtotalBeforeDiscount) }}</b>
+          <b class="room-subtotal-text">{!! $canShowRoomPrices ? format_price($roomSubtotalBeforeDiscount) : $priceInquiryText !!}</b>
         </div>
         <div class="kv mengenrabatt-line @if(! $hasQuantityDiscount) d-none @endif">
           <span>Mengenrabatt</span>
-          <b class="quantity-discount-text">{{ $hasQuantityDiscount ? '-' : '' }}{{ format_price($mengenrabattAmount ?? 0) }}</b>
+          @if($canShowRoomPrices)
+            <b class="quantity-discount-text">{{ $hasQuantityDiscount ? '-' : '' }}{{ format_price($mengenrabattAmount ?? 0) }}</b>
+          @else
+            <b class="quantity-discount-text">{!! $priceInquiryText !!}</b>
+          @endif
         </div>
-        <div class="kv"><span>Preis</span><b class="amount-text">{{ format_price($roomPriceDisplay) }}</b></div>
+        <div class="kv"><span>Preis</span><b class="amount-text">{!! $canShowRoomPrices ? format_price($roomPriceDisplay) : $priceInquiryText !!}</b></div>
         @if($extrasAmountDisplay > 0)
-          <div class="kv"><span>Zusatzleistungen</span><b>{{ format_price($extrasAmountDisplay) }}</b></div>
+          <div class="kv"><span>Zusatzleistungen</span><b>{!! $canShowRoomPrices ? format_price($extrasAmountDisplay) : $priceInquiryText !!}</b></div>
         @endif
-        <div class="kv"><span>Steuern</span><b class="tax-text">{{ format_price($taxAmount) }}</b></div>
+        <div class="kv"><span>Steuern</span><b class="tax-text">{!! $canShowRoomPrices ? format_price($taxAmount) : $priceInquiryText !!}</b></div>
         <hr>
-        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ format_price($total) }}</b></div>
+        <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{!! $canShowRoomPrices ? format_price($total) : $priceInquiryText !!}</b></div>
       </div>
     </div>
 
@@ -374,7 +381,7 @@ textarea.form-control{min-height:100px;}
                       <input type="checkbox" class="service-item" id="service_{{ $service->id }}" name="services[]" value="{{ $service->id }}" @if (in_array($service->id, (array)old('services', $selectedServices))) checked @endif>
                       <div class="addon-meta">
                         <div class="addon-name">{{ $service->name }}</div>
-                        <div class="addon-price">{{ $isLoggedIn ? format_price($service->price) : __('Preis nach Login') }}</div>
+                        <div class="addon-price">{!! $canShowRoomPrices ? format_price($service->price) : $priceInquiryText !!}</div>
                       </div>
                     </label>
                   @endforeach
@@ -391,7 +398,7 @@ textarea.form-control{min-height:100px;}
                       <input type="checkbox" class="food-item" id="food_{{ $food->id }}" name="foods[]" value="{{ $food->id }}" @if (in_array($food->id, (array)old('foods', $selectedFoods))) checked @endif>
                       <div class="addon-meta">
                         <div class="addon-name">{{ $food->name }}</div>
-                        <div class="addon-price">{{ $isLoggedIn ? format_price($food->price) : __('Preis nach Login') }}</div>
+                        <div class="addon-price">{!! $canShowRoomPrices ? format_price($food->price) : $priceInquiryText !!}</div>
                       </div>
                     </label>
                   @endforeach

@@ -6,21 +6,12 @@
 
     Theme::set('pageTitle', $room->name);
     $nights = max(1, $startDate->diffInHours($endDate));
-    $isCustomerLoggedIn = auth('customer')->check() || auth()->check();
-    $configuredPrice = HotelHelper::getRoomConfiguredPrice($room);
+    $canShowRoomPrices = HotelHelper::canShowRoomPrices();
+    $configuredPrice = $canShowRoomPrices ? HotelHelper::getRoomConfiguredPrice($room) : null;
     $displayPriceDiffers = false;
     $priceUnitLabel = __('hour_lowercase');
-
-    $contactSlug = ltrim('nimm-kontakt-mit-uns-auf', '/');
-    $contactUrl = url($contactSlug);
-
-    if (function_exists('is_plugin_active') && is_plugin_active('language')) {
-        $currentLocale = Language::getCurrentLocale();
-
-        if ($currentLocale) {
-            $contactUrl = url(trim($currentLocale . '/' . $contactSlug, '/'));
-        }
-    }
+    $priceInquiryText = HotelHelper::getRoomPriceInquiryText();
+    $priceInquiryUrl = 'https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf';
 @endphp
 <div class="about-area5 about-p p-relative room-details room-details--rooms">
     <div class="container pt-60 pb-40">
@@ -48,37 +39,32 @@
 
                         <div class="room-booking-card shadow-block">
                             <div class="room-booking-card__pricing">
-                                {{-- Preis NUR für eingeloggte User anzeigen --}}
-                                @if ($isCustomerLoggedIn)
-                                    <div class="room-booking-card__price-chip">
-                                        {{ __(':price / :unit', ['price' => format_price($configuredPrice), 'unit' => $priceUnitLabel]) }}
+                            {{-- Preis nur anzeigen, wenn dem Kunden eine Kategorie zugeordnet ist --}}
+                            @if ($canShowRoomPrices)
+                                <div class="room-booking-card__price-chip">
+                                    {{ __(':price / :unit', ['price' => format_price($configuredPrice), 'unit' => $priceUnitLabel]) }}
+                                </div>
+                                @if ($displayPriceDiffers)
+                                    <div class="room-booking-card__price-original text-muted text-decoration-line-through small">
+                                        {{ format_price($room->price) }}
                                     </div>
-                                    @if ($displayPriceDiffers)
-                                        <div class="room-booking-card__price-original text-muted text-decoration-line-through small">
-                                            {{ format_price($room->price) }}
-                                        </div>
-                                    @endif
-                                @else
-                                    <p class="room-booking-card__notice text-muted">
-                                        {!! __('Bitte :loginLink oder :registerLink, um die Preise zu sehen.', [
-                                            'loginLink' => '<a href="' . e(route('customer.login')) . '">' . __('einloggen') . '</a>',
-                                            'registerLink' => '<a href="' . e(route('customer.register')) . '">' . __('registrieren') . '</a>',
-                                        ]) !!}
-                                    </p>
                                 @endif
-                            </div>
+                            @else
+                                <p class="room-booking-card__notice text-muted">{!! $priceInquiryText !!}</p>
+                            @endif
+                        </div>
 
-                            @if (HotelHelper::isBookingEnabled())
-                                <div class="room-booking-card__form">
-                                    @if ($isCustomerLoggedIn)
-                                        {!! Theme::partial('hotel.forms.form', ['availableForBooking' => true, 'style' => 1, 'room' => $room]) !!}
-                                    @else
-                                        <div class="room-booking-card__cta">
-                                            <a class="room-booking-card__cta-btn" href="{{ $contactUrl }}">
-                                                {{ __('Request now') }}
-                                            </a>
-                                        </div>
-                                    @endif
+                        @if (HotelHelper::isBookingEnabled())
+                            <div class="room-booking-card__form">
+                                @if ($canShowRoomPrices)
+                                    {!! Theme::partial('hotel.forms.form', ['availableForBooking' => true, 'style' => 1, 'room' => $room]) !!}
+                                @else
+                                    <div class="room-booking-card__cta">
+                                        <a class="room-booking-card__cta-btn" href="{{ $priceInquiryUrl }}">
+                                            {{ __('Request now') }}
+                                        </a>
+                                    </div>
+                                @endif
                                 </div>
                             @else
                                 <p class="room-booking-card__notice text-muted mb-0">

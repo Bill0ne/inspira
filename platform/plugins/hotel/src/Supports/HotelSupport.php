@@ -448,6 +448,24 @@ class HotelSupport
         return (bool) $this->getSetting('hotel_booking_enabled_food_order', false);
     }
 
+    public function canShowRoomPrices(?Customer $customer = null): bool
+    {
+        $customer ??= $this->getCurrentCustomer();
+
+        if (! $customer) {
+            return false;
+        }
+
+        return (bool) $customer->customer_category_id;
+    }
+
+    public function getRoomPriceInquiryText(): string
+    {
+        $contactUrl = 'https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf';
+
+        return 'Preise <a href="' . e($contactUrl) . '">hier</a> abfragen';
+    }
+
     public function getRoomConfiguredPrice(Room $room, ?Customer $customer = null, int $quantity = 1): float
     {
         $basePrice = (float) $room->price;
