@@ -29,6 +29,7 @@ use Botble\Courses\Models\Course;
 use Botble\Courses\Models\Instructor;
 use Botble\Courses\Models\CourseCategory;
 use Botble\Hotel\Models\Tax;
+use Botble\Courses\Supports\CourseStatusManager;
 
 class CourseForm extends FormAbstract
 {
@@ -282,7 +283,7 @@ if ($course && $course->getKey()) {
                     ->defaultValue(false)
                     ->toArray()
             )
-            ->add('status', SelectField::class, StatusFieldOption::make())
+            ->add('status', SelectField::class, StatusFieldOption::make()->choices(CourseStatusManager::labels()))
             ->add('tax_id', 'customSelect', [
                 'label' => trans('plugins/hotel::room.form.tax'),
                 'required' => true,

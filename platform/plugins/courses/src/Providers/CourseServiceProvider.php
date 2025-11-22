@@ -19,6 +19,8 @@ use Botble\Theme\Facades\SiteMapManager;
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Routing\Router;
+use Botble\Courses\Commands\ExpireCoursesCommand;
+use Illuminate\Console\Scheduling\Schedule;
 
 class CourseServiceProvider extends ServiceProvider
 {
@@ -74,6 +76,14 @@ class CourseServiceProvider extends ServiceProvider
             Assets::addScripts(['booking-create'])
                 ->addStylesDirectly('vendor/core/plugins/hotel/css/hotel.css');
         });
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([ExpireCoursesCommand::class]);
+
+            $this->app->afterResolving(Schedule::class, function (Schedule $schedule): void {
+                $schedule->command(ExpireCoursesCommand::class)->cron('0 */6 * * *');
+            });
+        }
 
         if (defined('LANGUAGE_ADVANCED_MODULE_SCREEN_NAME')) {
             if (Schema::hasTable('courses_translations')) {

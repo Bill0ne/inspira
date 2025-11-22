@@ -3,13 +3,14 @@
 namespace Botble\Courses\Models;
 
 use Botble\Base\Casts\SafeContent;
-use Botble\Base\Enums\BaseStatusEnum;
 use Botble\Base\Models\BaseModel;
 use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\Tax;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Botble\Courses\Enums\CourseStatusEnum;
+use Botble\Courses\Supports\CourseStatusManager;
 
 class Course extends BaseModel
 {
@@ -39,7 +40,7 @@ class Course extends BaseModel
     ];
 
     protected $casts = [
-        'status' => BaseStatusEnum::class,
+        'status' => CourseStatusEnum::class,
         'name' => SafeContent::class,
         'description' => SafeContent::class,
         'start_date' => 'datetime',
@@ -212,62 +213,12 @@ class Course extends BaseModel
 
     public function syncAutomaticStatus(): void
     {
-        if (! $this->exists || ! $this->status instanceof BaseStatusEnum) {
-            return;
-        }
-
-        if (! static::hasExpiredStatusSupport()) {
-            return;
-        }
-
-        $hasUpcomingSessions = $this->hasUpcomingSessions();
-
-        if (
-            $this->status->equals(BaseStatusEnum::PUBLISHED())
-            && $this->shouldAutomaticallyExpire($hasUpcomingSessions)
-        ) {
-            $this->forceFill(['status' => BaseStatusEnum::EXPIRED])->saveQuietly();
-            $this->status = BaseStatusEnum::EXPIRED();
-
-            return;
-        }
-
-        if ($this->status->equals(BaseStatusEnum::EXPIRED()) && $hasUpcomingSessions) {
-            $this->forceFill(['status' => BaseStatusEnum::PUBLISHED])->saveQuietly();
-            $this->status = BaseStatusEnum::PUBLISHED();
-        }
+        CourseStatusManager::refresh($this);
     }
 
     public static function hasExpiredStatusSupport(): bool
     {
-        return defined(BaseStatusEnum::class . '::EXPIRED');
-    }
-
-    protected function shouldAutomaticallyExpire(?bool $hasUpcomingSessions = null): bool
-    {
-        $hasUpcomingSessions ??= $this->hasUpcomingSessions();
-
-        if ($hasUpcomingSessions) {
-            return false;
-        }
-
-        $hadSessions = $this->sessions()->exists();
-
-        if ($hadSessions) {
-            return true;
-        }
-
-        $now = Carbon::now();
-
-        if ($this->end_date instanceof Carbon) {
-            return $this->end_date->lte($now);
-        }
-
-        if ($this->start_date instanceof Carbon) {
-            return $this->start_date->lte($now);
-        }
-
-        return false;
+        return CourseStatusManager::hasExpiredStatusSupport();
     }
 
     public function isPast(): bool

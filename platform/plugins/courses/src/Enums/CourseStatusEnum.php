@@ -1,0 +1,34 @@
+<?php
+
+namespace Botble\Courses\Enums;
+
+use Botble\Base\Facades\Html;
+use Botble\Base\Supports\Enum;
+use Illuminate\Support\HtmlString;
+
+/**
+ * @method static CourseStatusEnum DRAFT()
+ * @method static CourseStatusEnum PUBLISHED()
+ * @method static CourseStatusEnum PENDING()
+ * @method static CourseStatusEnum EXPIRED()
+ */
+class CourseStatusEnum extends Enum
+{
+    public const PUBLISHED = 'published';
+    public const DRAFT = 'draft';
+    public const PENDING = 'pending';
+    public const EXPIRED = 'expired';
+
+    public static $langPath = 'plugins/courses::statuses';
+
+    public function toHtml(): string|HtmlString
+    {
+        return match ($this->value) {
+            self::DRAFT => Html::tag('span', self::DRAFT()->label(), ['class' => 'badge bg-secondary text-secondary-fg']),
+            self::PENDING => Html::tag('span', self::PENDING()->label(), ['class' => 'badge bg-warning text-warning-fg']),
+            self::PUBLISHED => Html::tag('span', self::PUBLISHED()->label(), ['class' => 'badge bg-success text-success-fg']),
+            self::EXPIRED => Html::tag('span', self::EXPIRED()->label(), ['class' => 'badge bg-danger text-danger-fg']),
+            default => parent::toHtml(),
+        };
+    }
+}
