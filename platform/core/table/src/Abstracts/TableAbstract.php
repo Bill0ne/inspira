@@ -717,11 +717,6 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
         return parent::render($view, $data, $mergeData);
     }
 
-    public function shouldShowFilterSection(): bool
-    {
-        return $this->isFiltering();
-    }
-
     protected function applyScopes(
         EloquentBuilder|QueryBuilder|EloquentRelation|Collection|AnonymousResourceCollection $query
     ): EloquentBuilder|QueryBuilder|EloquentRelation|Collection|AnonymousResourceCollection {

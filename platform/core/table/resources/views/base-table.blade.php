@@ -14,10 +14,7 @@
     @if ($table->hasFilters())
         <x-core::card
             class="mb-3 table-configuration-wrap"
-            @style([
-                'display: none' => ! $table->shouldShowFilterSection(),
-                'display: block' => $table->shouldShowFilterSection(),
-            ])
+            @style(['display: none' => !$table->isFiltering(), 'display: block' => $table->isFiltering()])
         >
             <x-core::card.body>
                 <x-core::button
