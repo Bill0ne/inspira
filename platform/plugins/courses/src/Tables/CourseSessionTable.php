@@ -2,7 +2,8 @@
 
 namespace Botble\Courses\Tables;
 
-use Botble\Base\Enums\BaseStatusEnum;
+use Botble\Courses\Enums\CourseStatusEnum;
+use Botble\Courses\Supports\CourseStatusManager;
 use Botble\Base\Facades\Assets;
 use Botble\Base\Facades\BaseHelper;
 use Botble\Courses\Models\Course;
@@ -113,7 +114,7 @@ class CourseSessionTable extends TableAbstract
                 SelectBulkChange::make()
                     ->name('course_status')
                     ->title('Status')
-                    ->choices(BaseStatusEnum::labels()),
+                    ->choices(CourseStatusManager::labels()),
                 SelectBulkChange::make()
                     ->name('instructor_id')
                     ->title('Coach')
@@ -229,23 +230,13 @@ HTML;
 
         $status = $course->status;
 
-        if (! $status instanceof BaseStatusEnum && $status !== null) {
-            $status = (new BaseStatusEnum())->make($status);
-        }
+        $status = CourseStatusManager::normalize($status);
 
-        if (
-            $course instanceof Course
-            && $course->isPast()
-            && Course::hasExpiredStatusSupport()
-        ) {
-            $status = BaseStatusEnum::EXPIRED();
-        }
-
-        if (! $status instanceof BaseStatusEnum) {
+        if (! $status instanceof CourseStatusEnum) {
             return '—';
         }
 
-        return (string) $status->toHtml();
+        return (string) (CourseStatusManager::getDisplayStatus($course) ?? $status)->toHtml();
     }
 
     // 10 SVG-Stühle; Füllung basierend auf gebucht vs. maxSeats (oder Prozent bei „unlimited“)

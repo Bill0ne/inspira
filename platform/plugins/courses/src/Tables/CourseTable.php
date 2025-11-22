@@ -2,8 +2,8 @@
 
 namespace Botble\Courses\Tables;
 
-use Botble\Base\Enums\BaseStatusEnum;
 use Botble\Courses\Models\Course;
+use Botble\Courses\Supports\CourseStatusManager;
 use Botble\Table\Abstracts\TableAbstract;
 use Botble\Table\Actions\DeleteAction;
 use Botble\Table\Actions\EditAction;
@@ -11,7 +11,6 @@ use Botble\Table\BulkActions\DeleteBulkAction;
 use Botble\Table\BulkChanges\CreatedAtBulkChange;
 use Botble\Table\BulkChanges\NameBulkChange;
 use Botble\Table\BulkChanges\SelectBulkChange;
-use Botble\Table\BulkChanges\StatusBulkChange;
 use Botble\Table\BulkChanges\DateBulkChange;
 use Botble\Table\BulkChanges\TextBulkChange;
 use Botble\Table\Columns\CreatedAtColumn;
@@ -69,19 +68,13 @@ class CourseTable extends TableAbstract
                     ->getValueUsing(function (StatusColumn $column, $value) {
                         $course = $column->getItem();
 
-                        if (! $value instanceof BaseStatusEnum && $value !== null) {
-                            $value = (new BaseStatusEnum())->make($value);
+                        if (! $course instanceof Course) {
+                            return $value;
                         }
 
-                        if (
-                            $course instanceof Course
-                            && $course->isPast()
-                            && Course::hasExpiredStatusSupport()
-                        ) {
-                            return BaseStatusEnum::EXPIRED();
-                        }
+                        $status = CourseStatusManager::normalize($value ?? $course->status);
 
-                        return $value;
+                        return CourseStatusManager::getDisplayStatus($course) ?? $status;
                     }),
             ])
             ->addBulkActions([
@@ -106,7 +99,11 @@ class CourseTable extends TableAbstract
                 DateBulkChange::make()
                     ->name('end_date')
                     ->title(trans('plugins/courses::courses.course.end_date')),
-                StatusBulkChange::make(),
+                SelectBulkChange::make()
+                    ->name('status')
+                    ->title(trans('core/base::tables.status'))
+                    ->choices(CourseStatusManager::labels())
+                    ->validate(['required', 'in:' . implode(',', CourseStatusManager::values())]),
                 CreatedAtBulkChange::make(),
             ])
             ->queryUsing(function (Builder $query) {

@@ -6,6 +6,7 @@ use Botble\ACL\Models\User;
 use Botble\Courses\Models\Course;
 use Botble\Courses\Models\CourseBooking;
 use Botble\Courses\Models\CourseSession;
+use Botble\Courses\Enums\CourseStatusEnum;
 use Botble\Hotel\Facades\HotelHelper;
 use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\CustomerCard;
@@ -44,7 +45,7 @@ class CourseBookingCustomerCardTest extends TestCase
         $course = Course::query()->create([
             'name' => 'Yoga Basics',
             'price' => 50,
-            'status' => 'published',
+            'status' => CourseStatusEnum::PUBLISHED,
             'accept_customer_card' => true,
         ]);
 
