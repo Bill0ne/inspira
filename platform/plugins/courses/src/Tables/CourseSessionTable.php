@@ -169,11 +169,11 @@ class CourseSessionTable extends TableAbstract
     {
         $request = $this->request() ?? request();
 
-        if (optional($request?->attributes)->get('course_session_default_filter')) {
+        if ($request && optional($request->attributes)->get('course_session_default_filter')) {
             return false;
         }
 
-        return parent::shouldShowFilterSection();
+        return $this->isFiltering();
     }
 
     protected function renderSessionOverview(CourseSession $session): string
