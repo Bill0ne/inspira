@@ -167,10 +167,10 @@ class CourseSessionTable extends TableAbstract
 
     public function shouldShowFilterSection(): bool
     {
-        $request = $this->request() ?? request();
-
-        if ($request && optional($request->attributes)->get('course_session_default_filter')) {
-            return false;
+        foreach (array_filter([$this->request(), request()]) as $request) {
+            if (optional($request->attributes)->get('course_session_default_filter')) {
+                return false;
+            }
         }
 
         return $this->isFiltering();
