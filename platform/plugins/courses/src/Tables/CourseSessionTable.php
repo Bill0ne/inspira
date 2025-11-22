@@ -169,7 +169,7 @@ class CourseSessionTable extends TableAbstract
     {
         $request = $this->request() ?? request();
 
-        if ($request?->attributes->get('course_session_default_filter')) {
+        if (optional($request?->attributes)->get('course_session_default_filter')) {
             return false;
         }
 
