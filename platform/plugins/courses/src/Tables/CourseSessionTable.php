@@ -165,6 +165,17 @@ class CourseSessionTable extends TableAbstract
             });
     }
 
+    public function shouldShowFilterSection(): bool
+    {
+        $request = $this->request() ?? request();
+
+        if ($request?->attributes->get('course_session_default_filter')) {
+            return false;
+        }
+
+        return parent::shouldShowFilterSection();
+    }
+
     protected function renderSessionOverview(CourseSession $session): string
     {
         $course = $session->course;
