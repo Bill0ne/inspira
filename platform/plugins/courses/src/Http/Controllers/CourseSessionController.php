@@ -16,6 +16,16 @@ class CourseSessionController extends BaseController
 
     public function index(CourseSessionTable $table)
     {
+        if (! request()->has('filter_table_id')) {
+            request()->merge([
+                'filter_table_id' => $table->getOption('id'),
+                'class' => $table::class,
+                'filter_columns' => ['course_status'],
+                'filter_operators' => ['='],
+                'filter_values' => ['published'],
+            ]);
+        }
+
         $this->pageTitle(trans('plugins/courses::courses.course.name'));
 
         return $table->renderTable();
