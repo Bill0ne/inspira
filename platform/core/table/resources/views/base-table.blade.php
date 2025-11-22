@@ -12,7 +12,13 @@
 
 <div class="table-wrapper">
     @if ($table->hasFilters())
-        @php($shouldShowFilters = method_exists($table, 'shouldShowFilterSection') ? $table->shouldShowFilterSection() : $table->isFiltering())
+        @php
+            $shouldShowFilters = $table->isFiltering();
+
+            if (method_exists($table, 'shouldShowFilterSection')) {
+                $shouldShowFilters = $table->shouldShowFilterSection();
+            }
+        @endphp
 
         <x-core::card
             class="mb-3 table-configuration-wrap"
