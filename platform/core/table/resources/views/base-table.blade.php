@@ -12,9 +12,14 @@
 
 <div class="table-wrapper">
     @if ($table->hasFilters())
+        @php($shouldShowFilters = method_exists($table, 'shouldShowFilterSection') ? $table->shouldShowFilterSection() : $table->isFiltering())
+
         <x-core::card
             class="mb-3 table-configuration-wrap"
-            @style(['display: none' => !$table->isFiltering(), 'display: block' => $table->isFiltering()])
+            @style([
+                'display: none' => ! $shouldShowFilters,
+                'display: block' => $shouldShowFilters,
+            ])
         >
             <x-core::card.body>
                 <x-core::button

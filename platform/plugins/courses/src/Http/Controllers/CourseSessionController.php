@@ -24,6 +24,8 @@ class CourseSessionController extends BaseController
                 'filter_operators' => ['='],
                 'filter_values' => ['published'],
             ]);
+
+            request()->attributes->set('course_session_default_filter', true);
         }
 
         $this->pageTitle(trans('plugins/courses::courses.course.name'));
