@@ -5,8 +5,6 @@ namespace Botble\Courses\Services;
 use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Courses\Events\CourseBookingCreated;
 use Botble\Courses\Models\CourseBooking;
-use Botble\Hotel\Models\CustomerCard;
-use Botble\Hotel\Services\CustomerCardService;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
 
@@ -89,15 +87,7 @@ class CourseBookingService
             return;
         }
 
-        app(CustomerCardService::class)->consumeUnits(
-            $card,
-            null,
-            $courseBooking->course,
-            $courseBooking->customer_card_units_used,
-            (float) $courseBooking->customer_card_discount
-        );
-
-        $courseBooking->customer_card_consumed_at = now();
-        $courseBooking->save();
+        app(\Botble\Hotel\Services\CustomerCardPricingService::class)
+            ->finalizeUsage($courseBooking);
     }
 }

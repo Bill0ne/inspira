@@ -15,7 +15,9 @@ use Botble\Hotel\Http\Requests\CustomerCardRequest;
 use Botble\Hotel\Models\CustomerCard;
 use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\CustomerCardUsage;
+use Botble\Hotel\Enums\CustomerCardCoverageType;
 use Botble\Hotel\Services\CustomerCardService;
+use Botble\Hotel\Services\CustomerCardPricingService;
 use Botble\Hotel\Supports\HotelSupport;
 use Botble\Hotel\Tables\CustomerCardTable;
 use Botble\JsValidation\Facades\JsValidator;
@@ -198,7 +200,7 @@ class CustomerCardController extends BaseController
             ->setNextUrl(route('customer-cards.edit', $customerCard));
     }
 
-    public function apply(Request $request, CustomerCardService $service)
+    public function apply(Request $request, CustomerCardService $service, CustomerCardPricingService $pricingService)
     {
         $customerId = auth('customer')->id();
 
@@ -229,8 +231,6 @@ class CustomerCardController extends BaseController
         }
 
         $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
-        $unitsUsed = min($card->units_remaining, 1);
-
         $coursePricing = 0.0;
 
         if ($course) {
@@ -242,14 +242,17 @@ class CustomerCardController extends BaseController
             );
         }
 
-        $discount = $service->calculateDiscount($card, $course, $unitsUsed, $coursePricing);
+        $cardEffect = $course
+            ? $pricingService->calculateCardEffect($card, $course, $coursePricing)
+            : new \Botble\Hotel\DTO\CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE());
 
         $hotelSupport = app(HotelSupport::class);
         $data = $hotelSupport->getCheckoutData(context: $context) ?: [];
 
         $data['customer_card_id'] = $card->getKey();
-        $data['customer_card_discount'] = $discount;
-        $data['customer_card_units_used'] = $unitsUsed;
+        $data['customer_card_discount'] = $cardEffect->discountGross;
+        $data['customer_card_units_used'] = $cardEffect->unitsUsed;
+        $data['customer_card_coverage_type'] = $cardEffect->coverageType->getValue();
 
         $hotelSupport->saveCheckoutData($data, $context);
 
@@ -257,10 +260,11 @@ class CustomerCardController extends BaseController
             ->httpResponse()
             ->setMessage(__('Karte angewendet.'))
             ->setData([
-                'discount' => format_price($discount),
-                'raw_discount' => $discount,
+                'discount' => format_price($cardEffect->discountGross),
+                'raw_discount' => $cardEffect->discountGross,
                 'card_id' => $card->getKey(),
-                'units_used' => $unitsUsed,
+                'units_used' => $cardEffect->unitsUsed,
+                'coverage_type' => $cardEffect->coverageType->getValue(),
             ]);
     }
 
@@ -274,7 +278,8 @@ class CustomerCardController extends BaseController
         unset(
             $data['customer_card_id'],
             $data['customer_card_discount'],
-            $data['customer_card_units_used']
+            $data['customer_card_units_used'],
+            $data['customer_card_coverage_type']
         );
 
         $hotelSupport->saveCheckoutData($data, $context);
