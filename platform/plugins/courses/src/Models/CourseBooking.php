@@ -29,8 +29,12 @@ class CourseBooking extends BaseModel
         'course_session_id',
         'rule_discount',
         'customer_card_id',
+        'customer_card_coverage_type',
         'customer_card_discount',
+        'customer_card_discount_gross',
         'customer_card_units_used',
+        'payment_split_card_gross',
+        'payment_split_online_gross',
         'customer_card_consumed_at',
     ];
 
@@ -38,8 +42,11 @@ class CourseBooking extends BaseModel
         'status' => BookingStatusEnum::class,
         'additional_info' => 'array',
         'customer_card_discount' => 'decimal:2',
+        'customer_card_discount_gross' => 'decimal:2',
         'customer_card_units_used' => 'int',
         'customer_card_consumed_at' => 'datetime',
+        'payment_split_card_gross' => 'decimal:2',
+        'payment_split_online_gross' => 'decimal:2',
     ];
 
     public function course()

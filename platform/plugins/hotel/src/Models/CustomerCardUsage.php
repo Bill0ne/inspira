@@ -18,11 +18,15 @@ class CustomerCardUsage extends BaseModel
         'course_id',
         'units_used',
         'discount_amount',
+        'discount_gross',
+        'coverage_type',
+        'status',
     ];
 
     protected $casts = [
         'units_used' => 'int',
         'discount_amount' => 'decimal:2',
+        'discount_gross' => 'decimal:2',
     ];
 
     public function card(): BelongsTo

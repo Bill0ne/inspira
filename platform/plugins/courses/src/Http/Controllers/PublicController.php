@@ -231,6 +231,7 @@ class PublicController extends Controller
         $selectedCard = null;
         $cardDiscount = 0.0;
         $cardUnitsUsed = max((int) data_get($checkoutData, 'customer_card_units_used', 1), 1);
+        $cardCoverageType = data_get($checkoutData, 'customer_card_coverage_type');
 
         if ($customer->id) {
             $availableCards = $customerCardService->getApplicableCardsForCourse($course->id, $customer->getKey());
@@ -241,22 +242,27 @@ class PublicController extends Controller
                 $selectedCard = $customerCardService->getValidCard($cardId, $customer->getKey());
 
                 if ($selectedCard) {
-                    $storedDiscount = (float) data_get($checkoutData, 'customer_card_discount', 0);
-                    $cardDiscount = $storedDiscount
-                        ?: $customerCardService->calculateDiscount($selectedCard, $course, $cardUnitsUsed, $courseGrossPrice);
-                    $cardDiscount = min($cardDiscount, $totalRaw);
-                    $cardDiscount = course_truncate_price($cardDiscount);
+                    $pricingService = app(\Botble\Hotel\Services\CustomerCardPricingService::class);
+                    $cardEffect = $pricingService->calculateCardEffect($selectedCard, $course, $totalRaw);
+                    $cardDiscount = course_truncate_price(min(
+                        (float) data_get($checkoutData, 'customer_card_discount', $cardEffect->discountGross),
+                        $totalRaw
+                    ));
+                    $cardUnitsUsed = $cardEffect->unitsUsed;
+                    $cardCoverageType = $cardEffect->coverageType->getValue();
 
                     HotelHelper::saveCheckoutData([
                         'customer_card_id' => $selectedCard->getKey(),
                         'customer_card_discount' => $cardDiscount,
                         'customer_card_units_used' => $cardUnitsUsed,
+                        'customer_card_coverage_type' => $cardCoverageType,
                     ], HotelSupport::CONTEXT_COURSE);
                 } else {
                     HotelHelper::saveCheckoutData([
                         'customer_card_id' => null,
                         'customer_card_discount' => null,
                         'customer_card_units_used' => null,
+                        'customer_card_coverage_type' => null,
                     ], HotelSupport::CONTEXT_COURSE);
                 }
             }
@@ -330,6 +336,7 @@ class PublicController extends Controller
         $cardId = (int) Arr::get($sessionData, 'customer_card_id');
         $cardDiscount = (float) Arr::get($sessionData, 'customer_card_discount', 0);
         $cardUnitsUsed = max((int) Arr::get($sessionData, 'customer_card_units_used', 1), 1);
+        $cardCoverageType = Arr::get($sessionData, 'customer_card_coverage_type');
         $customerCard = null;
 
         if ($cardId && Auth::guard('customer')->check()) {
@@ -337,11 +344,13 @@ class PublicController extends Controller
 
             if (! $customerCard) {
                 $cardDiscount = 0;
+                $cardCoverageType = null;
                 $cardUnitsUsed = 0;
                 HotelHelper::saveCheckoutData([
                     'customer_card_id' => null,
                     'customer_card_discount' => null,
                     'customer_card_units_used' => null,
+                    'customer_card_coverage_type' => null,
                 ], HotelSupport::CONTEXT_COURSE);
             }
         }
@@ -448,7 +457,9 @@ class PublicController extends Controller
             $booking->booking_number = CourseBooking::generateUniqueBookingNumber();
             $booking->customer_card_id = $customerCard?->getKey();
             $booking->customer_card_discount = $effectiveCardDiscount;
+            $booking->customer_card_discount_gross = $effectiveCardDiscount;
             $booking->customer_card_units_used = $customerCard ? $cardUnitsUsed : 0;
+            $booking->customer_card_coverage_type = $customerCard ? ($cardCoverageType ?: 'partial') : 'none';
 
             if (Auth::guard('customer')->check()) {
                 $booking->customer_id = Auth::guard('customer')->id();

@@ -110,9 +110,17 @@ class HookServiceProvider extends ServiceProvider
                     in_array($payment->payment_channel, [PaymentMethodEnum::COD, PaymentMethodEnum::BANK_TRANSFER])
                     && $request->input('status') == PaymentStatusEnum::COMPLETED
                 ) {
-                    CourseBooking::query()
-                        ->where('payment_id', $payment->id)
-                        ->update(['status' => 'processing']);
+                    $booking = CourseBooking::query()->where('payment_id', $payment->id)->first();
+
+                    if (! $booking) {
+                        return;
+                    }
+
+                    $booking->status = BookingStatusEnum::PROCESSING;
+                    $booking->save();
+
+                    app(\Botble\Hotel\Services\CustomerCardPricingService::class)
+                        ->finalizeUsage($booking);
                 }
             }, 183, 2);
         }
