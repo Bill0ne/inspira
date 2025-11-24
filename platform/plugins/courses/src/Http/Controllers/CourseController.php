@@ -204,6 +204,7 @@ class CourseController extends BaseController
             'thumbnail'        => $course->thumbnail,
             'is_featured'      => $course->is_featured,
             'status'           => $course->status,
+            'accept_customer_card' => $course->accept_customer_card,
         ]);
 
         $this->generateSessions($duplicatedCourse);

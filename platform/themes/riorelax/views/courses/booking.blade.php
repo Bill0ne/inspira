@@ -331,7 +331,7 @@ textarea.form-control{min-height:100px;}
                 <div class="kv"><span>Steuern</span><b class="tax-text">{{ course_format_price($priceBreakdown['calculated_tax'] ?? 0) }}</b></div>
                 <div class="kv"><span>Bruttopreis</span><b class="amount-text">{{ course_format_price($priceBreakdown['calculated_gross'] ?? 0) }}</b></div>
                 <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $couponAmount > 0 ? '-' : '' }}{{ course_format_price($couponAmount) }}</b></div>
-                <div class="kv card-discount-row {{ $cardDiscount > 0 ? '' : 'd-none' }}"><span>Kartenrabatt</span><b class="card-discount-text">-{{ course_format_price($cardDiscount) }}</b></div>
+                <div class="kv card-discount-row {{ $customerCardsAllowed && $cardDiscount > 0 ? '' : 'd-none' }}"><span>Kartenrabatt</span><b class="card-discount-text">-{{ course_format_price($cardDiscount) }}</b></div>
                 <div class="kv minimum-fee-row {{ $minimumOnlinePaymentFee > 0 ? '' : 'd-none' }}"><span>Mindestgebühr (Online-Zahlung)</span><b class="minimum-fee-text">{{ course_format_price($minimumOnlinePaymentFee) }}</b></div>
                 <hr>
                 <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ course_format_price($finalTotal) }}</b></div>
@@ -372,7 +372,7 @@ textarea.form-control{min-height:100px;}
                 value="{{ number_format($finalTotal, 2, '.', '') }}"
                 data-total
                 data-original-total="{{ number_format($total, 2, '.', '') }}"
-                data-active-discount="{{ number_format($cardDiscount, 2, '.', '') }}"
+                data-active-discount="{{ number_format($customerCardsAllowed ? $cardDiscount : 0, 2, '.', '') }}"
                 data-minimum-fee="{{ number_format($minimumOnlinePaymentFee, 2, '.', '') }}"
                 data-minimum-threshold="{{ number_format($minimumOnlinePaymentThreshold, 2, '.', '') }}"
             >
@@ -381,7 +381,11 @@ textarea.form-control{min-height:100px;}
             <input type="hidden" name="currency" value="{{ strtoupper(get_application_currency()->title) }}">
             <input type="hidden" name="currency_id" value="{{ get_application_currency_id() }}">
             <input type="hidden" name="register_customer" value="{{ old('register_customer', 0) }}" id="register_customer_flag">
-            <input type="hidden" name="customer_card_id" value="{{ $selectedCard?->getKey() }}" data-customer-card-input>
+            <input
+                type="hidden"
+                name="customer_card_id"
+                value="{{ $customerCardsAllowed ? $selectedCard?->getKey() : '' }}"
+                data-customer-card-input>
 
 
             {{-- STEP 1 --}}
@@ -467,57 +471,59 @@ textarea.form-control{min-height:100px;}
                     $cardControlsDisabled = $customerIsGuest || ! $hasAvailableCustomerCards;
                 @endphp
 
-                {{-- KUNDENKARTE --}}
-                <div class="checkout-action-card mb-3">
-                    <div class="checkout-action-card__header">
-                        <div>
-                            <span class="checkout-action-card__eyebrow">Kundenkarte</span>
-                            <h5 class="checkout-action-card__title">Kundenkarte anwenden</h5>
+                @if ($customerCardsAllowed)
+                    {{-- KUNDENKARTE --}}
+                    <div class="checkout-action-card mb-3">
+                        <div class="checkout-action-card__header">
+                            <div>
+                                <span class="checkout-action-card__eyebrow">Kundenkarte</span>
+                                <h5 class="checkout-action-card__title">Kundenkarte anwenden</h5>
+                            </div>
                         </div>
-                    </div>
-                    <div class="checkout-action-form">
-                        <label class="form-label checkout-action-label" for="customer_card_select">Kundenkarte auswählen</label>
-                        <div class="checkout-action-controls">
-                            <select id="customer_card_select"
-                                    class="form-select checkout-action-select"
-                                    data-course="{{ $course->id }}"
-                                    @if ($cardControlsDisabled) disabled aria-disabled="true" @endif>
-                                <option value="">
-                                    {{ $hasAvailableCustomerCards ? 'Keine Karte auswählen' : 'Keine Kundenkarte verfügbar' }}
-                                </option>
-                                @foreach ($availableCards as $card)
-                                    <option value="{{ $card->id }}" @selected($selectedCard && $selectedCard->id === $card->id)>
-                                        {{ $card->name }}@if ($card->uid) — {{ $card->uid }}@endif
+                        <div class="checkout-action-form">
+                            <label class="form-label checkout-action-label" for="customer_card_select">Kundenkarte auswählen</label>
+                            <div class="checkout-action-controls">
+                                <select id="customer_card_select"
+                                        class="form-select checkout-action-select"
+                                        data-course="{{ $course->id }}"
+                                        @if ($cardControlsDisabled) disabled aria-disabled="true" @endif>
+                                    <option value="">
+                                        {{ $hasAvailableCustomerCards ? 'Keine Karte auswählen' : 'Keine Kundenkarte verfügbar' }}
                                     </option>
-                                @endforeach
-                            </select>
-                            <button class="checkout-action-button checkout-action-button--primary"
-                                    type="button"
-                                    data-bb-customer-card="apply"
-                                    @if ($cardControlsDisabled) disabled aria-disabled="true" @endif>
-                                Anwenden
-                            </button>
-                            <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}"
-                                    data-bb-customer-card="remove"
-                                    type="button"
-                                    @if ($customerIsGuest) disabled aria-disabled="true" @endif>
-                                Entfernen
-                            </button>
+                                    @foreach ($availableCards as $card)
+                                        <option value="{{ $card->id }}" @selected($selectedCard && $selectedCard->id === $card->id)>
+                                            {{ $card->name }}@if ($card->uid) — {{ $card->uid }}@endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button class="checkout-action-button checkout-action-button--primary"
+                                        type="button"
+                                        data-bb-customer-card="apply"
+                                        @if ($cardControlsDisabled) disabled aria-disabled="true" @endif>
+                                    Anwenden
+                                </button>
+                                <button class="checkout-action-button checkout-action-button--ghost {{ $selectedCard ? '' : 'd-none' }}"
+                                        data-bb-customer-card="remove"
+                                        type="button"
+                                        @if ($customerIsGuest) disabled aria-disabled="true" @endif>
+                                    Entfernen
+                                </button>
+                            </div>
+                            @if ($customerIsGuest)
+                                <p class="mb-0 text-muted" style="font-size: 13px;">
+                                    {{ trans('plugins/hotel::customer-card.messages.login_required') }}
+                                </p>
+                            @elseif (! $hasAvailableCustomerCards)
+                                <p class="mb-0 text-muted" style="font-size: 13px;">
+                                    {{ trans('plugins/hotel::customer-card.purchase.no_active_hint') }}
+                                </p>
+                            @endif
                         </div>
-                        @if ($customerIsGuest)
-                            <p class="mb-0 text-muted" style="font-size: 13px;">
-                                {{ trans('plugins/hotel::customer-card.messages.login_required') }}
-                            </p>
-                        @elseif (! $hasAvailableCustomerCards)
-                            <p class="mb-0 text-muted" style="font-size: 13px;">
-                                {{ trans('plugins/hotel::customer-card.purchase.no_active_hint') }}
-                            </p>
-                        @endif
+                        <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
+                            <span>Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong></span>
+                        </div>
                     </div>
-                    <div class="checkout-action-feedback {{ $cardDiscount > 0 ? '' : 'd-none' }}" data-bb-customer-card="info">
-                        <span>Kartenrabatt: <strong data-bb-customer-card="discount">{{ course_format_price($cardDiscount) }}</strong></span>
-                    </div>
-                </div>
+                @endif
 
                 {{-- COUPON --}}
                 <div class="coupon-wrapper" id="courseCouponBox" data-checkout-context="course">
