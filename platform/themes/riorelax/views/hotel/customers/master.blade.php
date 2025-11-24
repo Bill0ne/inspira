@@ -53,7 +53,7 @@
         'is_logout' => true,
     ];
 
-    $primaryRoutes = ['customer.overview', 'customer.bookings'];
+    $primaryRoutes = ['customer.overview', 'customer.bookings', 'customer.cards'];
     $primaryNavigation = [];
     $overflowNavigation = [];
     $overflowHasActive = false;
