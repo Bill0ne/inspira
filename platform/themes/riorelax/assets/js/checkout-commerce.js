@@ -166,6 +166,8 @@
   }
 
   win.CheckoutState = win.CheckoutState || { card: null, coupon: null, totals: {} };
+  var removeUrl =
+    (win.customerCard && win.customerCard.routes && win.customerCard.routes.remove) || null;
 
   function extractCheckoutState(payload) {
     if (!payload || typeof payload !== 'object') return null;
@@ -244,6 +246,7 @@
     var $infoBox = $('[data-bb-customer-card="info"]');
     var $infoDiscount = $infoBox.find('[data-bb-customer-card="discount"]');
     var $cardInput = $('[data-customer-card-input]');
+    var $cardSection = $root.find('[data-bb-customer-card-section]');
     var cardState = state.card;
 
     if (cardState && cardState.id) {
@@ -257,8 +260,18 @@
           $infoDiscount.text(cardText);
         }
       }
+      if ($cardSection.length) {
+        $cardSection.removeClass('d-none');
+      }
     } else {
-      if ($cardSelect.length) $cardSelect.val('');
+      if ($cardSelect.length) {
+        $cardSelect.val('');
+        var $firstOption = $cardSelect.find('option').first();
+        if ($firstOption.length) {
+          $firstOption.prop('selected', true);
+          $firstOption.text('Keine Karte');
+        }
+      }
       if ($cardInput.length) $cardInput.val('');
       if ($removeButton.length) $removeButton.addClass('d-none');
       if ($infoBox.length) {
@@ -268,6 +281,9 @@
       if ($cardDiscountRow.length) {
         $cardDiscountRow.addClass('d-none');
         $cardDiscountText.text('-');
+      }
+      if ($cardSection.length) {
+        $cardSection.addClass('d-none');
       }
     }
 
@@ -295,6 +311,22 @@
   function updateTotals(data, context) {
     setCheckoutState(data, context);
   }
+
+  function refreshPaymentMethods(context) {
+    return reloadPaymentList(context);
+  }
+
+  function handleCardRemoveResponse(response) {
+    win.CheckoutState = response;
+    renderCheckoutUI();
+    refreshPaymentMethods();
+
+    $(document).trigger('customer-card.removed', {
+      response: response,
+    });
+  }
+
+  win.handleCardRemoveResponse = handleCardRemoveResponse;
 
   function getSharedPayload(context) {
     var payload = {};
@@ -438,6 +470,14 @@
   $document.off('click', '.toggle-coupon-form');
   $document.off('click', '.apply-coupon-code');
   $document.off('click', '.remove-coupon-code');
+
+  $document.on('click', '[data-card-remove]', function () {
+    var $trigger = $(this);
+    removeUrl = removeUrl || $trigger.data('url');
+    if (!removeUrl) return;
+
+    $.post(removeUrl).done(handleCardRemoveResponse).fail(handleRequestError);
+  });
 
   $document
     .on('click', '.toggle-coupon-form', function (e) {
