@@ -2,28 +2,18 @@
 
 namespace Botble\Hotel\Enums;
 
-use Botble\Base\Enums\Enum;
-use Botble\Base\Facades\BaseHelper;
-
-/**
- * @method static CustomerCardCoverageType NONE()
- * @method static CustomerCardCoverageType PARTIAL()
- * @method static CustomerCardCoverageType FULL()
- */
-class CustomerCardCoverageType extends Enum
+enum CustomerCardCoverageType: string
 {
-    public const NONE = 'none';
-    public const PARTIAL = 'partial';
-    public const FULL = 'full';
-
-    public static $langPath = 'plugins/hotel::customer-card.coverage_type';
+    case NONE = 'none';
+    case PARTIAL = 'partial';
+    case FULL = 'full';
 
     public function label(): string
     {
-        return match ($this->value) {
-            self::FULL => BaseHelper::clean(__('Full coverage')),
-            self::PARTIAL => BaseHelper::clean(__('Partial coverage')),
-            default => BaseHelper::clean(__('No coverage')),
+        return match ($this) {
+            self::NONE => 'Keine Abdeckung',
+            self::PARTIAL => 'Teilweise Abdeckung',
+            self::FULL => 'Volle Abdeckung',
         };
     }
 }

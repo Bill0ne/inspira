@@ -252,7 +252,7 @@ class CustomerCardController extends BaseController
 
         $cardEffect = $course
             ? $pricingService->calculateCardEffect($card, $course, $coursePricing)
-            : new \Botble\Hotel\DTO\CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE());
+            : new \Botble\Hotel\DTO\CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE);
 
         $hotelSupport = app(HotelSupport::class);
         $data = $hotelSupport->getCheckoutData(context: $context) ?: [];
@@ -260,7 +260,7 @@ class CustomerCardController extends BaseController
         $data['customer_card_id'] = $card->getKey();
         $data['customer_card_discount'] = $cardEffect->discountGross;
         $data['customer_card_units_used'] = $cardEffect->unitsUsed;
-        $data['customer_card_coverage_type'] = $cardEffect->coverageType->getValue();
+        $data['customer_card_coverage_type'] = $cardEffect->coverageType->value;
 
         $hotelSupport->saveCheckoutData($data, $context);
 
@@ -272,7 +272,7 @@ class CustomerCardController extends BaseController
                 'raw_discount' => $cardEffect->discountGross,
                 'card_id' => $card->getKey(),
                 'units_used' => $cardEffect->unitsUsed,
-                'coverage_type' => $cardEffect->coverageType->getValue(),
+                'coverage_type' => $cardEffect->coverageType->value,
             ]);
     }
 

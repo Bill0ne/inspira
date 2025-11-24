@@ -18,7 +18,7 @@ class CustomerCardPricingService
         $availableUnits = max($card->units_remaining, 0);
 
         if ($availableUnits <= 0 || $baseAmountGross <= 0) {
-            return new CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE());
+            return new CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE);
         }
 
         $unitValueGross = max((float) $card->base_price, 0);
@@ -28,8 +28,8 @@ class CustomerCardPricingService
         $unitsUsed = max(1, min($availableUnits, $estimatedUnits));
         $discountGross = min($unitsUsed * $unitValueGross, $baseAmountGross);
         $coverageType = $discountGross >= $baseAmountGross
-            ? CustomerCardCoverageType::FULL()
-            : CustomerCardCoverageType::PARTIAL();
+            ? CustomerCardCoverageType::FULL
+            : CustomerCardCoverageType::PARTIAL;
 
         return new CardEffectDTO($discountGross, $unitsUsed, $unitValueGross, $coverageType);
     }
@@ -64,15 +64,11 @@ class CustomerCardPricingService
 
             $coverage = $booking->customer_card_coverage_type;
 
-            if ($coverage instanceof CustomerCardCoverageType) {
-                $coverage = $coverage->getValue();
+            if (is_string($coverage)) {
+                $coverage = CustomerCardCoverageType::tryFrom($coverage);
             }
 
             $coverage ??= CustomerCardCoverageType::PARTIAL;
-
-            if ($coverage instanceof CustomerCardCoverageType) {
-                $coverage = $coverage->getValue();
-            }
 
             CustomerCardUsage::query()->create([
                 'card_id' => $card->getKey(),
@@ -81,7 +77,7 @@ class CustomerCardPricingService
                 'units_used' => $units,
                 'discount_amount' => (float) $booking->customer_card_discount_gross,
                 'discount_gross' => (float) $booking->customer_card_discount_gross,
-                'coverage_type' => $coverage,
+                'coverage_type' => $coverage->value,
                 'status' => 'consumed',
             ]);
 
