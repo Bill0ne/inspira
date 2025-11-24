@@ -22,6 +22,7 @@ use Botble\Hotel\Supports\HotelSupport;
 use Botble\Hotel\Tables\CustomerCardTable;
 use Botble\JsValidation\Facades\JsValidator;
 use Botble\Courses\Models\Course;
+use Botble\Courses\Services\CourseCheckoutStateService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -448,4 +449,3 @@ class CustomerCardController extends BaseController
         return $courseId ?: null;
     }
 }
-use Botble\Courses\Services\CourseCheckoutStateService;
