@@ -100,6 +100,8 @@
   var COUPON_STATE_ATTR = 'data-coupon-open';
   var COUPON_OPEN_CLASS = 'coupon-form-open';
 
+  var activeCouponRequest = null;
+
   function getStoredCouponState(ctx) {
     if (!ctx || !ctx.root) return null;
     var attr = ctx.root.getAttribute(COUPON_STATE_ATTR);
@@ -207,9 +209,22 @@
       ctxInfo.$box = $container;
     }
 
+    var previousValues = {
+      codeInput: ctxInfo && ctxInfo.$box ? ctxInfo.$box.find('input[name=coupon_code]').val() : '',
+      hiddenInput: ctxInfo && ctxInfo.$box ? ctxInfo.$box.find('input[name=coupon_hidden]').val() : '',
+    };
+
     if (typeof html === 'string') {
       $container.html(html);
       if (ctxInfo) {
+        if (previousValues.hiddenInput && !$container.find('input[name=coupon_hidden]').val()) {
+          $container.find('input[name=coupon_hidden]').val(previousValues.hiddenInput);
+        }
+
+        if (previousValues.codeInput && !$container.find('input[name=coupon_code]').val()) {
+          $container.find('input[name=coupon_code]').val(previousValues.codeInput);
+        }
+
         var hasApplied = $container.find('.coupon-feedback').length > 0;
         var storedState = getStoredCouponState(ctxInfo);
         if (hasApplied && typeof storedState !== 'boolean') {
@@ -336,7 +351,11 @@
 
       if (!ensureCourseContext('Coupon anwenden')) return;
 
-      $.ajax({
+      if (activeCouponRequest) {
+        return;
+      }
+
+      activeCouponRequest = $.ajax({
         url: url,
         type: 'POST',
         headers: { 'X-CSRF-TOKEN': getCsrf() },
@@ -361,6 +380,7 @@
           ctx.$box.find('input[name=coupon_hidden]').val(data.coupon_code || '');
           if (data.coupon_code) {
             ctx.$box.find('input[name=coupon_code]').val(data.coupon_code);
+            setStoredCouponState(ctx, true);
           }
         }
         refreshCouponBox(data && data.coupon_view, ctx.type);
@@ -379,6 +399,7 @@
       })
       .always(function () {
         toggleLoading($btn, false);
+        activeCouponRequest = null;
       });
     })
     .on('click', '.remove-coupon-code', function (e) {
@@ -393,7 +414,11 @@
 
       if (!ensureCourseContext('Coupon entfernen')) return;
 
-      $.ajax({
+      if (activeCouponRequest) {
+        return;
+      }
+
+      activeCouponRequest = $.ajax({
         url: url,
         type: 'POST',
         headers: { 'X-CSRF-TOKEN': getCsrf() },
@@ -418,6 +443,7 @@
           ctx.$box.find('input[name=coupon_hidden]').val('');
           if (!data.coupon_code) {
             ctx.$box.find('input[name=coupon_code]').val('');
+            setStoredCouponState(ctx, false);
           }
         }
         refreshCouponBox(data && data.coupon_view, ctx.type);
@@ -436,6 +462,7 @@
       })
       .always(function () {
         toggleLoading($btn, false);
+        activeCouponRequest = null;
       });
     });
 
