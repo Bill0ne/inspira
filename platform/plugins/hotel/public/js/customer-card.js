@@ -26,6 +26,24 @@ $(() => {
         handleError: (err) => console.error('Request error:', err),
     };
 
+    const extractErrorMessage = (error) => {
+        if (!error) return null;
+
+        if (typeof error === 'string') return error;
+
+        if (error.responseJSON?.message) return error.responseJSON.message;
+
+        if (error.responseJSON?.data?.message) return error.responseJSON.data.message;
+
+        if (error.responseJSON?.error) return error.responseJSON.error;
+
+        if (error.responseText) return error.responseText;
+
+        if (error.message) return error.message;
+
+        return null;
+    };
+
     /* ----------------------------------------------------------
      *  CONFIG
      * ---------------------------------------------------------- */
@@ -59,6 +77,17 @@ $(() => {
     const toggleButton = ($button, isLoading) => {
         if (!$button || !$button.length) return;
         $button.prop('disabled', !!isLoading).toggleClass('button-loading', !!isLoading);
+    };
+
+    const handleRequestError = (error) => {
+        const message = extractErrorMessage(error);
+
+        if (message) {
+            window.Botble.showError(message);
+            return;
+        }
+
+        window.Botble.handleError(error);
     };
 
     const isCustomerAuthenticated = () => !!CARD_CONFIG.isAuthenticated;
@@ -107,7 +136,11 @@ $(() => {
             url,
             type: 'POST',
             data,
-            headers: { 'X-CSRF-TOKEN': csrfToken() },
+            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken(),
+                'Accept': 'application/json',
+            },
             beforeSend: () => {
                 if ($trigger) {
                     $trigger.addClass('button-loading').attr('disabled', true);
@@ -118,7 +151,15 @@ $(() => {
                     $trigger.removeClass('button-loading').attr('disabled', false);
                 }
             },
-        }).then((response) => ({ data: response }));
+        })
+            .then((response) => ({ data: response }))
+            .catch((error) => {
+                const message = extractErrorMessage(error);
+                if (message) {
+                    window.Botble.showError(message);
+                }
+                return Promise.reject(error);
+            });
     };
 
     const triggerCustomerCardEvent = (eventName, detail = {}) => {
@@ -334,7 +375,7 @@ $(() => {
                         discount: Number(payload.raw_discount || 0),
                     });
                 })
-                .catch(window.Botble.handleError);
+                .catch(handleRequestError);
         });
 
         /* REMOVE ------------------------------------------------- */
@@ -358,7 +399,7 @@ $(() => {
 
                     triggerCustomerCardEvent('customer-card.removed', {});
                 })
-                .catch(window.Botble.handleError);
+                .catch(handleRequestError);
         });
     }
 
@@ -409,7 +450,7 @@ $(() => {
             })
             .catch((error) => {
                 $modal.modal('hide');
-                window.Botble.handleError(error);
+                handleRequestError(error);
             });
     });
 
