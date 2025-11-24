@@ -8,6 +8,7 @@ use Botble\Courses\Models\Course;
 use Botble\Hotel\Facades\HotelHelper;
 use Botble\Hotel\Supports\HotelSupport;
 use Botble\Hotel\Services\CouponService;
+use Botble\Courses\Services\CourseCheckoutStateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -47,52 +48,10 @@ class CouponController extends BaseController
                 ->setMessage(__('Wir konnten den Kurs für diese Buchung nicht ermitteln. Bitte versuche es erneut.'));
         }
 
-        $pricing = $course->resolvePricing(Auth::guard('customer')->user());
-        $priceBreakdown = course_price_breakdown($course, Auth::guard('customer')->user());
-        $amountNetRaw = (float) Arr::get($pricing, 'calculated_net', 0);
-
-        $discountAmount = $couponService->getDiscountAmount(
-            $coupon->type->getValue(),
-            (float) $coupon->value,
-            $amountNetRaw
-        );
-
-        $discountAmount = min($discountAmount, $amountNetRaw);
-        $discountAmount = course_truncate_price($discountAmount);
-        $netSubtotalRaw = max($amountNetRaw - $discountAmount, 0);
-        $netSubtotal = course_truncate_price($netSubtotalRaw);
-        $taxAmountRaw = $course->getTaxAmount($netSubtotalRaw);
-        $taxAmount = course_truncate_price($taxAmountRaw);
-        $totalAmount = course_truncate_price($netSubtotalRaw + $taxAmountRaw);
-        $subTotalDisplay = course_truncate_price($course->getPriceWithTax($amountNetRaw));
-        $couponDisplay = course_truncate_price($course->getPriceWithTax($discountAmount));
-        $discountDisplay = $discountAmount > 0
-            ? '-' . course_format_price($couponDisplay)
-            : course_format_price(0);
-        $displayTaxAmount = course_format_price($priceBreakdown['calculated_tax'] ?? 0);
-        $displaySubTotal = course_format_price($subTotalDisplay);
-        $displayTotal = course_format_price($totalAmount);
-
-        $sessionData['coupon_code'] = $couponCode;
-        $sessionData['coupon_amount'] = $discountAmount;
-        $sessionData['course_id'] = $course->getKey();
-
-        HotelHelper::saveCheckoutData($sessionData, HotelSupport::CONTEXT_COURSE);
+        $state = app(CourseCheckoutStateService::class)->buildState($course, $couponCode);
 
         return $this->response
-            ->setData([
-                'sub_total' => $displaySubTotal,
-                'discount_amount' => $discountDisplay,
-                'tax_amount' => $displayTaxAmount,
-                'total_amount' => $displayTotal,
-                'amount_raw' => $totalAmount,
-                'coupon_code' => $couponCode,
-                'coupon_view' => view('plugins/courses::coupons.partials.form', [
-                    'course' => $course,
-                    'appliedCouponCode' => $couponCode,
-                    'appliedCouponAmount' => $discountAmount,
-                ])->render(),
-            ])
+            ->setData($state)
             ->setMessage(__('Applied coupon ":code" successfully!', ['code' => $couponCode]));
     }
 
@@ -112,37 +71,17 @@ class CouponController extends BaseController
 
         HotelHelper::saveCheckoutData($sessionData, HotelSupport::CONTEXT_COURSE);
 
-        $data = [
-            'coupon_code' => null,
-        ];
-
-        if ($course) {
-            $pricing = $course->resolvePricing(Auth::guard('customer')->user());
-            $priceBreakdown = course_price_breakdown($course, Auth::guard('customer')->user());
-            $amountNetRaw = (float) Arr::get($pricing, 'calculated_net', 0);
-            $netSubtotalRaw = $amountNetRaw;
-            $netSubtotal = course_truncate_price($netSubtotalRaw);
-            $taxAmountRaw = $course->getTaxAmount($netSubtotalRaw);
-            $taxAmount = course_truncate_price($taxAmountRaw);
-            $totalAmount = course_truncate_price($netSubtotalRaw + $taxAmountRaw);
-            $subTotalDisplay = course_truncate_price($course->getPriceWithTax($amountNetRaw));
-
-            $data = array_merge($data, [
-                'sub_total' => course_format_price($subTotalDisplay),
-                'discount_amount' => course_format_price(0),
-                'tax_amount' => course_format_price($priceBreakdown['calculated_tax'] ?? 0),
-                'total_amount' => course_format_price($totalAmount),
-                'amount_raw' => $totalAmount,
-                'coupon_view' => view('plugins/courses::coupons.partials.form', [
-                    'course' => $course,
-                    'appliedCouponCode' => null,
-                    'appliedCouponAmount' => 0,
-                ])->render(),
-            ]);
-        }
+        $state = $course
+            ? app(CourseCheckoutStateService::class)->buildState($course)
+            : [
+                'success' => true,
+                'coupon' => null,
+                'card' => null,
+                'totals' => [],
+            ];
 
         return $this->response
-            ->setData($data)
+            ->setData($state)
             ->setMessage(__('Removed coupon ":code" successfully!', ['code' => $couponCode]));
     }
 
@@ -150,8 +89,16 @@ class CouponController extends BaseController
     {
         [$course] = $this->resolveCourseFromCheckout();
 
-        return $this->response
-            ->setData(view('plugins/courses::coupons.partials.form', compact('course'))->render());
+        $state = $course
+            ? app(CourseCheckoutStateService::class)->buildState($course)
+            : [
+                'success' => true,
+                'card' => null,
+                'coupon' => null,
+                'totals' => [],
+            ];
+
+        return $this->response->setData($state);
     }
 
     protected function resolveCourseFromCheckout(?int $courseId = null): array

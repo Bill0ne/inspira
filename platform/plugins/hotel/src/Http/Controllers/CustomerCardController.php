@@ -264,16 +264,31 @@ class CustomerCardController extends BaseController
 
         $hotelSupport->saveCheckoutData($data, $context);
 
+        $checkoutState = null;
+
+        if ($context === HotelSupport::CONTEXT_COURSE && $courseId) {
+            $course = Course::query()->find($courseId);
+
+            if ($course) {
+                $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
+            }
+        }
+
+        $checkoutState ??= [
+            'success' => true,
+            'card' => [
+                'id' => $card->getKey(),
+                'units_used' => $cardEffect->unitsUsed,
+                'discount' => $cardEffect->discountGross,
+                'coverage_type' => $cardEffect->coverageType->value,
+            ],
+            'totals' => [],
+        ];
+
         return $this
             ->httpResponse()
             ->setMessage(__('Karte angewendet.'))
-            ->setData([
-                'discount' => format_price($cardEffect->discountGross),
-                'raw_discount' => $cardEffect->discountGross,
-                'card_id' => $card->getKey(),
-                'units_used' => $cardEffect->unitsUsed,
-                'coverage_type' => $cardEffect->coverageType->value,
-            ]);
+            ->setData($checkoutState);
     }
 
     public function remove(Request $request)
@@ -292,13 +307,27 @@ class CustomerCardController extends BaseController
 
         $hotelSupport->saveCheckoutData($data, $context);
 
+        $checkoutState = null;
+
+        if ($context === HotelSupport::CONTEXT_COURSE) {
+            $courseId = $this->resolveCourseId($request, $context);
+            $course = $courseId ? Course::query()->find($courseId) : null;
+
+            if ($course) {
+                $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
+            }
+        }
+
+        $checkoutState ??= [
+            'success' => true,
+            'card' => null,
+            'totals' => [],
+        ];
+
         return $this
             ->httpResponse()
             ->setMessage(__('Karte entfernt.'))
-            ->setData([
-                'discount' => format_price(0),
-                'raw_discount' => 0,
-            ]);
+            ->setData($checkoutState);
     }
 
     public function usages(CustomerCard $customerCard, BaseHttpResponse $response): BaseHttpResponse
@@ -419,3 +448,4 @@ class CustomerCardController extends BaseController
         return $courseId ?: null;
     }
 }
+use Botble\Courses\Services\CourseCheckoutStateService;

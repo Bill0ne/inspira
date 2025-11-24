@@ -165,18 +165,135 @@
     }
   }
 
-  function updateTotals(data, context) {
-    if (!data || typeof data !== 'object') return;
-    var ctx = getActiveContext(context);
-    if (!ctx) return;
-    var root = getContextRoot(ctx) || document;
+  win.CheckoutState = win.CheckoutState || { card: null, coupon: null, totals: {} };
+
+  function extractCheckoutState(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+    if (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
+      return payload.data;
+    }
+    return payload;
+  }
+
+  function renderCheckoutUI(context) {
+    var state = win.CheckoutState || {};
+    var totals = state.totals || {};
+    var ctxType = getActiveContext(context);
+    var root = getContextRoot(ctxType) || document;
     var $root = $(root);
-    // Auch 0-Werte übernehmen (deshalb 'in' statt truthy)
-    if ('sub_total'       in data) $root.find('.amount-text').text(data.sub_total);
-    if ('discount_amount' in data) $root.find('.discount-text').text(data.discount_amount);
-    if ('tax_amount'      in data) $root.find('.tax-text').text(data.tax_amount);
-    if ('total_amount'    in data) $root.find('.total-amount-text').text(data.total_amount);
-    if ('amount_raw'      in data) $root.find('input[name=amount]').val(data.amount_raw);
+
+    var amountText = totals.sub_total_display ?? state.sub_total;
+    if (typeof amountText !== 'undefined') {
+      $root.find('.amount-text').text(amountText);
+    }
+
+    var discountText = totals.discount_display ?? state.discount_amount;
+    if (typeof discountText !== 'undefined') {
+      $root.find('.discount-text').text(discountText);
+    }
+
+    var taxText = totals.tax_display ?? state.tax_amount;
+    if (typeof taxText !== 'undefined') {
+      $root.find('.tax-text').text(taxText);
+    }
+
+    var totalText = totals.total_display ?? state.total_amount;
+    if (typeof totalText !== 'undefined') {
+      $root.find('.total-amount-text').text(totalText);
+    }
+
+    var amountRaw = totals.total_raw ?? state.amount_raw;
+    var $amountInput = $root.find('input[name="amount"]');
+    if ($amountInput.length && typeof amountRaw !== 'undefined') {
+      $amountInput.val(amountRaw);
+
+      if ('total_before_card_raw' in totals) {
+        $amountInput.data('original-total', totals.total_before_card_raw);
+      }
+      if ('card_discount_raw' in totals) {
+        $amountInput.data('active-discount', totals.card_discount_raw);
+      }
+      if ('minimum_fee_raw' in totals) {
+        $amountInput.data('minimum-fee', totals.minimum_fee_raw);
+      }
+      if ('minimum_threshold' in totals) {
+        $amountInput.data('minimum-threshold', totals.minimum_threshold);
+      }
+    }
+
+    var $cardDiscountRow = $root.find('.card-discount-row');
+    var $cardDiscountText = $root.find('.card-discount-text');
+    if ($cardDiscountRow.length) {
+      var cardDiscountRaw = totals.card_discount_raw ?? 0;
+      $cardDiscountRow.toggleClass('d-none', !(cardDiscountRaw > 0));
+      if (totals.card_discount_display) {
+        $cardDiscountText.text(totals.card_discount_display);
+      }
+    }
+
+    var $minimumFeeRow = $root.find('.minimum-fee-row');
+    if ($minimumFeeRow.length && 'minimum_fee_raw' in totals) {
+      $minimumFeeRow.toggleClass('d-none', !((totals.minimum_fee_raw || 0) > 0));
+      if (totals.minimum_fee_display) {
+        $minimumFeeRow.find('.minimum-fee-text').text(totals.minimum_fee_display);
+      }
+    }
+
+    var $cardSelect = $('#customer_card_select');
+    var $removeButton = $('[data-bb-customer-card="remove"]');
+    var $infoBox = $('[data-bb-customer-card="info"]');
+    var $infoDiscount = $infoBox.find('[data-bb-customer-card="discount"]');
+    var $cardInput = $('[data-customer-card-input]');
+    var cardState = state.card;
+
+    if (cardState && cardState.id) {
+      if ($cardSelect.length) $cardSelect.val(String(cardState.id));
+      if ($cardInput.length) $cardInput.val(cardState.id);
+      if ($removeButton.length) $removeButton.removeClass('d-none');
+      if ($infoBox.length) {
+        $infoBox.toggleClass('d-none', !((totals.card_discount_raw || 0) > 0));
+        var cardText = totals.card_discount_display_plain || cardState.discount_display;
+        if (cardText) {
+          $infoDiscount.text(cardText);
+        }
+      }
+    } else {
+      if ($cardSelect.length) $cardSelect.val('');
+      if ($cardInput.length) $cardInput.val('');
+      if ($removeButton.length) $removeButton.addClass('d-none');
+      if ($infoBox.length) {
+        $infoBox.addClass('d-none');
+        $infoDiscount.text('');
+      }
+      if ($cardDiscountRow.length) {
+        $cardDiscountRow.addClass('d-none');
+        $cardDiscountText.text('-');
+      }
+    }
+
+    var couponState = state.coupon || {};
+    var couponCode = couponState.code || state.coupon_code || '';
+    if (couponCode) {
+      $root.find('input[name="coupon_code"]').val(couponCode);
+      $root.find('input[name="coupon_hidden"]').val(couponCode);
+    }
+
+    if (state.views && state.views.coupon_box) {
+      refreshCouponBox(state.views.coupon_box, ctxType);
+    }
+
+    return state;
+  }
+
+  function setCheckoutState(payload, context) {
+    var state = extractCheckoutState(payload) || { card: null, coupon: null, totals: {} };
+    win.CheckoutState = state;
+    renderCheckoutUI(context);
+    return state;
+  }
+
+  function updateTotals(data, context) {
+    setCheckoutState(data, context);
   }
 
   function getSharedPayload(context) {
@@ -293,6 +410,8 @@
 
   // Expose für andere Module (Hotel-Recalc ruft das auf)
   var checkoutApi = {
+    setState: setCheckoutState,
+    renderCheckoutUI: renderCheckoutUI,
     updateTotals: updateTotals,
     reloadPaymentList: reloadPaymentList,
     restoreCouponFormState: restoreCouponFormState
@@ -375,15 +494,10 @@
         }
 
         callTheme('showSuccess', message || 'Gutschein angewendet.');
-        updateTotals(data, ctx.type);
-        if (data && typeof data.coupon_code !== 'undefined') {
-          ctx.$box.find('input[name=coupon_hidden]').val(data.coupon_code || '');
-          if (data.coupon_code) {
-            ctx.$box.find('input[name=coupon_code]').val(data.coupon_code);
-            setStoredCouponState(ctx, true);
-          }
+        var state = setCheckoutState(data, ctx.type);
+        if (state && state.coupon && state.coupon.code) {
+          setStoredCouponState(ctx, true);
         }
-        refreshCouponBox(data && data.coupon_view, ctx.type);
         reloadPaymentList(ctx.type);
 
         // Event für andere Module (z.B. course-checkout.js)
@@ -438,15 +552,10 @@
         }
 
         callTheme('showSuccess', message || 'Gutschein entfernt.');
-        updateTotals(data, ctx.type);
-        if (data && typeof data.coupon_code !== 'undefined') {
-          ctx.$box.find('input[name=coupon_hidden]').val('');
-          if (!data.coupon_code) {
-            ctx.$box.find('input[name=coupon_code]').val('');
-            setStoredCouponState(ctx, false);
-          }
+        var state = setCheckoutState(data, ctx.type);
+        if (!state.coupon || !state.coupon.code) {
+          setStoredCouponState(ctx, false);
         }
-        refreshCouponBox(data && data.coupon_view, ctx.type);
         reloadPaymentList(ctx.type);
 
         // Event für andere Module

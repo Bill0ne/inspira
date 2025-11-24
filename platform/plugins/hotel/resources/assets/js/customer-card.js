@@ -206,6 +206,19 @@ $(() => {
     CARD_CONFIG.applyCustomerCard = applyCustomerCard;
     CARD_CONFIG.removeCustomerCard = removeCustomerCard;
 
+    const syncCheckoutState = (payload) => {
+        if (window.CheckoutCommerce && typeof window.CheckoutCommerce.setState === 'function') {
+            return window.CheckoutCommerce.setState(payload, 'course');
+        }
+
+        if (typeof window.renderCheckoutUI === 'function') {
+            window.CheckoutState = payload || {};
+            return window.renderCheckoutUI('course');
+        }
+
+        return payload;
+    };
+
     /* ----------------------------------------------------------
      *  ADMIN FORM SYNC
      * ---------------------------------------------------------- */
@@ -359,20 +372,12 @@ $(() => {
 
             applyCustomerCard(cardId, courseId, $(this))
                 .then(({ data }) => {
-                    window.Botble.showSuccess(data.message);
                     const payload = data?.data || {};
-
-                    if (payload.discount) {
-                        $infoBox.removeClass('d-none')
-                            .find('[data-bb-customer-card="discount"]').text(payload.discount);
-                    }
-
-                    updateTotals(Number(payload.raw_discount || 0), payload.discount);
-                    $cardInput.val(cardId);
-                    $removeButton.removeClass('d-none');
+                    syncCheckoutState(payload);
+                    window.Botble.showSuccess(data.message);
 
                     triggerCustomerCardEvent('customer-card.applied', {
-                        discount: Number(payload.raw_discount || 0),
+                        discount: Number(payload?.totals?.card_discount_raw || payload.raw_discount || 0),
                     });
                 })
                 .catch(handleRequestError);
@@ -388,14 +393,9 @@ $(() => {
 
             removeCustomerCard($(this), courseId)
                 .then(({ data }) => {
+                    const payload = data?.data || {};
+                    syncCheckoutState(payload);
                     window.Botble.showSuccess(data.message);
-
-                    $infoBox.addClass('d-none');
-                    $cardSelect.val('');
-                    $removeButton.addClass('d-none');
-                    $cardInput.val('');
-
-                    updateTotals(0);
 
                     triggerCustomerCardEvent('customer-card.removed', {});
                 })
