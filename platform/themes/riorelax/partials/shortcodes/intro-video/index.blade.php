@@ -14,7 +14,7 @@
         <div class="row">
             <div class="col-12">
                 <div class="s-video-wrap">
-                    @if ($youtubeVideoId = $shortcode->youtube_video_id )
+                    @if ($youtubeVideoId = $shortcode->youtube_video_id)
                         <div class="s-video-content">
                             <a href="https://www.youtube.com/watch?v={{ $youtubeVideoId }}" class="popup-video">
                                 @php
@@ -24,6 +24,18 @@
                                 @endphp
                                 <img src="{{ $buttonIcon }}" alt="{{ __('Button play') }}">
                             </a>
+                        </div>
+                    @elseif ($videoUrl = $shortcode->video_url)
+                        <div class="s-video-content">
+                            <video class="w-100" controls
+                                @if($shortcode->autoplay) autoplay muted @endif
+                                @if($shortcode->loop) loop @endif
+                                @if ($backgroundImage)
+                                    poster="{{ RvMedia::getImageUrl($backgroundImage) }}"
+                                @endif
+                            >
+                                <source src="{{ RvMedia::getImageUrl($videoUrl) }}" type="video/mp4">
+                            </video>
                         </div>
                     @endif
                 </div>

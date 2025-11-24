@@ -1076,6 +1076,9 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
                 $shortcode->youtube_url
             ) : null;
 
+            $shortcode->loop = filter_var($shortcode->loop, FILTER_VALIDATE_BOOLEAN);
+            $shortcode->autoplay = filter_var($shortcode->autoplay, FILTER_VALIDATE_BOOLEAN);
+
             return Theme::partial('shortcodes.intro-video.index', compact('shortcode'));
         }
     );
@@ -1085,6 +1088,25 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
             ->add('title', TextField::class, TextFieldOption::make()->label(__('Title'))->toArray())
             ->add('subtitle', TextField::class, TextFieldOption::make()->label(__('Subtitle'))->toArray())
             ->add('youtube_url', TextField::class, TextFieldOption::make()->label(__('Youtube URL'))->toArray())
+            ->add('video_url', TextField::class, TextFieldOption::make()->label(__('Video URL'))->toArray())
+            ->add(
+                'loop',
+                SelectField::class,
+                SelectFieldOption::make()
+                    ->label(__('Loop'))
+                    ->choices(['0' => __('No'), '1' => __('Yes')])
+                    ->defaultValue('0')
+                    ->toArray(),
+            )
+            ->add(
+                'autoplay',
+                SelectField::class,
+                SelectFieldOption::make()
+                    ->label(__('Autoplay'))
+                    ->choices(['0' => __('No'), '1' => __('Yes')])
+                    ->defaultValue('0')
+                    ->toArray(),
+            )
             ->add(
                 'button_icon',
                 MediaImageField::class,
