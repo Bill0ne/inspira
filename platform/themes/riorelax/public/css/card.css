@@ -103,9 +103,9 @@
 .course-meta-left {
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
   gap: 8px !important;
-  flex-wrap: nowrap !important;
+  flex-wrap: wrap !important;
 }
 .mtxt {
   background: #F3F3F3 !important;
@@ -118,8 +118,13 @@
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  flex: 1 1 auto !important;
-  justify-content: center !important;
+  flex: 0 1 auto !important;
+  justify-content: flex-start !important;
+
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  min-width: auto !important;
 }
 .mtxt i {
   font-size: 13px !important;
