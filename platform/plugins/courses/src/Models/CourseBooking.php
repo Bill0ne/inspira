@@ -4,6 +4,7 @@ namespace Botble\Courses\Models;
 
 use Botble\Base\Models\BaseModel;
 use Botble\Hotel\Enums\BookingStatusEnum;
+use Botble\Hotel\Enums\CustomerCardCoverageType;
 use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\Invoice;
 use Botble\Payment\Models\Payment;
@@ -47,6 +48,7 @@ class CourseBooking extends BaseModel
         'customer_card_consumed_at' => 'datetime',
         'payment_split_card_gross' => 'decimal:2',
         'payment_split_online_gross' => 'decimal:2',
+        'customer_card_coverage_type' => CustomerCardCoverageType::class,
     ];
 
     public function course()
