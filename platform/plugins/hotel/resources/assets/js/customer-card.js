@@ -93,13 +93,32 @@ $(() => {
 
         const data = { _token: csrfToken(), ...payload };
 
-        let client = window.Botble.request;
+        let client = window.Botble && window.Botble.request;
 
-        if ($trigger && typeof client.withButtonLoading === 'function') {
+        if (client && $trigger && typeof client.withButtonLoading === 'function') {
             client = client.withButtonLoading($trigger);
         }
 
-        return client.post(url, data);
+        if (client && typeof client.post === 'function') {
+            return client.post(url, data);
+        }
+
+        return $.ajax({
+            url,
+            type: 'POST',
+            data,
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+            beforeSend: () => {
+                if ($trigger) {
+                    $trigger.addClass('button-loading').attr('disabled', true);
+                }
+            },
+            complete: () => {
+                if ($trigger) {
+                    $trigger.removeClass('button-loading').attr('disabled', false);
+                }
+            },
+        }).then((response) => ({ data: response }));
     };
 
     const triggerCustomerCardEvent = (eventName, detail = {}) => {
