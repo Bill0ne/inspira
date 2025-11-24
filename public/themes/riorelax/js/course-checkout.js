@@ -58,149 +58,29 @@ $(document).ready(function () {
                     return;
                 }
 
-                const $totalInput = $('input[name=amount]');
-                const $cardDiscountRow = $('.card-discount-row');
-                const $cardDiscountText = $('.card-discount-text');
-                const $minimumFeeRow = $('.minimum-fee-row');
-                const $minimumFeeText = $('.minimum-fee-text');
-                const $cardInfoBox = $('[data-bb-customer-card="info"]');
-                const $cardInfoDiscount = $cardInfoBox.find('[data-bb-customer-card="discount"]');
-
-                const previousAmountRaw = Number($totalInput.val() || 0);
-                const previousOriginalTotal = Number(
-                    $totalInput.data('original-total') || previousAmountRaw
-                );
-                const previousActiveDiscount = Number(
-                    $totalInput.data('active-discount') || 0
-                );
-                const previousMinimumFee = Number($totalInput.data('minimum-fee') || 0);
-                const previousMinimumThreshold = Number(
-                    $totalInput.data('minimum-threshold') || 0
-                );
-
-                const hasCardDiscountResponse =
-                    Object.prototype.hasOwnProperty.call(data, 'card_discount_raw') ||
-                    Object.prototype.hasOwnProperty.call(data, 'card_discount_ref');
-                const hasMinimumFeeResponse =
-                    Object.prototype.hasOwnProperty.call(data, 'minimum_fee_raw');
-
-                const nextAmountRaw =
-                    typeof data.amount_raw !== 'undefined' ? data.amount_raw : previousAmountRaw;
-                const nextOriginalTotal =
-                    typeof data.total_before_card_raw !== 'undefined'
-                        ? Number(data.total_before_card_raw)
-                        : typeof data.amount_raw !== 'undefined'
-                          ? Number(data.amount_raw)
-                          : previousOriginalTotal;
-                const cardDiscountRaw = hasCardDiscountResponse
-                    ? Number(data.card_discount_raw ?? data.card_discount_ref ?? 0)
-                    : previousActiveDiscount;
-                const minimumFeeRaw = hasMinimumFeeResponse
-                    ? Number(data.minimum_fee_raw ?? 0)
-                    : previousMinimumFee;
-                const minimumThreshold =
-                    typeof data.minimum_threshold !== 'undefined'
-                        ? Number(data.minimum_threshold)
-                        : previousMinimumThreshold;
-
-                // Hidden Inputs & Data-Attribute aktualisieren
-                $totalInput
-                    .val(nextAmountRaw)
-                    .data('original-total', nextOriginalTotal)
-                    .data('active-discount', cardDiscountRaw)
-                    .data('minimum-fee', minimumFeeRaw)
-                    .data('minimum-threshold', minimumThreshold);
-
-                // Sidebar-Werte
-                $('.total-amount-text').text(data.total_amount ?? '');
-                $('.amount-text').text(data.sub_total ?? '');
-                $('.discount-text').text(data.discount_amount ?? '');
-                $('.tax-text').text(data.tax_amount ?? '');
-
-                if ($cardDiscountRow.length) {
-                    if (cardDiscountRaw > 0) {
-                        $cardDiscountRow.removeClass('d-none');
-                    } else {
-                        $cardDiscountRow.addClass('d-none');
-                    }
-
-                    if (data.card_discount_display) {
-                        $cardDiscountText.text(data.card_discount_display);
-                    }
-                }
-
-                if ($minimumFeeRow.length) {
-                    if (minimumFeeRaw > 0) {
-                        $minimumFeeRow.removeClass('d-none');
-                    } else {
-                        $minimumFeeRow.addClass('d-none');
-                    }
-
-                    if (data.minimum_fee_display) {
-                        $minimumFeeText.text(data.minimum_fee_display);
-                    }
-                }
-
-                if ($cardInfoBox.length && Number($('[data-customer-card-input]').val())) {
-                    if (cardDiscountRaw > 0) {
-                        $cardInfoBox.removeClass('d-none');
-                    } else {
-                        $cardInfoBox.addClass('d-none');
-                    }
-
-                    if (data.card_discount_display_plain) {
-                        $cardInfoDiscount.text(data.card_discount_display_plain);
-                    }
-                }
-
-                $(document).trigger('customer-card.totals-updated', data);
-
-                // Payment Methods neu laden (Auswahl beibehalten)
-                const $paymentMethods = $('.payment-checkout-form .list_payment_method');
-                if ($paymentMethods.length) {
-                    $paymentMethods.load(
-                        window.location.href + ' .payment-checkout-form .list_payment_method > *',
-                        function (responseText, status, xhr) {
-                            if (status === 'error' && window.RiorelaxTheme) {
-                                window.RiorelaxTheme.handleError(xhr);
-                            }
-
-                            $paymentMethods
-                                .find('input[value="' + $selectedPaymentMethod + '"]')
-                                .prop('checked', true)
-                                .trigger('change');
-
-                            finishRefresh();
-                        }
-                    );
+                if (
+                    window.CheckoutCommerce &&
+                    typeof window.CheckoutCommerce.setState === 'function'
+                ) {
+                    window.CheckoutCommerce.setState(data, 'course');
                 } else {
-                    finishRefresh();
+                    window.CheckoutState = data || {};
+                    if (typeof window.renderCheckoutUI === 'function') {
+                        window.renderCheckoutUI('course');
+                    }
                 }
 
-                // Optional: Detail-Box (z.B. Gutscheinzeilen) neu laden
-                const $orderBox = $('.order-detail-box');
-                const refreshUrl = $orderBox.data('refresh-url');
-                if (refreshUrl) {
-                    $.ajax({
-                        url: refreshUrl,
-                        type: 'GET',
-                        data: { coupon_code: couponCode },
-                    })
-                        .done(({ error: refreshError, message: refreshMessage, data: refreshData }) => {
-                            if (!refreshError && refreshData) {
-                                $orderBox.html(refreshData);
-                                if (
-                                    window.CheckoutCommerce &&
-                                    typeof window.CheckoutCommerce.restoreCouponFormState === 'function'
-                                ) {
-                                    window.CheckoutCommerce.restoreCouponFormState('course');
-                                }
-                            } else if (refreshError && window.RiorelaxTheme) {
-                                window.RiorelaxTheme.showError(refreshMessage);
-                            }
-                        })
-                        .fail((err) => window.RiorelaxTheme && window.RiorelaxTheme.handleError(err));
-                }
+                const reloadPromise =
+                    window.CheckoutCommerce &&
+                    typeof window.CheckoutCommerce.reloadPaymentList === 'function'
+                        ? window.CheckoutCommerce.reloadPaymentList('course')
+                        : $.Deferred().resolve();
+
+                reloadPromise.always(() => {
+                    finishRefresh();
+                    $(document).trigger('customer-card.totals-updated', data);
+                });
+
             })
             .fail((err) => {
                 if (window.RiorelaxTheme) {
