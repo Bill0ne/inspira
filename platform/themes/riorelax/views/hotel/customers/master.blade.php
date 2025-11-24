@@ -198,14 +198,25 @@
 /* --- MOBILE --- */
 @media (max-width: 768px) {
     .customer-header {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-row-gap: 12px;
         align-items: center;
         text-align: center;
-        gap: 12px;
     }
     .customer-header-right {
-        flex-direction: column;
-        gap: 12px;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+    }
+    .customer-header-right .nav-link {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    .customer-header-right button {
+        font-size: 16px;
+        padding: 4px 8px;
     }
     .customer-header-right .dropdown {
         width: 100%;
@@ -213,6 +224,7 @@
         box-shadow: none;
         border-top: 1px solid #eee;
         border-radius: 0;
+        margin-top: 4px;
     }
 }
 </style>
