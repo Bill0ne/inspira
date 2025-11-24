@@ -39,6 +39,10 @@ class Course extends BaseModel
         'accept_customer_card',
     ];
 
+    protected $attributes = [
+        'accept_customer_card' => true,
+    ];
+
     protected $casts = [
         'status' => CourseStatusEnum::class,
         'name' => SafeContent::class,

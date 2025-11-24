@@ -34,8 +34,12 @@ class CustomerCardService
             return collect();
         }
 
-        if (class_exists(Course::class) && ! Course::query()->whereKey($courseId)->exists()) {
-            return collect();
+        if (class_exists(Course::class)) {
+            $course = Course::query()->find($courseId);
+
+            if (! $course || ! $course->accept_customer_card) {
+                return collect();
+            }
         }
 
         return $this->getActiveCardsByUser($userId);
@@ -74,7 +78,13 @@ class CustomerCardService
             return true;
         }
 
-        return Course::query()->whereKey($courseId)->exists();
+        $course = Course::query()->find($courseId);
+
+        if (! $course) {
+            return false;
+        }
+
+        return (bool) $course->accept_customer_card;
     }
 
     public function calculateDiscount(CustomerCard $card, ?Course $course, int $units = 1, ?float $courseNetPrice = null): float

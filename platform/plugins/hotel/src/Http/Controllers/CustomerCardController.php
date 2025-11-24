@@ -231,6 +231,14 @@ class CustomerCardController extends BaseController
         }
 
         $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
+
+        if ($course && ! $course->accept_customer_card) {
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setMessage(__('Dieser Kurs erlaubt keine Kundenkarte.'));
+        }
+
         $coursePricing = 0.0;
 
         if ($course) {

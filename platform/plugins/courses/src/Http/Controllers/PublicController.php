@@ -204,6 +204,8 @@ class PublicController extends Controller
         $course = Course::query()->findOrFail(Arr::get($sessionData, 'course_id'));
         $session = CourseSession::query()->findOrFail(Arr::get($sessionData, 'session_id'));
 
+        $customerCardsAllowed = (bool) $course->accept_customer_card;
+
         $pricing = $course->resolvePricing($customer);
         $courseGrossPrice = (float) ($pricing['calculated_gross'] ?? $course->getPriceWithTax($course->getCourseTotalPrice()));
         $priceBreakdown = course_price_breakdown($course, $customer);
@@ -233,7 +235,7 @@ class PublicController extends Controller
         $cardUnitsUsed = max((int) data_get($checkoutData, 'customer_card_units_used', 1), 1);
         $cardCoverageType = data_get($checkoutData, 'customer_card_coverage_type');
 
-        if ($customer->id) {
+        if ($customerCardsAllowed && $customer->id) {
             $availableCards = $customerCardService->getApplicableCardsForCourse($course->id, $customer->getKey());
 
             $cardId = (int) data_get($checkoutData, 'customer_card_id');
@@ -266,6 +268,13 @@ class PublicController extends Controller
                     ], HotelSupport::CONTEXT_COURSE);
                 }
             }
+        } else {
+            HotelHelper::saveCheckoutData([
+                'customer_card_id' => null,
+                'customer_card_discount' => null,
+                'customer_card_units_used' => null,
+                'customer_card_coverage_type' => null,
+            ], HotelSupport::CONTEXT_COURSE);
         }
 
         $totalAfterDiscountRaw = max($totalRaw - $cardDiscount, 0);
@@ -300,6 +309,7 @@ class PublicController extends Controller
                 'availableCards',
                 'selectedCard',
                 'cardDiscount',
+                'customerCardsAllowed',
                 'totalAfterDiscount',
                 'minimumOnlinePaymentFee',
                 'finalTotal',
@@ -339,7 +349,24 @@ class PublicController extends Controller
         $cardCoverageType = Arr::get($sessionData, 'customer_card_coverage_type');
         $customerCard = null;
 
-        if ($cardId && Auth::guard('customer')->check()) {
+        $courseId = (int) Arr::get($sessionData, 'course_id');
+        $course = Course::query()->find($courseId);
+        $customerCardsAllowed = (bool) ($course?->accept_customer_card);
+
+        if (! $customerCardsAllowed) {
+            $cardDiscount = 0;
+            $cardUnitsUsed = 0;
+            $cardCoverageType = null;
+
+            HotelHelper::saveCheckoutData([
+                'customer_card_id' => null,
+                'customer_card_discount' => null,
+                'customer_card_units_used' => null,
+                'customer_card_coverage_type' => null,
+            ], HotelSupport::CONTEXT_COURSE);
+        }
+
+        if ($customerCardsAllowed && $cardId && Auth::guard('customer')->check()) {
             $customerCard = $customerCardService->getValidCard($cardId, Auth::guard('customer')->id());
 
             if (! $customerCard) {
@@ -372,7 +399,7 @@ class PublicController extends Controller
                     ->setMessage(__('No seats available for this session.'));
             }
 
-            $course = Course::query()->findOrFail($request->input('course_id'));
+            $course = $course ?? Course::query()->findOrFail($request->input('course_id'));
 
             if ($request->input('register_customer') == 1) {
                 $request->validate([
