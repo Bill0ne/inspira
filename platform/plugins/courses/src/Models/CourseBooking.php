@@ -7,6 +7,7 @@ use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Hotel\Enums\CustomerCardCoverageType;
 use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\Invoice;
+use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Models\Payment;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -34,6 +35,7 @@ class CourseBooking extends BaseModel
         'customer_card_discount',
         'customer_card_discount_gross',
         'customer_card_units_used',
+        'payment_method',
         'payment_split_card_gross',
         'payment_split_online_gross',
         'customer_card_consumed_at',
@@ -48,6 +50,7 @@ class CourseBooking extends BaseModel
         'customer_card_consumed_at' => 'datetime',
         'payment_split_card_gross' => 'decimal:2',
         'payment_split_online_gross' => 'decimal:2',
+        'payment_method' => PaymentMethodEnum::class,
         'customer_card_coverage_type' => CustomerCardCoverageType::class,
     ];
 

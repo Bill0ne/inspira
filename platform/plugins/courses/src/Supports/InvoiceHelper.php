@@ -120,7 +120,10 @@ class InvoiceHelper
             ),
             'site_title' => theme_option('site_title'),
             'customer' => $invoice->customer,
-            'payment_method' => $invoice->payment?->payment_channel->label(),
+            'payment_method' => $invoice->payment?->payment_channel?->label()
+                ?? ($invoice->reference?->payment_method instanceof PaymentMethodEnum
+                    ? $invoice->reference->payment_method->label()
+                    : $invoice->reference?->payment_method),
             'payment_status' => $invoice->payment?->status->label(),
             'payment_description' => ($invoice->payment?->payment_channel == PaymentMethodEnum::BANK_TRANSFER && $invoice->payment?->status == PaymentStatusEnum::PENDING)
                 ? BaseHelper::clean(get_payment_setting('description', $invoice->payment?->payment_channel))

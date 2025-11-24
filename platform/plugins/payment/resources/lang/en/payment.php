@@ -68,6 +68,7 @@ return [
         'paypal' => 'PayPal',
         'cod' => 'Cash on delivery (COD)',
         'bank_transfer' => 'Bank transfer',
+        'customer_card' => 'Customer card',
     ],
     'statuses' => [
         'pending' => 'Pending',

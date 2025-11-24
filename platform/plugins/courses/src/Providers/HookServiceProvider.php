@@ -3,8 +3,9 @@
 namespace Botble\Courses\Providers;
 
 use Botble\Courses\Models\CourseBooking;
-use Botble\Hotel\Models\Customer;
 use Botble\Courses\Services\CourseBookingService;
+use Botble\Hotel\Enums\BookingStatusEnum;
+use Botble\Hotel\Models\Customer;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
@@ -17,6 +18,14 @@ class HookServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        add_filter(BASE_FILTER_ENUM_ARRAY, function ($values, $class) {
+            if ($class === PaymentMethodEnum::class) {
+                $values['CUSTOMER_CARD'] = 'customer_card';
+            }
+
+            return $values;
+        }, 120, 2);
+
 //        if (defined('PAYMENT_FILTER_REDIRECT_URL')) {
 //            add_filter(PAYMENT_FILTER_REDIRECT_URL, function ($checkoutToken) {
 //                return route('public.course.booking.information', $checkoutToken ?: session('course_booking_transaction_id'));
@@ -35,7 +44,43 @@ class HookServiceProvider extends ServiceProvider
 
         if (defined('PAYMENT_ACTION_PAYMENT_PROCESSED')) {
             add_action(PAYMENT_ACTION_PAYMENT_PROCESSED, function ($data) {
-               //
+                $orderIds = (array) Arr::get($data, 'order_id', []);
+                $orderId = Arr::first($orderIds);
+                $orderType = Arr::get($data, 'order_type') ?: session('order_type');
+
+                if ($orderType !== CourseBooking::class || ! $orderId) {
+                    return;
+                }
+
+                $payment = null;
+
+                if (is_plugin_active('payment')) {
+                    $payment = Payment::query()->where('charge_id', Arr::get($data, 'charge_id'))->first();
+
+                    if (! $payment) {
+                        $payment = PaymentHelper::storeLocalPayment($data);
+                    }
+                }
+
+                /** @var CourseBookingService $bookingService */
+                $bookingService = app(CourseBookingService::class);
+
+                $booking = $bookingService->processBooking($orderId, $payment?->charge_id);
+
+                if (! $booking) {
+                    return;
+                }
+
+                if ($payment) {
+                    $booking->forceFill([
+                        'payment_id' => $payment->getKey(),
+                        'payment_method' => $payment->payment_channel,
+                    ])->save();
+                }
+
+                if ($booking->status === BookingStatusEnum::PROCESSING) {
+                    $bookingService->finalizeCustomerCardUsage($booking->refresh());
+                }
             });
         }
 
@@ -117,10 +162,10 @@ class HookServiceProvider extends ServiceProvider
                     }
 
                     $booking->status = BookingStatusEnum::PROCESSING;
+                    $booking->payment_method = $payment->payment_channel;
                     $booking->save();
 
-                    app(\Botble\Hotel\Services\CustomerCardPricingService::class)
-                        ->finalizeUsage($booking);
+                    app(CourseBookingService::class)->finalizeCustomerCardUsage($booking);
                 }
             }, 183, 2);
         }

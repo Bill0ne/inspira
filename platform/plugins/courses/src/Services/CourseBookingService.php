@@ -5,6 +5,7 @@ namespace Botble\Courses\Services;
 use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Courses\Events\CourseBookingCreated;
 use Botble\Courses\Models\CourseBooking;
+use Botble\Hotel\Models\CustomerCard;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
 
@@ -21,14 +22,29 @@ class CourseBookingService
             return null;
         }
 
+        if (is_plugin_active('payment')) {
+            $payment = null;
 
-        if ($chargeId && is_plugin_active('payment')) {
-            $payment = Payment::query()->where(['charge_id' => $chargeId])->first();
+            if ($chargeId) {
+                $payment = Payment::query()->where(['charge_id' => $chargeId])->first();
+            }
+
+            if (! $payment && $courseBooking->payment_id) {
+                $payment = Payment::query()->find($courseBooking->payment_id);
+            }
+
+            if (! $payment) {
+                $payment = Payment::query()
+                    ->where(['order_id' => $bookingId, 'order_type' => CourseBooking::class])
+                    ->latest()
+                    ->first();
+            }
 
             if ($payment) {
                 $courseBooking->payment_id = $payment->getKey();
+                $courseBooking->payment_method = $payment->payment_channel;
 
-                $method = $payment->payment_channel;
+                $method = (string) $payment->payment_channel;
 
                 switch ($payment->status) {
                     case PaymentStatusEnum::COMPLETED:

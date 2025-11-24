@@ -156,8 +156,10 @@ class CourseBookingController extends BaseController
             if ($payment) {
                 $payment->status = $request->input('payment_status', PaymentStatusEnum::PENDING);
                 $booking->payment_id = $payment->id;
-                $booking->save();
             }
+
+            $booking->payment_method = $request->input('payment_method');
+            $booking->save();
         }
 
         CourseBookingCreated::dispatch($booking);
