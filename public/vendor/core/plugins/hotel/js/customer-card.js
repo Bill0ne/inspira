@@ -13,11 +13,11 @@ $(() => {
                     post: (url, data) =>
                         $.post(url, data)
                             .then(res => ({ data: res }))
-                            .finally(() => button.prop('disabled', false).removeClass('button-loading')),
+                            .always(() => button.prop('disabled', false).removeClass('button-loading')),
                     get: (url) =>
                         $.get(url)
                             .then(res => ({ data: res }))
-                            .finally(() => button.prop('disabled', false).removeClass('button-loading')),
+                            .always(() => button.prop('disabled', false).removeClass('button-loading')),
                 };
             },
         },
