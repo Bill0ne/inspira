@@ -36,6 +36,8 @@ use Botble\Payment\Services\Gateways\CodPaymentService;
 use Botble\Base\Facades\BaseHelper;
 use Botble\Courses\Http\Requests\CourseCheckoutRequest;
 use Botble\Payment\Enums\PaymentMethodEnum;
+use Botble\Payment\Enums\PaymentStatusEnum;
+use Botble\Payment\Models\Payment;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -527,9 +529,34 @@ class PublicController extends Controller
                 $appliedCoupon->increment('total_used');
             }
 
+            $payment = null;
+
+            if (is_plugin_active('payment')) {
+                $payment = Payment::query()->create([
+                    'amount' => 0,
+                    'currency' => strtoupper(get_application_currency()->title),
+                    'charge_id' => $booking->transaction_id,
+                    'payment_channel' => PaymentMethodEnum::CUSTOMER_CARD(),
+                    'status' => PaymentStatusEnum::COMPLETED,
+                    'order_id' => $booking->getKey(),
+                    'order_type' => CourseBooking::class,
+                    'customer_id' => $booking->customer_id,
+                    'customer_type' => Customer::class,
+                ]);
+            }
+
             $courseBookingService = app(CourseBookingService::class);
-            $courseBookingService->processBooking($booking->getKey());
-            $courseBookingService->finalizeCustomerCardUsage($booking->refresh());
+
+            if ($payment) {
+                $booking->forceFill([
+                    'payment_id' => $payment->getKey(),
+                    'payment_method' => $payment->payment_channel,
+                ])->save();
+            } else {
+                $booking->forceFill(['payment_method' => PaymentMethodEnum::CUSTOMER_CARD()])->save();
+            }
+
+            $courseBookingService->processBooking($booking->getKey(), $payment?->charge_id);
 
             if ($token = $request->input('token')) {
                 session()->forget($token);

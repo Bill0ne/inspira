@@ -125,7 +125,7 @@ class CourseBookingTable extends TableAbstract
             });
 
         if (!is_plugin_active('payment')) {
-            $data = $data->removeColumn('payment_status')->removeColumn('payment_id');
+            $data = $data->removeColumn('payment_status')->removeColumn('payment_method');
         } else {
             $data = $data
                 ->editColumn('payment_status', function (CourseBooking $item) {
@@ -133,10 +133,18 @@ class CourseBookingTable extends TableAbstract
                         ? BaseHelper::clean($item->payment->status->toHtml())
                         : '&mdash;';
                 })
-                ->editColumn('payment_id', function (CourseBooking $item) {
-                    return $item->payment && $item->payment->payment_channel
-                        ? BaseHelper::clean($item->payment->payment_channel->label())
-                        : '&mdash;';
+                ->editColumn('payment_method', function (CourseBooking $item) {
+                    if ($item->payment_method) {
+                        return BaseHelper::clean(is_string($item->payment_method)
+                            ? $item->payment_method
+                            : $item->payment_method->label());
+                    }
+
+                    if ($item->payment && $item->payment->payment_channel) {
+                        return BaseHelper::clean($item->payment->payment_channel->label());
+                    }
+
+                    return '&mdash;';
                 });
         }
 
@@ -155,11 +163,12 @@ class CourseBookingTable extends TableAbstract
                 'status',
                 'amount',
                 'payment_id',
+                'payment_method',
                 'course_id',
                 'customer_id',
             ])
             ->with(['customer', 'course'])
-            ->where('status', '!=', \Botble\Hotel\Enums\BookingStatusEnum::AWAITING_PAYMENT);;
+            ->where('status', '!=', \Botble\Hotel\Enums\BookingStatusEnum::AWAITING_PAYMENT);
 
         if (is_plugin_active('payment')) {
             $query->with('payment');
@@ -208,8 +217,8 @@ class CourseBookingTable extends TableAbstract
 
         if (is_plugin_active('payment')) {
             $columns = array_merge($columns, [
-                Column::make('payment_id')
-                    ->name('payment_id')
+                Column::make('payment_method')
+                    ->name('payment_method')
                     ->title(trans('plugins/hotel::booking.payment_method'))
                     ->alignLeft()
                     ->orderable(false)
