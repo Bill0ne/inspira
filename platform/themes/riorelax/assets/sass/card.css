@@ -114,9 +114,9 @@
 .course-meta-left {
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
   gap: 8px !important;
-  flex-wrap: nowrap !important;          /* kein Zeilenumbruch -> gleiche Höhe */
+  flex-wrap: wrap !important;            /* Chips dürfen umbrechen statt zu kürzen */
   min-width: 0 !important;               /* erlaubt Ellipsis */
 }
 .mtxt {
@@ -130,13 +130,13 @@
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  flex: 1 1 0% !important;
-  justify-content: center !important;
+  flex: 0 1 auto !important;             /* Breite folgt dem Inhalt */
+  justify-content: flex-start !important;
 
-  white-space: nowrap !important;        /* verhindert Umbruch */
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  min-width: 0 !important;
+  white-space: normal !important;        /* Datum darf vollständig angezeigt werden */
+  overflow: visible !important;
+  text-overflow: unset !important;
+  min-width: auto !important;
 }
 .mtxt i { font-size: 13px !important; margin-right: 3px !important; }
 
