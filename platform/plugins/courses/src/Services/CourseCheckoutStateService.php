@@ -9,6 +9,7 @@ use Botble\Hotel\Services\CouponService;
 use Botble\Hotel\Services\CustomerCardPricingService;
 use Botble\Hotel\Services\CustomerCardService;
 use Botble\Hotel\Supports\HotelSupport;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,8 +24,16 @@ class CourseCheckoutStateService
     ) {
     }
 
-    public function buildState(?Course $course, ?string $couponCode = null): array
+    public function buildState($courseOrRequest, ?string $couponCode = null): array
     {
+        $course = $courseOrRequest;
+
+        if ($courseOrRequest instanceof Request) {
+            $courseId = $courseOrRequest->input('course_id');
+            $course = $courseId ? Course::query()->find($courseId) : null;
+            $couponCode ??= $courseOrRequest->input('coupon_code');
+        }
+
         if (! $course) {
             return [
                 'success' => false,

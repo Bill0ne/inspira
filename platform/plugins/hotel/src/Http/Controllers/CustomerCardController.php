@@ -294,41 +294,11 @@ class CustomerCardController extends BaseController
 
     public function remove(Request $request)
     {
-        $context = $this->resolveCheckoutContext($request);
+        session()->forget('checkout.customer_card');
 
-        $hotelSupport = app(HotelSupport::class);
-        $data = $hotelSupport->getCheckoutData(context: $context) ?: [];
+        $checkoutState = app(CourseCheckoutStateService::class)->buildState($request);
 
-        unset(
-            $data['customer_card_id'],
-            $data['customer_card_discount'],
-            $data['customer_card_units_used'],
-            $data['customer_card_coverage_type']
-        );
-
-        $hotelSupport->saveCheckoutData($data, $context);
-
-        $checkoutState = null;
-
-        if ($context === HotelSupport::CONTEXT_COURSE) {
-            $courseId = $this->resolveCourseId($request, $context);
-            $course = $courseId ? Course::query()->find($courseId) : null;
-
-            if ($course) {
-                $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
-            }
-        }
-
-        $checkoutState ??= [
-            'success' => true,
-            'card' => null,
-            'totals' => [],
-        ];
-
-        return $this
-            ->httpResponse()
-            ->setMessage(__('Karte entfernt.'))
-            ->setData($checkoutState);
+        return response()->json($checkoutState);
     }
 
     public function usages(CustomerCard $customerCard, BaseHttpResponse $response): BaseHttpResponse
