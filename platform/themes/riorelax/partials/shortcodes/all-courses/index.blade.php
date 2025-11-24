@@ -2,7 +2,7 @@
     @if ($courses->isNotEmpty())
         <div class="row g-4">
             @foreach ($courses as $course)
-                <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="col-6 col-sm-6 col-md-4 col-lg-3">
                     {!! Theme::partial('courses.item', compact('course')) !!}
                 </div>
             @endforeach
