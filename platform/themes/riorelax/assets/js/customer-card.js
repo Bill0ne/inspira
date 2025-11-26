@@ -19,8 +19,12 @@
   if ($ && $.fn && typeof $.fn.on === 'function') {
     var $document = $(win.document);
     var $removeButton = $('[data-bb-customer-card="remove"]');
+    var $applyButton = $('[data-bb-customer-card="apply"]');
 
     removeUrl = removeUrl || $removeButton.data('url') || null;
+
+    $applyButton.off('click');
+    $removeButton.off('click');
 
     $removeButton.attr('data-card-remove', 'true');
 

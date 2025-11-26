@@ -177,6 +177,16 @@
     return payload;
   }
 
+  function handleRequestError(error) {
+    if (win.console && console.error) {
+      console.error('[Checkout] Request error:', error);
+    }
+
+    if (win.Botble && typeof win.Botble.showError === 'function') {
+      win.Botble.showError('Es ist ein Fehler beim Aktualisieren des Checkouts aufgetreten.');
+    }
+  }
+
   function renderCheckoutUI(context) {
     var state = win.CheckoutState || {};
     var totals = state.totals || {};
@@ -320,14 +330,42 @@
     return reloadPaymentList(context);
   }
 
-  function handleCardRemoveResponse(response) {
-    win.CheckoutState = response;
+  function handleCardApplyResponse(response) {
+    if (!response || response.success === false || response.error) {
+      handleRequestError(response);
+      return;
+    }
+
+    var nextState = extractCheckoutState(response.data || response);
+    if (!nextState) {
+      handleRequestError(response);
+      return;
+    }
+
+    win.CheckoutState = nextState;
     renderCheckoutUI();
     refreshPaymentMethods();
 
-    $(document).trigger('customer-card.removed', {
-      response: response,
-    });
+    $(document).trigger('customer-card.applied', [win.CheckoutState]);
+  }
+
+  function handleCardRemoveResponse(response) {
+    if (!response || response.success === false || response.error) {
+      handleRequestError(response);
+      return;
+    }
+
+    var nextState = extractCheckoutState(response.data || response);
+    if (!nextState) {
+      handleRequestError(response);
+      return;
+    }
+
+    win.CheckoutState = nextState;
+    renderCheckoutUI();
+    refreshPaymentMethods();
+
+    $(document).trigger('customer-card.removed', [win.CheckoutState]);
   }
 
   win.handleCardRemoveResponse = handleCardRemoveResponse;
@@ -475,13 +513,69 @@
   $document.off('click', '.apply-coupon-code');
   $document.off('click', '.remove-coupon-code');
   $document.off('click', '[data-card-remove]');
+  $('[data-bb-customer-card="apply"], [data-bb-customer-card="remove"]').off('click');
 
-  $document.on('click', '[data-card-remove]', function () {
+  var applyUrl = (win.customerCard && win.customerCard.routes && win.customerCard.routes.apply) || null;
+  var cardRequestInFlight = false;
+
+  $document.on('click', '[data-bb-customer-card="apply"]', function (e) {
+    e.preventDefault();
+    var $btn = $(this);
+    if (cardRequestInFlight) return;
+    cardRequestInFlight = true;
+    $btn.prop('disabled', true);
+
+    var cardId = $('#customer_card_select').val();
+    applyUrl = applyUrl || $btn.data('url');
+
+    if (!applyUrl || !cardId) {
+      cardRequestInFlight = false;
+      $btn.prop('disabled', false);
+      handleRequestError({ message: 'Kundenkarte oder URL nicht vorhanden.' });
+      return;
+    }
+
+    if (!ensureCourseContext('Kundenkarte anwenden')) {
+      cardRequestInFlight = false;
+      $btn.prop('disabled', false);
+      return;
+    }
+
+    $.ajax({
+      url: applyUrl,
+      type: 'POST',
+      headers: { 'X-CSRF-TOKEN': getCsrf() },
+      data: $.extend({ customer_card_id: cardId }, getSharedPayload(getActiveContext())),
+    })
+      .done(handleCardApplyResponse)
+      .fail(handleRequestError)
+      .always(function () {
+        cardRequestInFlight = false;
+        $btn.prop('disabled', false);
+      });
+  });
+
+  $document.on('click', '[data-card-remove]', function (e) {
+    e.preventDefault();
     var $trigger = $(this);
-    removeUrl = removeUrl || $trigger.data('url');
-    if (!removeUrl) return;
+    if (cardRequestInFlight) return;
+    cardRequestInFlight = true;
+    $trigger.prop('disabled', true);
 
-    $.post(removeUrl, getSharedPayload(getActiveContext())).done(handleCardRemoveResponse).fail(handleRequestError);
+    removeUrl = removeUrl || $trigger.data('url');
+    if (!removeUrl) {
+      cardRequestInFlight = false;
+      $trigger.prop('disabled', false);
+      return;
+    }
+
+    $.post(removeUrl, getSharedPayload(getActiveContext()))
+      .done(handleCardRemoveResponse)
+      .fail(handleRequestError)
+      .always(function () {
+        cardRequestInFlight = false;
+        $trigger.prop('disabled', false);
+      });
   });
 
   $document
@@ -551,11 +645,7 @@
           response: res,
         });
       })
-      .fail(function (err) {
-        callTheme('handleError', err, function () {
-          if (win.console && console.error) console.error(err);
-        });
-      })
+      .fail(handleRequestError)
       .always(function () {
         toggleLoading($btn, false);
         activeCouponRequest = null;
@@ -609,11 +699,7 @@
           response: res,
         });
       })
-      .fail(function (err) {
-        callTheme('handleError', err, function () {
-          if (win.console && console.error) console.error(err);
-        });
-      })
+      .fail(handleRequestError)
       .always(function () {
         toggleLoading($btn, false);
         activeCouponRequest = null;
