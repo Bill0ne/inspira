@@ -224,20 +224,38 @@ class CustomerCardController extends BaseController
         $context = $this->resolveCheckoutContext($request);
         $courseId = $this->resolveCourseId($request, $context);
 
+        if ($context === HotelSupport::CONTEXT_COURSE && ! $courseId) {
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setMessage(__('Es konnte kein Kurs ermittelt werden.'));
+        }
+
+        $course = null;
+
+        if ($context === HotelSupport::CONTEXT_COURSE && class_exists(Course::class)) {
+            $course = Course::query()->find($courseId);
+
+            if (! $course) {
+                return $this
+                    ->httpResponse()
+                    ->setError()
+                    ->setMessage(__('Der Kurs wurde nicht gefunden.'));
+            }
+
+            if (! $course->accept_customer_card) {
+                return $this
+                    ->httpResponse()
+                    ->setError()
+                    ->setMessage(__('Dieser Kurs erlaubt keine Kundenkarte.'));
+            }
+        }
+
         if (! $service->isApplicable($card, $courseId)) {
             return $this
                 ->httpResponse()
                 ->setError()
                 ->setMessage(trans('plugins/hotel::customer-card.messages.card_unavailable'));
-        }
-
-        $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
-
-        if ($course && ! $course->accept_customer_card) {
-            return $this
-                ->httpResponse()
-                ->setError()
-                ->setMessage(__('Dieser Kurs erlaubt keine Kundenkarte.'));
         }
 
         $coursePricing = 0.0;

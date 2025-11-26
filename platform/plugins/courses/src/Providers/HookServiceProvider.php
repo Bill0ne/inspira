@@ -78,7 +78,14 @@ class HookServiceProvider extends ServiceProvider
                     ])->save();
                 }
 
-                if ($booking->status === BookingStatusEnum::PROCESSING) {
+                if ($payment && $payment->status === PaymentStatusEnum::COMPLETED) {
+                    if ($booking->status !== BookingStatusEnum::PROCESSING) {
+                        $booking->status = BookingStatusEnum::PROCESSING;
+                        $booking->save();
+                    }
+
+                    $bookingService->finalizeCustomerCardUsage($booking->refresh());
+                } elseif ($booking->status === BookingStatusEnum::PROCESSING) {
                     $bookingService->finalizeCustomerCardUsage($booking->refresh());
                 }
             });
