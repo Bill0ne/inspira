@@ -135,13 +135,29 @@ class CourseBookingTable extends TableAbstract
                 })
                 ->editColumn('payment_method', function (CourseBooking $item) {
                     if ($item->payment_method) {
-                        return BaseHelper::clean(is_string($item->payment_method)
-                            ? $item->payment_method
-                            : $item->payment_method->label());
+                        if ($item->payment_method instanceof \Botble\Payment\Enums\PaymentMethodEnum) {
+                            return BaseHelper::clean($item->payment_method->label());
+                        }
+
+                        if ($item->payment_method === 'customer_card') {
+                            return BaseHelper::clean(trans('plugins/payment::payment.methods.customer_card'));
+                        }
+
+                        return BaseHelper::clean((string) $item->payment_method);
                     }
 
                     if ($item->payment && $item->payment->payment_channel) {
-                        return BaseHelper::clean($item->payment->payment_channel->label());
+                        $channel = $item->payment->payment_channel;
+
+                        if ($channel instanceof \Botble\Payment\Enums\PaymentMethodEnum) {
+                            return BaseHelper::clean($channel->label());
+                        }
+
+                        if ($channel === 'customer_card') {
+                            return BaseHelper::clean(trans('plugins/payment::payment.methods.customer_card'));
+                        }
+
+                        return BaseHelper::clean((string) $channel);
                     }
 
                     return '&mdash;';

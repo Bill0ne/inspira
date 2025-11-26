@@ -281,7 +281,7 @@
         var $firstOption = $cardSelect.find('option').first();
         if ($firstOption.length) {
           $firstOption.prop('selected', true);
-          $firstOption.text('Keine Karte');
+          $firstOption.text('Keine Karte auswählen');
         }
       }
       if ($cardInput.length) $cardInput.val('');

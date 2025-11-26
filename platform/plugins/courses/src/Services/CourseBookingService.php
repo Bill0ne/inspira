@@ -5,6 +5,7 @@ namespace Botble\Courses\Services;
 use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Courses\Events\CourseBookingCreated;
 use Botble\Courses\Models\CourseBooking;
+use Botble\Hotel\Enums\CustomerCardCoverageType;
 use Botble\Hotel\Models\CustomerCard;
 use Botble\Hotel\Services\CustomerCardPricingService;
 use Botble\Payment\Enums\PaymentStatusEnum;
@@ -99,6 +100,10 @@ class CourseBookingService
             || $courseBooking->customer_card_units_used <= 0
         ) {
             return;
+        }
+
+        if (! $courseBooking->customer_card_coverage_type) {
+            $courseBooking->customer_card_coverage_type = CustomerCardCoverageType::PARTIAL;
         }
 
         DB::transaction(function () use ($courseBooking) {

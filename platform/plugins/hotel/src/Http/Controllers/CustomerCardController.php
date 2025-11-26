@@ -26,6 +26,7 @@ use Botble\Courses\Services\CourseCheckoutStateService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class CustomerCardController extends BaseController
 {
@@ -312,9 +313,55 @@ class CustomerCardController extends BaseController
 
     public function remove(Request $request)
     {
-        session()->forget('checkout.customer_card');
+        $context = $this->resolveCheckoutContext($request);
+        $support = app(HotelSupport::class);
 
-        $checkoutState = app(CourseCheckoutStateService::class)->buildState($request);
+        $sessionData = $support->getCheckoutData(null, $context) ?: [];
+        $patterns = [
+            'customer_card',
+            'card_effect',
+            'card_id',
+            'card_units',
+            'card_discount',
+        ];
+
+        foreach (array_keys($sessionData) as $key) {
+            foreach ($patterns as $pattern) {
+                if (Str::contains($key, $pattern)) {
+                    unset($sessionData[$key]);
+                    break;
+                }
+            }
+        }
+
+        session()->forget([
+            'checkout.customer_card',
+            'checkout.customer_card_id',
+            'checkout.customer_card_units',
+            'checkout.customer_card_units_used',
+            'checkout.customer_card_discount',
+            'checkout.customer_card_effect',
+            'checkout.card',
+            'checkout.card_effect',
+        ]);
+
+        $tokenKey = $context === HotelSupport::CONTEXT_COURSE
+            ? 'course_checkout_token'
+            : 'hotel_checkout_token';
+        $token = session($tokenKey) ?: session('checkout_token');
+
+        if ($token) {
+            session()->put($token, $sessionData);
+        }
+
+        $checkoutState = $context === HotelSupport::CONTEXT_COURSE
+            ? app(CourseCheckoutStateService::class)->buildState($request)
+            : [
+                'success' => true,
+                'card' => null,
+                'coupon' => null,
+                'totals' => [],
+            ];
 
         return response()->json($checkoutState);
     }

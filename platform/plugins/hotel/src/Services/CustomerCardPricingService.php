@@ -77,11 +77,12 @@ class CustomerCardPricingService
             }
 
             $units = max(1, min($unitsRequested, $availableUnits));
-            $card->decrement('units_remaining', $units);
+            $remainingUnits = max($availableUnits - $units, 0);
 
-            if ($card->units_remaining <= 0) {
-                $card->update(['units_remaining' => 0, 'is_active' => false]);
-            }
+            $card->forceFill([
+                'units_remaining' => $remainingUnits,
+                'is_active' => $remainingUnits > 0 ? $card->is_active : false,
+            ])->save();
 
             $coverage = $booking->customer_card_coverage_type;
 

@@ -14,6 +14,7 @@ use Botble\Media\Facades\RvMedia;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
+use Botble\Payment\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
 
@@ -145,7 +146,10 @@ class InvoiceHelper
             ),
             'site_title' => theme_option('site_title'),
             'customer' => $invoice->customer,
-            'payment_method' => $invoice->payment?->payment_channel->label(),
+            'payment_method' => $this->resolvePaymentMethodLabel(
+                $invoice->payment,
+                $invoice->reference?->payment_method
+            ),
             'payment_status' => $invoice->payment?->status->label(),
             'payment_description' => ($invoice->payment?->payment_channel == PaymentMethodEnum::BANK_TRANSFER && $invoice->payment?->status == PaymentStatusEnum::PENDING)
                 ? BaseHelper::clean(get_payment_setting('description', $invoice->payment?->payment_channel))
@@ -165,6 +169,25 @@ class InvoiceHelper
                 'hotel_invoice_footer' => apply_filters('hotel_invoice_footer', null, $invoice),
             ],
         ];
+    }
+
+    protected function resolvePaymentMethodLabel(?Payment $payment, mixed $referenceMethod): mixed
+    {
+        $paymentMethod = $payment?->payment_channel;
+
+        if ($paymentMethod instanceof PaymentMethodEnum) {
+            return $paymentMethod->label();
+        }
+
+        if ($referenceMethod instanceof PaymentMethodEnum) {
+            return $referenceMethod->label();
+        }
+
+        if (is_string($referenceMethod) && $referenceMethod === 'customer_card') {
+            return trans('plugins/payment::payment.methods.customer_card');
+        }
+
+        return $referenceMethod;
     }
 
     public function getDataForPreview(): Invoice
