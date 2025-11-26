@@ -252,7 +252,9 @@
     if (cardState && cardState.id) {
       if ($cardSelect.length) $cardSelect.val(String(cardState.id));
       if ($cardInput.length) $cardInput.val(cardState.id);
-      if ($removeButton.length) $removeButton.removeClass('d-none');
+      if ($removeButton.length) {
+        $removeButton.removeClass('d-none').prop('disabled', false);
+      }
       if ($infoBox.length) {
         $infoBox.toggleClass('d-none', !((totals.card_discount_raw || 0) > 0));
         var cardText = totals.card_discount_display_plain || cardState.discount_display;
@@ -273,7 +275,9 @@
         }
       }
       if ($cardInput.length) $cardInput.val('');
-      if ($removeButton.length) $removeButton.addClass('d-none');
+      if ($removeButton.length) {
+        $removeButton.addClass('d-none').prop('disabled', true);
+      }
       if ($infoBox.length) {
         $infoBox.addClass('d-none');
         $infoDiscount.text('');
@@ -470,13 +474,14 @@
   $document.off('click', '.toggle-coupon-form');
   $document.off('click', '.apply-coupon-code');
   $document.off('click', '.remove-coupon-code');
+  $document.off('click', '[data-card-remove]');
 
   $document.on('click', '[data-card-remove]', function () {
     var $trigger = $(this);
     removeUrl = removeUrl || $trigger.data('url');
     if (!removeUrl) return;
 
-    $.post(removeUrl).done(handleCardRemoveResponse).fail(handleRequestError);
+    $.post(removeUrl, getSharedPayload(getActiveContext())).done(handleCardRemoveResponse).fail(handleRequestError);
   });
 
   $document
