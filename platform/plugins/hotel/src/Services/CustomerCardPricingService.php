@@ -9,6 +9,7 @@ use Botble\Hotel\Models\CustomerCardUsage;
 use Botble\Courses\Models\Course;
 use Botble\Courses\Models\CourseBooking;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CustomerCardPricingService
 {
@@ -44,6 +45,8 @@ class CustomerCardPricingService
             $card = CustomerCard::query()->lockForUpdate()->find($booking->customer_card_id);
 
             if (! $card) {
+                Log::warning('[CustomerCardFinalize] Card not found for booking ' . $booking->getKey());
+
                 return;
             }
 
@@ -52,10 +55,28 @@ class CustomerCardPricingService
                 ->exists();
 
             if ($usageExists) {
+                Log::info('[CustomerCardFinalize] Usage already recorded for booking ' . $booking->getKey());
+
                 return;
             }
 
-            $units = max(1, min($booking->customer_card_units_used, $card->units_remaining));
+            $unitsRequested = max(1, (int) $booking->customer_card_units_used);
+
+            $availableUnits = max(0, (int) $card->units_remaining);
+
+            if ($availableUnits <= 0) {
+                Log::warning('[CustomerCardFinalize] Card ' . $card->getKey() . ' has no remaining units for booking '
+                    . $booking->getKey());
+
+                return;
+            }
+
+            if ($card->units_remaining < $unitsRequested) {
+                Log::warning('[CustomerCardFinalize] Card ' . $card->getKey() . ' has '
+                    . $card->units_remaining . ' units, booking requested ' . $unitsRequested . ' units');
+            }
+
+            $units = max(1, min($unitsRequested, $availableUnits));
             $card->decrement('units_remaining', $units);
 
             if ($card->units_remaining <= 0) {
@@ -82,6 +103,9 @@ class CustomerCardPricingService
             ]);
 
             $booking->forceFill(['customer_card_consumed_at' => now()])->save();
+
+            Log::info('[CustomerCardFinalize] Recorded usage for booking ' . $booking->getKey()
+                . ' with card ' . $card->getKey() . ' using ' . $units . ' units');
         });
     }
 }
