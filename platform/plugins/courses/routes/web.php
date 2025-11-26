@@ -14,6 +14,7 @@ use Botble\Courses\Models\Course;
 use Botble\Courses\Http\Controllers\Front\CouponController as CouponControllerFront;
 use Botble\Courses\Models\CourseCategory;
 use Botble\Courses\Facades\CourseHelper;
+use Botble\Courses\Http\Controllers\CourseCheckoutDebugController;
 
 AdminHelper::registerRoutes(function () {
     Route::group(['prefix' => 'courses', 'as' => 'course.'], function () {
@@ -54,6 +55,10 @@ AdminHelper::registerRoutes(function () {
     Route::group(['prefix' => 'course-bookings', 'as' => 'course-booking.'], function (): void {
         Route::resource('', CourseBookingController::class)->parameters(['' => 'course_booking']);
     });
+
+    Route::match(['get', 'post'], 'debug/course-checkout/state', [CourseCheckoutDebugController::class, 'state'])
+        ->middleware(['web', 'core', 'auth'])
+        ->name('course.debug.checkout-state');
 });
 
 Route::group(['namespace' => 'Botble\Courses\Http\Controllers', 'middleware' => ['web', 'core']], function (): void {

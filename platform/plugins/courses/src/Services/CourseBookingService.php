@@ -5,9 +5,13 @@ namespace Botble\Courses\Services;
 use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Courses\Events\CourseBookingCreated;
 use Botble\Courses\Models\CourseBooking;
+use Botble\Hotel\Enums\CustomerCardCoverageType;
 use Botble\Hotel\Models\CustomerCard;
+use Botble\Hotel\Services\CustomerCardPricingService;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CourseBookingService
 {
@@ -84,26 +88,53 @@ class CourseBookingService
 
     public function finalizeCustomerCardUsage(CourseBooking $courseBooking): void
     {
+        if ($courseBooking->customer_card_consumed_at) {
+            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' already finalized');
+
+            return;
+        }
+
         if (
             $courseBooking->status !== BookingStatusEnum::PROCESSING
             || ! $courseBooking->customer_card_id
             || $courseBooking->customer_card_units_used <= 0
-            || $courseBooking->customer_card_consumed_at
         ) {
             return;
         }
 
-        $card = CustomerCard::query()->find($courseBooking->customer_card_id);
-
-        if ($card && $courseBooking->customer_id && $card->assigned_to !== $courseBooking->customer_id) {
-            $card = null;
+        if (! $courseBooking->customer_card_coverage_type) {
+            $courseBooking->customer_card_coverage_type = CustomerCardCoverageType::PARTIAL;
         }
 
-        if (! $card) {
-            return;
-        }
+        DB::transaction(function () use ($courseBooking) {
+            $card = CustomerCard::query()->lockForUpdate()->find($courseBooking->customer_card_id);
 
-        app(\Botble\Hotel\Services\CustomerCardPricingService::class)
-            ->finalizeUsage($courseBooking);
+            if ($card && $courseBooking->customer_id && $card->assigned_to !== $courseBooking->customer_id) {
+                $card = null;
+            }
+
+            if (! $card) {
+                Log::warning('[CustomerCardFinalize] Card not found or mismatched for booking ' . $courseBooking->getKey());
+
+                return;
+            }
+
+            $unitsRequested = max(1, (int) $courseBooking->customer_card_units_used);
+
+            if ($card->units_remaining < $unitsRequested) {
+                Log::warning('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' requires '
+                    . $unitsRequested . ' units but card ' . $card->getKey() . ' has '
+                    . $card->units_remaining . ' remaining');
+
+                return;
+            }
+
+            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalizing with card ' . $card->getKey());
+
+            app(CustomerCardPricingService::class)->finalizeUsage($courseBooking);
+
+            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalized with card '
+                . $card->getKey());
+        });
     }
 }

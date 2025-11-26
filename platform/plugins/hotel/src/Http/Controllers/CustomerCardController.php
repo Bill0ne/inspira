@@ -26,6 +26,7 @@ use Botble\Courses\Services\CourseCheckoutStateService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class CustomerCardController extends BaseController
 {
@@ -224,20 +225,38 @@ class CustomerCardController extends BaseController
         $context = $this->resolveCheckoutContext($request);
         $courseId = $this->resolveCourseId($request, $context);
 
+        if ($context === HotelSupport::CONTEXT_COURSE && ! $courseId) {
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setMessage(__('Es konnte kein Kurs ermittelt werden.'));
+        }
+
+        $course = null;
+
+        if ($context === HotelSupport::CONTEXT_COURSE && class_exists(Course::class)) {
+            $course = Course::query()->find($courseId);
+
+            if (! $course) {
+                return $this
+                    ->httpResponse()
+                    ->setError()
+                    ->setMessage(__('Der Kurs wurde nicht gefunden.'));
+            }
+
+            if (! $course->accept_customer_card) {
+                return $this
+                    ->httpResponse()
+                    ->setError()
+                    ->setMessage(__('Dieser Kurs erlaubt keine Kundenkarte.'));
+            }
+        }
+
         if (! $service->isApplicable($card, $courseId)) {
             return $this
                 ->httpResponse()
                 ->setError()
                 ->setMessage(trans('plugins/hotel::customer-card.messages.card_unavailable'));
-        }
-
-        $course = class_exists(Course::class) ? Course::query()->find($courseId) : null;
-
-        if ($course && ! $course->accept_customer_card) {
-            return $this
-                ->httpResponse()
-                ->setError()
-                ->setMessage(__('Dieser Kurs erlaubt keine Kundenkarte.'));
         }
 
         $coursePricing = 0.0;
@@ -294,9 +313,55 @@ class CustomerCardController extends BaseController
 
     public function remove(Request $request)
     {
-        session()->forget('checkout.customer_card');
+        $context = $this->resolveCheckoutContext($request);
+        $support = app(HotelSupport::class);
 
-        $checkoutState = app(CourseCheckoutStateService::class)->buildState($request);
+        $sessionData = $support->getCheckoutData(null, $context) ?: [];
+        $patterns = [
+            'customer_card',
+            'card_effect',
+            'card_id',
+            'card_units',
+            'card_discount',
+        ];
+
+        foreach (array_keys($sessionData) as $key) {
+            foreach ($patterns as $pattern) {
+                if (Str::contains($key, $pattern)) {
+                    unset($sessionData[$key]);
+                    break;
+                }
+            }
+        }
+
+        session()->forget([
+            'checkout.customer_card',
+            'checkout.customer_card_id',
+            'checkout.customer_card_units',
+            'checkout.customer_card_units_used',
+            'checkout.customer_card_discount',
+            'checkout.customer_card_effect',
+            'checkout.card',
+            'checkout.card_effect',
+        ]);
+
+        $tokenKey = $context === HotelSupport::CONTEXT_COURSE
+            ? 'course_checkout_token'
+            : 'hotel_checkout_token';
+        $token = session($tokenKey) ?: session('checkout_token');
+
+        if ($token) {
+            session()->put($token, $sessionData);
+        }
+
+        $checkoutState = $context === HotelSupport::CONTEXT_COURSE
+            ? app(CourseCheckoutStateService::class)->buildState($request)
+            : [
+                'success' => true,
+                'card' => null,
+                'coupon' => null,
+                'totals' => [],
+            ];
 
         return response()->json($checkoutState);
     }
