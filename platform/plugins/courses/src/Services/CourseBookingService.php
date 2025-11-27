@@ -198,7 +198,8 @@ class CourseBookingService
                 return;
             }
 
-            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalizing with card ' . $card->getKey());
+            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalizing with card '
+                . $card->getKey());
 
             app(CustomerCardPricingService::class)->finalizeUsage($courseBooking);
 
