@@ -41,11 +41,13 @@ class CustomerCardPricingService
             return;
         }
 
-        if ($booking->customer_card_units_used <= 0) {
-            $booking->forceFill(['customer_card_units_used' => 1])->save();
+        $unitsUsed = max((int) $booking->customer_card_units_used, 1);
+
+        if ($booking->customer_card_units_used !== $unitsUsed) {
+            $booking->forceFill(['customer_card_units_used' => $unitsUsed])->save();
         }
 
-        DB::transaction(function () use ($booking) {
+        DB::transaction(function () use ($booking, $unitsUsed) {
             $card = CustomerCard::query()->lockForUpdate()->find($booking->customer_card_id);
 
             Log::info('[CustomerCardFinalize] Start booking ' . $booking->getKey(), [
@@ -76,7 +78,7 @@ class CustomerCardPricingService
                 return;
             }
 
-            $unitsRequested = max(1, (int) $booking->customer_card_units_used);
+            $unitsRequested = $unitsUsed;
 
             $availableUnits = max(0, (int) $card->units_remaining);
 
@@ -109,16 +111,12 @@ class CustomerCardPricingService
                 ? $coverage->value
                 : ($coverage ?: CustomerCardCoverageType::PARTIAL->value);
 
-            if ($booking->customer_card_units_used <= 0) {
-                $booking->customer_card_units_used = 1;
-            }
-
             CustomerCardUsage::query()->create([
                 'card_id' => $card->getKey(),
                 'booking_id' => $booking->getKey(),
                 'course_id' => $booking->course_id,
                 'units_used' => $units,
-                'discount_amount' => (float) $booking->customer_card_discount_gross,
+                'discount_amount' => (float) $booking->customer_card_discount,
                 'discount_gross' => (float) $booking->customer_card_discount_gross,
                 'coverage_type' => $coverageValue,
                 'status' => 'consumed',

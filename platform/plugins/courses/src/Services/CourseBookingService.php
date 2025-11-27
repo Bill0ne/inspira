@@ -123,12 +123,10 @@ class CourseBookingService
             return;
         }
 
-        $customerCardMethod = $this->normalizePaymentChannel(PaymentMethodEnum::CUSTOMER_CARD());
-        $paymentId = $courseBooking->payment_id;
-        $payment = null;
-
-        if ($paymentId) {
-            $payment = Payment::query()->find($paymentId);
+        if (! $courseBooking->customer_card_id) {
+            Log::info('[CustomerCardFinalize] Skipping booking without customer card', [
+                'booking_id' => $courseBooking->getKey(),
+            ]);
 
             if (! $payment && $this->normalizePaymentChannel($courseBooking->payment_method) !== $customerCardMethod) {
                 Log::warning('[CustomerCardFinalize] Payment not found for booking, skipping', [
@@ -136,18 +134,19 @@ class CourseBookingService
                     'payment_id' => $paymentId,
                 ]);
 
-                return;
-            }
-        } elseif ($this->normalizePaymentChannel($courseBooking->payment_method) !== $customerCardMethod) {
-            Log::warning('[CustomerCardFinalize] Booking missing payment, skipping', [
+        if ($courseBooking->status !== BookingStatusEnum::PROCESSING) {
+            Log::info('[CustomerCardFinalize] Booking not completed yet, skipping', [
                 'booking_id' => $courseBooking->getKey(),
+                'status' => $this->resolveEnumValue($courseBooking->status),
             ]);
 
             return;
         }
 
-        if ($courseBooking->customer_card_units_used <= 0) {
-            $courseBooking->customer_card_units_used = 1;
+        $unitsUsed = max((int) $courseBooking->customer_card_units_used, 1);
+
+        if ($courseBooking->customer_card_units_used !== $unitsUsed) {
+            $courseBooking->customer_card_units_used = $unitsUsed;
             $courseBooking->save();
         }
 
@@ -157,27 +156,8 @@ class CourseBookingService
             'payment_id' => $courseBooking->payment_id,
         ]);
 
-        if ($courseBooking->customer_card_id && $courseBooking->status !== BookingStatusEnum::PROCESSING) {
-            $courseBooking->status = BookingStatusEnum::PROCESSING;
-            $courseBooking->save();
-
-            Log::info('[CustomerCardFinalize] Forced booking to PROCESSING due to customer card usage', [
-                'booking_id' => $courseBooking->getKey(),
-            ]);
-        }
-
         if ($courseBooking->customer_card_consumed_at) {
             Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' already finalized');
-
-            return;
-        }
-
-        if (! $courseBooking->customer_card_id || $courseBooking->customer_card_units_used <= 0) {
-            Log::info('[CustomerCardFinalize] Skipping booking ' . $courseBooking->getKey() . ' because it is not ready', [
-                'status' => $this->resolveEnumValue($courseBooking->status),
-                'card_id' => $courseBooking->customer_card_id,
-                'units_used' => $courseBooking->customer_card_units_used,
-            ]);
 
             return;
         }

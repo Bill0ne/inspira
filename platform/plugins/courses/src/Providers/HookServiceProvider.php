@@ -84,28 +84,21 @@ class HookServiceProvider extends ServiceProvider
                     }
                 }
 
-                if ($booking->customer_card_id && ! $booking->payment_method) {
-                    $booking->payment_method = $bookingService->normalizePaymentChannel(
-                        PaymentMethodEnum::CUSTOMER_CARD()
-                    );
-                }
-
                 if ($booking->isDirty()) {
                     $booking->save();
                 }
 
                 $booking->refresh();
 
-                $customerCardMethod = $bookingService->normalizePaymentChannel(PaymentMethodEnum::CUSTOMER_CARD());
-
-                if (
-                    $booking->customer_card_id
-                    && $booking->status === BookingStatusEnum::PROCESSING
-                    && ($booking->payment_id
-                        || $bookingService->normalizePaymentChannel($booking->payment_method) === $customerCardMethod)
-                ) {
-                    $bookingService->finalizeCustomerCardUsage($booking);
+                if (! $booking->customer_card_id) {
+                    return;
                 }
+
+                if ($booking->status !== BookingStatusEnum::PROCESSING) {
+                    return;
+                }
+
+                $bookingService->finalizeCustomerCardUsage($booking);
             });
         }
 
