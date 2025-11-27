@@ -14,7 +14,6 @@ use Botble\Media\Facades\RvMedia;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
-use Botble\Payment\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
 
