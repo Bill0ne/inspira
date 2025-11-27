@@ -29,6 +29,7 @@ class CustomerCardUsage extends BaseModel
         'discount_amount' => 'decimal:2',
         'discount_gross' => 'decimal:2',
         'coverage_type' => 'string',
+        'status' => 'string',
         'consumed_at' => 'datetime',
     ];
 
