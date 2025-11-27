@@ -96,10 +96,13 @@ class HookServiceProvider extends ServiceProvider
 
                 $booking->refresh();
 
+                $customerCardMethod = $bookingService->normalizePaymentChannel(PaymentMethodEnum::CUSTOMER_CARD());
+
                 if (
                     $booking->customer_card_id
-                    && $booking->payment_id
                     && $booking->status === BookingStatusEnum::PROCESSING
+                    && ($booking->payment_id
+                        || $bookingService->normalizePaymentChannel($booking->payment_method) === $customerCardMethod)
                 ) {
                     $bookingService->finalizeCustomerCardUsage($booking);
                 }
