@@ -187,6 +187,45 @@
     }
   }
 
+  function syncCustomerCardPayment(context) {
+    var ctxType = getActiveContext(context);
+    var root = getContextRoot(ctxType) || document;
+    var $root = $(root);
+    var $form = $root.find('.payment-checkout-form');
+
+    if (!$form.length) return;
+
+    var $amountInput = $root.find('input[name="amount"]');
+    var amountRaw = parseFloat($amountInput.val());
+    if (!isFinite(amountRaw)) amountRaw = 0;
+
+    var cardId = ($root.find('[data-customer-card-input]').val() || '').toString().trim();
+    var hasCardPayment = !!cardId && amountRaw <= 0;
+
+    var $paymentOptions = $form.find('.list_payment_method input[name="payment_method"]');
+    var $hidden = $form.find('input[name="payment_method"][data-customer-card-method]');
+
+    if (hasCardPayment) {
+      $paymentOptions.prop('checked', false).prop('disabled', true);
+
+      if (!$hidden.length) {
+        $hidden = $('<input>', {
+          type: 'hidden',
+          name: 'payment_method',
+          'data-customer-card-method': '1'
+        }).appendTo($form);
+      }
+
+      $hidden.val('customer_card');
+    } else {
+      $paymentOptions.prop('disabled', false);
+
+      if ($hidden.length) {
+        $hidden.remove();
+      }
+    }
+  }
+
   function renderCheckoutUI(context) {
     var state = win.CheckoutState || {};
     var totals = state.totals || {};
@@ -233,6 +272,8 @@
       }
     }
 
+    syncCustomerCardPayment(context);
+
     var $cardDiscountRow = $root.find('.card-discount-row');
     var $cardDiscountText = $root.find('.card-discount-text');
     if ($cardDiscountRow.length) {
@@ -251,28 +292,28 @@
       }
     }
 
-  var $cardSelect = $('#customer_card_select');
-  var $removeButton = $('[data-bb-customer-card="remove"]');
-  var $infoBox = $('[data-bb-customer-card="info"]');
-  var $infoDiscount = $infoBox.find('[data-bb-customer-card="discount"]');
-  var $cardInput = $('[data-customer-card-input]');
-  var $cardIdInput = $root.find('input[name="customer_card_id"]');
-  var $cardUnitsInput = $root.find('input[name="customer_card_units_used"]');
-  var $cardCoverageInput = $root.find('input[name="customer_card_coverage_type"]');
-  var $cardDiscountInput = $root.find('input[name="customer_card_discount"]');
-  var $cardSection = $root.find('[data-bb-customer-card-section]');
-  var cardState = state.card;
+    var $cardSelect = $('#customer_card_select');
+    var $removeButton = $('[data-bb-customer-card="remove"]');
+    var $infoBox = $('[data-bb-customer-card="info"]');
+    var $infoDiscount = $infoBox.find('[data-bb-customer-card="discount"]');
+    var $cardInput = $('[data-customer-card-input]');
+    var $cardIdInput = $root.find('input[name="customer_card_id"]');
+    var $cardUnitsInput = $root.find('input[name="customer_card_units_used"]');
+    var $cardCoverageInput = $root.find('input[name="customer_card_coverage_type"]');
+    var $cardDiscountInput = $root.find('input[name="customer_card_discount"]');
+    var $cardSection = $root.find('[data-bb-customer-card-section]');
+    var cardState = state.card;
 
     if (cardState && cardState.id) {
-    if ($cardSelect.length) $cardSelect.val(String(cardState.id));
-    if ($cardInput.length) $cardInput.val(cardState.id);
-    if ($cardIdInput.length) $cardIdInput.val(cardState.id);
-    if ($cardUnitsInput.length) $cardUnitsInput.val(cardState.units_used || 1);
-    if ($cardCoverageInput.length) $cardCoverageInput.val(cardState.coverage_type || 'none');
-    if ($cardDiscountInput.length) $cardDiscountInput.val(cardState.discount || 0);
-    if ($removeButton.length) {
-      $removeButton.removeClass('d-none').prop('disabled', false);
-    }
+      if ($cardSelect.length) $cardSelect.val(String(cardState.id));
+      if ($cardInput.length) $cardInput.val(cardState.id);
+      if ($cardIdInput.length) $cardIdInput.val(cardState.id);
+      if ($cardUnitsInput.length) $cardUnitsInput.val(cardState.units_used || 1);
+      if ($cardCoverageInput.length) $cardCoverageInput.val(cardState.coverage_type || 'none');
+      if ($cardDiscountInput.length) $cardDiscountInput.val(cardState.discount || 0);
+      if ($removeButton.length) {
+        $removeButton.removeClass('d-none').prop('disabled', false);
+      }
       if ($infoBox.length) {
         $infoBox.toggleClass('d-none', !((totals.card_discount_raw || 0) > 0));
         var cardText = totals.card_discount_display_plain || cardState.discount_display;
@@ -283,35 +324,35 @@
       if ($cardSection.length) {
         $cardSection.removeClass('d-none');
       }
-  } else {
-    if ($cardSelect.length) {
-      $cardSelect.val('');
+    } else {
+      if ($cardSelect.length) {
+        $cardSelect.val('');
         var $firstOption = $cardSelect.find('option').first();
         if ($firstOption.length) {
           $firstOption.prop('selected', true);
           $firstOption.text('Keine Karte auswählen');
         }
-    }
-    if ($cardInput.length) $cardInput.val('');
-    if ($cardIdInput.length) $cardIdInput.val('');
-    if ($cardUnitsInput.length) $cardUnitsInput.val('');
-    if ($cardCoverageInput.length) $cardCoverageInput.val('');
-    if ($cardDiscountInput.length) $cardDiscountInput.val('');
-    if ($removeButton.length) {
-      $removeButton.addClass('d-none').prop('disabled', true);
-    }
+      }
+      if ($cardInput.length) $cardInput.val('');
+      if ($cardIdInput.length) $cardIdInput.val('');
+      if ($cardUnitsInput.length) $cardUnitsInput.val('');
+      if ($cardCoverageInput.length) $cardCoverageInput.val('');
+      if ($cardDiscountInput.length) $cardDiscountInput.val('');
+      if ($removeButton.length) {
+        $removeButton.addClass('d-none').prop('disabled', true);
+      }
       if ($infoBox.length) {
         $infoBox.addClass('d-none');
         $infoDiscount.text('');
       }
-    if ($cardDiscountRow.length) {
-      $cardDiscountRow.addClass('d-none');
-      $cardDiscountText.text('-');
-    }
-    $totalInput.data('active-discount', 0).data('minimum-fee', 0);
-    if ($cardSection.length) {
-      $cardSection.addClass('d-none');
-    }
+      if ($cardDiscountRow.length) {
+        $cardDiscountRow.addClass('d-none');
+        $cardDiscountText.text('-');
+      }
+      $totalInput.data('active-discount', 0).data('minimum-fee', 0);
+      if ($cardSection.length) {
+        $cardSection.addClass('d-none');
+      }
     }
 
     var couponState = state.coupon || {};
@@ -489,6 +530,7 @@
       if (selected) {
         $list.find('input[name="payment_method"][value="' + selected + '"]').prop('checked', true).trigger('change');
       }
+      syncCustomerCardPayment(context);
       dfd.resolve();
     });
 

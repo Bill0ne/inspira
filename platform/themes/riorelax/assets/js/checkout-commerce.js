@@ -187,6 +187,45 @@
     }
   }
 
+  function syncCustomerCardPayment(context) {
+    var ctxType = getActiveContext(context);
+    var root = getContextRoot(ctxType) || document;
+    var $root = $(root);
+    var $form = $root.find('.payment-checkout-form');
+
+    if (!$form.length) return;
+
+    var $amountInput = $root.find('input[name="amount"]');
+    var amountRaw = parseFloat($amountInput.val());
+    if (!isFinite(amountRaw)) amountRaw = 0;
+
+    var cardId = ($root.find('[data-customer-card-input]').val() || '').toString().trim();
+    var hasCardPayment = !!cardId && amountRaw <= 0;
+
+    var $paymentOptions = $form.find('.list_payment_method input[name="payment_method"]');
+    var $hidden = $form.find('input[name="payment_method"][data-customer-card-method]');
+
+    if (hasCardPayment) {
+      $paymentOptions.prop('checked', false).prop('disabled', true);
+
+      if (!$hidden.length) {
+        $hidden = $('<input>', {
+          type: 'hidden',
+          name: 'payment_method',
+          'data-customer-card-method': '1'
+        }).appendTo($form);
+      }
+
+      $hidden.val('customer_card');
+    } else {
+      $paymentOptions.prop('disabled', false);
+
+      if ($hidden.length) {
+        $hidden.remove();
+      }
+    }
+  }
+
   function renderCheckoutUI(context) {
     var state = win.CheckoutState || {};
     var totals = state.totals || {};
@@ -232,6 +271,8 @@
         $amountInput.data('minimum-threshold', totals.minimum_threshold);
       }
     }
+
+    syncCustomerCardPayment(context);
 
     var $cardDiscountRow = $root.find('.card-discount-row');
     var $cardDiscountText = $root.find('.card-discount-text');
@@ -489,6 +530,7 @@
       if (selected) {
         $list.find('input[name="payment_method"][value="' + selected + '"]').prop('checked', true).trigger('change');
       }
+      syncCustomerCardPayment(context);
       dfd.resolve();
     });
 
