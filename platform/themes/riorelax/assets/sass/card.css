@@ -137,6 +137,20 @@
   overflow: visible !important;
   text-overflow: unset !important;
   min-width: auto !important;
+  overflow-wrap: anywhere !important;     /* bricht auch lange Zeiträume zuverlässig um */
+}
+.course-meta-left .mtxt:first-child {
+  flex: 1 1 220px !important;            /* Datum darf wachsen und umbrechen */
+  max-width: 100% !important;
+  white-space: normal !important;
+  min-width: 0 !important;
+  word-break: break-word !important;     /* sichert Zeilenumbrüche bei fehlenden Leerzeichen */
+}
+.course-meta-left .mtxt:not(:first-child) {
+  flex: 0 0 auto !important;             /* Preis passt sich seiner Breite an */
+  white-space: nowrap !important;
+  padding-left: 8px !important;          /* kompakteres Preis-Badge */
+  padding-right: 8px !important;
 }
 .mtxt i { font-size: 13px !important; margin-right: 3px !important; }
 
