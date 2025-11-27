@@ -22,6 +22,7 @@ class CustomerCardUsage extends BaseModel
         'discount_gross',
         'coverage_type',
         'status',
+        'consumed_at',
     ];
 
     protected $casts = [
@@ -29,6 +30,7 @@ class CustomerCardUsage extends BaseModel
         'discount_amount' => 'decimal:2',
         'discount_gross' => 'decimal:2',
         'coverage_type' => CustomerCardCoverageType::class,
+        'consumed_at' => 'datetime',
     ];
 
     public function card(): BelongsTo

@@ -8,6 +8,7 @@ use Botble\Courses\Models\CourseBooking;
 use Botble\Hotel\Enums\CustomerCardCoverageType;
 use Botble\Hotel\Models\CustomerCard;
 use Botble\Hotel\Services\CustomerCardPricingService;
+use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
 use Illuminate\Support\Facades\DB;
@@ -77,6 +78,14 @@ class CourseBookingService
 
                 $courseBooking->save();
             }
+
+            if (
+                $courseBooking->payment_method === PaymentMethodEnum::CUSTOMER_CARD()
+                && $courseBooking->status !== BookingStatusEnum::PROCESSING
+            ) {
+                $courseBooking->status = BookingStatusEnum::PROCESSING;
+                $courseBooking->save();
+            }
         }
 
         $this->finalizeCustomerCardUsage($courseBooking);
@@ -99,12 +108,24 @@ class CourseBookingService
             || ! $courseBooking->customer_card_id
             || $courseBooking->customer_card_units_used <= 0
         ) {
+            Log::info('[CustomerCardFinalize] Skipping booking ' . $courseBooking->getKey() . ' because it is not ready', [
+                'status' => (string) $courseBooking->status,
+                'card_id' => $courseBooking->customer_card_id,
+                'units_used' => $courseBooking->customer_card_units_used,
+            ]);
+
             return;
         }
 
         if (! $courseBooking->customer_card_coverage_type) {
             $courseBooking->customer_card_coverage_type = CustomerCardCoverageType::PARTIAL;
         }
+
+        Log::info('[CustomerCardFinalize] Starting usage for booking ' . $courseBooking->getKey(), [
+            'card_id' => $courseBooking->customer_card_id,
+            'units_used' => $courseBooking->customer_card_units_used,
+            'coverage' => (string) $courseBooking->customer_card_coverage_type,
+        ]);
 
         DB::transaction(function () use ($courseBooking) {
             $card = CustomerCard::query()->lockForUpdate()->find($courseBooking->customer_card_id);
