@@ -52,6 +52,9 @@ class Assets extends BaseAssets
             $this->config['resources']['styles']['select2']['src']['local'][1] = '/vendor/core/core/base/css/libraries/select2.rtl.css';
         }
 
+        $this->styles = array_values(array_unique(array_merge(['core'], $this->styles)));
+        $lastStyles = array_values(array_unique(array_merge($lastStyles, ['core'])));
+
         return parent::renderHeader($lastStyles);
     }
 

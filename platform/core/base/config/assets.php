@@ -27,6 +27,7 @@ return [
         'fslightbox',
     ],
     'styles' => [
+        'core',
         'fontawesome',
         'select2',
         'toastr',
