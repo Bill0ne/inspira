@@ -37,16 +37,21 @@ class CustomerCardPricingService
 
     public function finalizeUsage(CourseBooking $booking): void
     {
-        if (! $booking->customer_card_id || $booking->customer_card_units_used <= 0) {
+        if (! $booking->customer_card_id) {
             return;
+        }
+
+        if ($booking->customer_card_units_used <= 0) {
+            $booking->forceFill(['customer_card_units_used' => 1])->save();
         }
 
         DB::transaction(function () use ($booking) {
             $card = CustomerCard::query()->lockForUpdate()->find($booking->customer_card_id);
 
-            Log::info('[CardFinalize] Starting usage for booking ' . $booking->getKey(), [
+            Log::info('[CustomerCardFinalize] Start booking ' . $booking->getKey(), [
                 'card_id' => $booking->customer_card_id,
                 'units_used' => $booking->customer_card_units_used,
+                'units_before' => $card?->units_remaining,
             ]);
 
             if (! $card) {
@@ -90,14 +95,14 @@ class CustomerCardPricingService
             $units = max(1, min($unitsRequested, $availableUnits));
             $remainingUnits = max($availableUnits - $units, 0);
 
-            Log::info('[CardFinalize] units_used = ' . $units . ', units_remaining_before = ' . $availableUnits);
+            Log::info('[CustomerCardFinalize] Units before: ' . $availableUnits . ' for booking ' . $booking->getKey());
 
             $card->forceFill([
                 'units_remaining' => $remainingUnits,
                 'is_active' => $remainingUnits > 0 ? $card->is_active : false,
             ])->save();
 
-            Log::info('[CardFinalize] units_remaining_after = ' . $remainingUnits);
+            Log::info('[CustomerCardFinalize] Units after: ' . $remainingUnits . ' for booking ' . $booking->getKey());
 
             $coverage = $booking->customer_card_coverage_type;
 
@@ -106,6 +111,10 @@ class CustomerCardPricingService
             }
 
             $coverage ??= CustomerCardCoverageType::PARTIAL;
+
+            if ($booking->customer_card_units_used <= 0) {
+                $booking->customer_card_units_used = 1;
+            }
 
             CustomerCardUsage::query()->create([
                 'card_id' => $card->getKey(),
