@@ -72,9 +72,11 @@ class HookServiceProvider extends ServiceProvider
                 }
 
                 if ($payment) {
+                    $paymentMethod = $bookingService->normalizePaymentChannel($payment->payment_channel);
+
                     $booking->forceFill([
                         'payment_id' => $payment->getKey(),
-                        'payment_method' => $payment->payment_channel,
+                        'payment_method' => $paymentMethod,
                     ])->save();
                 }
 
@@ -169,7 +171,8 @@ class HookServiceProvider extends ServiceProvider
                     }
 
                     $booking->status = BookingStatusEnum::PROCESSING;
-                    $booking->payment_method = $payment->payment_channel;
+                    $booking->payment_method = app(CourseBookingService::class)
+                        ->normalizePaymentChannel($payment->payment_channel);
                     $booking->save();
 
                     app(CourseBookingService::class)->finalizeCustomerCardUsage($booking);
