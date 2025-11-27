@@ -77,18 +77,31 @@ class HookServiceProvider extends ServiceProvider
                     $booking->forceFill([
                         'payment_id' => $payment->getKey(),
                         'payment_method' => $paymentMethod,
-                    ])->save();
+                    ]);
+
+                    if ($payment->status === PaymentStatusEnum::COMPLETED) {
+                        $booking->status = BookingStatusEnum::PROCESSING;
+                    }
                 }
 
-                if ($payment && $payment->status === PaymentStatusEnum::COMPLETED) {
-                    if ($booking->status !== BookingStatusEnum::PROCESSING) {
-                        $booking->status = BookingStatusEnum::PROCESSING;
-                        $booking->save();
-                    }
+                if ($booking->customer_card_id && ! $booking->payment_method) {
+                    $booking->payment_method = $bookingService->normalizePaymentChannel(
+                        PaymentMethodEnum::CUSTOMER_CARD()
+                    );
+                }
 
-                    $bookingService->finalizeCustomerCardUsage($booking->refresh());
-                } elseif ($booking->status === BookingStatusEnum::PROCESSING) {
-                    $bookingService->finalizeCustomerCardUsage($booking->refresh());
+                if ($booking->isDirty()) {
+                    $booking->save();
+                }
+
+                $booking->refresh();
+
+                if (
+                    $booking->customer_card_id
+                    && $booking->payment_id
+                    && $booking->status === BookingStatusEnum::PROCESSING
+                ) {
+                    $bookingService->finalizeCustomerCardUsage($booking);
                 }
             });
         }
@@ -164,18 +177,17 @@ class HookServiceProvider extends ServiceProvider
                     in_array($payment->payment_channel, [PaymentMethodEnum::COD, PaymentMethodEnum::BANK_TRANSFER])
                     && $request->input('status') == PaymentStatusEnum::COMPLETED
                 ) {
-                    $booking = CourseBooking::query()->where('payment_id', $payment->id)->first();
-
-                    if (! $booking) {
-                        return;
-                    }
-
-                    $booking->status = BookingStatusEnum::PROCESSING;
-                    $booking->payment_method = app(CourseBookingService::class)
-                        ->normalizePaymentChannel($payment->payment_channel);
-                    $booking->save();
-
-                    app(CourseBookingService::class)->finalizeCustomerCardUsage($booking);
+                    do_action(PAYMENT_ACTION_PAYMENT_PROCESSED, [
+                        'amount' => (float) $payment->amount,
+                        'currency' => $payment->currency,
+                        'charge_id' => $payment->charge_id,
+                        'payment_channel' => $payment->payment_channel,
+                        'status' => PaymentStatusEnum::COMPLETED,
+                        'order_id' => [$payment->order_id],
+                        'order_type' => CourseBooking::class,
+                        'customer_id' => $payment->customer_id,
+                        'customer_type' => $payment->customer_type,
+                    ]);
                 }
             }, 183, 2);
         }
