@@ -149,6 +149,13 @@ class CourseBookingService
             $courseBooking->save();
         }
 
+        if ($courseBooking->customer_card_id) {
+            $courseBooking->forceFill([
+                'payment_method' => $this->normalizePaymentChannel(PaymentMethodEnum::CUSTOMER_CARD()),
+                'status' => BookingStatusEnum::PROCESSING,
+            ])->save();
+        }
+
         Log::info('[CustomerCardFinalize] Start booking ' . $courseBooking->getKey(), [
             'status' => $this->resolveEnumValue($courseBooking->status),
             'payment_method' => $this->resolveEnumValue($courseBooking->payment_method),
@@ -193,36 +200,7 @@ class CourseBookingService
             'coverage' => $coverageValue,
         ]);
 
-        DB::transaction(function () use ($courseBooking) {
-            $card = CustomerCard::query()->lockForUpdate()->find($courseBooking->customer_card_id);
-
-            if ($card && $courseBooking->customer_id && $card->assigned_to !== $courseBooking->customer_id) {
-                $card = null;
-            }
-
-            if (! $card) {
-                Log::warning('[CustomerCardFinalize] Card not found or mismatched for booking ' . $courseBooking->getKey());
-
-                return;
-            }
-
-            $unitsRequested = max(1, (int) $courseBooking->customer_card_units_used);
-
-            if ($card->units_remaining < $unitsRequested) {
-                Log::warning('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' requires '
-                    . $unitsRequested . ' units but card ' . $card->getKey() . ' has '
-                    . $card->units_remaining . ' remaining');
-
-                return;
-            }
-
-            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalizing with card ' . $card->getKey());
-
-            app(CustomerCardPricingService::class)->finalizeUsage($courseBooking);
-
-            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalized with card '
-                . $card->getKey());
-        });
+        app(CustomerCardPricingService::class)->finalizeUsage($courseBooking);
     }
 
     public function normalizePaymentChannel(mixed $channel): string

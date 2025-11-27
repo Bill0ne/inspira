@@ -74,20 +74,25 @@ class HookServiceProvider extends ServiceProvider
                 if ($payment) {
                     $paymentMethod = $bookingService->normalizePaymentChannel($payment->payment_channel);
 
+                    if ($booking->customer_card_id) {
+                        $paymentMethod = $bookingService->normalizePaymentChannel(PaymentMethodEnum::CUSTOMER_CARD());
+                    }
+
                     $booking->forceFill([
                         'payment_id' => $payment->getKey(),
                         'payment_method' => $paymentMethod,
                     ]);
 
-                    if ($payment->status === PaymentStatusEnum::COMPLETED) {
+                    if ($payment->status === PaymentStatusEnum::COMPLETED || $booking->customer_card_id) {
                         $booking->status = BookingStatusEnum::PROCESSING;
                     }
                 }
 
-                if ($booking->customer_card_id && ! $booking->payment_method) {
+                if ($booking->customer_card_id) {
                     $booking->payment_method = $bookingService->normalizePaymentChannel(
                         PaymentMethodEnum::CUSTOMER_CARD()
                     );
+                    $booking->status = BookingStatusEnum::PROCESSING;
                 }
 
                 if ($booking->isDirty()) {
