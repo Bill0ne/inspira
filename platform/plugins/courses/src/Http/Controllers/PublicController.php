@@ -499,8 +499,8 @@ class PublicController extends Controller
             $booking->customer_card_discount_gross = $effectiveCardDiscount;
             $booking->customer_card_units_used = $customerCard ? $cardUnitsUsed : 0;
             $booking->customer_card_coverage_type = $customerCard
-                ? ($cardCoverageType ?? CustomerCardCoverageType::PARTIAL)
-                : CustomerCardCoverageType::NONE;
+                ? ($cardCoverageType?->value ?? CustomerCardCoverageType::PARTIAL->value)
+                : CustomerCardCoverageType::NONE->value;
 
             if (Auth::guard('customer')->check()) {
                 $booking->customer_id = Auth::guard('customer')->id();
@@ -557,7 +557,17 @@ class PublicController extends Controller
                 $booking->forceFill(['payment_method' => $customerCardMethod])->save();
             }
 
-            $courseBookingService->processBooking($booking->getKey(), $payment?->charge_id);
+            do_action(PAYMENT_ACTION_PAYMENT_PROCESSED, [
+                'amount' => (float) ($payment?->amount ?? 0),
+                'currency' => strtoupper(get_application_currency()->title),
+                'charge_id' => $payment?->charge_id ?? $booking->transaction_id,
+                'payment_channel' => $payment?->payment_channel ?? $customerCardMethod,
+                'status' => PaymentStatusEnum::COMPLETED,
+                'order_id' => [$booking->getKey()],
+                'order_type' => CourseBooking::class,
+                'customer_id' => $booking->customer_id,
+                'customer_type' => Customer::class,
+            ]);
 
             if ($token = $request->input('token')) {
                 session()->forget($token);

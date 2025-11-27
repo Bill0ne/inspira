@@ -101,7 +101,12 @@ class CourseBookingService
             $courseBooking->save();
         }
 
-        $this->finalizeCustomerCardUsage($courseBooking);
+        if ($courseBooking->customer_card_id && ! $courseBooking->customer_card_coverage_type) {
+            $courseBooking->customer_card_coverage_type = $this->normalizeCoverageType(
+                CustomerCardCoverageType::PARTIAL
+            );
+            $courseBooking->save();
+        }
 
         CourseBookingCreated::dispatch($courseBooking);
 
@@ -110,9 +115,44 @@ class CourseBookingService
 
     public function finalizeCustomerCardUsage(CourseBooking $courseBooking): void
     {
+        if (! $courseBooking->exists) {
+            Log::warning('[CustomerCardFinalize] Booking not persisted, skipping', [
+                'booking_id' => $courseBooking->getKey(),
+            ]);
+
+            return;
+        }
+
+        $paymentId = $courseBooking->payment_id;
+
+        if (! $paymentId) {
+            Log::warning('[CustomerCardFinalize] Booking missing payment, skipping', [
+                'booking_id' => $courseBooking->getKey(),
+            ]);
+
+            return;
+        }
+
+        $payment = Payment::query()->find($paymentId);
+
+        if (! $payment) {
+            Log::warning('[CustomerCardFinalize] Payment not found for booking, skipping', [
+                'booking_id' => $courseBooking->getKey(),
+                'payment_id' => $paymentId,
+            ]);
+
+            return;
+        }
+
+        if ($courseBooking->customer_card_units_used <= 0) {
+            $courseBooking->customer_card_units_used = 1;
+            $courseBooking->save();
+        }
+
         Log::info('[CustomerCardFinalize] Start booking ' . $courseBooking->getKey(), [
             'status' => $this->resolveEnumValue($courseBooking->status),
             'payment_method' => $this->resolveEnumValue($courseBooking->payment_method),
+            'payment_id' => $courseBooking->payment_id,
         ]);
 
         if ($courseBooking->customer_card_id && $courseBooking->status !== BookingStatusEnum::PROCESSING) {
@@ -130,11 +170,6 @@ class CourseBookingService
             return;
         }
 
-        if ($courseBooking->customer_card_id && $courseBooking->customer_card_units_used <= 0) {
-            $courseBooking->customer_card_units_used = 1;
-            $courseBooking->save();
-        }
-
         if (! $courseBooking->customer_card_id || $courseBooking->customer_card_units_used <= 0) {
             Log::info('[CustomerCardFinalize] Skipping booking ' . $courseBooking->getKey() . ' because it is not ready', [
                 'status' => $this->resolveEnumValue($courseBooking->status),
@@ -145,11 +180,12 @@ class CourseBookingService
             return;
         }
 
-        if (! $courseBooking->customer_card_coverage_type) {
-            $courseBooking->customer_card_coverage_type = CustomerCardCoverageType::PARTIAL;
-        }
+        $coverageValue = $this->normalizeCoverageType($courseBooking->customer_card_coverage_type);
 
-        $coverageValue = $this->resolveEnumValue($courseBooking->customer_card_coverage_type, 'none');
+        if ($courseBooking->customer_card_coverage_type !== $coverageValue) {
+            $courseBooking->customer_card_coverage_type = $coverageValue;
+            $courseBooking->save();
+        }
 
         Log::info('[CustomerCardFinalize] Starting usage for booking ' . $courseBooking->getKey(), [
             'card_id' => $courseBooking->customer_card_id,
@@ -221,5 +257,18 @@ class CourseBookingService
         }
 
         return $default;
+    }
+
+    protected function normalizeCoverageType(mixed $coverageType): string
+    {
+        if ($coverageType instanceof CustomerCardCoverageType) {
+            return $coverageType->value;
+        }
+
+        if (is_string($coverageType) || is_numeric($coverageType)) {
+            return (string) $coverageType;
+        }
+
+        return CustomerCardCoverageType::PARTIAL->value;
     }
 }
