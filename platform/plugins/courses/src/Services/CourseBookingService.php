@@ -146,10 +146,12 @@ class CourseBookingService
             $courseBooking->customer_card_coverage_type = CustomerCardCoverageType::PARTIAL;
         }
 
+        $coverageValue = $courseBooking->customer_card_coverage_type?->value ?? 'none';
+
         Log::info('[CustomerCardFinalize] Starting usage for booking ' . $courseBooking->getKey(), [
             'card_id' => $courseBooking->customer_card_id,
             'units_used' => $courseBooking->customer_card_units_used,
-            'coverage' => (string) $courseBooking->customer_card_coverage_type,
+            'coverage' => $coverageValue,
         ]);
 
         DB::transaction(function () use ($courseBooking) {
