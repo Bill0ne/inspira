@@ -251,20 +251,28 @@
       }
     }
 
-    var $cardSelect = $('#customer_card_select');
-    var $removeButton = $('[data-bb-customer-card="remove"]');
-    var $infoBox = $('[data-bb-customer-card="info"]');
-    var $infoDiscount = $infoBox.find('[data-bb-customer-card="discount"]');
-    var $cardInput = $('[data-customer-card-input]');
-    var $cardSection = $root.find('[data-bb-customer-card-section]');
-    var cardState = state.card;
+  var $cardSelect = $('#customer_card_select');
+  var $removeButton = $('[data-bb-customer-card="remove"]');
+  var $infoBox = $('[data-bb-customer-card="info"]');
+  var $infoDiscount = $infoBox.find('[data-bb-customer-card="discount"]');
+  var $cardInput = $('[data-customer-card-input]');
+  var $cardIdInput = $root.find('input[name="customer_card_id"]');
+  var $cardUnitsInput = $root.find('input[name="customer_card_units_used"]');
+  var $cardCoverageInput = $root.find('input[name="customer_card_coverage_type"]');
+  var $cardDiscountInput = $root.find('input[name="customer_card_discount"]');
+  var $cardSection = $root.find('[data-bb-customer-card-section]');
+  var cardState = state.card;
 
     if (cardState && cardState.id) {
-      if ($cardSelect.length) $cardSelect.val(String(cardState.id));
-      if ($cardInput.length) $cardInput.val(cardState.id);
-      if ($removeButton.length) {
-        $removeButton.removeClass('d-none').prop('disabled', false);
-      }
+    if ($cardSelect.length) $cardSelect.val(String(cardState.id));
+    if ($cardInput.length) $cardInput.val(cardState.id);
+    if ($cardIdInput.length) $cardIdInput.val(cardState.id);
+    if ($cardUnitsInput.length) $cardUnitsInput.val(cardState.units_used || 1);
+    if ($cardCoverageInput.length) $cardCoverageInput.val(cardState.coverage_type || 'none');
+    if ($cardDiscountInput.length) $cardDiscountInput.val(cardState.discount || 0);
+    if ($removeButton.length) {
+      $removeButton.removeClass('d-none').prop('disabled', false);
+    }
       if ($infoBox.length) {
         $infoBox.toggleClass('d-none', !((totals.card_discount_raw || 0) > 0));
         var cardText = totals.card_discount_display_plain || cardState.discount_display;
@@ -275,30 +283,35 @@
       if ($cardSection.length) {
         $cardSection.removeClass('d-none');
       }
-    } else {
-      if ($cardSelect.length) {
-        $cardSelect.val('');
+  } else {
+    if ($cardSelect.length) {
+      $cardSelect.val('');
         var $firstOption = $cardSelect.find('option').first();
         if ($firstOption.length) {
           $firstOption.prop('selected', true);
           $firstOption.text('Keine Karte auswählen');
         }
-      }
-      if ($cardInput.length) $cardInput.val('');
-      if ($removeButton.length) {
-        $removeButton.addClass('d-none').prop('disabled', true);
-      }
+    }
+    if ($cardInput.length) $cardInput.val('');
+    if ($cardIdInput.length) $cardIdInput.val('');
+    if ($cardUnitsInput.length) $cardUnitsInput.val('');
+    if ($cardCoverageInput.length) $cardCoverageInput.val('');
+    if ($cardDiscountInput.length) $cardDiscountInput.val('');
+    if ($removeButton.length) {
+      $removeButton.addClass('d-none').prop('disabled', true);
+    }
       if ($infoBox.length) {
         $infoBox.addClass('d-none');
         $infoDiscount.text('');
       }
-      if ($cardDiscountRow.length) {
-        $cardDiscountRow.addClass('d-none');
-        $cardDiscountText.text('-');
-      }
-      if ($cardSection.length) {
-        $cardSection.addClass('d-none');
-      }
+    if ($cardDiscountRow.length) {
+      $cardDiscountRow.addClass('d-none');
+      $cardDiscountText.text('-');
+    }
+    $totalInput.data('active-discount', 0).data('minimum-fee', 0);
+    if ($cardSection.length) {
+      $cardSection.addClass('d-none');
+    }
     }
 
     var couponState = state.coupon || {};

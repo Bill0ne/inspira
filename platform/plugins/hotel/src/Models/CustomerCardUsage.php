@@ -3,7 +3,6 @@
 namespace Botble\Hotel\Models;
 
 use Botble\Base\Models\BaseModel;
-use Botble\Hotel\Enums\CustomerCardCoverageType;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Botble\Hotel\Models\CustomerCard;
 use Botble\Hotel\Models\Booking;
@@ -29,7 +28,7 @@ class CustomerCardUsage extends BaseModel
         'units_used' => 'int',
         'discount_amount' => 'decimal:2',
         'discount_gross' => 'decimal:2',
-        'coverage_type' => CustomerCardCoverageType::class,
+        'coverage_type' => 'string',
         'consumed_at' => 'datetime',
     ];
 

@@ -256,12 +256,20 @@
     var $infoBox = $('[data-bb-customer-card="info"]');
     var $infoDiscount = $infoBox.find('[data-bb-customer-card="discount"]');
     var $cardInput = $('[data-customer-card-input]');
+    var $cardIdInput = $root.find('input[name="customer_card_id"]');
+    var $cardUnitsInput = $root.find('input[name="customer_card_units_used"]');
+    var $cardCoverageInput = $root.find('input[name="customer_card_coverage_type"]');
+    var $cardDiscountInput = $root.find('input[name="customer_card_discount"]');
     var $cardSection = $root.find('[data-bb-customer-card-section]');
     var cardState = state.card;
 
     if (cardState && cardState.id) {
       if ($cardSelect.length) $cardSelect.val(String(cardState.id));
       if ($cardInput.length) $cardInput.val(cardState.id);
+      if ($cardIdInput.length) $cardIdInput.val(cardState.id);
+      if ($cardUnitsInput.length) $cardUnitsInput.val(cardState.units_used || 1);
+      if ($cardCoverageInput.length) $cardCoverageInput.val(cardState.coverage_type || 'none');
+      if ($cardDiscountInput.length) $cardDiscountInput.val(cardState.discount || 0);
       if ($removeButton.length) {
         $removeButton.removeClass('d-none').prop('disabled', false);
       }
@@ -285,6 +293,10 @@
         }
       }
       if ($cardInput.length) $cardInput.val('');
+      if ($cardIdInput.length) $cardIdInput.val('');
+      if ($cardUnitsInput.length) $cardUnitsInput.val('');
+      if ($cardCoverageInput.length) $cardCoverageInput.val('');
+      if ($cardDiscountInput.length) $cardDiscountInput.val('');
       if ($removeButton.length) {
         $removeButton.addClass('d-none').prop('disabled', true);
       }
@@ -296,6 +308,7 @@
         $cardDiscountRow.addClass('d-none');
         $cardDiscountText.text('-');
       }
+      $totalInput.data('active-discount', 0).data('minimum-fee', 0);
       if ($cardSection.length) {
         $cardSection.addClass('d-none');
       }
