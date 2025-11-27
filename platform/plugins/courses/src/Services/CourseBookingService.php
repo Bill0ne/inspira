@@ -88,6 +88,16 @@ class CourseBookingService
             }
         }
 
+        if ($courseBooking->customer_card_id && ! $courseBooking->payment_method) {
+            $courseBooking->payment_method = PaymentMethodEnum::CUSTOMER_CARD();
+            $courseBooking->save();
+        }
+
+        if ($courseBooking->customer_card_id && $courseBooking->status !== BookingStatusEnum::PROCESSING) {
+            $courseBooking->status = BookingStatusEnum::PROCESSING;
+            $courseBooking->save();
+        }
+
         $this->finalizeCustomerCardUsage($courseBooking);
 
         CourseBookingCreated::dispatch($courseBooking);
@@ -97,17 +107,32 @@ class CourseBookingService
 
     public function finalizeCustomerCardUsage(CourseBooking $courseBooking): void
     {
+        Log::info('[CustomerCardFinalize] Start booking ' . $courseBooking->getKey(), [
+            'status' => (string) $courseBooking->status,
+            'payment_method' => (string) $courseBooking->payment_method,
+        ]);
+
+        if ($courseBooking->customer_card_id && $courseBooking->status !== BookingStatusEnum::PROCESSING) {
+            $courseBooking->status = BookingStatusEnum::PROCESSING;
+            $courseBooking->save();
+
+            Log::info('[CustomerCardFinalize] Forced booking to PROCESSING due to customer card usage', [
+                'booking_id' => $courseBooking->getKey(),
+            ]);
+        }
+
         if ($courseBooking->customer_card_consumed_at) {
             Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' already finalized');
 
             return;
         }
 
-        if (
-            $courseBooking->status !== BookingStatusEnum::PROCESSING
-            || ! $courseBooking->customer_card_id
-            || $courseBooking->customer_card_units_used <= 0
-        ) {
+        if ($courseBooking->customer_card_id && $courseBooking->customer_card_units_used <= 0) {
+            $courseBooking->customer_card_units_used = 1;
+            $courseBooking->save();
+        }
+
+        if (! $courseBooking->customer_card_id || $courseBooking->customer_card_units_used <= 0) {
             Log::info('[CustomerCardFinalize] Skipping booking ' . $courseBooking->getKey() . ' because it is not ready', [
                 'status' => (string) $courseBooking->status,
                 'card_id' => $courseBooking->customer_card_id,
