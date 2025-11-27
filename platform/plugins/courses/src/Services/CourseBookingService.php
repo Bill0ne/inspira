@@ -128,8 +128,11 @@ class CourseBookingService
                 'booking_id' => $courseBooking->getKey(),
             ]);
 
-            return;
-        }
+            if (! $payment && $this->normalizePaymentChannel($courseBooking->payment_method) !== $customerCardMethod) {
+                Log::warning('[CustomerCardFinalize] Payment not found for booking, skipping', [
+                    'booking_id' => $courseBooking->getKey(),
+                    'payment_id' => $paymentId,
+                ]);
 
         if ($courseBooking->status !== BookingStatusEnum::PROCESSING) {
             Log::info('[CustomerCardFinalize] Booking not completed yet, skipping', [
