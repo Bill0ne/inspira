@@ -49,7 +49,9 @@ class CourseBookingService
                 $courseBooking->payment_id = $payment->getKey();
                 $courseBooking->payment_method = $payment->payment_channel;
 
-                $method = (string) $payment->payment_channel;
+                $method = $payment->payment_channel instanceof PaymentMethodEnum
+                    ? $payment->payment_channel->value
+                    : $payment->payment_channel;
 
                 switch ($payment->status) {
                     case PaymentStatusEnum::COMPLETED:
@@ -108,8 +110,12 @@ class CourseBookingService
     public function finalizeCustomerCardUsage(CourseBooking $courseBooking): void
     {
         Log::info('[CustomerCardFinalize] Start booking ' . $courseBooking->getKey(), [
-            'status' => (string) $courseBooking->status,
-            'payment_method' => (string) $courseBooking->payment_method,
+            'status' => $courseBooking->status instanceof BookingStatusEnum
+                ? $courseBooking->status->value
+                : $courseBooking->status,
+            'payment_method' => $courseBooking->payment_method instanceof PaymentMethodEnum
+                ? $courseBooking->payment_method->value
+                : $courseBooking->payment_method,
         ]);
 
         if ($courseBooking->customer_card_id && $courseBooking->status !== BookingStatusEnum::PROCESSING) {
@@ -134,7 +140,9 @@ class CourseBookingService
 
         if (! $courseBooking->customer_card_id || $courseBooking->customer_card_units_used <= 0) {
             Log::info('[CustomerCardFinalize] Skipping booking ' . $courseBooking->getKey() . ' because it is not ready', [
-                'status' => (string) $courseBooking->status,
+                'status' => $courseBooking->status instanceof BookingStatusEnum
+                    ? $courseBooking->status->value
+                    : $courseBooking->status,
                 'card_id' => $courseBooking->customer_card_id,
                 'units_used' => $courseBooking->customer_card_units_used,
             ]);

@@ -105,12 +105,9 @@ class CustomerCardPricingService
             Log::info('[CustomerCardFinalize] Units after: ' . $remainingUnits . ' for booking ' . $booking->getKey());
 
             $coverage = $booking->customer_card_coverage_type;
-
-            if (is_string($coverage)) {
-                $coverage = CustomerCardCoverageType::tryFrom($coverage);
-            }
-
-            $coverage ??= CustomerCardCoverageType::PARTIAL;
+            $coverageValue = $coverage instanceof CustomerCardCoverageType
+                ? $coverage->value
+                : ($coverage ?: CustomerCardCoverageType::PARTIAL->value);
 
             if ($booking->customer_card_units_used <= 0) {
                 $booking->customer_card_units_used = 1;
@@ -123,7 +120,7 @@ class CustomerCardPricingService
                 'units_used' => $units,
                 'discount_amount' => (float) $booking->customer_card_discount_gross,
                 'discount_gross' => (float) $booking->customer_card_discount_gross,
-                'coverage_type' => $coverage->value,
+                'coverage_type' => $coverageValue,
                 'status' => 'consumed',
                 'consumed_at' => now(),
             ]);
