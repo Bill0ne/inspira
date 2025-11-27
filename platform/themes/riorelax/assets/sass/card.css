@@ -138,6 +138,18 @@
   text-overflow: unset !important;
   min-width: auto !important;
 }
+.course-meta-left .mtxt:first-child {
+  flex: 1 1 220px !important;            /* Datum darf wachsen und umbrechen */
+  max-width: 100% !important;
+  white-space: normal !important;
+  min-width: 0 !important;
+}
+.course-meta-left .mtxt:not(:first-child) {
+  flex: 0 0 auto !important;             /* Preis passt sich seiner Breite an */
+  white-space: nowrap !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
 .mtxt i { font-size: 13px !important; margin-right: 3px !important; }
 
 /* === CTA – außerhalb des Body, immer am Kartenende === */

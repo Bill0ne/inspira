@@ -128,6 +128,20 @@
   min-width: 0 !important;
 }
 
+.course-meta-left .mtxt:first-child {
+  flex: 1 1 220px !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  min-width: 0 !important;
+}
+
+.course-meta-left .mtxt:not(:first-child) {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+
 .mtxt i {
   font-size: 13px !important;
   margin-right: 3px !important;
