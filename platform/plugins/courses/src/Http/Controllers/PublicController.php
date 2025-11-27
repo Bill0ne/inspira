@@ -531,12 +531,15 @@ class PublicController extends Controller
 
             $payment = null;
 
+            $courseBookingService = app(CourseBookingService::class);
+            $customerCardMethod = $courseBookingService->normalizePaymentChannel(PaymentMethodEnum::CUSTOMER_CARD());
+
             if (is_plugin_active('payment')) {
                 $payment = Payment::query()->create([
                     'amount' => 0,
                     'currency' => strtoupper(get_application_currency()->title),
                     'charge_id' => $booking->transaction_id,
-                    'payment_channel' => PaymentMethodEnum::CUSTOMER_CARD(),
+                    'payment_channel' => $customerCardMethod,
                     'status' => PaymentStatusEnum::COMPLETED,
                     'order_id' => $booking->getKey(),
                     'order_type' => CourseBooking::class,
@@ -545,15 +548,13 @@ class PublicController extends Controller
                 ]);
             }
 
-            $courseBookingService = app(CourseBookingService::class);
-
             if ($payment) {
                 $booking->forceFill([
                     'payment_id' => $payment->getKey(),
-                    'payment_method' => $payment->payment_channel,
+                    'payment_method' => $courseBookingService->normalizePaymentChannel($payment->payment_channel),
                 ])->save();
             } else {
-                $booking->forceFill(['payment_method' => PaymentMethodEnum::CUSTOMER_CARD()])->save();
+                $booking->forceFill(['payment_method' => $customerCardMethod])->save();
             }
 
             $courseBookingService->processBooking($booking->getKey(), $payment?->charge_id);

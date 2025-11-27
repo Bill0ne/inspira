@@ -27,6 +27,8 @@ class CourseBookingService
             return null;
         }
 
+        $customerCardMethod = (string) PaymentMethodEnum::CUSTOMER_CARD();
+
         if (is_plugin_active('payment')) {
             $payment = null;
 
@@ -47,11 +49,10 @@ class CourseBookingService
 
             if ($payment) {
                 $courseBooking->payment_id = $payment->getKey();
-                $courseBooking->payment_method = $payment->payment_channel;
+                $channel = $this->normalizePaymentChannel($payment->payment_channel);
+                $courseBooking->payment_method = $channel;
 
-                $method = $payment->payment_channel instanceof PaymentMethodEnum
-                    ? $payment->payment_channel->value
-                    : $payment->payment_channel;
+                $method = $channel;
 
                 switch ($payment->status) {
                     case PaymentStatusEnum::COMPLETED:
@@ -82,7 +83,7 @@ class CourseBookingService
             }
 
             if (
-                $courseBooking->payment_method === PaymentMethodEnum::CUSTOMER_CARD()
+                (string) $courseBooking->payment_method === $customerCardMethod
                 && $courseBooking->status !== BookingStatusEnum::PROCESSING
             ) {
                 $courseBooking->status = BookingStatusEnum::PROCESSING;
@@ -91,7 +92,7 @@ class CourseBookingService
         }
 
         if ($courseBooking->customer_card_id && ! $courseBooking->payment_method) {
-            $courseBooking->payment_method = PaymentMethodEnum::CUSTOMER_CARD();
+            $courseBooking->payment_method = $customerCardMethod;
             $courseBooking->save();
         }
 
@@ -110,12 +111,8 @@ class CourseBookingService
     public function finalizeCustomerCardUsage(CourseBooking $courseBooking): void
     {
         Log::info('[CustomerCardFinalize] Start booking ' . $courseBooking->getKey(), [
-            'status' => $courseBooking->status instanceof BookingStatusEnum
-                ? $courseBooking->status->value
-                : $courseBooking->status,
-            'payment_method' => $courseBooking->payment_method instanceof PaymentMethodEnum
-                ? $courseBooking->payment_method->value
-                : $courseBooking->payment_method,
+            'status' => $this->resolveEnumValue($courseBooking->status),
+            'payment_method' => $this->resolveEnumValue($courseBooking->payment_method),
         ]);
 
         if ($courseBooking->customer_card_id && $courseBooking->status !== BookingStatusEnum::PROCESSING) {
@@ -140,9 +137,7 @@ class CourseBookingService
 
         if (! $courseBooking->customer_card_id || $courseBooking->customer_card_units_used <= 0) {
             Log::info('[CustomerCardFinalize] Skipping booking ' . $courseBooking->getKey() . ' because it is not ready', [
-                'status' => $courseBooking->status instanceof BookingStatusEnum
-                    ? $courseBooking->status->value
-                    : $courseBooking->status,
+                'status' => $this->resolveEnumValue($courseBooking->status),
                 'card_id' => $courseBooking->customer_card_id,
                 'units_used' => $courseBooking->customer_card_units_used,
             ]);
@@ -154,7 +149,7 @@ class CourseBookingService
             $courseBooking->customer_card_coverage_type = CustomerCardCoverageType::PARTIAL;
         }
 
-        $coverageValue = $courseBooking->customer_card_coverage_type?->value ?? 'none';
+        $coverageValue = $this->resolveEnumValue($courseBooking->customer_card_coverage_type, 'none');
 
         Log::info('[CustomerCardFinalize] Starting usage for booking ' . $courseBooking->getKey(), [
             'card_id' => $courseBooking->customer_card_id,
@@ -192,5 +187,39 @@ class CourseBookingService
             Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalized with card '
                 . $card->getKey());
         });
+    }
+
+    public function normalizePaymentChannel(mixed $channel): string
+    {
+        if ($channel instanceof PaymentMethodEnum) {
+            $channel = $channel->getValue();
+        }
+
+        if (empty($channel) || (! is_string($channel) && ! is_numeric($channel))) {
+            return 'unknown';
+        }
+
+        return (string) $channel;
+    }
+
+    protected function resolveEnumValue(mixed $enum, string $default = 'unknown'): string
+    {
+        if ($enum instanceof \BackedEnum) {
+            return (string) $enum->value;
+        }
+
+        if ($enum instanceof \UnitEnum) {
+            return $enum->name;
+        }
+
+        if (is_object($enum) && method_exists($enum, 'getValue')) {
+            return (string) $enum->getValue();
+        }
+
+        if (is_string($enum) || is_numeric($enum)) {
+            return (string) $enum;
+        }
+
+        return $default;
     }
 }
