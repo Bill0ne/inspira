@@ -166,6 +166,8 @@
   }
 
   win.CheckoutState = win.CheckoutState || { card: null, coupon: null, totals: {} };
+  var removeUrl =
+    (win.customerCard && win.customerCard.routes && win.customerCard.routes.remove) || null;
 
   function extractCheckoutState(payload) {
     if (!payload || typeof payload !== 'object') return null;
@@ -173,6 +175,55 @@
       return payload.data;
     }
     return payload;
+  }
+
+  function handleRequestError(error) {
+    if (win.console && console.error) {
+      console.error('[Checkout] Request error:', error);
+    }
+
+    if (win.Botble && typeof win.Botble.showError === 'function') {
+      win.Botble.showError('Es ist ein Fehler beim Aktualisieren des Checkouts aufgetreten.');
+    }
+  }
+
+  function syncCustomerCardPayment(context) {
+    var ctxType = getActiveContext(context);
+    var root = getContextRoot(ctxType) || document;
+    var $root = $(root);
+    var $form = $root.find('.payment-checkout-form');
+
+    if (!$form.length) return;
+
+    var $amountInput = $root.find('input[name="amount"]');
+    var amountRaw = parseFloat($amountInput.val());
+    if (!isFinite(amountRaw)) amountRaw = 0;
+
+    var cardId = ($root.find('[data-customer-card-input]').val() || '').toString().trim();
+    var hasCardPayment = !!cardId && amountRaw <= 0;
+
+    var $paymentOptions = $form.find('.list_payment_method input[name="payment_method"]');
+    var $hidden = $form.find('input[name="payment_method"][data-customer-card-method]');
+
+    if (hasCardPayment) {
+      $paymentOptions.prop('checked', false).prop('disabled', true);
+
+      if (!$hidden.length) {
+        $hidden = $('<input>', {
+          type: 'hidden',
+          name: 'payment_method',
+          'data-customer-card-method': '1'
+        }).appendTo($form);
+      }
+
+      $hidden.val('customer_card');
+    } else {
+      $paymentOptions.prop('disabled', false);
+
+      if ($hidden.length) {
+        $hidden.remove();
+      }
+    }
   }
 
   function renderCheckoutUI(context) {
@@ -221,6 +272,8 @@
       }
     }
 
+    syncCustomerCardPayment(context);
+
     var $cardDiscountRow = $root.find('.card-discount-row');
     var $cardDiscountText = $root.find('.card-discount-text');
     if ($cardDiscountRow.length) {
@@ -244,12 +297,23 @@
     var $infoBox = $('[data-bb-customer-card="info"]');
     var $infoDiscount = $infoBox.find('[data-bb-customer-card="discount"]');
     var $cardInput = $('[data-customer-card-input]');
+    var $cardIdInput = $root.find('input[name="customer_card_id"]');
+    var $cardUnitsInput = $root.find('input[name="customer_card_units_used"]');
+    var $cardCoverageInput = $root.find('input[name="customer_card_coverage_type"]');
+    var $cardDiscountInput = $root.find('input[name="customer_card_discount"]');
+    var $cardSection = $root.find('[data-bb-customer-card-section]');
     var cardState = state.card;
 
     if (cardState && cardState.id) {
       if ($cardSelect.length) $cardSelect.val(String(cardState.id));
       if ($cardInput.length) $cardInput.val(cardState.id);
-      if ($removeButton.length) $removeButton.removeClass('d-none');
+      if ($cardIdInput.length) $cardIdInput.val(cardState.id);
+      if ($cardUnitsInput.length) $cardUnitsInput.val(cardState.units_used || 1);
+      if ($cardCoverageInput.length) $cardCoverageInput.val(cardState.coverage_type || 'none');
+      if ($cardDiscountInput.length) $cardDiscountInput.val(cardState.discount || 0);
+      if ($removeButton.length) {
+        $removeButton.removeClass('d-none').prop('disabled', false);
+      }
       if ($infoBox.length) {
         $infoBox.toggleClass('d-none', !((totals.card_discount_raw || 0) > 0));
         var cardText = totals.card_discount_display_plain || cardState.discount_display;
@@ -257,10 +321,26 @@
           $infoDiscount.text(cardText);
         }
       }
+      if ($cardSection.length) {
+        $cardSection.removeClass('d-none');
+      }
     } else {
-      if ($cardSelect.length) $cardSelect.val('');
+      if ($cardSelect.length) {
+        $cardSelect.val('');
+        var $firstOption = $cardSelect.find('option').first();
+        if ($firstOption.length) {
+          $firstOption.prop('selected', true);
+          $firstOption.text('Keine Karte auswählen');
+        }
+      }
       if ($cardInput.length) $cardInput.val('');
-      if ($removeButton.length) $removeButton.addClass('d-none');
+      if ($cardIdInput.length) $cardIdInput.val('');
+      if ($cardUnitsInput.length) $cardUnitsInput.val('');
+      if ($cardCoverageInput.length) $cardCoverageInput.val('');
+      if ($cardDiscountInput.length) $cardDiscountInput.val('');
+      if ($removeButton.length) {
+        $removeButton.addClass('d-none').prop('disabled', true);
+      }
       if ($infoBox.length) {
         $infoBox.addClass('d-none');
         $infoDiscount.text('');
@@ -268,6 +348,10 @@
       if ($cardDiscountRow.length) {
         $cardDiscountRow.addClass('d-none');
         $cardDiscountText.text('-');
+      }
+      $totalInput.data('active-discount', 0).data('minimum-fee', 0);
+      if ($cardSection.length) {
+        $cardSection.addClass('d-none');
       }
     }
 
@@ -295,6 +379,50 @@
   function updateTotals(data, context) {
     setCheckoutState(data, context);
   }
+
+  function refreshPaymentMethods(context) {
+    return reloadPaymentList(context);
+  }
+
+  function handleCardApplyResponse(response) {
+    if (!response || response.success === false || response.error) {
+      handleRequestError(response);
+      return;
+    }
+
+    var nextState = extractCheckoutState(response.data || response);
+    if (!nextState) {
+      handleRequestError(response);
+      return;
+    }
+
+    win.CheckoutState = nextState;
+    renderCheckoutUI();
+    refreshPaymentMethods();
+
+    $(document).trigger('customer-card.applied', [win.CheckoutState]);
+  }
+
+  function handleCardRemoveResponse(response) {
+    if (!response || response.success === false || response.error) {
+      handleRequestError(response);
+      return;
+    }
+
+    var nextState = extractCheckoutState(response.data || response);
+    if (!nextState) {
+      handleRequestError(response);
+      return;
+    }
+
+    win.CheckoutState = nextState;
+    renderCheckoutUI();
+    refreshPaymentMethods();
+
+    $(document).trigger('customer-card.removed', [win.CheckoutState]);
+  }
+
+  win.handleCardRemoveResponse = handleCardRemoveResponse;
 
   function getSharedPayload(context) {
     var payload = {};
@@ -402,6 +530,7 @@
       if (selected) {
         $list.find('input[name="payment_method"][value="' + selected + '"]').prop('checked', true).trigger('change');
       }
+      syncCustomerCardPayment(context);
       dfd.resolve();
     });
 
@@ -438,6 +567,71 @@
   $document.off('click', '.toggle-coupon-form');
   $document.off('click', '.apply-coupon-code');
   $document.off('click', '.remove-coupon-code');
+  $document.off('click', '[data-card-remove]');
+  $('[data-bb-customer-card="apply"], [data-bb-customer-card="remove"]').off('click');
+
+  var applyUrl = (win.customerCard && win.customerCard.routes && win.customerCard.routes.apply) || null;
+  var cardRequestInFlight = false;
+
+  $document.on('click', '[data-bb-customer-card="apply"]', function (e) {
+    e.preventDefault();
+    var $btn = $(this);
+    if (cardRequestInFlight) return;
+    cardRequestInFlight = true;
+    $btn.prop('disabled', true);
+
+    var cardId = $('#customer_card_select').val();
+    applyUrl = applyUrl || $btn.data('url');
+
+    if (!applyUrl || !cardId) {
+      cardRequestInFlight = false;
+      $btn.prop('disabled', false);
+      handleRequestError({ message: 'Kundenkarte oder URL nicht vorhanden.' });
+      return;
+    }
+
+    if (!ensureCourseContext('Kundenkarte anwenden')) {
+      cardRequestInFlight = false;
+      $btn.prop('disabled', false);
+      return;
+    }
+
+    $.ajax({
+      url: applyUrl,
+      type: 'POST',
+      headers: { 'X-CSRF-TOKEN': getCsrf() },
+      data: $.extend({ customer_card_id: cardId }, getSharedPayload(getActiveContext())),
+    })
+      .done(handleCardApplyResponse)
+      .fail(handleRequestError)
+      .always(function () {
+        cardRequestInFlight = false;
+        $btn.prop('disabled', false);
+      });
+  });
+
+  $document.on('click', '[data-card-remove]', function (e) {
+    e.preventDefault();
+    var $trigger = $(this);
+    if (cardRequestInFlight) return;
+    cardRequestInFlight = true;
+    $trigger.prop('disabled', true);
+
+    removeUrl = removeUrl || $trigger.data('url');
+    if (!removeUrl) {
+      cardRequestInFlight = false;
+      $trigger.prop('disabled', false);
+      return;
+    }
+
+    $.post(removeUrl, getSharedPayload(getActiveContext()))
+      .done(handleCardRemoveResponse)
+      .fail(handleRequestError)
+      .always(function () {
+        cardRequestInFlight = false;
+        $trigger.prop('disabled', false);
+      });
+  });
 
   $document
     .on('click', '.toggle-coupon-form', function (e) {
@@ -506,11 +700,7 @@
           response: res,
         });
       })
-      .fail(function (err) {
-        callTheme('handleError', err, function () {
-          if (win.console && console.error) console.error(err);
-        });
-      })
+      .fail(handleRequestError)
       .always(function () {
         toggleLoading($btn, false);
         activeCouponRequest = null;
@@ -564,11 +754,7 @@
           response: res,
         });
       })
-      .fail(function (err) {
-        callTheme('handleError', err, function () {
-          if (win.console && console.error) console.error(err);
-        });
-      })
+      .fail(handleRequestError)
       .always(function () {
         toggleLoading($btn, false);
         activeCouponRequest = null;
