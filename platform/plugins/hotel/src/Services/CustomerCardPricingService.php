@@ -44,8 +44,19 @@ class CustomerCardPricingService
         DB::transaction(function () use ($booking) {
             $card = CustomerCard::query()->lockForUpdate()->find($booking->customer_card_id);
 
+            Log::info('[CardFinalize] Starting usage for booking ' . $booking->getKey(), [
+                'card_id' => $booking->customer_card_id,
+                'units_used' => $booking->customer_card_units_used,
+            ]);
+
             if (! $card) {
                 Log::warning('[CustomerCardFinalize] Card not found for booking ' . $booking->getKey());
+
+                return;
+            }
+
+            if ($booking->customer_id && $card->assigned_to && $card->assigned_to !== $booking->customer_id) {
+                Log::warning('[CustomerCardFinalize] Card ' . $card->getKey() . ' not assigned to booking ' . $booking->getKey());
 
                 return;
             }
@@ -79,10 +90,14 @@ class CustomerCardPricingService
             $units = max(1, min($unitsRequested, $availableUnits));
             $remainingUnits = max($availableUnits - $units, 0);
 
+            Log::info('[CardFinalize] units_used = ' . $units . ', units_remaining_before = ' . $availableUnits);
+
             $card->forceFill([
                 'units_remaining' => $remainingUnits,
                 'is_active' => $remainingUnits > 0 ? $card->is_active : false,
             ])->save();
+
+            Log::info('[CardFinalize] units_remaining_after = ' . $remainingUnits);
 
             $coverage = $booking->customer_card_coverage_type;
 
@@ -101,6 +116,7 @@ class CustomerCardPricingService
                 'discount_gross' => (float) $booking->customer_card_discount_gross,
                 'coverage_type' => $coverage->value,
                 'status' => 'consumed',
+                'consumed_at' => now(),
             ]);
 
             $booking->forceFill(['customer_card_consumed_at' => now()])->save();
