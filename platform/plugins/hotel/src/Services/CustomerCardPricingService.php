@@ -73,6 +73,10 @@ class CustomerCardPricingService
             if ($usageExists) {
                 Log::info('[CustomerCardFinalize] Usage already recorded for booking ' . $booking->getKey());
 
+                if (! $booking->customer_card_consumed_at) {
+                    $booking->forceFill(['customer_card_consumed_at' => now()])->save();
+                }
+
                 return;
             }
 
@@ -94,6 +98,10 @@ class CustomerCardPricingService
 
             $units = max(1, min($unitsRequested, $availableUnits));
             $remainingUnits = max($availableUnits - $units, 0);
+
+            if ($booking->customer_card_units_used !== $units) {
+                $booking->forceFill(['customer_card_units_used' => $units])->save();
+            }
 
             Log::info('[CustomerCardFinalize] Units before: ' . $availableUnits . ' for booking ' . $booking->getKey());
 
