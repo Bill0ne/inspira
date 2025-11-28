@@ -13,7 +13,6 @@ use Botble\Payment\Supports\PaymentHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Log;
 
 class HookServiceProvider extends ServiceProvider
 {
@@ -49,9 +48,9 @@ class HookServiceProvider extends ServiceProvider
                 $orderId = Arr::first($orderIds);
                 $orderType = Arr::get($data, 'order_type') ?: session('order_type');
 
-                  if ($orderType !== CourseBooking::class || ! $orderId) {
-                      return;
-                  }
+                if ($orderType !== CourseBooking::class || ! $orderId) {
+                    return;
+                }
 
                 $payment = null;
 
@@ -72,43 +71,36 @@ class HookServiceProvider extends ServiceProvider
                     return;
                 }
 
-                 if ($payment) {
-                     $paymentMethod = $bookingService->normalizePaymentChannel($payment->payment_channel);
+                if ($payment) {
+                    $paymentMethod = $bookingService->normalizePaymentChannel($payment->payment_channel);
 
-                     $booking->forceFill([
-                         'payment_id' => $payment->getKey(),
-                         'payment_method' => $paymentMethod,
-                     ]);
+                    $booking->forceFill([
+                        'payment_id' => $payment->getKey(),
+                        'payment_method' => $paymentMethod,
+                    ]);
 
-                     if ($payment->status === PaymentStatusEnum::COMPLETED) {
-                         $booking->status = BookingStatusEnum::PROCESSING;
-                     }
-                 }
+                    if ($payment->status === PaymentStatusEnum::COMPLETED) {
+                        $booking->status = BookingStatusEnum::PROCESSING;
+                    }
+                }
 
-                 if ($booking->isDirty()) {
-                     $booking->save();
-                 }
+                if ($booking->isDirty()) {
+                    $booking->save();
+                }
 
-                 $booking->refresh();
+                $booking->refresh();
 
-                 Log::info('[CustomerCardDebug] Payment hook processed for course booking', [
-                     'booking_id' => $booking->getKey(),
-                     'status' => $booking->status?->value ?? $booking->status,
-                     'payment_channel' => $payment?->payment_channel,
-                     'customer_card_id' => $booking->customer_card_id,
-                 ]);
+                if (! $booking->customer_card_id) {
+                    return;
+                }
 
-                 if ($payment && $payment->status === PaymentStatusEnum::COMPLETED) {
-                     $booking->status = BookingStatusEnum::PROCESSING;
-                     $booking->save();
-                     $booking->refresh();
-                 }
+                if ($booking->status !== BookingStatusEnum::PROCESSING) {
+                    return;
+                }
 
-                 if ($booking->customer_card_id && $booking->status === BookingStatusEnum::PROCESSING) {
-                     $bookingService->finalizeCustomerCardUsage($booking);
-                 }
-              });
-          }
+                $bookingService->finalizeCustomerCardUsage($booking);
+            });
+        }
 
         if (defined('PAYMENT_COURSE_FILTER_PAYMENT_DATA')) {
             add_filter(PAYMENT_COURSE_FILTER_PAYMENT_DATA, function (array $data, Request $request) {
