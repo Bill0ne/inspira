@@ -124,13 +124,19 @@ class CourseBookingService
         }
 
         $customerCardMethod = $this->normalizePaymentChannel(PaymentMethodEnum::CUSTOMER_CARD());
+
+        if ($courseBooking->customer_card_id && ! $courseBooking->payment_method) {
+            $courseBooking->payment_method = $customerCardMethod;
+            $courseBooking->save();
+        }
+
         $paymentId = $courseBooking->payment_id;
         $payment = null;
 
         if ($paymentId) {
             $payment = Payment::query()->find($paymentId);
 
-            if ($payment && $payment->status !== PaymentStatusEnum::COMPLETED) {
+            if ($payment && $payment->status !== PaymentStatusEnum::COMPLETED && $courseBooking->amount > 0) {
                 Log::warning('[CustomerCardFinalize] Payment not completed yet, skipping', [
                     'booking_id' => $courseBooking->getKey(),
                     'payment_id' => $paymentId,
@@ -143,7 +149,7 @@ class CourseBookingService
 
         $isCustomerCardPayment = $this->normalizePaymentChannel($courseBooking->payment_method) === $customerCardMethod;
 
-        if (! $payment && ! $isCustomerCardPayment) {
+        if (! $payment && ! $isCustomerCardPayment && $courseBooking->amount > 0) {
             Log::warning('[CustomerCardFinalize] Booking missing completed payment, skipping', [
                 'booking_id' => $courseBooking->getKey(),
                 'payment_id' => $paymentId,

@@ -3,6 +3,7 @@
 namespace Botble\Courses\Providers;
 
 use Botble\Courses\Models\CourseBooking;
+use Botble\Courses\Events\CourseBookingCreated;
 use Botble\Courses\Services\CourseBookingService;
 use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Hotel\Models\Customer;
@@ -12,6 +13,7 @@ use Botble\Payment\Models\Payment;
 use Botble\Payment\Supports\PaymentHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class HookServiceProvider extends ServiceProvider
@@ -111,6 +113,24 @@ class HookServiceProvider extends ServiceProvider
                 }
             });
         }
+
+        Event::listen(CourseBookingCreated::class, function (CourseBookingCreated $event) {
+            $booking = $event->booking;
+
+            if (! $booking->customer_card_id) {
+                return;
+            }
+
+            if ($booking->customer_card_consumed_at) {
+                return;
+            }
+
+            if ($booking->amount > 0 && $booking->payment_id) {
+                return;
+            }
+
+            app(CourseBookingService::class)->finalizeCustomerCardUsage($booking);
+        });
 
         if (defined('PAYMENT_COURSE_FILTER_PAYMENT_DATA')) {
             add_filter(PAYMENT_COURSE_FILTER_PAYMENT_DATA, function (array $data, Request $request) {
