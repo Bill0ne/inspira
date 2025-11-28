@@ -38,6 +38,10 @@ class CustomerCardPricingService
     public function finalizeUsage(CourseBooking $booking): void
     {
         if (! $booking->customer_card_id) {
+            Log::info('[CustomerCardDebug] finalizeUsage skipped: booking without card', [
+                'booking_id' => $booking->getKey(),
+            ]);
+
             return;
         }
 
@@ -50,20 +54,22 @@ class CustomerCardPricingService
         DB::transaction(function () use ($booking, $unitsUsed) {
             $card = CustomerCard::query()->lockForUpdate()->find($booking->customer_card_id);
 
-            Log::info('[CustomerCardFinalize] Start booking ' . $booking->getKey(), [
-                'card_id' => $booking->customer_card_id,
-                'units_used' => $booking->customer_card_units_used,
-                'units_before' => $card?->units_remaining,
-            ]);
-
             if (! $card) {
-                Log::warning('[CustomerCardFinalize] Card not found for booking ' . $booking->getKey());
+                Log::warning('[CustomerCardDebug] finalizeUsage guard: card not found', [
+                    'booking_id' => $booking->getKey(),
+                    'card_id' => $booking->customer_card_id,
+                ]);
 
                 return;
             }
 
             if ($booking->customer_id && $card->assigned_to && $card->assigned_to !== $booking->customer_id) {
-                Log::warning('[CustomerCardFinalize] Card ' . $card->getKey() . ' not assigned to booking ' . $booking->getKey());
+                Log::warning('[CustomerCardDebug] finalizeUsage guard: card not assigned to booking customer', [
+                    'booking_id' => $booking->getKey(),
+                    'card_id' => $card->getKey(),
+                    'assigned_to' => $card->assigned_to,
+                    'booking_customer_id' => $booking->customer_id,
+                ]);
 
                 return;
             }
@@ -73,38 +79,39 @@ class CustomerCardPricingService
                 ->exists();
 
             if ($usageExists) {
-                Log::info('[CustomerCardFinalize] Usage already recorded for booking ' . $booking->getKey());
+                Log::info('[CustomerCardDebug] finalizeUsage guard: usage already exists', [
+                    'booking_id' => $booking->getKey(),
+                ]);
 
                 return;
             }
-
-            $unitsRequested = $unitsUsed;
 
             $availableUnits = max(0, (int) $card->units_remaining);
+            $unitsToUse = max(1, $unitsUsed);
 
-            if ($availableUnits <= 0) {
-                Log::warning('[CustomerCardFinalize] Card ' . $card->getKey() . ' has no remaining units for booking '
-                    . $booking->getKey());
-
-                return;
+            if ($availableUnits < $unitsToUse) {
+                Log::warning('[CustomerCardDebug] finalizeUsage warning: insufficient units', [
+                    'booking_id' => $booking->getKey(),
+                    'card_id' => $card->getKey(),
+                    'units_requested' => $unitsToUse,
+                    'units_available' => $availableUnits,
+                ]);
             }
 
-            if ($card->units_remaining < $unitsRequested) {
-                Log::warning('[CustomerCardFinalize] Card ' . $card->getKey() . ' has '
-                    . $card->units_remaining . ' units, booking requested ' . $unitsRequested . ' units');
-            }
+            $remainingUnits = max($availableUnits - $unitsToUse, 0);
 
-            $units = max(1, min($unitsRequested, $availableUnits));
-            $remainingUnits = max($availableUnits - $units, 0);
-
-            Log::info('[CustomerCardFinalize] Units before: ' . $availableUnits . ' for booking ' . $booking->getKey());
+            Log::info('[CustomerCardDebug] finalizeUsage applying consumption', [
+                'card_id' => $card->getKey(),
+                'booking_id' => $booking->getKey(),
+                'units_before' => $availableUnits,
+                'units_to_use' => $unitsToUse,
+                'units_after' => $remainingUnits,
+            ]);
 
             $card->forceFill([
                 'units_remaining' => $remainingUnits,
                 'is_active' => $remainingUnits > 0 ? $card->is_active : false,
             ])->save();
-
-            Log::info('[CustomerCardFinalize] Units after: ' . $remainingUnits . ' for booking ' . $booking->getKey());
 
             $coverage = $booking->customer_card_coverage_type;
             $coverageValue = $coverage instanceof CustomerCardCoverageType
@@ -115,7 +122,7 @@ class CustomerCardPricingService
                 'card_id' => $card->getKey(),
                 'booking_id' => $booking->getKey(),
                 'course_id' => $booking->course_id,
-                'units_used' => $units,
+                'units_used' => $unitsToUse,
                 'discount_amount' => (float) $booking->customer_card_discount,
                 'discount_gross' => (float) $booking->customer_card_discount_gross,
                 'coverage_type' => $coverageValue,
@@ -125,8 +132,12 @@ class CustomerCardPricingService
 
             $booking->forceFill(['customer_card_consumed_at' => now()])->save();
 
-            Log::info('[CustomerCardFinalize] Recorded usage for booking ' . $booking->getKey()
-                . ' with card ' . $card->getKey() . ' using ' . $units . ' units');
+            Log::info('[CustomerCardDebug] finalizeUsage recorded usage', [
+                'booking_id' => $booking->getKey(),
+                'card_id' => $card->getKey(),
+                'units_used' => $unitsToUse,
+                'units_after' => $remainingUnits,
+            ]);
         });
     }
 }

@@ -6,12 +6,10 @@ use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Courses\Events\CourseBookingCreated;
 use Botble\Courses\Models\CourseBooking;
 use Botble\Hotel\Enums\CustomerCardCoverageType;
-use Botble\Hotel\Models\CustomerCard;
 use Botble\Hotel\Services\CustomerCardPricingService;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CourseBookingService
@@ -115,8 +113,17 @@ class CourseBookingService
 
     public function finalizeCustomerCardUsage(CourseBooking $courseBooking): void
     {
+        Log::info('[CustomerCardDebug] finalizeCustomerCardUsage entry', [
+            'booking_id' => $courseBooking->getKey(),
+            'status' => $this->resolveEnumValue($courseBooking->status),
+            'payment_id' => $courseBooking->payment_id,
+            'payment_method' => $this->resolveEnumValue($courseBooking->payment_method),
+            'customer_card_id' => $courseBooking->customer_card_id,
+            'customer_card_units_used' => $courseBooking->customer_card_units_used,
+        ]);
+
         if (! $courseBooking->exists) {
-            Log::warning('[CustomerCardFinalize] Booking not persisted, skipping', [
+            Log::warning('[CustomerCardDebug] Guard: booking not persisted', [
                 'booking_id' => $courseBooking->getKey(),
             ]);
 
@@ -124,18 +131,15 @@ class CourseBookingService
         }
 
         if (! $courseBooking->customer_card_id) {
-            Log::info('[CustomerCardFinalize] Skipping booking without customer card', [
+            Log::info('[CustomerCardDebug] Guard: booking without customer card', [
                 'booking_id' => $courseBooking->getKey(),
             ]);
 
-            if (! $payment && $this->normalizePaymentChannel($courseBooking->payment_method) !== $customerCardMethod) {
-                Log::warning('[CustomerCardFinalize] Payment not found for booking, skipping', [
-                    'booking_id' => $courseBooking->getKey(),
-                    'payment_id' => $paymentId,
-                ]);
+            return;
+        }
 
         if ($courseBooking->status !== BookingStatusEnum::PROCESSING) {
-            Log::info('[CustomerCardFinalize] Booking not completed yet, skipping', [
+            Log::info('[CustomerCardDebug] Guard: booking not in PROCESSING', [
                 'booking_id' => $courseBooking->getKey(),
                 'status' => $this->resolveEnumValue($courseBooking->status),
             ]);
@@ -150,14 +154,10 @@ class CourseBookingService
             $courseBooking->save();
         }
 
-        Log::info('[CustomerCardFinalize] Start booking ' . $courseBooking->getKey(), [
-            'status' => $this->resolveEnumValue($courseBooking->status),
-            'payment_method' => $this->resolveEnumValue($courseBooking->payment_method),
-            'payment_id' => $courseBooking->payment_id,
-        ]);
-
         if ($courseBooking->customer_card_consumed_at) {
-            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' already finalized');
+            Log::info('[CustomerCardDebug] Guard: booking already finalized', [
+                'booking_id' => $courseBooking->getKey(),
+            ]);
 
             return;
         }
@@ -169,42 +169,18 @@ class CourseBookingService
             $courseBooking->save();
         }
 
-        Log::info('[CustomerCardFinalize] Starting usage for booking ' . $courseBooking->getKey(), [
+        Log::info('[CustomerCardDebug] Ready to finalize customer card usage', [
             'card_id' => $courseBooking->customer_card_id,
             'units_used' => $courseBooking->customer_card_units_used,
             'coverage' => $coverageValue,
         ]);
 
-        DB::transaction(function () use ($courseBooking) {
-            $card = CustomerCard::query()->lockForUpdate()->find($courseBooking->customer_card_id);
+        Log::info('[CustomerCardDebug] Calling pricing service finalizeUsage', [
+            'booking_id' => $courseBooking->getKey(),
+            'card_id' => $courseBooking->customer_card_id,
+        ]);
 
-            if ($card && $courseBooking->customer_id && $card->assigned_to !== $courseBooking->customer_id) {
-                $card = null;
-            }
-
-            if (! $card) {
-                Log::warning('[CustomerCardFinalize] Card not found or mismatched for booking ' . $courseBooking->getKey());
-
-                return;
-            }
-
-            $unitsRequested = max(1, (int) $courseBooking->customer_card_units_used);
-
-            if ($card->units_remaining < $unitsRequested) {
-                Log::warning('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' requires '
-                    . $unitsRequested . ' units but card ' . $card->getKey() . ' has '
-                    . $card->units_remaining . ' remaining');
-
-                return;
-            }
-
-            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalizing with card ' . $card->getKey());
-
-            app(CustomerCardPricingService::class)->finalizeUsage($courseBooking);
-
-            Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalized with card '
-                . $card->getKey());
-        });
+        app(CustomerCardPricingService::class)->finalizeUsage($courseBooking);
     }
 
     public function normalizePaymentChannel(mixed $channel): string
