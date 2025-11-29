@@ -93,6 +93,12 @@ return [
         'route_unavailable' => 'The customer card service is currently unavailable.',
         'card_not_found' => 'The selected card could not be found or is no longer active.',
         'card_unavailable' => 'This card cannot be used for the selected course.',
+        'manual_usage_title' => 'Adjust usage',
+        'manual_usage_increase' => 'Manual usage will create a booking at the base price. Do you want to increase the card usage by :amount?',
+        'manual_usage_decrease' => 'Manual usage will create a booking at the base price. Do you want to reduce the card usage by :amount?',
+        'manual_usage_success' => 'Card usage has been updated.',
+        'manual_usage_unassigned' => 'This card is not assigned to a customer.',
+        'manual_usage_unavailable' => 'This card has no remaining units.',
     ],
     'invoice' => [
         'discount_line' => 'Customer card discount: :card',

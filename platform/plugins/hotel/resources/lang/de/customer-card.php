@@ -93,6 +93,12 @@ return [
         'route_unavailable' => 'Der Kundenkarten-Service ist aktuell nicht verfügbar.',
         'card_not_found' => 'Diese Karte wurde nicht gefunden oder ist nicht mehr aktiv.',
         'card_unavailable' => 'Diese Karte kann für diesen Kurs nicht verwendet werden.',
+        'manual_usage_title' => 'Verwendung anpassen',
+        'manual_usage_increase' => 'Die manuelle Anpassung legt eine Buchung zum Basispreis an. Möchtest du die Verwendung der Karte um :amount erhöhen?',
+        'manual_usage_decrease' => 'Die manuelle Anpassung legt eine Buchung zum Basispreis an. Möchtest du die Verwendung der Karte um :amount reduzieren?',
+        'manual_usage_success' => 'Kartenverwendung wurde aktualisiert.',
+        'manual_usage_unassigned' => 'Diese Karte ist keinem Kunden zugewiesen.',
+        'manual_usage_unavailable' => 'Diese Karte hat keine verbleibenden Einheiten mehr.',
     ],
     'invoice' => [
         'discount_line' => 'Rabatt über Kundenkarte: :card',
