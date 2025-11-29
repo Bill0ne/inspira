@@ -441,6 +441,8 @@ $(() => {
         $modal.find('.modal-title').text(title);
         $modal.find('.modal-body').html(`<div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>`);
 
+        $modal.modal('show');
+
         window.Botble.request
             .get(url)
             .then(({ data }) => {
