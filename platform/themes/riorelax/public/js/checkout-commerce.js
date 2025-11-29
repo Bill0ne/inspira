@@ -369,11 +369,39 @@
     return state;
   }
 
+  var renderTimer = null;
+
+  function scheduleRender(context) {
+    if (renderTimer) {
+      clearTimeout(renderTimer);
+    }
+
+    renderTimer = setTimeout(function () {
+      renderTimer = null;
+      renderCheckoutUI(context);
+    }, 120);
+  }
+
   function setCheckoutState(payload, context) {
-    var state = extractCheckoutState(payload) || { card: null, coupon: null, totals: {} };
-    win.CheckoutState = state;
-    renderCheckoutUI(context);
-    return state;
+    var nextState = extractCheckoutState(payload);
+    if (!nextState) return win.CheckoutState;
+
+    var mergedState = Object.assign({}, win.CheckoutState || {});
+
+    if ('totals' in nextState) mergedState.totals = nextState.totals || {};
+    if ('card' in nextState) mergedState.card = nextState.card || null;
+    if ('coupon' in nextState) mergedState.coupon = nextState.coupon || null;
+    if ('views' in nextState) mergedState.views = nextState.views;
+
+    ['sub_total', 'discount_amount', 'tax_amount', 'total_amount', 'amount_raw', 'coupon_code']
+      .forEach(function (key) {
+        if (key in nextState) mergedState[key] = nextState[key];
+      });
+
+    win.CheckoutState = mergedState;
+    scheduleRender(context);
+
+    return mergedState;
   }
 
   function updateTotals(data, context) {
@@ -390,17 +418,15 @@
       return;
     }
 
-    var nextState = extractCheckoutState(response.data || response);
+    var nextState = setCheckoutState(response.data || response);
     if (!nextState) {
       handleRequestError(response);
       return;
     }
 
-    win.CheckoutState = nextState;
-    renderCheckoutUI();
     refreshPaymentMethods();
 
-    $(document).trigger('customer-card.applied', [win.CheckoutState]);
+    $(document).trigger('customer-card.applied', [nextState]);
   }
 
   function handleCardRemoveResponse(response) {
@@ -409,17 +435,15 @@
       return;
     }
 
-    var nextState = extractCheckoutState(response.data || response);
+    var nextState = setCheckoutState(response.data || response);
     if (!nextState) {
       handleRequestError(response);
       return;
     }
 
-    win.CheckoutState = nextState;
-    renderCheckoutUI();
     refreshPaymentMethods();
 
-    $(document).trigger('customer-card.removed', [win.CheckoutState]);
+    $(document).trigger('customer-card.removed', [nextState]);
   }
 
   win.handleCardRemoveResponse = handleCardRemoveResponse;

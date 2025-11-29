@@ -26,7 +26,6 @@ use Botble\Courses\Services\CourseCheckoutStateService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 
 class CustomerCardController extends BaseController
 {
@@ -275,15 +274,12 @@ class CustomerCardController extends BaseController
             : new \Botble\Hotel\DTO\CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE);
 
         $hotelSupport = app(HotelSupport::class);
-        $data = $hotelSupport->getCheckoutData(context: $context) ?: [];
-
-        $data['customer_card_id'] = $card->getKey();
-        $data['customer_card_discount'] = $cardEffect->discountGross;
-        $data['customer_card_units_used'] = $cardEffect->unitsUsed;
-        $data['customer_card_coverage_type'] = $cardEffect->coverageType->value;
-        $data['customer_card_unit_price'] = $cardEffect->unitValueGross;
-
-        $hotelSupport->saveCheckoutData($data, $context);
+        $hotelSupport->saveCheckoutData([
+            'customer_card_id' => $card->getKey(),
+            'customer_card_discount' => $cardEffect->discountGross,
+            'customer_card_units_used' => $cardEffect->unitsUsed,
+            'customer_card_coverage_type' => $cardEffect->coverageType->value,
+        ], $context);
 
         $checkoutState = null;
 
@@ -319,52 +315,30 @@ class CustomerCardController extends BaseController
         $context = $this->resolveCheckoutContext($request);
         $support = app(HotelSupport::class);
 
-        $sessionData = $support->getCheckoutData(null, $context) ?: [];
-        $patterns = [
-            'customer_card',
-            'card_effect',
-            'card_id',
-            'card_units',
-            'card_discount',
-        ];
+        $support->saveCheckoutData([
+            'customer_card_id' => null,
+            'customer_card_discount' => null,
+            'customer_card_units_used' => null,
+            'customer_card_coverage_type' => null,
+        ], $context);
 
-        foreach (array_keys($sessionData) as $key) {
-            foreach ($patterns as $pattern) {
-                if (Str::contains($key, $pattern)) {
-                    unset($sessionData[$key]);
-                    break;
-                }
+        $checkoutState = null;
+
+        if ($context === HotelSupport::CONTEXT_COURSE) {
+            $courseId = $this->resolveCourseId($request, $context);
+            $course = $courseId ? Course::query()->find($courseId) : null;
+
+            if ($course) {
+                $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
             }
         }
 
-        session()->forget([
-            'checkout.customer_card',
-            'checkout.customer_card_id',
-            'checkout.customer_card_units',
-            'checkout.customer_card_units_used',
-            'checkout.customer_card_discount',
-            'checkout.customer_card_effect',
-            'checkout.card',
-            'checkout.card_effect',
-        ]);
-
-        $tokenKey = $context === HotelSupport::CONTEXT_COURSE
-            ? 'course_checkout_token'
-            : 'hotel_checkout_token';
-        $token = session($tokenKey) ?: session('checkout_token');
-
-        if ($token) {
-            session()->put($token, $sessionData);
-        }
-
-        $checkoutState = $context === HotelSupport::CONTEXT_COURSE
-            ? app(CourseCheckoutStateService::class)->buildState($request)
-            : [
-                'success' => true,
-                'card' => null,
-                'coupon' => null,
-                'totals' => [],
-            ];
+        $checkoutState ??= [
+            'success' => true,
+            'card' => null,
+            'coupon' => null,
+            'totals' => [],
+        ];
 
         return response()->json($checkoutState);
     }
