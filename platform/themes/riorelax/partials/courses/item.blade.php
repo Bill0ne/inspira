@@ -4,6 +4,10 @@ use Carbon\Carbon;
 $now = now();
 
 /* === Sessions ermitteln === */
+// Relationsdaten sicher neu laden, damit Terminänderungen aus dem Admin-Bereich
+// direkt auf der Karte erscheinen
+$course->unsetRelation('sessions');
+
 $upcoming = $course->sessions()
     ->where('start_date', '>=', $now)
     ->orderBy('start_date')

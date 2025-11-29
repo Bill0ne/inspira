@@ -1,20 +1,21 @@
-<style>
-/* === Inspira – Course Card Final Design === */
+/* === Inspira – Course Card (compiled from assets/sass/card.css) === */
+
 .course-card {
   background: #fff !important;
   border-radius: 10px !important;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,.06) !important;
   overflow: hidden !important;
-  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+  transition: transform .25s ease, box-shadow .25s ease !important;
   cursor: pointer !important;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between !important;
-  min-height: 420px !important;
+  display: flex !important;              /* Flex-Spalte für Body + CTA */
+  flex-direction: column !important;
+  height: 100% !important;               /* damit sich die Karte strecken kann */
 }
+.course-card * { box-sizing: border-box !important; }
+
 .course-card:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08) !important;
 }
 
 /* === Bild === */
@@ -28,83 +29,96 @@
   border-radius: 14px !important;
   display: block !important;
   object-fit: cover !important;
-  aspect-ratio: 16 / 9 !important;
-  background-color: #f2f2f2 !important; /* Fallback bei leerem Bild */
+  aspect-ratio: 16/9 !important;
+  background-color: #f2f2f2 !important; /* Fallback */
 }
 
 /* === Body === */
 .course-body {
   padding: 10px 16px 12px 16px !important;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
   gap: 6px !important;
-  flex: 1 1 auto !important;
+  flex: 1 1 auto !important;             /* Body nimmt den verfügbaren Raum */
+  min-height: 0 !important;              /* verhindert Overflows in Flex-Containern */
 }
 
-/* Titel */
+/* Titel – exakt Platz für 3 Zeilen */
 .course-title {
   font-size: 16px !important;
   line-height: 20px !important;
   font-weight: 600 !important;
   color: #414141 !important;
   margin: 0 0 2px 0 !important;
+
   display: -webkit-box !important;
-  -webkit-line-clamp: 3 !important;
   -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 3 !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  min-height: calc(3 * 20px) !important;
+
+  min-height: 60px !important;          /* 3 * 20px */
+  max-height: 60px !important;
 }
 
-/* Untertitel */
+/* Untertitel – reserviere 1 Zeile, auch wenn leer */
 .course-subtitle {
   font-size: 13px !important;
   font-weight: 500 !important;
   color: #6C6C6C !important;
   line-height: 18px !important;
-  margin-bottom: 4px !important;
+  margin: 0 0 4px 0 !important;
+
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+
+  min-height: 18px !important;          /* 1 Zeile reservieren */
+  max-height: 18px !important;
 }
 
-/* Beschreibung */
+/* Beschreibung – exakt 2 Zeilen + zusätzlicher Abstand darunter */
 .course-desc {
   font-size: 12px !important;
   line-height: 18px !important;
   color: #666 !important;
   font-weight: 400 !important;
-  margin: 0 0 12px 0 !important;
+
   display: -webkit-box !important;
-  -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  min-height: calc(2 * 18px) !important;
+
+  min-height: 36px !important;          /* 2 * 18px */
+  max-height: 36px !important;
+  margin: 0 0 14px 0 !important;         /* gewünschtes Padding/Abstand nach unten */
 }
 
-/* Standardisierte Textfarben (keine Fettelemente) */
-.course-body,
-.course-body p,
-.course-body span,
-.course-body strong,
-.course-body em {
+/* Standardisierte Textfarben */
+.course-body, .course-body p, .course-body span, .course-body strong, .course-body em {
   color: #4b4b4b !important;
   font-weight: 400 !important;
 }
 
-/* === Footer === */
+/* === Footer (Chips) innerhalb des Body === */
 .course-meta {
-  display: flex;
+  display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
-  margin-top: auto !important;
+  margin-top: auto !important;           /* Footer an das untere Ende des Body drücken */
 }
 
-/* Zeile 1: Chips */
+/* Chips-Zeile */
 .course-meta-left {
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
   gap: 8px !important;
-  flex-wrap: nowrap !important;
+  flex-wrap: wrap !important;            /* Chips dürfen umbrechen statt zu kürzen */
+  min-width: 0 !important;               /* erlaubt Ellipsis */
 }
 .mtxt {
   background: #F3F3F3 !important;
@@ -117,39 +131,59 @@
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  flex: 1 1 auto !important;
-  justify-content: center !important;
-}
-.mtxt i {
-  font-size: 13px !important;
-  margin-right: 3px !important;
-}
+  flex: 0 1 auto !important;             /* Breite folgt dem Inhalt */
+  justify-content: flex-start !important;
 
-/* Zeile 2: CTA (volle Breite) */
-.course-meta-cta {
-  margin-top: 4px !important;
-  display: flex !important;
-  justify-content: stretch !important;
-  width: 100% !important;
+  white-space: normal !important;        /* Datum darf vollständig angezeigt werden */
+  overflow: visible !important;
+  text-overflow: unset !important;
+  min-width: auto !important;
+  overflow-wrap: anywhere !important;     /* bricht auch lange Zeiträume zuverlässig um */
 }
+.course-meta-left .mtxt:first-child {
+  flex: 1 1 220px !important;            /* Datum darf wachsen und umbrechen */
+  max-width: 100% !important;
+  white-space: normal !important;
+  min-width: 0 !important;
+  word-break: break-word !important;     /* sichert Zeilenumbrüche bei fehlenden Leerzeichen */
+}
+.course-meta-left .mtxt:not(:first-child) {
+  flex: 0 0 auto !important;             /* Preis passt sich seiner Breite an */
+  white-space: nowrap !important;
+  padding-left: 8px !important;          /* kompakteres Preis-Badge */
+  padding-right: 8px !important;
+}
+.course-meta-left .mtxt:first-child {
+  flex: 1 1 220px !important;            /* Datum darf wachsen und umbrechen */
+  max-width: 100% !important;
+  white-space: normal !important;
+  min-width: 0 !important;
+}
+.course-meta-left .mtxt:not(:first-child) {
+  flex: 0 0 auto !important;             /* Preis passt sich seiner Breite an */
+  white-space: nowrap !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+.mtxt i { font-size: 13px !important; margin-right: 3px !important; }
+
+/* === CTA – außerhalb des Body, immer am Kartenende === */
+.course-meta-cta { display:none !important; } /* existiert in deinem Blade nicht, nur zur Sicherheit */
+
 .btn-cart {
   background: #578E88 !important;
   color: #fff !important;
   padding: 10px 0 !important;
-  border-radius: 0 0 10px 10px !important; /* bündig mit Karte */
+  border-radius: 0 0 10px 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   width: 100% !important;
   font-size: 14px !important;
   font-weight: 500 !important;
-  transition: background 0.2s ease !important;
-  border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+  transition: background .2s ease !important;
+  border-top: 1px solid rgba(0,0,0,.05) !important;
+  margin-top: auto !important;           /* wichtiger Fix: Button ans Kartenende */
 }
-.btn-cart:hover {
-  background: #4B7C75 !important;
-}
-.btn-cart i {
-  font-size: 15px !important;
-}
-</style>
+.btn-cart:hover { background: #4B7C75 !important; }
+.btn-cart i { font-size: 15px !important; }
