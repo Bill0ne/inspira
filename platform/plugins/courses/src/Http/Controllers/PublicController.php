@@ -23,6 +23,7 @@ use Botble\Courses\Models\CourseCategory;
 use Botble\Optimize\Facades\OptimizerHelper;
 use Botble\Hotel\Models\Currency;
 use Botble\Hotel\Models\Customer;
+use Botble\Hotel\Services\CustomerCardPricingService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Botble\Hotel\Services\CustomerCardService;
@@ -463,14 +464,22 @@ class PublicController extends Controller
             $effectiveCardDiscount = 0;
 
             if ($customerCard) {
-                $calculatedDiscount = $customerCardService->calculateDiscount(
+                $cardEffect = app(CustomerCardPricingService::class)->calculateCardEffect(
                     $customerCard,
                     $course,
-                    $cardUnitsUsed,
-                    $courseGrossPrice
+                    $grossTotalRaw
                 );
-                $effectiveCardDiscount = min($cardDiscount ?: $calculatedDiscount, $grossTotalRaw);
-                $effectiveCardDiscount = course_truncate_price($effectiveCardDiscount);
+                $cardDiscount = course_truncate_price(min($cardEffect->discountGross, $grossTotalRaw));
+                $cardUnitsUsed = max(1, (int) $cardEffect->unitsUsed);
+                $cardCoverageType = $cardEffect->coverageType;
+                $cardCoverageTypeValue = $cardCoverageType->value;
+
+                $effectiveCardDiscount = $cardDiscount;
+            } else {
+                $cardDiscount = 0;
+                $cardUnitsUsed = 0;
+                $cardCoverageType = null;
+                $cardCoverageTypeValue = null;
             }
 
             $amountDueRaw = max($grossTotalRaw - $effectiveCardDiscount, 0);
@@ -568,6 +577,8 @@ class PublicController extends Controller
                 'customer_id' => $booking->customer_id,
                 'customer_type' => Customer::class,
             ]);
+
+            $courseBookingService->finalizeCustomerCardUsage($booking);
 
             if ($token = $request->input('token')) {
                 session()->forget($token);
