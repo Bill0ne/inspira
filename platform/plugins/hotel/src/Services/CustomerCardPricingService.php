@@ -22,8 +22,10 @@ class CustomerCardPricingService
             return new CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE);
         }
 
-        $unitValueGross = max((float) $card->base_price, 0);
-        $unitValueGross = $unitValueGross > 0 ? $unitValueGross : $baseAmountGross;
+        $basePrice = $card->base_price;
+        $unitValueGross = ($basePrice !== null && $basePrice !== '')
+            ? max((float) $basePrice, 0)
+            : max($baseAmountGross, 0);
 
         $estimatedUnits = (int) ceil($baseAmountGross / max($unitValueGross, 1));
         $unitsUsed = max(1, min($availableUnits, $estimatedUnits));

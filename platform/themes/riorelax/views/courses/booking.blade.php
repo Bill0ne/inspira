@@ -332,6 +332,7 @@ textarea.form-control{min-height:100px;}
                 <div class="kv"><span>Bruttopreis</span><b class="amount-text">{{ course_format_price($priceBreakdown['calculated_gross'] ?? 0) }}</b></div>
                 <div class="kv"><span>Rabatt (Coupon)</span><b class="discount-text">{{ $couponAmount > 0 ? '-' : '' }}{{ course_format_price($couponAmount) }}</b></div>
                 <div class="kv card-discount-row {{ $customerCardsAllowed && $cardDiscount > 0 ? '' : 'd-none' }}"><span>Kartenrabatt</span><b class="card-discount-text">-{{ course_format_price($cardDiscount) }}</b></div>
+                <div class="kv card-unit-price-row {{ $customerCardsAllowed && $cardDiscount > 0 ? '' : 'd-none' }}"><span>Rabatt je Einheit</span><b class="card-unit-price-text">{{ course_format_price($cardUnitPrice ?? 0) }}</b></div>
                 <div class="kv minimum-fee-row {{ $minimumOnlinePaymentFee > 0 ? '' : 'd-none' }}"><span>Mindestgebühr (Online-Zahlung)</span><b class="minimum-fee-text">{{ course_format_price($minimumOnlinePaymentFee) }}</b></div>
                 <hr>
                 <div class="kv total"><span>Gesamt</span><b class="total-amount-text">{{ course_format_price($finalTotal) }}</b></div>

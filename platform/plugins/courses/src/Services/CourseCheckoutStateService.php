@@ -63,6 +63,7 @@ class CourseCheckoutStateService
             ? CustomerCardCoverageType::tryFrom($cardCoverageTypeValue)
             : null;
         $selectedCard = null;
+        $cardUnitPrice = (float) Arr::get($sessionData, 'customer_card_unit_price', 0);
 
         if ($cardId && Auth::guard('customer')->check()) {
             $selectedCard = $this->customerCardService->getValidCard($cardId, Auth::guard('customer')->id());
@@ -81,12 +82,14 @@ class CourseCheckoutStateService
             $cardUnitsUsed = $cardEffect->unitsUsed;
             $cardCoverageType = $cardEffect->coverageType;
             $cardCoverageTypeValue = $cardCoverageType->value;
+            $cardUnitPrice = $cardEffect->unitValueGross;
 
             HotelHelper::saveCheckoutData([
                 'customer_card_id' => $selectedCard->getKey(),
                 'customer_card_discount' => $cardDiscount,
                 'customer_card_units_used' => $cardUnitsUsed,
                 'customer_card_coverage_type' => $cardCoverageTypeValue,
+                'customer_card_unit_price' => $cardUnitPrice,
             ], HotelSupport::CONTEXT_COURSE);
         } else {
             if ($cardId || Arr::has($sessionData, 'customer_card_discount')) {
@@ -95,6 +98,7 @@ class CourseCheckoutStateService
                     'customer_card_discount' => null,
                     'customer_card_units_used' => null,
                     'customer_card_coverage_type' => null,
+                    'customer_card_unit_price' => null,
                 ], HotelSupport::CONTEXT_COURSE);
             }
 
@@ -102,6 +106,7 @@ class CourseCheckoutStateService
             $cardUnitsUsed = 0;
             $cardCoverageType = null;
             $cardCoverageTypeValue = null;
+            $cardUnitPrice = 0.0;
         }
 
         $totalAfterDiscountRaw = max($totalAmountRaw - $cardDiscount, 0);
@@ -155,6 +160,8 @@ class CourseCheckoutStateService
                 'total_before_card_raw' => course_truncate_price($totalAmountRaw),
                 'coupon_discount_raw' => $couponDisplay,
                 'coupon_discount_display' => $discountDisplay,
+                'card_unit_price_raw' => $cardUnitPrice,
+                'card_unit_price_display' => course_format_price($cardUnitPrice),
             ],
             'card' => $selectedCard ? [
                 'id' => $selectedCard->getKey(),
@@ -162,6 +169,8 @@ class CourseCheckoutStateService
                 'discount' => $cardDiscount,
                 'discount_display' => $cardDiscountPlain,
                 'coverage_type' => $cardCoverageTypeValue,
+                'unit_price_raw' => $cardUnitPrice,
+                'unit_price_display' => course_format_price($cardUnitPrice),
             ] : null,
             'coupon' => $couponCode ? [
                 'code' => $couponCode,
