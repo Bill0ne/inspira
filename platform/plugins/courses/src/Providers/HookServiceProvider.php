@@ -115,7 +115,7 @@ class HookServiceProvider extends ServiceProvider
         }
 
         Event::listen(CourseBookingCreated::class, function (CourseBookingCreated $event) {
-            $booking = $event->booking;
+            $booking = $event->courseBooking;
 
             if (! $booking->customer_card_id) {
                 return;
