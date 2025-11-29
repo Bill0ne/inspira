@@ -281,6 +281,7 @@ class CustomerCardController extends BaseController
         $data['customer_card_discount'] = $cardEffect->discountGross;
         $data['customer_card_units_used'] = $cardEffect->unitsUsed;
         $data['customer_card_coverage_type'] = $cardEffect->coverageType->value;
+        $data['customer_card_unit_price'] = $cardEffect->unitValueGross;
 
         $hotelSupport->saveCheckoutData($data, $context);
 
@@ -301,6 +302,8 @@ class CustomerCardController extends BaseController
                 'units_used' => $cardEffect->unitsUsed,
                 'discount' => $cardEffect->discountGross,
                 'coverage_type' => $cardEffect->coverageType->value,
+                'unit_price_raw' => $cardEffect->unitValueGross,
+                'unit_price_display' => format_price($cardEffect->unitValueGross),
             ],
             'totals' => [],
         ];
