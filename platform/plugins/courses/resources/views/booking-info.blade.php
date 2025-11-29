@@ -18,6 +18,19 @@
 
     $startLabel24 = $session ? BaseHelper::formatDate($session->start_date, 'd.m.Y H:i') : null;
     $endLabel24   = ($session && $session->end_date) ? BaseHelper::formatDate($session->end_date, 'd.m.Y H:i') : null;
+    $endTimeLabel = ($session && $session->end_date) ? BaseHelper::formatDate($session->end_date, 'H:i') : null;
+
+    $baseNet = course_truncate_price(($booking->sub_total ?? 0) + ($booking->rule_discount ?? 0));
+    $calculatedNet = course_truncate_price($booking->sub_total ?? 0);
+    $netAfterCoupon = course_truncate_price(max($calculatedNet - ($booking->coupon_amount ?? 0), 0));
+    $grossBeforeCard = course_truncate_price($netAfterCoupon + ($booking->tax_amount ?? 0));
+    $cardDiscountGross = course_truncate_price($booking->customer_card_discount ?? 0);
+    $amountBeforeFee = course_truncate_price(max($grossBeforeCard - $cardDiscountGross, 0));
+    $minimumOnlinePaymentFee = course_truncate_price(max(0, ($booking->amount ?? 0) - $amountBeforeFee));
+    $cardUnitsUsed = (int) ($booking->customer_card_units_used ?? 0);
+    $cardUnitPrice = $cardUnitsUsed > 0 ? course_truncate_price($cardDiscountGross / $cardUnitsUsed) : 0;
+    $configuratorNet = course_truncate_price($calculatedNet - $baseNet);
+    $showConfiguratorRow = abs($configuratorNet) > 0.00001;
 
     $instructor = $course?->instructor;
 @endphp
@@ -60,7 +73,7 @@
 }
 .booking-ticket__header h2 {
   color:#fff;
-  font:600 17px/1.3 system-ui;
+  font:600 16px/1.3 system-ui;
   margin:0;
 }
 
@@ -86,7 +99,7 @@
   text-transform:uppercase;
 }
 .booking-ticket .name-big {
-  font:600 16px/22px system-ui;
+  font:600 15px/20px system-ui;
   color:#0F172A;
   margin:5px 0 18px;
 }
@@ -94,13 +107,13 @@
   margin:8px 0 18px;
 }
 .booking-ticket .field .val {
-  font:600 16px/22px system-ui;
+  font:600 15px/21px system-ui;
   color:#0F172A;
 }
 .booking-ticket .field small {
   display:block;
   margin-top:4px;
-  font:400 13px/16px system-ui;
+  font:400 12px/15px system-ui;
   color:#94A3B8;
 }
 
@@ -163,7 +176,7 @@
 }
 .booking-ticket .right-title {
   margin:0 0 14px;
-  font:700 17px/22px system-ui;
+  font:700 16px/21px system-ui;
 }
 .booking-ticket .kv {
   display:flex;
@@ -172,11 +185,11 @@
 }
 .booking-ticket .kv span {
   color:#C7CED6;
-  font:500 13px/16px system-ui;
+  font:500 12px/15px system-ui;
 }
 .booking-ticket .kv b {
   color:#fff;
-  font:600 14px/18px system-ui;
+  font:600 13px/17px system-ui;
 }
 .booking-ticket .divider {
   height:1px;
@@ -186,8 +199,15 @@
 .booking-ticket .total {
   display:flex;
   justify-content:space-between;
-  font:700 18px/22px system-ui;
+  font:700 17px/21px system-ui;
   color:#fff;
+}
+.booking-ticket .kv b.negative {
+  color:#F87171;
+}
+.booking-ticket .kv small {
+  color:#C7CED6;
+  font:500 11px/14px system-ui;
 }
 
 /* Löcher ganz oben & unten */
@@ -237,15 +257,9 @@
       <div class="name-big">{{ $fullName }}</div>
 
       @if($startLabel24)
-        <div class="field">
-          <div class="val">{{ $startLabel24 }}</div>
-          <small>{{ __('Startdatum der Sitzung') }}</small>
-        </div>
-      @endif
-      @if($endLabel24)
-        <div class="field">
-          <div class="val">{{ $endLabel24 }}</div>
-          <small>{{ __('Enddatum der Sitzung') }}</small>
+        <div class="field session-field">
+          <div class="val">{{ $startLabel24 }}@if($endTimeLabel) - {{ $endTimeLabel }}@endif</div>
+          <small>{{ __('Sitzung') }}</small>
         </div>
       @endif
 
@@ -272,13 +286,34 @@
     {{-- PREIS & STATUS --}}
     <div class="booking-ticket__right">
       <div class="booking-ticket__status">
-        {!! $booking->status->toHtml() !!}
+        @php
+            $paymentStatus = ($booking->payment && $booking->payment->id) ? $booking->payment->status : null;
+        @endphp
+
+        {!! $paymentStatus?->toHtml() ?? $booking->status->toHtml() !!}
       </div>
       <div class="booking-ticket__right-content">
         <div class="right-title">{{ __('Gesamtpreis') }}</div>
-        <div class="kv"><span>{{ __('Preis') }}</span><b>{{ course_format_price($booking->sub_total) }}</b></div>
-        <div class="kv"><span>{{ __('Rabatt') }}</span><b>{{ course_format_price($booking->coupon_amount) }}</b></div>
+        <div class="kv"><span>{{ __('Originalpreis') }}</span><b>{{ course_format_price($baseNet) }}</b></div>
+        <div class="kv @if (! $showConfiguratorRow) d-none @endif">
+          <span>{{ __('Preis Konfigurator') }}</span>
+          @php($configuratorPrefix = $configuratorNet > 0 ? '+' : ($configuratorNet < 0 ? '-' : ''))
+          <b>{{ $configuratorPrefix }}{{ course_format_price(abs($configuratorNet)) }}</b>
+        </div>
         <div class="kv"><span>{{ __('Steuern') }}</span><b>{{ course_format_price($booking->tax_amount) }}</b></div>
+        <div class="kv"><span>{{ __('Bruttopreis') }}</span><b>{{ course_format_price($grossBeforeCard) }}</b></div>
+        <div class="divider"></div>
+        <div class="kv"><span>{{ __('Rabatt (Coupon)') }}</span><b class="negative">{{ $booking->coupon_amount > 0 ? '-' : '' }}{{ course_format_price($booking->coupon_amount) }}</b></div>
+        @if($cardDiscountGross > 0)
+          <div class="kv"><span>{{ __('Kartenrabatt') }}</span><b class="negative">-{{ course_format_price($cardDiscountGross) }}</b></div>
+          @if($cardUnitPrice > 0)
+            <div class="kv"><span>{{ __('Rabatt je Einheit') }}</span><b>{{ course_format_price($cardUnitPrice) }}</b></div>
+            <div class="kv"><span>{{ __('Verbrauchte Einheiten') }}</span><b>{{ $cardUnitsUsed }}</b></div>
+          @endif
+        @endif
+        @if($minimumOnlinePaymentFee > 0)
+          <div class="kv"><span>{{ __('Mindestgebühr (Online-Zahlung)') }}</span><b>{{ course_format_price($minimumOnlinePaymentFee) }}</b></div>
+        @endif
         <div class="divider"></div>
         <div class="total"><span>{{ __('Gesamt') }}</span><span>{{ course_format_price($booking->amount) }}</span></div>
       </div>
