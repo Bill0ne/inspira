@@ -180,6 +180,58 @@ class CustomerCardController extends BaseController
             ->withUpdatedSuccessMessage();
     }
 
+    public function adjustUsage(
+        CustomerCard $customerCard,
+        Request $request,
+        BaseHttpResponse $response
+    ): BaseHttpResponse {
+        $request->validate([
+            'direction' => ['required', 'in:increase,decrease'],
+            'amount' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        if (! $customerCard->assigned_to) {
+            return $response
+                ->setError()
+                ->setMessage(trans('plugins/hotel::customer-card.messages.manual_usage_unassigned'));
+        }
+
+        $amount = max(1, (int) $request->input('amount', 1));
+        $direction = $request->input('direction');
+
+        if ($direction === 'increase') {
+            if ($customerCard->units_remaining <= 0) {
+                return $response
+                    ->setError()
+                    ->setMessage(trans('plugins/hotel::customer-card.messages.manual_usage_unavailable'));
+            }
+
+            $customerCard->units_remaining = max(0, $customerCard->units_remaining - $amount);
+        } else {
+            $customerCard->units_remaining = min(
+                $customerCard->units_total,
+                $customerCard->units_remaining + $amount
+            );
+        }
+
+        if ($customerCard->units_remaining <= 0) {
+            $customerCard->is_active = false;
+        }
+
+        $customerCard->save();
+
+        event(new UpdatedContentEvent(CUSTOMER_CARD_MODULE_SCREEN_NAME, $request, $customerCard));
+
+        return $response
+            ->setMessage(trans('plugins/hotel::customer-card.messages.manual_usage_success'))
+            ->setData([
+                'units_remaining' => $customerCard->units_remaining,
+                'units_total' => $customerCard->units_total,
+                'status_label' => $customerCard->status_label,
+                'status_color' => $customerCard->status_color,
+            ]);
+    }
+
     public function destroy(CustomerCard $customerCard)
     {
         event(new DeletedContentEvent(CUSTOMER_CARD_MODULE_SCREEN_NAME, request(), $customerCard));

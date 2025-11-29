@@ -406,6 +406,78 @@ $(() => {
     /* ----------------------------------------------------------
      *  USAGE MODAL
      * ---------------------------------------------------------- */
+    const adjustUsageSelector = '[data-bb-customer-card="usage-adjust"]';
+
+    $(document).on('click', adjustUsageSelector, function (event) {
+        event.preventDefault();
+
+        const $button = $(this);
+        const url = $button.data('url');
+        const direction = $button.data('direction');
+        const amount = Number($button.data('amount') || 1) || 1;
+        const confirmMessage = $button.data('confirm') || t('messages.manual_usage_increase');
+        const confirmTitle = $button.data('confirmTitle') || t('messages.manual_usage_title');
+
+        if (!url || !direction) {
+            return;
+        }
+
+        const performRequest = () => {
+            toggleButton($button, true);
+
+            window.Botble.request
+                .post(url, {
+                    _token: csrfToken(),
+                    direction,
+                    amount,
+                })
+                .then(({ data }) => {
+                    toggleButton($button, false);
+                    window.Botble.showSuccess(data?.message || t('messages.manual_usage_success'));
+
+                    const $table = $button.closest('table');
+                    const tableId = $table?.attr('id');
+
+                    if (tableId && window.LaravelDataTables?.[tableId]?.ajax?.reload) {
+                        window.LaravelDataTables[tableId].ajax.reload(null, false);
+                    } else if (window.LaravelDataTables) {
+                        const tables = Object.values(window.LaravelDataTables);
+                        if (tables?.length && tables[0]?.ajax?.reload) {
+                            tables[0].ajax.reload(null, false);
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        window.location.reload();
+                    }
+                })
+                .catch((error) => {
+                    toggleButton($button, false);
+                    handleRequestError(error);
+                });
+        };
+
+        if (window.Botble.showConfirm) {
+            window.Botble.showConfirm({
+                title: confirmTitle,
+                message: confirmMessage,
+                yes_button_text: t('general.yes', 'Ja'),
+                no_button_text: t('general.no', 'Nein'),
+                callback: (isConfirmed) => {
+                    if (isConfirmed) {
+                        performRequest();
+                    }
+                },
+            });
+
+            return;
+        }
+
+        if (confirm(confirmMessage)) {
+            performRequest();
+        }
+    });
+
     const usageSelector = '[data-bb-customer-card="usage"]';
 
     const ensureUsageModal = () => {

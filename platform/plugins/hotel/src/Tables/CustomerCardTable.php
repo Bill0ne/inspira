@@ -78,7 +78,34 @@ public function ajax(): JsonResponse
 
         // Assigned mode columns
         $data->addColumn('units_remaining', function (CustomerCard $card) {
-            return sprintf('%d / %d', $card->units_remaining, $card->units_total);
+            $counter = Html::tag('div', sprintf('%d / %d', $card->units_remaining, $card->units_total), [
+                'class' => 'fw-semibold',
+            ]);
+
+            $actions = Html::tag(
+                'div',
+                Html::tag('button', Html::tag('i', '', ['class' => 'ti ti-minus']), [
+                    'type' => 'button',
+                    'class' => 'btn btn-sm btn-outline-secondary me-2',
+                    'data-bb-customer-card' => 'usage-adjust',
+                    'data-direction' => 'decrease',
+                    'data-url' => route('customer-cards.adjust-usage', $card),
+                    'data-confirm' => trans('plugins/hotel::customer-card.messages.manual_usage_decrease', ['amount' => 1]),
+                    'data-confirm-title' => trans('plugins/hotel::customer-card.messages.manual_usage_title'),
+                ])
+                . Html::tag('button', Html::tag('i', '', ['class' => 'ti ti-plus']), [
+                    'type' => 'button',
+                    'class' => 'btn btn-sm btn-outline-primary',
+                    'data-bb-customer-card' => 'usage-adjust',
+                    'data-direction' => 'increase',
+                    'data-url' => route('customer-cards.adjust-usage', $card),
+                    'data-confirm' => trans('plugins/hotel::customer-card.messages.manual_usage_increase', ['amount' => 1]),
+                    'data-confirm-title' => trans('plugins/hotel::customer-card.messages.manual_usage_title'),
+                ]),
+                ['class' => 'd-flex align-items-center']
+            );
+
+            return Html::tag('div', $counter . $actions, ['class' => 'd-flex flex-column align-items-start gap-2']);
         });
 
         $data->addColumn('assigned_to', function (CustomerCard $card) {
