@@ -13,6 +13,7 @@ use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Arr;
 
 class CourseBookingService
 {
@@ -158,6 +159,8 @@ class CourseBookingService
 
         if ($payment && $payment->status !== PaymentStatusEnum::COMPLETED) {
             if ($courseBooking->amount > 0) {
+                $this->markCustomerCardFinalizePending($courseBooking);
+
                 Log::warning('[CustomerCardFinalize] Payment not completed yet, skipping', [
                     'booking_id' => $courseBooking->getKey(),
                     'payment_id' => $paymentId,
@@ -195,6 +198,10 @@ class CourseBookingService
         if ($courseBooking->customer_card_units_used <= 0) {
             $courseBooking->customer_card_units_used = 1;
             $courseBooking->save();
+        }
+
+        if ($this->isCustomerCardFinalizePending($courseBooking)) {
+            $this->clearCustomerCardFinalizePending($courseBooking);
         }
 
         Log::info('[CustomerCardFinalize] Start booking ' . $courseBooking->getKey(), [
@@ -318,5 +325,38 @@ class CourseBookingService
         }
 
         return CustomerCardCoverageType::PARTIAL->value;
+    }
+
+    protected function markCustomerCardFinalizePending(CourseBooking $courseBooking): void
+    {
+        $additionalInfo = $courseBooking->additional_info ?? [];
+
+        if (Arr::get($additionalInfo, 'customer_card_finalize_pending') === true) {
+            return;
+        }
+
+        $courseBooking->forceFill([
+            'additional_info' => Arr::set($additionalInfo, 'customer_card_finalize_pending', true),
+        ])->save();
+    }
+
+    protected function clearCustomerCardFinalizePending(CourseBooking $courseBooking): void
+    {
+        $additionalInfo = $courseBooking->additional_info ?? [];
+
+        if (! Arr::get($additionalInfo, 'customer_card_finalize_pending')) {
+            return;
+        }
+
+        Arr::forget($additionalInfo, 'customer_card_finalize_pending');
+
+        $courseBooking->forceFill([
+            'additional_info' => $additionalInfo,
+        ])->save();
+    }
+
+    protected function isCustomerCardFinalizePending(CourseBooking $courseBooking): bool
+    {
+        return Arr::get($courseBooking->additional_info ?? [], 'customer_card_finalize_pending', false) === true;
     }
 }

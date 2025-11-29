@@ -197,6 +197,95 @@ class CourseBookingCustomerCardTest extends TestCase
         $this->assertSame($payment->getKey(), $booking->refresh()->payment_id);
     }
 
+    public function test_customer_card_usage_is_finalized_after_payment_completed_late(): void
+    {
+        $customer = Customer::query()->create([
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'email' => 'john3@example.com',
+            'phone' => '+49 30 9876544',
+            'password' => 'secret',
+        ]);
+
+        $card = CustomerCard::query()->create([
+            'name' => '5er Karte',
+            'type' => 'custom',
+            'discount_percent' => 0,
+            'units_total' => 5,
+            'units_remaining' => 5,
+            'is_active' => true,
+            'assigned_to' => $customer->getKey(),
+        ]);
+
+        $course = Course::query()->create([
+            'name' => 'Yoga',
+            'price' => 120,
+            'status' => CourseStatusEnum::PUBLISHED,
+            'accept_customer_card' => true,
+        ]);
+
+        $session = CourseSession::query()->create([
+            'course_id' => $course->getKey(),
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(2),
+        ]);
+
+        $booking = CourseBooking::query()->create([
+            'course_id' => $course->getKey(),
+            'course_session_id' => $session->getKey(),
+            'customer_id' => $customer->getKey(),
+            'transaction_id' => Str::uuid(),
+            'booking_number' => Str::upper(Str::random(10)),
+            'amount' => 80,
+            'sub_total' => 120,
+            'customer_card_id' => $card->getKey(),
+            'customer_card_units_used' => 1,
+            'customer_card_coverage_type' => 'partial',
+            'customer_card_discount_gross' => 40,
+        ]);
+
+        $payment = \Botble\Payment\Models\Payment::query()->create([
+            'amount' => 80,
+            'currency' => 'EUR',
+            'charge_id' => (string) Str::uuid(),
+            'payment_channel' => PaymentMethodEnum::BANK_TRANSFER,
+            'status' => PaymentStatusEnum::PENDING,
+            'order_id' => $booking->getKey(),
+            'order_type' => CourseBooking::class,
+            'customer_id' => $customer->getKey(),
+            'customer_type' => Customer::class,
+        ]);
+
+        app(CourseBookingService::class)->finalizeCustomerCardUsage($booking->refresh());
+
+        $this->assertNull($booking->refresh()->customer_card_consumed_at);
+        $this->assertDatabaseMissing('ht_customer_card_usages', [
+            'card_id' => $card->getKey(),
+            'course_id' => $course->getKey(),
+        ]);
+
+        $payment->status = PaymentStatusEnum::COMPLETED;
+        $payment->save();
+
+        $request = request()->duplicate([], ['status' => PaymentStatusEnum::COMPLETED]);
+
+        do_action(ACTION_AFTER_UPDATE_PAYMENT, $request, $payment->refresh());
+
+        $booking->refresh();
+
+        $this->assertNotNull($booking->customer_card_consumed_at);
+        $this->assertDatabaseHas('ht_customer_card_usages', [
+            'card_id' => $card->getKey(),
+            'course_id' => $course->getKey(),
+            'units_used' => 1,
+            'discount_gross' => 40,
+            'coverage_type' => 'partial',
+        ]);
+
+        $this->assertSame(4, $card->refresh()->units_remaining);
+        $this->assertSame($payment->getKey(), $booking->payment_id);
+    }
+
     public function test_course_disallows_customer_card_when_flag_is_disabled(): void
     {
         $customer = Customer::query()->create([

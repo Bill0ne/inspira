@@ -215,6 +215,40 @@ class HookServiceProvider extends ServiceProvider
                         'customer_type' => $payment->customer_type,
                     ]);
                 }
+
+                if ($payment->order_type !== CourseBooking::class) {
+                    return;
+                }
+
+                $booking = CourseBooking::query()->find($payment->order_id);
+
+                if (! $booking) {
+                    return;
+                }
+
+                $bookingService = app(CourseBookingService::class);
+
+                $updates = [];
+
+                if (! $booking->payment_id) {
+                    $updates['payment_id'] = $payment->getKey();
+                }
+
+                if (! $booking->payment_method && $payment->payment_channel) {
+                    $updates['payment_method'] = $bookingService->normalizePaymentChannel($payment->payment_channel);
+                }
+
+                if ($updates) {
+                    $booking->forceFill($updates)->save();
+                }
+
+                if (
+                    $payment->status === PaymentStatusEnum::COMPLETED
+                    && $booking->customer_card_id
+                    && ! $booking->customer_card_consumed_at
+                ) {
+                    $bookingService->finalizeCustomerCardUsage($booking->refresh());
+                }
             }, 183, 2);
         }
 
