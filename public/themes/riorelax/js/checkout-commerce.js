@@ -274,15 +274,26 @@
 
     syncCustomerCardPayment(context);
 
-    var $cardDiscountRow = $root.find('.card-discount-row');
-    var $cardDiscountText = $root.find('.card-discount-text');
-    if ($cardDiscountRow.length) {
-      var cardDiscountRaw = totals.card_discount_raw ?? 0;
-      $cardDiscountRow.toggleClass('d-none', !(cardDiscountRaw > 0));
-      if (totals.card_discount_display) {
-        $cardDiscountText.text(totals.card_discount_display);
-      }
+  var $cardDiscountRow = $root.find('.card-discount-row');
+  var $cardDiscountText = $root.find('.card-discount-text');
+  var $cardUnitPriceRow = $root.find('.card-unit-price-row');
+  var $cardUnitPriceText = $root.find('.card-unit-price-text');
+  if ($cardDiscountRow.length) {
+    var cardDiscountRaw = totals.card_discount_raw ?? 0;
+    $cardDiscountRow.toggleClass('d-none', !(cardDiscountRaw > 0));
+    if (totals.card_discount_display) {
+      $cardDiscountText.text(totals.card_discount_display);
     }
+  }
+
+  if ($cardUnitPriceRow.length) {
+    var cardUnitPriceRaw = totals.card_unit_price_raw ?? 0;
+    $cardUnitPriceRow.toggleClass('d-none', !(cardUnitPriceRaw > 0));
+
+    if (totals.card_unit_price_display) {
+      $cardUnitPriceText.text(totals.card_unit_price_display);
+    }
+  }
 
     var $minimumFeeRow = $root.find('.minimum-fee-row');
     if ($minimumFeeRow.length && 'minimum_fee_raw' in totals) {
@@ -345,13 +356,17 @@
         $infoBox.addClass('d-none');
         $infoDiscount.text('');
       }
-      if ($cardDiscountRow.length) {
-        $cardDiscountRow.addClass('d-none');
-        $cardDiscountText.text('-');
-      }
-      $totalInput.data('active-discount', 0).data('minimum-fee', 0);
-      if ($cardSection.length) {
-        $cardSection.addClass('d-none');
+    if ($cardDiscountRow.length) {
+      $cardDiscountRow.addClass('d-none');
+      $cardDiscountText.text('-');
+    }
+    if ($cardUnitPriceRow.length) {
+      $cardUnitPriceRow.addClass('d-none');
+      $cardUnitPriceText.text('-');
+    }
+    $totalInput.data('active-discount', 0).data('minimum-fee', 0);
+    if ($cardSection.length) {
+      $cardSection.addClass('d-none');
       }
     }
 

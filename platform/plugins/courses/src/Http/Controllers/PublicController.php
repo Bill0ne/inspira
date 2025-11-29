@@ -23,6 +23,7 @@ use Botble\Courses\Models\CourseCategory;
 use Botble\Optimize\Facades\OptimizerHelper;
 use Botble\Hotel\Models\Currency;
 use Botble\Hotel\Models\Customer;
+use Botble\Hotel\Services\CustomerCardPricingService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Botble\Hotel\Services\CustomerCardService;
@@ -240,6 +241,7 @@ class PublicController extends Controller
         $cardCoverageType = $cardCoverageTypeValue
             ? CustomerCardCoverageType::tryFrom($cardCoverageTypeValue)
             : null;
+        $cardUnitPrice = (float) data_get($checkoutData, 'customer_card_unit_price', 0);
 
         if ($customerCardsAllowed && $customer->id) {
             $availableCards = $customerCardService->getApplicableCardsForCourse($course->id, $customer->getKey());
@@ -259,12 +261,14 @@ class PublicController extends Controller
                     $cardUnitsUsed = $cardEffect->unitsUsed;
                     $cardCoverageType = $cardEffect->coverageType;
                     $cardCoverageTypeValue = $cardCoverageType->value;
+                    $cardUnitPrice = $cardEffect->unitValueGross;
 
                     HotelHelper::saveCheckoutData([
                         'customer_card_id' => $selectedCard->getKey(),
                         'customer_card_discount' => $cardDiscount,
                         'customer_card_units_used' => $cardUnitsUsed,
                         'customer_card_coverage_type' => $cardCoverageTypeValue,
+                        'customer_card_unit_price' => $cardUnitPrice,
                     ], HotelSupport::CONTEXT_COURSE);
                 } else {
                     HotelHelper::saveCheckoutData([
@@ -272,6 +276,7 @@ class PublicController extends Controller
                         'customer_card_discount' => null,
                         'customer_card_units_used' => null,
                         'customer_card_coverage_type' => null,
+                        'customer_card_unit_price' => null,
                     ], HotelSupport::CONTEXT_COURSE);
                 }
             }
@@ -281,6 +286,7 @@ class PublicController extends Controller
                 'customer_card_discount' => null,
                 'customer_card_units_used' => null,
                 'customer_card_coverage_type' => null,
+                'customer_card_unit_price' => null,
             ], HotelSupport::CONTEXT_COURSE);
         }
 
@@ -316,6 +322,7 @@ class PublicController extends Controller
                 'availableCards',
                 'selectedCard',
                 'cardDiscount',
+                'cardUnitPrice',
                 'customerCardsAllowed',
                 'totalAfterDiscount',
                 'minimumOnlinePaymentFee',
@@ -463,14 +470,22 @@ class PublicController extends Controller
             $effectiveCardDiscount = 0;
 
             if ($customerCard) {
-                $calculatedDiscount = $customerCardService->calculateDiscount(
+                $cardEffect = app(CustomerCardPricingService::class)->calculateCardEffect(
                     $customerCard,
                     $course,
-                    $cardUnitsUsed,
-                    $courseGrossPrice
+                    $grossTotalRaw
                 );
-                $effectiveCardDiscount = min($cardDiscount ?: $calculatedDiscount, $grossTotalRaw);
-                $effectiveCardDiscount = course_truncate_price($effectiveCardDiscount);
+                $cardDiscount = course_truncate_price(min($cardEffect->discountGross, $grossTotalRaw));
+                $cardUnitsUsed = max(1, (int) $cardEffect->unitsUsed);
+                $cardCoverageType = $cardEffect->coverageType;
+                $cardCoverageTypeValue = $cardCoverageType->value;
+
+                $effectiveCardDiscount = $cardDiscount;
+            } else {
+                $cardDiscount = 0;
+                $cardUnitsUsed = 0;
+                $cardCoverageType = null;
+                $cardCoverageTypeValue = null;
             }
 
             $amountDueRaw = max($grossTotalRaw - $effectiveCardDiscount, 0);
@@ -568,6 +583,8 @@ class PublicController extends Controller
                 'customer_id' => $booking->customer_id,
                 'customer_type' => Customer::class,
             ]);
+
+            $courseBookingService->finalizeCustomerCardUsage($booking);
 
             if ($token = $request->input('token')) {
                 session()->forget($token);
