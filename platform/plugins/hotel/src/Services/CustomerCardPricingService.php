@@ -27,9 +27,11 @@ class CustomerCardPricingService
             ? max((float) $basePrice, 0)
             : max($baseAmountGross, 0);
 
-        $estimatedUnits = (int) ceil($baseAmountGross / max($unitValueGross, 1));
-        $unitsUsed = max(1, min($availableUnits, $estimatedUnits));
-        $discountGross = min($unitsUsed * $unitValueGross, $baseAmountGross);
+        // Jede Buchung soll genau einen Karteneinsatz verbrauchen.
+        $unitsUsed = min($availableUnits, 1);
+
+        // Der abzuziehende Betrag entspricht dem Einheitswert, höchstens jedoch dem Basisbetrag.
+        $discountGross = min($unitValueGross, $baseAmountGross);
         $coverageType = $discountGross >= $baseAmountGross
             ? CustomerCardCoverageType::FULL
             : CustomerCardCoverageType::PARTIAL;
