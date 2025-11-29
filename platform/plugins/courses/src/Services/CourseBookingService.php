@@ -135,24 +135,43 @@ class CourseBookingService
 
         if ($paymentId) {
             $payment = Payment::query()->find($paymentId);
+        }
 
-            if ($payment && $payment->status !== PaymentStatusEnum::COMPLETED) {
-                if ($courseBooking->amount > 0) {
-                    Log::warning('[CustomerCardFinalize] Payment not completed yet, skipping', [
-                        'booking_id' => $courseBooking->getKey(),
-                        'payment_id' => $paymentId,
-                        'payment_status' => $payment->status->value ?? $payment->status,
-                    ]);
+        if (! $payment && is_plugin_active('payment')) {
+            $payment = Payment::query()
+                ->where([
+                    'order_id' => $courseBooking->getKey(),
+                    'order_type' => CourseBooking::class,
+                ])
+                ->latest()
+                ->first();
 
-                    return;
-                }
+            if ($payment && ! $paymentId) {
+                $paymentId = $payment->getKey();
 
-                Log::info('[CustomerCardFinalize] Continuing without completed payment for zero-amount booking', [
+                $courseBooking->forceFill([
+                    'payment_id' => $paymentId,
+                    'payment_method' => $this->normalizePaymentChannel($payment->payment_channel),
+                ])->save();
+            }
+        }
+
+        if ($payment && $payment->status !== PaymentStatusEnum::COMPLETED) {
+            if ($courseBooking->amount > 0) {
+                Log::warning('[CustomerCardFinalize] Payment not completed yet, skipping', [
                     'booking_id' => $courseBooking->getKey(),
                     'payment_id' => $paymentId,
                     'payment_status' => $payment->status->value ?? $payment->status,
                 ]);
+
+                return;
             }
+
+            Log::info('[CustomerCardFinalize] Continuing without completed payment for zero-amount booking', [
+                'booking_id' => $courseBooking->getKey(),
+                'payment_id' => $paymentId,
+                'payment_status' => $payment->status->value ?? $payment->status,
+            ]);
         }
 
         $isCustomerCardPayment = $this->normalizePaymentChannel($courseBooking->payment_method) === $customerCardMethod;
