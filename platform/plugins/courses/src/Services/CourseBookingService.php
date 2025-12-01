@@ -279,6 +279,23 @@ class CourseBookingService
         });
     }
 
+    public function markCustomerCardFinalizePendingIfNeeded(CourseBooking $courseBooking): void
+    {
+        if (! $courseBooking->customer_card_id || $courseBooking->customer_card_units_used <= 0) {
+            return;
+        }
+
+        if ($courseBooking->customer_card_consumed_at) {
+            return;
+        }
+
+        if ($this->isCustomerCardFinalizePending($courseBooking)) {
+            return;
+        }
+
+        $this->markCustomerCardFinalizePending($courseBooking);
+    }
+
     public function normalizePaymentChannel(mixed $channel): string
     {
         if ($channel instanceof PaymentMethodEnum) {
