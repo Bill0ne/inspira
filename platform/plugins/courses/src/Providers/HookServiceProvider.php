@@ -81,7 +81,10 @@ class HookServiceProvider extends ServiceProvider
                         'payment_method' => $paymentMethod,
                     ]);
 
-                    if ($payment->status === PaymentStatusEnum::COMPLETED) {
+                    if (
+                        $payment->status === PaymentStatusEnum::COMPLETED
+                        && (! $booking->customer_card_id || $booking->customer_card_consumed_at)
+                    ) {
                         $booking->status = BookingStatusEnum::PROCESSING;
                     }
                 }
@@ -102,7 +105,8 @@ class HookServiceProvider extends ServiceProvider
 
                 if ($booking->customer_card_id) {
                     if (
-                        $booking->status !== BookingStatusEnum::PROCESSING
+                        $booking->customer_card_consumed_at
+                        && $booking->status !== BookingStatusEnum::PROCESSING
                         && (! $payment || $payment->status === PaymentStatusEnum::COMPLETED)
                     ) {
                         $booking->status = BookingStatusEnum::PROCESSING;
@@ -247,6 +251,10 @@ class HookServiceProvider extends ServiceProvider
                     && $booking->customer_card_id
                     && ! $booking->customer_card_consumed_at
                 ) {
+                    $bookingService->finalizeCustomerCardUsage($booking->refresh());
+                }
+
+                if ($booking->customer_card_id) {
                     $bookingService->finalizeCustomerCardUsage($booking->refresh());
                 }
             }, 183, 2);

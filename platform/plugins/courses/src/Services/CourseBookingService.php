@@ -57,7 +57,11 @@ class CourseBookingService
 
                 switch ($payment->status) {
                     case PaymentStatusEnum::COMPLETED:
-                        $courseBooking->status = BookingStatusEnum::PROCESSING;
+                        if ($courseBooking->customer_card_id && ! $courseBooking->customer_card_consumed_at) {
+                            $courseBooking->status = BookingStatusEnum::PENDING;
+                        } else {
+                            $courseBooking->status = BookingStatusEnum::PROCESSING;
+                        }
                         break;
 
                     case PaymentStatusEnum::PENDING:
@@ -83,22 +87,10 @@ class CourseBookingService
                 $courseBooking->save();
             }
 
-            if (
-                (string) $courseBooking->payment_method === $customerCardMethod
-                && $courseBooking->status !== BookingStatusEnum::PROCESSING
-            ) {
-                $courseBooking->status = BookingStatusEnum::PROCESSING;
-                $courseBooking->save();
-            }
         }
 
         if ($courseBooking->customer_card_id && ! $courseBooking->payment_method) {
             $courseBooking->payment_method = $customerCardMethod;
-            $courseBooking->save();
-        }
-
-        if ($courseBooking->customer_card_id && $courseBooking->status !== BookingStatusEnum::PROCESSING) {
-            $courseBooking->status = BookingStatusEnum::PROCESSING;
             $courseBooking->save();
         }
 
@@ -196,8 +188,10 @@ class CourseBookingService
         }
 
         if ($courseBooking->customer_card_units_used <= 0) {
-            $courseBooking->customer_card_units_used = 1;
-            $courseBooking->save();
+            Log::warning('[CustomerCardFinalize] Booking ' . $courseBooking->getKey()
+                . ' missing units_used, skipping');
+
+            return;
         }
 
         if ($this->isCustomerCardFinalizePending($courseBooking)) {
@@ -209,15 +203,6 @@ class CourseBookingService
             'payment_method' => $this->resolveEnumValue($courseBooking->payment_method),
             'payment_id' => $courseBooking->payment_id,
         ]);
-
-        if ($courseBooking->customer_card_id && $courseBooking->status !== BookingStatusEnum::PROCESSING) {
-            $courseBooking->status = BookingStatusEnum::PROCESSING;
-            $courseBooking->save();
-
-            Log::info('[CustomerCardFinalize] Forced booking to PROCESSING due to customer card usage', [
-                'booking_id' => $courseBooking->getKey(),
-            ]);
-        }
 
         if ($courseBooking->customer_card_consumed_at) {
             Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' already finalized');
@@ -240,6 +225,15 @@ class CourseBookingService
         if ($courseBooking->customer_card_coverage_type !== $coverageValue) {
             $courseBooking->customer_card_coverage_type = $coverageValue;
             $courseBooking->save();
+        }
+
+        if ($courseBooking->customer_card_id) {
+            $courseBooking->forceFill([
+                'payment_split_card_gross' => $courseBooking->payment_split_card_gross
+                    ?? $courseBooking->customer_card_discount_gross,
+                'payment_split_online_gross' => $courseBooking->payment_split_online_gross
+                    ?? max(0, (float) $courseBooking->amount),
+            ])->save();
         }
 
         Log::info('[CustomerCardFinalize] Starting usage for booking ' . $courseBooking->getKey(), [
@@ -274,6 +268,11 @@ class CourseBookingService
             Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalizing with card ' . $card->getKey());
 
             app(CustomerCardPricingService::class)->finalizeUsage($courseBooking);
+
+            if ($courseBooking->status !== BookingStatusEnum::PROCESSING) {
+                $courseBooking->status = BookingStatusEnum::PROCESSING;
+                $courseBooking->save();
+            }
 
             Log::info('[CustomerCardFinalize] Booking ' . $courseBooking->getKey() . ' finalized with card '
                 . $card->getKey());

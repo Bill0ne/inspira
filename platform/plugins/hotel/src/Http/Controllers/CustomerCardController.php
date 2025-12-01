@@ -22,6 +22,7 @@ use Botble\Hotel\Supports\HotelSupport;
 use Botble\Hotel\Tables\CustomerCardTable;
 use Botble\JsValidation\Facades\JsValidator;
 use Botble\Courses\Models\Course;
+use Botble\Courses\Models\CourseBooking;
 use Botble\Courses\Services\CourseCheckoutStateService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -229,6 +230,80 @@ class CustomerCardController extends BaseController
                 'units_total' => $customerCard->units_total,
                 'status_label' => $customerCard->status_label,
                 'status_color' => $customerCard->status_color,
+            ]);
+    }
+
+    public function rebookUsage(
+        CustomerCard $customerCard,
+        Request $request,
+        BaseHttpResponse $response,
+        CustomerCardPricingService $pricingService
+    ): BaseHttpResponse {
+        $data = $request->validate([
+            'usage_id' => ['required', 'integer', 'exists:ht_customer_card_usages,id'],
+            'target_card_id' => ['required', 'integer', 'exists:ht_customer_cards,id'],
+            'course_booking_id' => ['nullable', 'integer', 'exists:course_bookings,id'],
+            'units_used' => ['nullable', 'integer', 'min:1'],
+            'discount_gross' => ['nullable', 'numeric', 'min:0'],
+            'coverage_type' => ['nullable', 'string'],
+        ]);
+
+        $usage = CustomerCardUsage::query()->find($data['usage_id']);
+
+        if (! $usage || $usage->card_id !== $customerCard->getKey()) {
+            return $response
+                ->setError()
+                ->setMessage(__('Die Nutzung konnte nicht der ausgewählten Karte zugeordnet werden.'));
+        }
+
+        $targetCard = CustomerCard::query()->find($data['target_card_id']);
+
+        if (! $targetCard) {
+            return $response
+                ->setError()
+                ->setMessage(__('Die Zielkarte wurde nicht gefunden.'));
+        }
+
+        $booking = null;
+
+        if (! empty($data['course_booking_id'])) {
+            $booking = CourseBooking::query()->find((int) $data['course_booking_id']);
+        }
+
+        $booking ??= $usage->courseBooking;
+
+        if (! $booking) {
+            return $response
+                ->setError()
+                ->setMessage(__('Die zugehörige Kursbuchung wurde nicht gefunden.'));
+        }
+
+        $unitsUsed = $data['units_used'] ?? (int) ($booking->customer_card_units_used ?: $usage->units_used ?: 1);
+        $discountGross = (float) ($data['discount_gross'] ?? ($booking->customer_card_discount_gross ?: $usage->discount_gross));
+        $coverageType = $data['coverage_type']
+            ?? ($booking->customer_card_coverage_type?->value ?? CustomerCardCoverageType::PARTIAL->value);
+
+        $newUsage = $pricingService->rebookUsage(
+            $usage,
+            $targetCard,
+            $booking,
+            $unitsUsed,
+            $discountGross,
+            $coverageType
+        );
+
+        if (! $newUsage) {
+            return $response
+                ->setError()
+                ->setMessage(__('Die Nutzungsumbuchung ist fehlgeschlagen.'));
+        }
+
+        return $response
+            ->setMessage(__('Die Kartennutzung wurde zurückgebucht und neu verbucht.'))
+            ->setData([
+                'usage_id' => $newUsage->getKey(),
+                'target_card_id' => $targetCard->getKey(),
+                'booking_id' => $booking->getKey(),
             ]);
     }
 

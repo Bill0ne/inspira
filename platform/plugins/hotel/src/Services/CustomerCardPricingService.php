@@ -8,6 +8,7 @@ use Botble\Hotel\Models\CustomerCard;
 use Botble\Hotel\Models\CustomerCardUsage;
 use Botble\Courses\Models\Course;
 use Botble\Courses\Models\CourseBooking;
+use Botble\Payment\Enums\PaymentMethodEnum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -45,10 +46,6 @@ class CustomerCardPricingService
             return;
         }
 
-        if ($booking->customer_card_units_used <= 0) {
-            $booking->forceFill(['customer_card_units_used' => 1])->save();
-        }
-
         DB::transaction(function () use ($booking) {
             $card = CustomerCard::query()->lockForUpdate()->find($booking->customer_card_id);
 
@@ -76,6 +73,11 @@ class CustomerCardPricingService
                         ->where('booking_id', $booking->getKey())
                         ->orWhere('course_booking_id', $booking->getKey());
                 })
+                ->where(function ($query) {
+                    $query
+                        ->whereNull('status')
+                        ->orWhere('status', '!=', 'reversed');
+                })
                 ->exists();
 
             if ($usageExists) {
@@ -88,7 +90,13 @@ class CustomerCardPricingService
                 return;
             }
 
-            $unitsRequested = max(1, (int) $booking->customer_card_units_used);
+            $unitsRequested = max(0, (int) $booking->customer_card_units_used);
+
+            if ($unitsRequested <= 0) {
+                Log::warning('[CustomerCardFinalize] Booking ' . $booking->getKey() . ' requested invalid units');
+
+                return;
+            }
 
             $availableUnits = max(0, (int) $card->units_remaining);
 
@@ -125,10 +133,6 @@ class CustomerCardPricingService
                 ? $coverage->value
                 : ($coverage ?: CustomerCardCoverageType::PARTIAL->value);
 
-            if ($booking->customer_card_units_used <= 0) {
-                $booking->customer_card_units_used = 1;
-            }
-
             CustomerCardUsage::query()->create([
                 'card_id' => $card->getKey(),
                 'booking_id' => null,
@@ -146,6 +150,64 @@ class CustomerCardPricingService
 
             Log::info('[CustomerCardFinalize] Recorded usage for booking ' . $booking->getKey()
                 . ' with card ' . $card->getKey() . ' using ' . $units . ' units');
+        });
+    }
+
+    public function rebookUsage(
+        CustomerCardUsage $usage,
+        CustomerCard $targetCard,
+        CourseBooking $booking,
+        int $unitsUsed,
+        float $discountGross,
+        string $coverageType
+    ): ?CustomerCardUsage {
+        return DB::transaction(function () use (
+            $usage,
+            $targetCard,
+            $booking,
+            $unitsUsed,
+            $discountGross,
+            $coverageType
+        ) {
+            $sourceCard = CustomerCard::query()->lockForUpdate()->find($usage->card_id);
+
+            $coverageValue = CustomerCardCoverageType::tryFrom($coverageType)?->value ?? $coverageType;
+
+            if ($sourceCard) {
+                $sourceCard->increment('units_remaining', max(0, (int) $usage->units_used));
+                $sourceCard->is_active = true;
+                $sourceCard->save();
+            }
+
+            $usage->forceFill([
+                'status' => 'reversed',
+            ])->save();
+
+            $booking->forceFill([
+                'customer_card_id' => $targetCard->getKey(),
+                'customer_card_units_used' => max(1, $unitsUsed),
+                'customer_card_discount' => $discountGross,
+                'customer_card_discount_gross' => $discountGross,
+                'customer_card_coverage_type' => $coverageValue,
+                'payment_method' => PaymentMethodEnum::CUSTOMER_CARD(),
+                'payment_split_card_gross' => $discountGross,
+                'payment_split_online_gross' => max(0, (float) $booking->amount),
+                'customer_card_consumed_at' => null,
+            ])->save();
+
+            $booking->refresh();
+
+            $this->finalizeUsage($booking);
+
+            return CustomerCardUsage::query()
+                ->where('course_booking_id', $booking->getKey())
+                ->where(function ($query) {
+                    $query
+                        ->whereNull('status')
+                        ->orWhere('status', '!=', 'reversed');
+                })
+                ->latest()
+                ->first();
         });
     }
 }

@@ -516,6 +516,12 @@ class PublicController extends Controller
             $booking->customer_card_coverage_type = $customerCard
                 ? ($cardCoverageType?->value ?? CustomerCardCoverageType::PARTIAL->value)
                 : CustomerCardCoverageType::NONE->value;
+            $booking->payment_split_card_gross = $customerCard ? $effectiveCardDiscount : 0;
+            $booking->payment_split_online_gross = $amountDue;
+
+            if ($customerCard) {
+                $booking->status = BookingStatusEnum::PENDING;
+            }
 
             if (Auth::guard('customer')->check()) {
                 $booking->customer_id = Auth::guard('customer')->id();
