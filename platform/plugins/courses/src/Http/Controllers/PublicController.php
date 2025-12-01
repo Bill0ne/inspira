@@ -590,8 +590,6 @@ class PublicController extends Controller
                 'customer_type' => Customer::class,
             ]);
 
-            $courseBookingService->finalizeCustomerCardUsage($booking);
-
             if ($token = $request->input('token')) {
                 session()->forget($token);
                 HotelHelper::clearCheckoutData();
@@ -686,6 +684,13 @@ class PublicController extends Controller
         $booking = CourseBooking::query()
             ->where('transaction_id', $transactionId)
             ->firstOrFail();
+
+        $courseBookingService = app(CourseBookingService::class);
+
+        $courseBookingService->finalizeCustomerCardUsage($booking);
+        $courseBookingService->markCustomerCardFinalizePendingIfNeeded($booking);
+
+        $booking->refresh();
 
         SeoHelper::setTitle(__('Course Booking Information'));
 
