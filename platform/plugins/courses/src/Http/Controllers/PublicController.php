@@ -60,7 +60,6 @@ class PublicController extends Controller
         Theme::breadcrumb()->add(__('Courses'), route('public.courses'));
 
         if ($request->ajax() && $request->wantsJson()) {
-
             $params = CourseSearchParams::fromRequest($request->input());
             $courses = $this->getCourseService->getCourses($params);
 
@@ -185,8 +184,7 @@ class PublicController extends Controller
         string $token,
         BaseHttpResponse $response,
         CustomerCardService $customerCardService
-    )
-    {
+    ) {
         SeoHelper::setTitle(__('Course Booking'));
         OptimizerHelper::disable();
 
@@ -252,7 +250,7 @@ class PublicController extends Controller
                 $selectedCard = $customerCardService->getValidCard($cardId, $customer->getKey());
 
                 if ($selectedCard) {
-                    $pricingService = app(\Botble\Hotel\Services\CustomerCardPricingService::class);
+                    $pricingService = app(CustomerCardPricingService::class);
                     $cardEffect = $pricingService->calculateCardEffect($selectedCard, $course, $totalRaw);
                     $cardDiscount = course_truncate_price(min(
                         (float) data_get($checkoutData, 'customer_card_discount', $cardEffect->discountGross),
@@ -337,13 +335,12 @@ class PublicController extends Controller
         CourseCheckoutRequest $request,
         BaseHttpResponse $response,
         CustomerCardService $customerCardService
-    )
-    {
+    ) {
         do_action('form_extra_fields_validate', $request);
 
         $token = $request->input('token');
 
-        if (!session()->has($token)) {
+        if (! session()->has($token)) {
             if (session()->has('course_booking_transaction_id')) {
                 return $response->setNextUrl(
                     route('public.course.booking.information', session('course_booking_transaction_id'))
@@ -409,7 +406,7 @@ class PublicController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if (!$session->hasAvailableSeats()) {
+            if (! $session->hasAvailableSeats()) {
                 DB::rollBack();
 
                 return $response
@@ -425,7 +422,7 @@ class PublicController extends Controller
                     'first_name' => 'required|string|max:60|min:2',
                     'last_name' => 'required|string|max:60|min:2',
                     'email' => 'required|max:120|min:6|email|unique:ht_customers',
-                    'phone' => 'required|string|'.BaseHelper::getPhoneValidationRule(),
+                    'phone' => 'required|string|' . BaseHelper::getPhoneValidationRule(),
                     'password' => 'required|string|min:6|confirmed',
                 ]);
 
@@ -531,13 +528,20 @@ class PublicController extends Controller
 
             $bookingAddress = new \Botble\Courses\Models\CourseBookingAddress();
             $bookingAddress->fill($request->only([
-                'first_name', 'last_name', 'email', 'phone', 'country', 'state', 'city', 'address', 'zip'
+                'first_name',
+                'last_name',
+                'email',
+                'phone',
+                'country',
+                'state',
+                'city',
+                'address',
+                'zip',
             ]));
             $bookingAddress->course_booking_id = $booking->getKey();
             $bookingAddress->save();
 
             DB::commit();
-
         } catch (\Throwable $e) {
             DB::rollBack();
             throw $e;
@@ -615,9 +619,9 @@ class PublicController extends Controller
 
         if (is_plugin_active('payment')) {
             session()->put('selected_payment_method', $data['type']);
-            session(['order_type' => \Botble\Courses\Models\CourseBooking::class]);
+            session(['order_type' => CourseBooking::class]);
             $paymentData = apply_filters(PAYMENT_COURSE_FILTER_PAYMENT_DATA, [], $request);
-            $paymentData['order_type'] = \Botble\Courses\Models\CourseBooking::class;
+            $paymentData['order_type'] = CourseBooking::class;
 
             switch ($request->input('payment_method')) {
                 case PaymentMethodEnum::COD:
@@ -650,7 +654,7 @@ class PublicController extends Controller
                     ->setMessage($data['message']);
             }
 
-            if ($data['error'] || !$data['charge_id']) {
+            if ($data['error'] || ! $data['charge_id']) {
                 return $response
                     ->setError()
                     ->setNextUrl(route('public.course.booking.form', $token))
@@ -735,7 +739,6 @@ class PublicController extends Controller
 
         return $response->setData($state);
     }
-
 
     protected function calculateDynamicPrice(
         float $basePrice,
