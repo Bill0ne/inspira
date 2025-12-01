@@ -79,9 +79,18 @@ class HookServiceProvider extends ServiceProvider
                 session()->forget('order_type');
 
                 switch ($orderType) {
-                    case \Botble\Courses\Models\CourseBooking::class:
-                        return app(\Botble\Courses\Services\CourseBookingService::class)
-                            ->processBooking($orderId, $data['charge_id']);
+                        case \Botble\Courses\Models\CourseBooking::class:
+                            $service = app(\Botble\Courses\Services\CourseBookingService::class);
+
+                /** 1) Payment-Update durchführen */
+                            $booking = $service->processBooking($orderId, $data['charge_id']);
+
+                /** 2) Kundenkarten-Finalisierung NACH erfolgreich completed */
+                        if ($booking && $booking->customer_card_id) {
+                            $service->finalizeCustomerCardUsage($booking);
+                        }
+
+                return $booking;
 
                     case \Botble\Hotel\Models\Booking::class:
                         return app(\Botble\Hotel\Services\BookingService::class)
