@@ -216,11 +216,18 @@ class HookServiceProvider extends ServiceProvider
                     ]);
                 }
 
-                if ($payment->order_type !== CourseBooking::class) {
+                $orderIds = (array) ($request->input('order_id', []) ?: []);
+                $primaryOrderId = Arr::first($orderIds) ?: $payment->order_id;
+
+                if (! $primaryOrderId) {
                     return;
                 }
 
-                $booking = CourseBooking::query()->find($payment->order_id);
+                if ($payment->order_type && $payment->order_type !== CourseBooking::class) {
+                    return;
+                }
+
+                $booking = CourseBooking::query()->find($primaryOrderId);
 
                 if (! $booking) {
                     return;
