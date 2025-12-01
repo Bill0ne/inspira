@@ -285,6 +285,10 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
                 ->name('adjust-usage')
                 ->permission('customer-cards.edit');
 
+            Route::post('{customer_card}/rebook-usage', [CustomerCardController::class, 'rebookUsage'])
+                ->name('rebook-usage')
+                ->permission('customer-cards.edit');
+
             Route::resource('', CustomerCardController::class)
                 ->parameters(['' => 'customer_card']);
 
