@@ -234,14 +234,26 @@ class CourseBookingService
      *  HELPER
      * ──────────────────────────────────────────────────────────────────────── */
 
-    public function normalizePaymentChannel(mixed $channel): string
-    {
-        if ($channel instanceof PaymentMethodEnum) {
-            return $channel->value;
-        }
-
-        return (string) $channel ?: 'unknown';
+public function normalizePaymentChannel(mixed $channel): string
+{
+    // Falls Enum (BackedEnum) -> sauber den Wert auslesen
+    if ($channel instanceof \BackedEnum) {
+        return (string) $channel->value;
     }
+
+    // Falls Botble eine Enum-Klasse übergibt, die getValue() hat
+    if (is_object($channel) && method_exists($channel, 'getValue')) {
+        return (string) $channel->getValue();
+    }
+
+    // Fallback: String oder Zahl
+    if (is_string($channel) || is_numeric($channel)) {
+        return (string) $channel;
+    }
+
+    return 'unknown';
+}
+
 
     protected function normalizeCoverageType(mixed $coverageType): string
     {
