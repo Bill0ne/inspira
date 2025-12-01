@@ -54,36 +54,35 @@ class CourseBookingService
                 $method = $channel;
                 $status = $this->resolveEnumValue($payment->status);
 
-                switch ($status) {
-                    case PaymentStatusEnum::COMPLETED->value:
-                        if ($courseBooking->customer_card_id && ! $courseBooking->customer_card_consumed_at) {
-                            // Karte ist beteiligt, aber noch nicht verbraucht:
-                            // Buchung bleibt PENDING, bis finalizeCustomerCardUsage durch ist.
-                            $courseBooking->status = BookingStatusEnum::PENDING;
-                        } else {
-                            $courseBooking->status = BookingStatusEnum::PROCESSING;
-                        }
-                        break;
+               switch ($status) {
+    case PaymentStatusEnum::COMPLETED->value:
+        // Wenn Karte beteiligt, aber noch nicht verbraucht -> PENDING
+        if ($courseBooking->customer_card_id && ! $courseBooking->customer_card_consumed_at) {
+            $courseBooking->status = BookingStatusEnum::PENDING;
+        } else {
+            $courseBooking->status = BookingStatusEnum::PROCESSING;
+        }
+        break;
 
-                    case PaymentStatusEnum::PENDING->value:
-                        if (in_array($method, ['cod', 'bank_transfer'])) {
-                            $courseBooking->status = BookingStatusEnum::PENDING;
-                        } else {
-                            $courseBooking->status = BookingStatusEnum::AWAITING_PAYMENT;
-                        }
-                        break;
+    case PaymentStatusEnum::PENDING->value:
+        if (in_array($method, ['cod', 'bank_transfer'])) {
+            $courseBooking->status = BookingStatusEnum::PENDING;
+        } else {
+            $courseBooking->status = BookingStatusEnum::AWAITING_PAYMENT;
+        }
+        break;
 
-                    case PaymentStatusEnum::FAILED->value:
-                    case PaymentStatusEnum::FRAUD->value:
-                    case PaymentStatusEnum::CANCELED->value:
-                        $courseBooking->status = BookingStatusEnum::FAILED;
-                        break;
+    case PaymentStatusEnum::FAILED->value:
+    case PaymentStatusEnum::FRAUD->value:
+    case PaymentStatusEnum::CANCELED->value:
+        $courseBooking->status = BookingStatusEnum::FAILED;
+        break;
 
-                    case PaymentStatusEnum::REFUNDING->value:
-                    case PaymentStatusEnum::REFUNDED->value:
-                        $courseBooking->status = BookingStatusEnum::CANCELLED;
-                        break;
-                }
+    case PaymentStatusEnum::REFUNDING->value:
+    case PaymentStatusEnum::REFUNDED->value:
+        $courseBooking->status = BookingStatusEnum::CANCELLED;
+        break;
+}
 
                 $courseBooking->save();
             }
