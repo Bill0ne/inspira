@@ -19,9 +19,7 @@ class CourseBookingService
 {
     public function processBooking(int $bookingId, ?string $chargeId = null): ?CourseBooking
     {
-        /**
-         * @var CourseBooking|null $courseBooking
-         */
+        /** @var CourseBooking|null $courseBooking */
         $courseBooking = CourseBooking::query()->find($bookingId);
 
         if (! $courseBooking) {
@@ -54,17 +52,20 @@ class CourseBookingService
                 $courseBooking->payment_method = $channel;
 
                 $method = $channel;
+                $status = $this->resolveEnumValue($payment->status);
 
-                switch ($payment->status) {
-                    case PaymentStatusEnum::COMPLETED:
+                switch ($status) {
+                    case PaymentStatusEnum::COMPLETED->value:
                         if ($courseBooking->customer_card_id && ! $courseBooking->customer_card_consumed_at) {
+                            // Karte ist beteiligt, aber noch nicht verbraucht:
+                            // Buchung bleibt PENDING, bis finalizeCustomerCardUsage durch ist.
                             $courseBooking->status = BookingStatusEnum::PENDING;
                         } else {
                             $courseBooking->status = BookingStatusEnum::PROCESSING;
                         }
                         break;
 
-                    case PaymentStatusEnum::PENDING:
+                    case PaymentStatusEnum::PENDING->value:
                         if (in_array($method, ['cod', 'bank_transfer'])) {
                             $courseBooking->status = BookingStatusEnum::PENDING;
                         } else {
@@ -72,21 +73,20 @@ class CourseBookingService
                         }
                         break;
 
-                    case PaymentStatusEnum::FAILED:
-                    case PaymentStatusEnum::FRAUD:
-                    case PaymentStatusEnum::CANCELED:
+                    case PaymentStatusEnum::FAILED->value:
+                    case PaymentStatusEnum::FRAUD->value:
+                    case PaymentStatusEnum::CANCELED->value:
                         $courseBooking->status = BookingStatusEnum::FAILED;
                         break;
 
-                    case PaymentStatusEnum::REFUNDING:
-                    case PaymentStatusEnum::REFUNDED:
+                    case PaymentStatusEnum::REFUNDING->value:
+                    case PaymentStatusEnum::REFUNDED->value:
                         $courseBooking->status = BookingStatusEnum::CANCELLED;
                         break;
                 }
 
                 $courseBooking->save();
             }
-
         }
 
         if ($courseBooking->customer_card_id && ! $courseBooking->payment_method) {
@@ -125,6 +125,7 @@ class CourseBookingService
 
         $paymentId = $courseBooking->payment_id;
         $payment = null;
+        $paymentStatus = null;
 
         if ($paymentId) {
             $payment = Payment::query()->find($paymentId);
@@ -149,14 +150,18 @@ class CourseBookingService
             }
         }
 
-        if ($payment && $payment->status !== PaymentStatusEnum::COMPLETED) {
+        if ($payment) {
+            $paymentStatus = $this->resolveEnumValue($payment->status);
+        }
+
+        if ($payment && $paymentStatus !== PaymentStatusEnum::COMPLETED->value) {
             if ($courseBooking->amount > 0) {
                 $this->markCustomerCardFinalizePending($courseBooking);
 
                 Log::warning('[CustomerCardFinalize] Payment not completed yet, skipping', [
                     'booking_id' => $courseBooking->getKey(),
                     'payment_id' => $paymentId,
-                    'payment_status' => $payment->status->value ?? $payment->status,
+                    'payment_status' => $paymentStatus,
                 ]);
 
                 return;
@@ -165,7 +170,7 @@ class CourseBookingService
             Log::info('[CustomerCardFinalize] Continuing without completed payment for zero-amount booking', [
                 'booking_id' => $courseBooking->getKey(),
                 'payment_id' => $paymentId,
-                'payment_status' => $payment->status->value ?? $payment->status,
+                'payment_status' => $paymentStatus,
             ]);
         }
 
