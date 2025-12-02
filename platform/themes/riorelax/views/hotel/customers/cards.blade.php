@@ -312,19 +312,35 @@
                             <tr>
                                 <th>{{ __('Datum') }}</th>
                                 <th>{{ __('Karte') }}</th>
-                                <th>{{ __('Kurs') }}</th>
+                                <th>{{ __('Buchung / Kurs') }}</th>
                                 <th>{{ trans('plugins/hotel::customer-card.purchase.units_used') }}</th>
-                                <th>{{ trans('plugins/hotel::customer-card.purchase.saved_amount') }}</th>
+                                <th>{{ __('Status') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($usages as $usage)
                                 <tr>
-                                    <td>{{ $usage->created_at->translatedFormat('d.m.Y H:i') }}</td>
-                                    <td>{{ $usage->card?->name }}</td>
-                                    <td>{{ $usage->course?->name ?? __('Kurs entfernt') }}</td>
+                                    <td>{{ $usage->display_date }}</td>
+                                    <td>
+                                        @if ($usage->card)
+                                            {{ $usage->card->name }}
+                                        @else
+                                            <span class="text-muted">({{ __('gelöschte Karte') }})</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($usage->booking)
+                                            <div>{{ $usage->booking->booking_number ?? __('Buchung ohne Nummer') }}</div>
+
+                                            <div class="text-muted small">
+                                                {{ $usage->booking->course?->name ?? __('Kurs entfernt') }}
+                                            </div>
+                                        @else
+                                            <span class="text-muted">{{ __('Buchung nicht verfügbar') }}</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $usage->units_used }}</td>
-                                    <td>{{ format_price($usage->discount_amount) }}</td>
+                                    <td>{{ $usage->status ?? '—' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
