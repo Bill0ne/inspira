@@ -136,8 +136,8 @@
                         <input type="hidden" name="amount" value="{{ $purchasePrice }}">
                         @if (isset($order))
                             <input type="hidden" name="order_id" value="{{ $order->getKey() }}">
-                            <input type="hidden" name="order_type" value="customer_card">
                         @endif
+                        <input type="hidden" name="order_type" value="customer_card">
                         <input type="hidden" name="return_url" value="{{ route('customer.cards') }}">
                         <input type="hidden" name="callback_url" value="{{ route('customer.cards') }}">
 
