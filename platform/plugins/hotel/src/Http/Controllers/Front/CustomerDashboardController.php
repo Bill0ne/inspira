@@ -68,10 +68,24 @@ class CustomerDashboardController
                 return $card;
             });
 
+        $customerId = auth('customer')->id();
+
         $usages = CustomerCardUsage::query()
-            ->whereIn('card_id', $cards->pluck('id'))
+            ->whereHas('booking', function ($query) use ($customerId) {
+                $query->where('customer_id', $customerId);
+            })
+            ->with(['card', 'booking.course'])
+            ->orderByDesc('consumed_at')
             ->orderByDesc('created_at')
             ->get();
+
+        $usages->each(function (CustomerCardUsage $usage): void {
+            $date = $usage->consumed_at ?? $usage->created_at;
+
+            $usage->display_date = $date
+                ? $date->timezone('Europe/Berlin')->format('d.m.Y H:i')
+                : null;
+        });
 
         return Theme::scope(
             'hotel.customers.cards',
