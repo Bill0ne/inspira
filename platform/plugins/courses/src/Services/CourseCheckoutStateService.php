@@ -21,9 +21,11 @@ class CourseCheckoutStateService
         protected CouponService $couponService,
         protected CustomerCardService $customerCardService,
         protected CustomerCardPricingService $customerCardPricingService
-    ) {
-    }
+    ) {}
 
+    /**
+     * Checkout state für Kurs berechnen
+     */
     public function buildState($courseOrRequest, ?string $couponCode = null): array
     {
         $course = $courseOrRequest;
@@ -34,7 +36,7 @@ class CourseCheckoutStateService
             $couponCode ??= $courseOrRequest->input('coupon_code');
         }
 
-        if (! $course) {
+        if (!$course) {
             return [
                 'success' => false,
                 'card' => null,
@@ -43,9 +45,10 @@ class CourseCheckoutStateService
             ];
         }
 
+        // Grundpreise
         [$amountNetRaw, $couponAmountNet] = $this->calculateBookingAmount($course, $couponCode);
 
-        $amountNetRaw = (float) $amountNetRaw;
+        $amountNetRaw = (float)$amountNetRaw;
         $couponAmountNet = min($couponAmountNet, $amountNetRaw);
         $netSubtotalRaw = max($amountNetRaw - $couponAmountNet, 0);
         $netSubtotal = course_truncate_price($netSubtotalRaw);
@@ -54,51 +57,60 @@ class CourseCheckoutStateService
         $totalAmountRaw = $netSubtotalRaw + $taxAmountRaw;
         $totalAmount = course_truncate_price($totalAmountRaw);
 
+        // Sessiondaten laden
         $sessionData = HotelHelper::getCheckoutData(null, HotelSupport::CONTEXT_COURSE);
         $cardDiscount = 0.0;
-        $cardId = (int) Arr::get($sessionData, 'customer_card_id');
-        $cardUnitsUsed = max((int) Arr::get($sessionData, 'customer_card_units_used', 1), 1);
+        $cardId = (int)Arr::get($sessionData, 'customer_card_id');
+        $cardUnitsUsed = max((int)Arr::get($sessionData, 'customer_card_units_used', 1), 1);
         $cardCoverageTypeValue = Arr::get($sessionData, 'customer_card_coverage_type');
         $cardCoverageType = $cardCoverageTypeValue
             ? CustomerCardCoverageType::tryFrom($cardCoverageTypeValue)
             : null;
+        $cardUnitPrice = (float)Arr::get($sessionData, 'customer_card_unit_price', 0);
         $selectedCard = null;
-        $cardUnitPrice = (float) Arr::get($sessionData, 'customer_card_unit_price', 0);
 
         if ($cardId && Auth::guard('customer')->check()) {
             $selectedCard = $this->customerCardService->getValidCard($cardId, Auth::guard('customer')->id());
         }
 
+        // Karteneffekt neu berechnen
         if ($selectedCard) {
-            $storedDiscount = (float) Arr::get($sessionData, 'customer_card_discount', 0);
+            $storedDiscount = (float)Arr::get($sessionData, 'customer_card_discount', 0);
+
             $cardEffect = $this->customerCardPricingService->calculateCardEffect(
                 $selectedCard,
                 $course,
                 $totalAmountRaw
             );
 
-            $cardDiscount = min($storedDiscount ?: $cardEffect->discountGross, $totalAmountRaw);
+            $cardDiscount = min(
+                $storedDiscount ?: $cardEffect->discountGross,
+                $totalAmountRaw
+            );
+
             $cardDiscount = course_truncate_price($cardDiscount);
             $cardUnitsUsed = $cardEffect->unitsUsed;
             $cardCoverageType = $cardEffect->coverageType;
             $cardCoverageTypeValue = $cardCoverageType->value;
             $cardUnitPrice = $cardEffect->unitValueGross;
 
+            // Session aktualisieren
             HotelHelper::saveCheckoutData([
-                'customer_card_id' => $selectedCard->getKey(),
-                'customer_card_discount' => $cardDiscount,
-                'customer_card_units_used' => $cardUnitsUsed,
+                'customer_card_id'            => $selectedCard->getKey(),
+                'customer_card_discount'      => $cardDiscount,
+                'customer_card_units_used'    => $cardUnitsUsed,
                 'customer_card_coverage_type' => $cardCoverageTypeValue,
-                'customer_card_unit_price' => $cardUnitPrice,
+                'customer_card_unit_price'    => $cardUnitPrice,
             ], HotelSupport::CONTEXT_COURSE);
         } else {
+            // Karte wurde entfernt oder ungültig
             if ($cardId || Arr::has($sessionData, 'customer_card_discount')) {
                 HotelHelper::saveCheckoutData([
-                    'customer_card_id' => null,
-                    'customer_card_discount' => null,
-                    'customer_card_units_used' => null,
+                    'customer_card_id'            => null,
+                    'customer_card_discount'      => null,
+                    'customer_card_units_used'    => null,
                     'customer_card_coverage_type' => null,
-                    'customer_card_unit_price' => null,
+                    'customer_card_unit_price'    => null,
                 ], HotelSupport::CONTEXT_COURSE);
             }
 
@@ -109,6 +121,7 @@ class CourseCheckoutStateService
             $cardUnitPrice = 0.0;
         }
 
+        // Endpreise
         $totalAfterDiscountRaw = max($totalAmountRaw - $cardDiscount, 0);
         $totalAfterDiscount = course_truncate_price($totalAfterDiscountRaw);
         $minimumOnlinePaymentFee = 0.0;
@@ -117,7 +130,9 @@ class CourseCheckoutStateService
             $totalAfterDiscount > 0
             && $totalAfterDiscount < self::MINIMUM_ONLINE_PAYMENT_AMOUNT
         ) {
-            $minimumOnlinePaymentFee = course_truncate_price(self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscount);
+            $minimumOnlinePaymentFee = course_truncate_price(
+                self::MINIMUM_ONLINE_PAYMENT_AMOUNT - $totalAfterDiscount
+            );
         }
 
         $finalTotal = course_truncate_price($totalAfterDiscount + $minimumOnlinePaymentFee);
@@ -144,38 +159,41 @@ class CourseCheckoutStateService
         return [
             'success' => true,
             'totals' => [
-                'gross' => course_truncate_price($totalAmountRaw),
-                'gross_display' => course_format_price($totalAmount),
-                'sub_total_display' => course_format_price($subTotalDisplay),
-                'discount_display' => $discountDisplay,
-                'tax_display' => course_format_price($priceBreakdown['calculated_tax'] ?? 0),
-                'total_display' => course_format_price($finalTotal),
-                'total_raw' => $finalTotal,
-                'minimum_fee_raw' => $minimumOnlinePaymentFee,
-                'minimum_fee_display' => $minimumFeeDisplay,
-                'card_discount_raw' => $cardDiscount,
-                'card_discount_display' => $cardDiscountDisplay,
-                'card_discount_display_plain' => $cardDiscountPlain,
-                'minimum_threshold' => self::MINIMUM_ONLINE_PAYMENT_AMOUNT,
-                'total_before_card_raw' => course_truncate_price($totalAmountRaw),
-                'coupon_discount_raw' => $couponDisplay,
-                'coupon_discount_display' => $discountDisplay,
-                'card_unit_price_raw' => $cardUnitPrice,
-                'card_unit_price_display' => course_format_price($cardUnitPrice),
+                'gross'                     => course_truncate_price($totalAmountRaw),
+                'gross_display'             => course_format_price($totalAmount),
+                'sub_total_display'         => course_format_price($subTotalDisplay),
+                'discount_display'          => $discountDisplay,
+                'tax_display'               => course_format_price($priceBreakdown['calculated_tax'] ?? 0),
+                'total_display'             => course_format_price($finalTotal),
+                'total_raw'                 => $finalTotal,
+                'minimum_fee_raw'           => $minimumOnlinePaymentFee,
+                'minimum_fee_display'       => $minimumFeeDisplay,
+                'card_discount_raw'         => $cardDiscount,
+                'card_discount_display'     => $cardDiscountDisplay,
+                'card_discount_display_plain'=> $cardDiscountPlain,
+                'minimum_threshold'         => self::MINIMUM_ONLINE_PAYMENT_AMOUNT,
+                'total_before_card_raw'     => course_truncate_price($totalAmountRaw),
+                'coupon_discount_raw'       => $couponDisplay,
+                'coupon_discount_display'   => $discountDisplay,
+                'card_unit_price_raw'       => $cardUnitPrice,
+                'card_unit_price_display'   => course_format_price($cardUnitPrice),
             ],
+
             'card' => $selectedCard ? [
-                'id' => $selectedCard->getKey(),
-                'units_used' => $cardUnitsUsed,
-                'discount' => $cardDiscount,
-                'discount_display' => $cardDiscountPlain,
-                'coverage_type' => $cardCoverageTypeValue,
-                'unit_price_raw' => $cardUnitPrice,
-                'unit_price_display' => course_format_price($cardUnitPrice),
+                'id'                => $selectedCard->getKey(),
+                'units_used'        => $cardUnitsUsed,
+                'discount'          => $cardDiscount,
+                'discount_display'  => $cardDiscountPlain,
+                'coverage_type'     => $cardCoverageTypeValue,
+                'unit_price_raw'    => $cardUnitPrice,
+                'unit_price_display'=> course_format_price($cardUnitPrice),
             ] : null,
+
             'coupon' => $couponCode ? [
-                'code' => $couponCode,
+                'code'     => $couponCode,
                 'discount' => $couponDisplay,
             ] : null,
+
             'views' => [
                 'coupon_box' => view('plugins/courses::coupons.partials.form', [
                     'course' => $course,
@@ -183,23 +201,26 @@ class CourseCheckoutStateService
                     'appliedCouponAmount' => $couponAmountNet,
                 ])->render(),
             ],
-            'sub_total' => course_format_price($subTotalDisplay),
-            'discount_amount' => $discountDisplay,
-            'tax_amount' => course_format_price($priceBreakdown['calculated_tax'] ?? 0),
-            'total_amount' => course_format_price($finalTotal),
-            'amount_raw' => $finalTotal,
-            'coupon_code' => $couponCode,
+            'sub_total'     => course_format_price($subTotalDisplay),
+            'discount_amount'=> $discountDisplay,
+            'tax_amount'     => course_format_price($priceBreakdown['calculated_tax'] ?? 0),
+            'total_amount'   => course_format_price($finalTotal),
+            'amount_raw'     => $finalTotal,
+            'coupon_code'    => $couponCode,
         ];
     }
 
+    /**
+     * Grundbetrag + Coupon
+     */
     public function calculateBookingAmount(Course $course, ?string $couponCode = null): array
     {
         $pricing = $course->resolvePricing(Auth::guard('customer')->user());
-        $amount = (float) ($pricing['calculated_net'] ?? 0);
+        $amount = (float)($pricing['calculated_net'] ?? 0);
 
         $sessionData = HotelHelper::getCheckoutData(null, HotelSupport::CONTEXT_COURSE);
 
-        if (! $couponCode) {
+        if (!$couponCode) {
             $couponCode = Arr::get($sessionData, 'coupon_code');
         }
 
