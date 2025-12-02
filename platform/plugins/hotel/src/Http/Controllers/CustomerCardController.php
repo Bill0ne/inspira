@@ -329,113 +329,99 @@ class CustomerCardController extends BaseController
     }
 
     public function apply(Request $request, CustomerCardService $service, CustomerCardPricingService $pricingService)
-    {
-        $customerId = auth('customer')->id();
+{
+    $customerId = auth('customer')->id();
 
-        if (! $customerId) {
-            return $this
-                ->httpResponse()
-                ->setError()
-                ->setMessage(trans('plugins/hotel::customer-card.messages.login_required'));
-        }
-
-        $card = $service->getValidCard((int) $request->input('card_id'), $customerId);
-
-        if (! $card) {
-            return $this
-                ->httpResponse()
-                ->setError()
-                ->setMessage(trans('plugins/hotel::customer-card.messages.card_not_found'));
-        }
-
-        $context = $this->resolveCheckoutContext($request);
-        $courseId = $this->resolveCourseId($request, $context);
-
-        if ($context === HotelSupport::CONTEXT_COURSE && ! $courseId) {
-            return $this
-                ->httpResponse()
-                ->setError()
-                ->setMessage(__('Es konnte kein Kurs ermittelt werden.'));
-        }
-
-        $course = null;
-
-        if ($context === HotelSupport::CONTEXT_COURSE && class_exists(Course::class)) {
-            $course = Course::query()->find($courseId);
-
-            if (! $course) {
-                return $this
-                    ->httpResponse()
-                    ->setError()
-                    ->setMessage(__('Der Kurs wurde nicht gefunden.'));
-            }
-
-            if (! $course->accept_customer_card) {
-                return $this
-                    ->httpResponse()
-                    ->setError()
-                    ->setMessage(__('Dieser Kurs erlaubt keine Kundenkarte.'));
-            }
-        }
-
-        if (! $service->isApplicable($card, $courseId)) {
-            return $this
-                ->httpResponse()
-                ->setError()
-                ->setMessage(trans('plugins/hotel::customer-card.messages.card_unavailable'));
-        }
-
-        $coursePricing = 0.0;
-
-        if ($course) {
-            $pricing = $course->resolvePricing(auth('customer')->user());
-            $coursePricing = (float) Arr::get(
-                $pricing,
-                'calculated_gross',
-                $course->getPriceWithTax($course->getCourseTotalPrice())
-            );
-        }
-
-        $cardEffect = $course
-            ? $pricingService->calculateCardEffect($card, $course, $coursePricing)
-            : new \Botble\Hotel\DTO\CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE);
-
-        $hotelSupport = app(HotelSupport::class);
-        $hotelSupport->saveCheckoutData([
-            'customer_card_id' => $card->getKey(),
-            'customer_card_discount' => $cardEffect->discountGross,
-            'customer_card_units_used' => $cardEffect->unitsUsed,
-            'customer_card_coverage_type' => $cardEffect->coverageType->value,
-        ], $context);
-
-        $checkoutState = null;
-
-        if ($context === HotelSupport::CONTEXT_COURSE && $courseId) {
-            $course = Course::query()->find($courseId);
-
-            if ($course) {
-                $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
-            }
-        }
-
-        $checkoutState ??= [
-            'success' => true,
-            'card' => [
-                'id' => $card->getKey(),
-                'units_used' => $cardEffect->unitsUsed,
-                'discount' => $cardEffect->discountGross,
-                'coverage_type' => $cardEffect->coverageType->value,
-                'unit_price_raw' => $cardEffect->unitValueGross,
-                'unit_price_display' => format_price($cardEffect->unitValueGross),
-            ],
-            'totals' => [],
-        ];
-
+    if (!$customerId) {
         return $this
             ->httpResponse()
-            ->setMessage(__('Karte angewendet.'))
-            ->setData($checkoutState);
+            ->setError()
+            ->setMessage(trans('plugins/hotel::customer-card.messages.login_required'));
     }
+
+    // Karte prüfen
+    $card = $service->getValidCard((int)$request->input('card_id'), $customerId);
+
+    if (!$card) {
+        return $this
+            ->httpResponse()
+            ->setError()
+            ->setMessage(trans('plugins/hotel::customer-card.messages.card_not_found'));
+    }
+
+    // Kontext bestimmen (Hotel / Kurs)
+    $context = $this->resolveCheckoutContext($request);
+    $courseId = $this->resolveCourseId($request, $context);
+
+    $course = null;
+
+    if ($context === HotelSupport::CONTEXT_COURSE && $courseId) {
+        $course = Course::query()->find($courseId);
+
+        if (!$course) {
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setMessage(__('Der Kurs wurde nicht gefunden.'));
+        }
+
+        if (!$course->accept_customer_card) {
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setMessage(__('Dieser Kurs erlaubt keine Kundenkarte.'));
+        }
+    }
+
+    // Preis berechnen
+    $coursePricing = 0.0;
+
+    if ($course) {
+        $pricing = $course->resolvePricing(auth('customer')->user());
+        $coursePricing = (float)($pricing['calculated_gross']
+            ?? $course->getPriceWithTax($course->getCourseTotalPrice()));
+    }
+
+    // Karteneffekt (richtiger Rabatt, richtige Session)
+    $cardEffect = $course
+        ? $pricingService->calculateCardEffect($card, $course, $coursePricing)
+        : new \Botble\Hotel\DTO\CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE);
+
+    // Session aktualisieren
+    app(HotelSupport::class)->saveCheckoutData([
+        'customer_card_id'           => $card->getKey(),
+        'customer_card_discount'     => $cardEffect->discountGross,
+        'customer_card_units_used'   => $cardEffect->unitsUsed,
+        'customer_card_coverage_type'=> $cardEffect->coverageType->value,
+        'customer_card_unit_price'   => $cardEffect->unitValueGross,
+    ], $context);
+
+    // Checkout-Ansicht aktualisieren
+    $checkoutState = null;
+
+    if ($context === HotelSupport::CONTEXT_COURSE && $course) {
+        $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
+    }
+
+    // Falls kein Kurs-Checkout → Basispayload
+    $checkoutState ??= [
+        'success' => true,
+        'card' => [
+            'id' => $card->getKey(),
+            'units_used' => $cardEffect->unitsUsed,
+            'discount' => $cardEffect->discountGross,
+            'coverage_type' => $cardEffect->coverageType->value,
+            'unit_price_raw' => $cardEffect->unitValueGross,
+            'unit_price_display' => format_price($cardEffect->unitValueGross),
+        ],
+        'totals' => [],
+    ];
+
+    return $this
+        ->httpResponse()
+        ->setMessage(__('Karte angewendet.'))
+        ->setData($checkoutState);
+}
 
     public function remove(Request $request)
     {
