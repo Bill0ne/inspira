@@ -95,7 +95,6 @@ class CustomerCardPricingService
             }
 
             $availableUnits = max(0, (int) $card->units_remaining);
-
             if ($availableUnits <= 0) {
                 Log::warning('[CustomerCardFinalize] Card ' . $card->getKey() . ' has no remaining units for booking '
                     . $booking->getKey());
