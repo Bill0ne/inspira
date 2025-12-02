@@ -137,7 +137,7 @@ $(function () {
             const price = parseFloat(rawPrice) || 0;
             const taxId = $taxField.val();
             const taxValue = Number(taxRates[taxId]) || 0;
-            const gross = Math.trunc(price * (1 + taxValue / 100) * 100) / 100;
+            const gross = Math.round(price * (1 + taxValue / 100) * 100) / 100;
 
             $taxText.text(`${taxValue.toFixed(2)}%`);
             $grossText.text(formatCurrency(gross));
