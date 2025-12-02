@@ -32,11 +32,17 @@ class HookServiceProvider extends ServiceProvider
         if (defined('PAYMENT_FILTER_REDIRECT_URL')) {
             add_filter(PAYMENT_FILTER_REDIRECT_URL, function ($checkoutToken) {
                 if (session()->has('course_booking_transaction_id')) {
-                    return route('public.course.booking.information', $checkoutToken ?: session('course_booking_transaction_id'));
+                    return route(
+                        'public.course.booking.information',
+                        $checkoutToken ?: session('course_booking_transaction_id')
+                    );
                 }
 
                 if (session()->has('booking_transaction_id')) {
-                    return route('public.booking.information', $checkoutToken ?: session('booking_transaction_id'));
+                    return route(
+                        'public.booking.information',
+                        $checkoutToken ?: session('booking_transaction_id')
+                    );
                 }
 
                 return url('/');
@@ -72,29 +78,33 @@ class HookServiceProvider extends ServiceProvider
                 $orderIds = (array) $data['order_id'];
                 $orderId = Arr::first($orderIds);
 
+                // Payment in der lokalen DB speichern (Botble-Standard)
                 PaymentHelper::storeLocalPayment($data);
 
+                // Typ der Bestellung (Hotel-Booking, CourseBooking, CustomerCardOrder, …)
                 $orderType = $data['order_type'] ?? session('order_type');
 
                 session()->forget('order_type');
 
                 switch ($orderType) {
-                        case \Botble\Courses\Models\CourseBooking::class:
-                            $service = app(\Botble\Courses\Services\CourseBookingService::class);
+                    case \Botble\Courses\Models\CourseBooking::class: {
+                        /** @var \Botble\Courses\Services\CourseBookingService $service */
+                        $service = app(\Botble\Courses\Services\CourseBookingService::class);
 
-                /** 1) Payment-Update durchführen */
-                            $booking = $service->processBooking($orderId, $data['charge_id']);
+                        // 1) Booking anhand des Payments aktualisieren
+                        $booking = $service->processBooking($orderId, $data['charge_id'] ?? null);
 
-                /** 2) Kundenkarten-Finalisierung NACH erfolgreich completed */
-                        if ($booking && $booking->customer_card_id) {
+                        // 2) Nur wenn eine Kundenkarte beteiligt ist → Finalisierung durchführen
+                        if ($booking && $booking->customer_card_id && $booking->customer_card_units_used > 0) {
                             $service->finalizeCustomerCardUsage($booking);
                         }
 
-                return $booking;
+                        return $booking;
+                    }
 
                     case \Botble\Hotel\Models\Booking::class:
-                        return app(\Botble\Hotel\Services\BookingService::class)
-                            ->processBooking($orderId, $data['charge_id']);
+                        return app(BookingService::class)
+                            ->processBooking($orderId, $data['charge_id'] ?? null);
 
                     case CustomerCardOrder::class:
                         if (! $orderId && empty($data['charge_id'])) {
@@ -115,6 +125,7 @@ class HookServiceProvider extends ServiceProvider
                 $orderIds = (array) $request->input('order_id', []);
                 $orderType = Arr::get($data, 'order_type') ?: $request->input('order_type');
 
+                // Customer Card Bestellungen
                 if ($orderType === 'customer_card') {
                     $orderType = CustomerCardOrder::class;
                 }
@@ -123,59 +134,65 @@ class HookServiceProvider extends ServiceProvider
                     $order = null;
 
                     if (! empty($orderIds)) {
-                        $order = CustomerCardOrder::query()->with('template')->find(Arr::first($orderIds));
+                        $order = CustomerCardOrder::query()
+                            ->with('template')
+                            ->find(Arr::first($orderIds));
                     }
 
                     if ($order) {
                         return array_merge($data, [
-                            'amount' => (float) $order->amount,
+                            'amount'          => (float) $order->amount,
                             'shipping_amount' => 0,
                             'shipping_method' => null,
-                            'tax_amount' => 0,
+                            'tax_amount'      => 0,
                             'discount_amount' => 0,
-                            'currency' => strtoupper(get_application_currency()->title),
-                            'order_id' => $orderIds,
-                            'description' => trans('plugins/payment::payment.payment_description', [
-                                'order_id' => Arr::first($orderIds),
-                                'site_url' => request()->getHost(),
-                            ]),
-                            'customer_id' => $order->customer_id,
-                            'customer_type' => Customer::class,
-                            'return_url' => $request->input('return_url', route('customer.cards')),
-                            'callback_url' => $request->input('callback_url', route('customer.cards')),
-                            'products' => [
+                            'currency'        => strtoupper(get_application_currency()->title),
+                            'order_id'        => $orderIds,
+                            'description'     => trans(
+                                'plugins/payment::payment.payment_description',
                                 [
-                                    'id' => $order->card_template_id,
-                                    'name' => $order->template->name ?? 'Customer card',
-                                    'image' => null,
-                                    'price' => $order->amount,
+                                    'order_id' => Arr::first($orderIds),
+                                    'site_url' => request()->getHost(),
+                                ]
+                            ),
+                            'customer_id'   => $order->customer_id,
+                            'customer_type' => Customer::class,
+                            'return_url'    => $request->input('return_url', route('customer.cards')),
+                            'callback_url'  => $request->input('callback_url', route('customer.cards')),
+                            'products'      => [
+                                [
+                                    'id'              => $order->card_template_id,
+                                    'name'            => $order->template->name ?? 'Customer card',
+                                    'image'           => null,
+                                    'price'           => $order->amount,
                                     'price_per_order' => $order->amount,
-                                    'qty' => 1,
+                                    'qty'             => 1,
                                 ],
                             ],
-                            'orders' => [$order],
-                            'address' => [],
-                            'checkout_token' => session('checkout_token'),
-                            'order_type' => CustomerCardOrder::class,
+                            'orders'        => [$order],
+                            'address'       => [],
+                            'checkout_token'=> session('checkout_token'),
+                            'order_type'    => CustomerCardOrder::class,
                         ]);
                     }
 
                     return array_merge($data, [
-                        'amount' => (float) $request->input('amount', Arr::get($data, 'amount', 0)),
-                        'currency' => strtoupper(get_application_currency()->title),
-                        'order_id' => $orderIds,
-                        'order_type' => CustomerCardOrder::class,
-                        'return_url' => $request->input('return_url', route('customer.cards')),
-                        'callback_url' => $request->input('callback_url', route('customer.cards')),
-                        'customer_id' => auth('customer')->check() ? auth('customer')->id() : null,
-                        'customer_type' => Customer::class,
-                        'products' => [],
-                        'orders' => [],
-                        'address' => [],
-                        'checkout_token' => session('checkout_token'),
+                        'amount'          => (float) $request->input('amount', Arr::get($data, 'amount', 0)),
+                        'currency'        => strtoupper(get_application_currency()->title),
+                        'order_id'        => $orderIds,
+                        'order_type'      => CustomerCardOrder::class,
+                        'return_url'      => $request->input('return_url', route('customer.cards')),
+                        'callback_url'    => $request->input('callback_url', route('customer.cards')),
+                        'customer_id'     => auth('customer')->check() ? auth('customer')->id() : null,
+                        'customer_type'   => Customer::class,
+                        'products'        => [],
+                        'orders'          => [],
+                        'address'         => [],
+                        'checkout_token'  => session('checkout_token'),
                     ]);
                 }
 
+                // Hotel-Booking Payment-Daten
                 $booking = Booking::query()->find(Arr::first($orderIds));
 
                 if (! $booking) {
@@ -184,44 +201,50 @@ class HookServiceProvider extends ServiceProvider
 
                 $rooms = [
                     [
-                        'id' => $booking->getKey(),
-                        'name' => $booking->room->room->name,
-                        'image' => RvMedia::getImageUrl($booking->room->room->image),
-                        'price' => $booking->amount + $booking->tax_amount - $booking->coupon_amount,
+                        'id'              => $booking->getKey(),
+                        'name'            => $booking->room->room->name,
+                        'image'           => RvMedia::getImageUrl($booking->room->room->image),
+                        'price'           => $booking->amount + $booking->tax_amount - $booking->coupon_amount,
                         'price_per_order' => $booking->amount,
-                        'qty' => 1,
+                        'qty'             => 1,
                     ],
                 ];
 
                 $address = [
-                    'name' => $booking->address->first_name . ' ' . $booking->address->last_name,
-                    'email' => $booking->address->email,
-                    'phone' => $booking->address->phone,
+                    'name'    => $booking->address->first_name . ' ' . $booking->address->last_name,
+                    'email'   => $booking->address->email,
+                    'phone'   => $booking->address->phone,
                     'country' => $booking->address->country,
-                    'state' => $booking->address->state,
-                    'city' => $booking->address->city,
+                    'state'   => $booking->address->state,
+                    'city'    => $booking->address->city,
                     'address' => $booking->address->address,
-                    'zip' => $booking->address->zip,
+                    'zip'     => $booking->address->zip,
                 ];
 
                 return array_merge($data, [
-                    'amount' => (float) $booking->amount,
+                    'amount'          => (float) $booking->amount,
                     'shipping_amount' => 0,
                     'shipping_method' => null,
-                    'tax_amount' => $booking->tax_amount,
+                    'tax_amount'      => $booking->tax_amount,
                     'discount_amount' => $booking->coupon_amount,
-                    'currency' => strtoupper(get_application_currency()->title),
-                    'order_id' => $orderIds,
-                    'description' => trans('plugins/payment::payment.payment_description', ['order_id' => Arr::first($orderIds), 'site_url' => request()->getHost()]),
-                    'customer_id' => auth('customer')->check() ? auth('customer')->id() : null,
-                    'customer_type' => Customer::class,
-                    'return_url' => $request->input('return_url'),
-                    'callback_url' => $request->input('callback_url'),
-                    'products' => $rooms,
-                    'orders' => [$booking],
-                    'address' => $address,
-                    'checkout_token' => session('checkout_token'),
-                    'order_type' => \Botble\Hotel\Models\Booking::class,
+                    'currency'        => strtoupper(get_application_currency()->title),
+                    'order_id'        => $orderIds,
+                    'description'     => trans(
+                        'plugins/payment::payment.payment_description',
+                        [
+                            'order_id' => Arr::first($orderIds),
+                            'site_url' => request()->getHost(),
+                        ]
+                    ),
+                    'customer_id'     => auth('customer')->check() ? auth('customer')->id() : null,
+                    'customer_type'   => Customer::class,
+                    'return_url'      => $request->input('return_url'),
+                    'callback_url'    => $request->input('callback_url'),
+                    'products'        => $rooms,
+                    'orders'          => [$booking],
+                    'address'         => $address,
+                    'checkout_token'  => session('checkout_token'),
+                    'order_type'      => Booking::class,
                 ]);
             }, 140, 2);
         }
@@ -245,7 +268,7 @@ class HookServiceProvider extends ServiceProvider
         if (defined('ACTION_AFTER_UPDATE_PAYMENT')) {
             add_action(ACTION_AFTER_UPDATE_PAYMENT, function ($request, $payment): void {
                 if (
-                    in_array($payment->payment_channel, [PaymentMethodEnum::COD, PaymentMethodEnum::BANK_TRANSFER])
+                    in_array($payment->payment_channel, [PaymentMethodEnum::COD, PaymentMethodEnum::BANK_TRANSFER], true)
                     && $request->input('status') == PaymentStatusEnum::COMPLETED
                 ) {
                     Booking::query()
@@ -288,8 +311,16 @@ class HookServiceProvider extends ServiceProvider
                                     return $subQuery
                                         ->where('ht_booking_addresses.first_name', 'LIKE', '%' . $keyword . '%')
                                         ->orWhere('ht_booking_addresses.last_name', 'LIKE', '%' . $keyword . '%')
-                                        ->orWhere(DB::raw('CONCAT(ht_booking_addresses.first_name, " ", ht_booking_addresses.last_name)'), 'LIKE', '%' . $keyword . '%')
-                                        ->orWhere(DB::raw('CONCAT(ht_booking_addresses.last_name, " ", ht_booking_addresses.first_name)'), 'LIKE', '%' . $keyword . '%');
+                                        ->orWhere(
+                                            DB::raw('CONCAT(ht_booking_addresses.first_name, " ", ht_booking_addresses.last_name)'),
+                                            'LIKE',
+                                            '%' . $keyword . '%'
+                                        )
+                                        ->orWhere(
+                                            DB::raw('CONCAT(ht_booking_addresses.last_name, " ", ht_booking_addresses.first_name)'),
+                                            'LIKE',
+                                            '%' . $keyword . '%'
+                                        );
                                 })
                                 ->select('payments.*');
                         }
@@ -350,7 +381,7 @@ class HookServiceProvider extends ServiceProvider
     {
         if (Auth::user()->hasPermission('booking.index')) {
             $data[] = [
-                'key' => 'pending-bookings',
+                'key'   => 'pending-bookings',
                 'value' => Booking::query()
                     ->where('status', BaseStatusEnum::PENDING)
                     ->count(),
