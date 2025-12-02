@@ -143,8 +143,8 @@ $(function () {
             $grossText.text(formatCurrency(gross));
         };
 
-        $priceField.on('input', calculateGross);
-        $taxField.on('change', calculateGross);
+        $priceField.on('input change', calculateGross);
+        $taxField.on('change input', calculateGross);
         calculateGross();
     }
 });
