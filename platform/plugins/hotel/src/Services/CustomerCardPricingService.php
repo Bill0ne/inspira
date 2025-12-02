@@ -55,20 +55,36 @@ class CustomerCardPricingService
 
             $usageExists = CustomerCardUsage::query()
                 ->where('course_booking_id', $booking->getKey())
-                ->where(fn ($q) => $q->whereNull('status')->orWhere('status', '!=', 'reversed'))
+                ->where(function ($query) {
+                    $query
+                        ->whereNull('status')
+                        ->orWhere('status', '!=', 'reversed');
+                })
+                ->lockForUpdate()
                 ->exists();
 
             if ($usageExists) {
-                if (!$booking->customer_card_consumed_at) {
+                Log::info('[CustomerCardFinalize] Usage already recorded for booking ' . $booking->getKey());
+
+                if (! $booking->customer_card_consumed_at) {
                     $booking->forceFill(['customer_card_consumed_at' => now()])->save();
                 }
+
                 return;
             }
 
             $availableUnits = max(0, (int)$card->units_remaining);
             $unitsRequested = max(1, (int)$booking->customer_card_units_used);
 
-            $units = min($unitsRequested, $availableUnits);
+            if ($card->units_remaining < $unitsRequested) {
+                Log::warning('[CustomerCardFinalize] Card ' . $card->getKey() . ' has '
+                    . $card->units_remaining . ' units, booking requested ' . $unitsRequested . ' units');
+
+                // Not enough units → do not consume
+                return;
+            }
+
+            $units = $unitsRequested;
             $remainingUnits = $availableUnits - $units;
 
             $booking->forceFill([
@@ -134,13 +150,19 @@ class CustomerCardPricingService
             $coverageValue = CustomerCardCoverageType::tryFrom($coverageType)?->value
                 ?? $coverageType;
 
+            $customerCardMethod = PaymentMethodEnum::CUSTOMER_CARD();
+
             $booking->forceFill([
                 'customer_card_id'             => $targetCard->getKey(),
                 'customer_card_units_used'     => max(1, $unitsUsed),
                 'customer_card_discount'       => $discountGross,
                 'customer_card_discount_gross' => $discountGross,
                 'customer_card_coverage_type'  => $coverageValue,
-                'payment_method'               => PaymentMethodEnum::CUSTOMER_CARD(),
+                'payment_method'               => method_exists($customerCardMethod, 'getValue')
+                    ? $customerCardMethod->getValue()
+                    : ($customerCardMethod instanceof \BackedEnum
+                        ? $customerCardMethod->value
+                        : (string) $customerCardMethod),
                 'payment_split_card_gross'     => $discountGross,
                 'payment_split_online_gross'   => max(0, $booking->amount),
                 'customer_card_consumed_at'    => null,

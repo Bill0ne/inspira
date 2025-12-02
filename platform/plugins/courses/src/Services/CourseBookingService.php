@@ -231,16 +231,11 @@ class CourseBookingService
 
         $completedStatus = $this->resolveEnumValue(PaymentStatusEnum::COMPLETED);
 
-        /**
-         * ------------------------------------------------------------------
-         *  FALL 1: RESTZAHLUNG > 0 → PAYMENT MUSS "completed" SEIN
-         * ------------------------------------------------------------------
-         */
         if ($courseBooking->amount > 0) {
-            if (! $payment || $paymentStatus !== $completedStatus) {
+            if (! $payment || $paymentStatus !== PaymentStatusEnum::COMPLETED) {
                 $this->markCustomerCardFinalizePending($courseBooking);
 
-                Log::warning('[CustomerCardFinalize] Payment not completed yet, skipping', [
+                Log::warning('[CustomerCardFinalize] Payment not completed, skipping', [
                     'booking_id'     => $courseBooking->getKey(),
                     'payment_id'     => $payment?->getKey(),
                     'payment_status' => $paymentStatus,
@@ -250,17 +245,17 @@ class CourseBookingService
                 return;
             }
         } else {
-            /**
-             * ------------------------------------------------------------------
-             *  FALL 2: ZERO-AMOUNT → PURE KARTENZAHLUNG
-             * ------------------------------------------------------------------
-             */
-            Log::info('[CustomerCardFinalize] Proceeding for zero-amount booking', [
-                'booking_id'     => $courseBooking->getKey(),
-                'payment_id'     => $payment?->getKey(),
-                'payment_status' => $paymentStatus,
-                'amount'         => $courseBooking->amount,
-            ]);
+            if ($payment && $paymentStatus && $paymentStatus !== PaymentStatusEnum::COMPLETED) {
+                $this->markCustomerCardFinalizePending($courseBooking);
+
+                Log::warning('[CustomerCardFinalize] Zero-amount booking has non-completed payment, skipping', [
+                    'booking_id'     => $courseBooking->getKey(),
+                    'payment_id'     => $payment->getKey(),
+                    'payment_status' => $paymentStatus,
+                ]);
+
+                return;
+            }
         }
 
         // Falls Pending-Flag gesetzt war → jetzt entfernen
