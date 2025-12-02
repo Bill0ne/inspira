@@ -465,12 +465,6 @@
 
   function getSharedPayload(context) {
     var payload = {};
-    var ctx = context || getActiveContext();
-
-    if (ctx === 'course') {
-      payload.course_checkout = true;
-    }
-
     if (context === 'course' || !context) {
       var courseRoot = getContextRoot('course') || document;
       var courseInput = courseRoot.querySelector('input[name="course_id"]') || document.querySelector('input[name="course_id"]');
@@ -645,7 +639,7 @@
       url: applyUrl,
       type: 'POST',
       headers: { 'X-CSRF-TOKEN': getCsrf() },
-      data: $.extend({ card_id: cardId }, getSharedPayload(getActiveContext())),
+      data: $.extend({ customer_card_id: cardId }, getSharedPayload(getActiveContext())),
     })
       .done(handleCardApplyResponse)
       .fail(handleRequestError)
