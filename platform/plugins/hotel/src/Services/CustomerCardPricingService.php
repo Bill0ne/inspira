@@ -68,11 +68,7 @@ class CustomerCardPricingService
             }
 
             $usageExists = CustomerCardUsage::query()
-                ->where(function ($query) use ($booking) {
-                    $query
-                        ->where('booking_id', $booking->getKey())
-                        ->orWhere('course_booking_id', $booking->getKey());
-                })
+                ->where('course_booking_id', $booking->getKey())
                 ->where(function ($query) {
                     $query
                         ->whereNull('status')
@@ -135,7 +131,6 @@ class CustomerCardPricingService
 
             CustomerCardUsage::query()->create([
                 'card_id' => $card->getKey(),
-                'booking_id' => null,
                 'course_booking_id' => $booking->getKey(),
                 'course_id' => $booking->course_id,
                 'units_used' => $units,

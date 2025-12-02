@@ -19,28 +19,7 @@ class CustomerCardPricingService
         $baseAmountGross = max($baseAmountGross, 0);
         $availableUnits = max($card->units_remaining, 0);
 
-        if ($availableUnits <= 0 || $baseAmountGross <= 0) {
-            return new CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE);
-        }
-
-        $basePrice = $card->base_price;
-        $unitValueGross = ($basePrice !== null && $basePrice !== '')
-            ? max((float) $basePrice, 0)
-            : max($baseAmountGross, 0);
-
-        // Jede Buchung soll genau einen Karteneinsatz verbrauchen.
-        $unitsUsed = min($availableUnits, 1);
-
-        // Der abzuziehende Betrag entspricht dem Einheitswert, höchstens jedoch dem Basisbetrag.
-        $discountGross = min($unitValueGross, $baseAmountGross);
-        $coverageType = $discountGross >= $baseAmountGross
-            ? CustomerCardCoverageType::FULL
-            : CustomerCardCoverageType::PARTIAL;
-
-        return new CardEffectDTO($discountGross, $unitsUsed, $unitValueGross, $coverageType);
-    }
-
-    public function finalizeUsage(CourseBooking $booking): void
+    public function courseBooking(): BelongsTo
     {
         if (! $booking->customer_card_id) {
             return;
