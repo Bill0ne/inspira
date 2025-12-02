@@ -329,99 +329,110 @@ class CustomerCardController extends BaseController
     }
 
     public function apply(Request $request, CustomerCardService $service, CustomerCardPricingService $pricingService)
-{
-    $customerId = auth('customer')->id();
+    {
+        $customerId = auth('customer')->id();
 
-    if (!$customerId) {
-        return $this
-            ->httpResponse()
-            ->setError()
-            ->setMessage(trans('plugins/hotel::customer-card.messages.login_required'));
-    }
-
-    // Karte prüfen
-    $card = $service->getValidCard((int)$request->input('card_id'), $customerId);
-
-    if (!$card) {
-        return $this
-            ->httpResponse()
-            ->setError()
-            ->setMessage(trans('plugins/hotel::customer-card.messages.card_not_found'));
-    }
-
-    // Kontext bestimmen (Hotel / Kurs)
-    $context = $this->resolveCheckoutContext($request);
-    $courseId = $this->resolveCourseId($request, $context);
-
-    $course = null;
-
-    if ($context === HotelSupport::CONTEXT_COURSE && $courseId) {
-        $course = Course::query()->find($courseId);
-
-        if (!$course) {
+        if (! $customerId) {
             return $this
                 ->httpResponse()
                 ->setError()
-                ->setMessage(__('Der Kurs wurde nicht gefunden.'));
+                ->setMessage(trans('plugins/hotel::customer-card.messages.login_required'));
         }
 
-        if (!$course->accept_customer_card) {
+        $card = $service->getValidCard((int) $request->input('card_id'), $customerId);
+
+        if (! $card) {
             return $this
                 ->httpResponse()
                 ->setError()
-                ->setMessage(__('Dieser Kurs erlaubt keine Kundenkarte.'));
+                ->setMessage(trans('plugins/hotel::customer-card.messages.card_not_found'));
         }
+
+        $context = $this->resolveCheckoutContext($request);
+        $courseId = $this->resolveCourseId($request, $context);
+
+        $course = null;
+
+        if ($context === HotelSupport::CONTEXT_COURSE && $courseId) {
+            $course = Course::query()->find($courseId);
+
+            if (! $course) {
+                return $this
+                    ->httpResponse()
+                    ->setError()
+                    ->setMessage(__('Der Kurs wurde nicht gefunden.'));
+            }
+
+            if (! $course->accept_customer_card) {
+                return $this
+                    ->httpResponse()
+                    ->setError()
+                    ->setMessage(__('Dieser Kurs erlaubt keine Kundenkarte.'));
+            }
+        }
+
+        $coursePricing = 0.0;
+
+        if ($course) {
+            $pricing = $course->resolvePricing(auth('customer')->user());
+            $coursePricing = (float) ($pricing['calculated_gross']
+                ?? $course->getPriceWithTax($course->getCourseTotalPrice()));
+        }
+
+        $cardEffect = $course
+            ? $pricingService->calculateCardEffect($card, $course, $coursePricing)
+            : new \Botble\Hotel\DTO\CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE);
+
+        app(HotelSupport::class)->saveCheckoutData([
+            'customer_card_id'            => $card->getKey(),
+            'customer_card_discount'      => $cardEffect->discountGross,
+            'customer_card_units_used'    => $cardEffect->unitsUsed,
+            'customer_card_coverage_type' => $cardEffect->coverageType->value,
+            'customer_card_unit_price'    => $cardEffect->unitValueGross,
+        ], $context);
+
+        $checkoutState = null;
+
+        if ($context === HotelSupport::CONTEXT_COURSE && $course) {
+            try {
+                $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
+            } catch (Throwable $exception) {
+                return $this
+                    ->httpResponse()
+                    ->setError()
+                    ->setCode(422)
+                    ->setMessage(__('Die Checkout-Berechnung konnte nicht abgeschlossen werden.'))
+                    ->setData([
+                        'message' => __('Die Checkout-Berechnung konnte nicht abgeschlossen werden.'),
+                        'reason' => $exception->getMessage(),
+                    ]);
+            }
+
+            $checkoutState['course'] = array_merge(
+                ['id' => $course->getKey()],
+                Arr::get($checkoutState, 'course', []) ?: []
+            );
+
+            if ($checkoutError = $this->validateCheckoutPayload($checkoutState, $course)) {
+                return $this
+                    ->httpResponse()
+                    ->setError()
+                    ->setCode($checkoutError['code'])
+                    ->setMessage($checkoutError['message'])
+                    ->setData([
+                        'message' => $checkoutError['message'],
+                        'missing' => $checkoutError['missing'],
+                    ]);
+            }
+        }
+
+        $checkoutState = $this->enrichCheckoutPayload($checkoutState, $course, $cardEffect, $card);
+
+        return $this
+            ->httpResponse()
+            ->setMessage(__('Karte angewendet.'))
+            ->setData($checkoutState);
     }
-
-    // Preis berechnen
-    $coursePricing = 0.0;
-
-    if ($course) {
-        $pricing = $course->resolvePricing(auth('customer')->user());
-        $coursePricing = (float)($pricing['calculated_gross']
-            ?? $course->getPriceWithTax($course->getCourseTotalPrice()));
-    }
-
-    // Karteneffekt (richtiger Rabatt, richtige Session)
-    $cardEffect = $course
-        ? $pricingService->calculateCardEffect($card, $course, $coursePricing)
-        : new \Botble\Hotel\DTO\CardEffectDTO(0, 0, 0, CustomerCardCoverageType::NONE);
-
-    // Session aktualisieren
-    app(HotelSupport::class)->saveCheckoutData([
-        'customer_card_id'           => $card->getKey(),
-        'customer_card_discount'     => $cardEffect->discountGross,
-        'customer_card_units_used'   => $cardEffect->unitsUsed,
-        'customer_card_coverage_type'=> $cardEffect->coverageType->value,
-        'customer_card_unit_price'   => $cardEffect->unitValueGross,
-    ], $context);
-
-    // Checkout-Ansicht aktualisieren
-    $checkoutState = null;
-
-    if ($context === HotelSupport::CONTEXT_COURSE && $course) {
-        $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
-    }
-
-    // Falls kein Kurs-Checkout → Basispayload
-    $checkoutState ??= [
-        'success' => true,
-        'card' => [
-            'id' => $card->getKey(),
-            'units_used' => $cardEffect->unitsUsed,
-            'discount' => $cardEffect->discountGross,
-            'coverage_type' => $cardEffect->coverageType->value,
-            'unit_price_raw' => $cardEffect->unitValueGross,
-            'unit_price_display' => format_price($cardEffect->unitValueGross),
-        ],
-        'totals' => [],
-    ];
-
-    return $this
-        ->httpResponse()
-        ->setMessage(__('Karte angewendet.'))
-        ->setData($checkoutState);
-}
 
     public function remove(Request $request)
     {
@@ -436,24 +447,138 @@ class CustomerCardController extends BaseController
         ], $context);
 
         $checkoutState = null;
+        $course = null;
 
         if ($context === HotelSupport::CONTEXT_COURSE) {
             $courseId = $this->resolveCourseId($request, $context);
             $course = $courseId ? Course::query()->find($courseId) : null;
 
             if ($course) {
-                $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
+                try {
+                    $checkoutState = app(CourseCheckoutStateService::class)->buildState($course);
+                } catch (Throwable $exception) {
+                    return $this
+                        ->httpResponse()
+                        ->setError()
+                        ->setCode(422)
+                        ->setMessage(__('Die Checkout-Berechnung konnte nicht abgeschlossen werden.'))
+                        ->setData([
+                            'message' => __('Die Checkout-Berechnung konnte nicht abgeschlossen werden.'),
+                            'reason' => $exception->getMessage(),
+                        ]);
+                }
+
+                $checkoutState['course'] = array_merge(
+                    ['id' => $course->getKey()],
+                    Arr::get($checkoutState, 'course', []) ?: []
+                );
+
+                if ($checkoutError = $this->validateCheckoutPayload($checkoutState, $course)) {
+                    return $this
+                        ->httpResponse()
+                        ->setError()
+                        ->setCode($checkoutError['code'])
+                        ->setMessage($checkoutError['message'])
+                        ->setData([
+                            'message' => $checkoutError['message'],
+                            'missing' => $checkoutError['missing'],
+                        ]);
+                }
             }
         }
 
-        $checkoutState ??= [
-            'success' => true,
-            'card' => null,
-            'coupon' => null,
-            'totals' => [],
-        ];
+        $checkoutState = $this->enrichCheckoutPayload($checkoutState, $course, null, null);
 
-        return response()->json($checkoutState);
+        return $this
+            ->httpResponse()
+            ->setMessage(__('Karte entfernt.'))
+            ->setData($checkoutState);
+    }
+
+    protected function validateCheckoutPayload(?array $checkoutState, ?Course $course = null): ?array
+    {
+        if (! is_array($checkoutState)) {
+            return [
+                'code' => 422,
+                'message' => __('Die Checkout-Daten sind ungültig.'),
+                'missing' => ['payload'],
+            ];
+        }
+
+        $missing = [];
+        $totals = Arr::get($checkoutState, 'totals');
+
+        if (! is_array($totals)) {
+            $missing[] = 'totals';
+        } else {
+            foreach (['total_raw', 'minimum_fee_raw', 'card_discount_raw'] as $requiredTotal) {
+                if (! array_key_exists($requiredTotal, $totals)) {
+                    $missing[] = 'totals.' . $requiredTotal;
+                }
+            }
+        }
+
+        if ($course) {
+            $courseData = Arr::get($checkoutState, 'course', []);
+
+            if (! is_array($courseData) || (int) Arr::get($courseData, 'id', 0) !== (int) $course->getKey()) {
+                $missing[] = 'course.id';
+            }
+        }
+
+        if (! empty($missing)) {
+            return [
+                'code' => 422,
+                'message' => __('Die Checkout-Daten sind unvollständig.'),
+                'missing' => $missing,
+            ];
+        }
+
+        return null;
+    }
+
+    protected function enrichCheckoutPayload(?array $checkoutState, ?Course $course, $cardEffect = null, ?CustomerCard $card = null): array
+    {
+        $state = $checkoutState ?? [];
+
+        $state['success'] = $state['success'] ?? true;
+
+        $totals = Arr::get($state, 'totals', []);
+        $totals['card_discount_raw'] = Arr::get($totals, 'card_discount_raw', $cardEffect->discountGross ?? 0.0);
+        $totals['card_discount_display'] = Arr::get(
+            $totals,
+            'card_discount_display',
+            format_price($totals['card_discount_raw'])
+        );
+        $totals['minimum_fee_raw'] = Arr::get($totals, 'minimum_fee_raw', 0.0);
+        $totals['minimum_fee_display'] = Arr::get(
+            $totals,
+            'minimum_fee_display',
+            format_price($totals['minimum_fee_raw'])
+        );
+        $totals['total_raw'] = Arr::get($totals, 'total_raw', 0.0);
+
+        $state['totals'] = $totals;
+
+        if ($course) {
+            $state['course'] = array_merge(['id' => $course->getKey()], Arr::get($state, 'course', []) ?: []);
+        }
+
+        if (! Arr::get($state, 'card') && $card) {
+            $state['card'] = [
+                'id' => $card->getKey(),
+                'units_used' => $cardEffect->unitsUsed ?? 0,
+                'discount' => $cardEffect->discountGross ?? 0,
+                'coverage_type' => $cardEffect->coverageType->value ?? null,
+                'unit_price_raw' => $cardEffect->unitValueGross ?? 0.0,
+                'unit_price_display' => format_price($cardEffect->unitValueGross ?? 0.0),
+            ];
+        }
+
+        $state['raw_discount'] = Arr::get($state, 'raw_discount', $totals['card_discount_raw']);
+        $state['minimum_fee'] = Arr::get($state, 'minimum_fee', $totals['minimum_fee_raw']);
+
+        return $state;
     }
 
     public function usages(CustomerCard $customerCard, BaseHttpResponse $response): BaseHttpResponse
