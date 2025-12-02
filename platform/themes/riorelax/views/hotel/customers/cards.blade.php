@@ -34,6 +34,93 @@
             padding: 28px;
         }
 
+        .inspira-card-history__table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        .inspira-card-history__table thead th {
+            background: #f6f8fb;
+            color: #6c757d;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .inspira-card-history__table tbody td {
+            padding: 18px 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f3f5;
+            font-size: 14px;
+            color: #1f2d3d;
+        }
+
+        .inspira-card-history__table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .inspira-card-history__table tbody tr:hover {
+            background: #f9fbff;
+        }
+
+        .inspira-history-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .inspira-history-meta__title {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .inspira-history-meta__subtitle {
+            color: #6c757d;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .inspira-history-units {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .inspira-history-units strong {
+            font-size: 16px;
+            color: #0f172a;
+        }
+
+        .inspira-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .inspira-status--success {
+            background: #e8f7f1;
+            color: #1e7d6d;
+        }
+
+        .inspira-status--warning {
+            background: #fff4e6;
+            color: #b75c00;
+        }
+
+        .inspira-status--muted {
+            background: #f1f3f5;
+            color: #495057;
+        }
+
         .inspira-card-panel__header {
             display: flex;
             align-items: flex-start;
@@ -307,42 +394,71 @@
                 <p class="mb-0 text-muted">{{ trans('plugins/hotel::customer-card.purchase.history_empty') }}</p>
             @else
                 <div class="table-responsive">
-                    <table class="table table-striped align-middle mb-0">
+                    <table class="inspira-card-history__table">
                         <thead>
                             <tr>
                                 <th>{{ __('Datum') }}</th>
                                 <th>{{ __('Karte') }}</th>
                                 <th>{{ __('Buchung / Kurs') }}</th>
                                 <th>{{ trans('plugins/hotel::customer-card.purchase.units_used') }}</th>
+                                <th>{{ trans('plugins/hotel::customer-card.purchase.saved_amount') }}</th>
                                 <th>{{ __('Status') }}</th>
                             </tr>
                         </thead>
                         <tbody>
+                            @php
+                                $statusLabels = [
+                                    'consumed' => trans('plugins/hotel::customer-card.status.consumed'),
+                                    'pending' => __('Ausstehend'),
+                                    'reverted' => __('Storniert'),
+                                ];
+
+                                $statusTones = [
+                                    'consumed' => 'success',
+                                    'pending' => 'warning',
+                                    'reverted' => 'muted',
+                                ];
+                            @endphp
+
                             @foreach ($usages as $usage)
+                                @php
+                                    $statusKey = $usage->status ?: 'consumed';
+                                    $statusLabel = $statusLabels[$statusKey] ?? __('Status unbekannt');
+                                    $statusTone = $statusTones[$statusKey] ?? 'muted';
+                                @endphp
+
                                 <tr>
-                                    <td>{{ $usage->display_date }}</td>
+                                    <td class="text-nowrap">{{ $usage->display_date }}</td>
                                     <td>
                                         @if ($usage->card)
-                                            {{ $usage->card->name }}
+                                            <div class="inspira-history-meta">
+                                                <span class="inspira-history-meta__title">{{ $usage->card->name }}</span>
+                                                <span class="inspira-history-meta__subtitle">{{ __('Karte des Kundenkontos') }}</span>
+                                            </div>
                                         @else
                                             <span class="text-muted">({{ __('gelöschte Karte') }})</span>
                                         @endif
                                     </td>
                                     <td>
                                         @if ($usage->courseBooking)
-                                            <div>
-                                                {{ $usage->courseBooking->booking_number ?? __('Buchung ohne Nummer') }}
-                                            </div>
-
-                                            <div class="text-muted small">
-                                                {{ $usage->courseBooking->course->name ?? __('Kurs entfernt') }}
+                                            <div class="inspira-history-meta">
+                                                <span class="inspira-history-meta__title">{{ $usage->courseBooking->booking_number ?? __('Buchung ohne Nummer') }}</span>
+                                                <p class="inspira-history-meta__subtitle">{{ $usage->courseBooking->course->name ?? __('Kurs entfernt') }}</p>
                                             </div>
                                         @else
                                             <span class="text-muted">{{ __('Buchung wurde entfernt') }}</span>
                                         @endif
                                     </td>
-                                    <td>{{ $usage->units_used }}</td>
-                                    <td>{{ $usage->status ?? '—' }}</td>
+                                    <td>
+                                        <div class="inspira-history-units">
+                                            <strong>{{ $usage->units_used }}</strong>
+                                            <span class="text-muted">{{ __('Einheiten') }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ format_price($usage->discount_amount) }}</td>
+                                    <td>
+                                        <span class="inspira-status inspira-status--{{ $statusTone }}">{{ $statusLabel }}</span>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
