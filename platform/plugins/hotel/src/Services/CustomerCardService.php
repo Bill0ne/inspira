@@ -183,7 +183,8 @@ class CustomerCardService
     public function assignTemplateToCustomer(CustomerCard $template, Customer $customer): CustomerCard
     {
         return $this->database->transaction(function () use ($template, $customer) {
-            $attributes = [
+            $newCard = $template->replicate();
+            $newCard->fill([
                 'name' => $template->name,
                 'type' => $template->type,
                 'base_price' => $template->base_price,
@@ -194,27 +195,8 @@ class CustomerCardService
                 'is_active' => true,
                 'created_by' => $template->created_by,
                 'assigned_to' => $customer->getKey(),
-            ];
-
-            $existingCard = CustomerCard::query()
-                ->where('assigned_to', $customer->getKey())
-                ->where('name', $template->name)
-                ->first();
-
-            if ($existingCard) {
-                $existingCard->fill($attributes);
-                $existingCard->units_remaining = $template->units_total;
-                if (! $existingCard->uid) {
-                    $existingCard->uid = CustomerCard::generateUid();
-                }
-                $existingCard->save();
-
-                return $existingCard->refresh();
-            }
-
-            $newCard = $template->replicate();
-            $newCard->fill($attributes);
-            $newCard->uid = CustomerCard::generateUid();
+                'uid' => CustomerCard::generateUid(),
+            ]);
             $newCard->save();
 
             return $newCard->refresh();
