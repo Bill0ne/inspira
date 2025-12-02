@@ -140,5 +140,6 @@ return [
         'confirm_description' => 'Confirm the purchase of your customer card. It will be available immediately after checkout.',
         'restriction_note' => 'Coupons or price configurators cannot be applied to customer cards.',
         'submit_button' => 'Activate card for :price',
+        'payment_method_missing' => 'Please choose a payment method to continue with your card purchase.',
     ],
 ];

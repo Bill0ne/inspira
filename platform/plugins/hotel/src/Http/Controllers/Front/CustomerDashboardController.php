@@ -221,10 +221,17 @@ class CustomerDashboardController
 
         $paymentMethod = $request->input('payment_method');
 
+        if (! $paymentMethod) {
+            return $response
+                ->setError()
+                ->setNextUrl(route('customer.cards.checkout', $customerCard))
+                ->setMessage(trans('plugins/hotel::customer-card.checkout.payment_method_missing'));
+        }
+
         $data = [
             'error' => false,
             'message' => false,
-            'amount' => $amount,
+            'amount' => $order->amount,
             'currency' => strtoupper(get_application_currency()->title),
             'type' => $paymentMethod,
             'charge_id' => null,
