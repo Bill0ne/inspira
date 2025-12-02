@@ -291,6 +291,30 @@ class CourseController extends BaseController
             return true;
         });
 
+        $desiredAutoSessions = collect($dates)
+            ->where('is_manual', false)
+            ->pluck('start_date')
+            ->filter()
+            ->map(fn ($date) => Carbon::parse($date)->toDateTimeString())
+            ->values();
+
+        $obsoleteAutoSessions = $course->sessions()
+            ->where('is_manual', false)
+            ->get()
+            ->filter(fn ($session) => !$desiredAutoSessions->contains($session->start_date->toDateTimeString()));
+
+        foreach ($obsoleteAutoSessions as $session) {
+            if ($session->activeBookings()->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'sessions' => __("Cannot remove session starting at :date; it has bookings.", [
+                        'date' => $session->start_date->format('Y-m-d H:i'),
+                    ]),
+                ]);
+            }
+
+            $session->delete();
+        }
+
         $existingManuals = $course->sessions()->where('is_manual', true)->with('bookings')->get();
         $submittedIds = collect($manualSessionsFromForm)->pluck('id')->filter()->toArray();
 
