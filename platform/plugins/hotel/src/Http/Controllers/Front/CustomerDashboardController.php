@@ -71,10 +71,10 @@ class CustomerDashboardController
         $customerId = auth('customer')->id();
 
         $usages = CustomerCardUsage::query()
-            ->whereHas('booking', function ($query) use ($customerId) {
+            ->whereHas('courseBooking', function ($query) use ($customerId) {
                 $query->where('customer_id', $customerId);
             })
-            ->with(['card', 'booking.course'])
+            ->with(['card', 'courseBooking.course'])
             ->orderByDesc('consumed_at')
             ->orderByDesc('created_at')
             ->get();

@@ -329,14 +329,14 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($usage->booking)
-                                            <div>{{ $usage->booking->booking_number ?? __('Buchung ohne Nummer') }}</div>
+                                        @if ($usage->courseBooking)
+                                            <div>{{ $usage->courseBooking->booking_number ?? __('Buchung ohne Nummer') }}</div>
 
                                             <div class="text-muted small">
-                                                {{ $usage->booking->course?->name ?? __('Kurs entfernt') }}
+                                                {{ $usage->courseBooking->course?->name ?? __('Kurs entfernt') }}
                                             </div>
                                         @else
-                                            <span class="text-muted">{{ __('Buchung nicht verfügbar') }}</span>
+                                            <span class="text-muted">{{ __('Buchung wurde entfernt') }}</span>
                                         @endif
                                     </td>
                                     <td>{{ $usage->units_used }}</td>
