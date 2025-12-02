@@ -92,4 +92,59 @@ $(function () {
     if (initialCourseId) {
         $courseSelect.trigger('change');
     }
+
+    const $priceHelper = $('.course-price-helper');
+
+    if ($priceHelper.length) {
+        const helperData = $priceHelper.data();
+        const taxRates = helperData.taxRates || {};
+        const currency = helperData.currency || {};
+        const $priceField = $(helperData.priceField || '#price');
+        const $taxField = $(helperData.taxField || '#tax_id');
+        const $taxText = $priceHelper.find('[data-course-price-tax]');
+        const $grossText = $priceHelper.find('[data-course-price-gross]');
+
+        const formatCurrency = value => {
+            const decimals = Number(currency.decimals ?? 2);
+            const decimalSeparator = currency.decimal_separator || '.';
+            const thousandSeparator = currency.thousand_separator || ',';
+            const symbol = currency.symbol || '';
+            const isPrefix = !!currency.is_prefix;
+            const addSpace = !!currency.add_space;
+
+            const normalized = Number(value || 0);
+            const fixed = normalized.toFixed(decimals);
+
+            let [integer, fraction] = fixed.split('.');
+
+            integer = integer.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
+
+            let formatted = fraction ? [integer, fraction].join(decimalSeparator) : integer;
+
+            if (! symbol) {
+                return formatted;
+            }
+
+            const spacing = addSpace ? ' ' : '';
+
+            return isPrefix
+                ? `${symbol}${spacing}${formatted}`
+                : `${formatted}${spacing}${symbol}`;
+        };
+
+        const calculateGross = () => {
+            const rawPrice = ($priceField.val() || '').toString().replace(',', '.');
+            const price = parseFloat(rawPrice) || 0;
+            const taxId = $taxField.val();
+            const taxValue = Number(taxRates[taxId]) || 0;
+            const gross = Math.round(price * (1 + taxValue / 100) * 100) / 100;
+
+            $taxText.text(`${taxValue.toFixed(2)}%`);
+            $grossText.text(formatCurrency(gross));
+        };
+
+        $priceField.on('input', calculateGross);
+        $taxField.on('change', calculateGross);
+        calculateGross();
+    }
 });

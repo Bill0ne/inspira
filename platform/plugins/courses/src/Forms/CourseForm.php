@@ -45,9 +45,29 @@ class CourseForm extends FormAbstract
             });
         }
         $taxes = [];
+        $taxRates = [];
+        $selectedTaxPercentage = 0;
+        $currency = get_application_currency();
+
+        $currencyFormat = [
+            'symbol' => $currency->symbol ?? '',
+            'is_prefix' => (bool) ($currency->is_prefix_symbol ?? true),
+            'decimals' => (int) ($currency->decimals ?? 2),
+            'decimal_separator' => ($decimalSeparator = setting('hotel_decimal_separator', '.')) === 'space' ? ' ' : $decimalSeparator,
+            'thousand_separator' => ($thousandSeparator = setting('hotel_thousands_separator', ',')) === 'space' ? ' ' : $thousandSeparator,
+            'add_space' => setting('hotel_add_space_between_price_and_currency', 0) == 1,
+        ];
+
         if (is_plugin_active('hotel')) {
-            $taxes = Tax::query()->pluck('title', 'id')->all();
+            $taxCollection = Tax::query()->get(['id', 'title', 'percentage']);
+
+            $taxes = $taxCollection->pluck('title', 'id')->all();
+            $taxRates = $taxCollection->mapWithKeys(fn (Tax $tax) => [$tax->getKey() => (float) $tax->percentage])->all();
+            $selectedTaxPercentage = (float) ($course?->tax?->percentage ?? $taxCollection->first()?->percentage ?? 0);
         }
+
+        $basePrice = (float) ($course?->price ?? 0);
+        $grossPreview = course_truncate_price($basePrice * (1 + $selectedTaxPercentage / 100));
 
         Assets::addScriptsDirectly(['vendor/core/plugins/courses/js/script.js']);
 
@@ -163,6 +183,12 @@ if ($course && $course->getKey()) {
                 NumberFieldOption::make()
                     ->label(trans('plugins/courses::courses.course.price'))
                     ->wrapperAttributes(['class' => 'form-group col-md-6'])
+                    ->helperText(view('plugins/courses::partials.price-helper', [
+                        'grossPreview' => course_format_price($grossPreview),
+                        'selectedTaxPercentage' => $selectedTaxPercentage,
+                        'taxRates' => $taxRates,
+                        'currencyFormat' => $currencyFormat,
+                    ])->render())
                     ->required()
             )
             ->when(is_plugin_active('hotel'), function ($form) {
