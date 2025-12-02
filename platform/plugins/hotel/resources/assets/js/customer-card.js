@@ -114,37 +114,6 @@ $(() => {
         return false;
     };
 
-    const showCheckoutError = (message) => {
-        const $inlineError = $('[data-bb-customer-card="error"], .customer-card-error');
-
-        if ($inlineError.length) {
-            $inlineError
-                .removeClass('d-none')
-                .text(message || t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
-            return;
-        }
-
-        window.Botble.showError(message || t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
-    };
-
-    const validateCheckoutResponse = (payload, requireCourse = false) => {
-        if (!payload || typeof payload !== 'object') return false;
-
-        const totals = payload.totals;
-        if (!totals || typeof totals !== 'object') return false;
-
-        const requiredTotals = ['total_raw', 'minimum_fee_raw', 'card_discount_raw'];
-        const hasTotals = requiredTotals.every((key) => Object.prototype.hasOwnProperty.call(totals, key));
-        const hasCourse = !requireCourse || (payload.course && Number(payload.course.id));
-
-        return hasTotals && hasCourse;
-    };
-
-    const resetControls = ($button = null, ...controls) => {
-        toggleButton($button, false);
-        controls.filter(Boolean).forEach(($control) => $control.prop('disabled', false).removeClass('button-loading'));
-    };
-
     /* ----------------------------------------------------------
      *  UNIVERSAL REQUEST WRAPPER
      * ---------------------------------------------------------- */
@@ -237,13 +206,7 @@ $(() => {
     CARD_CONFIG.applyCustomerCard = applyCustomerCard;
     CARD_CONFIG.removeCustomerCard = removeCustomerCard;
 
-    const syncCheckoutState = (payload, { trigger = null } = {}) => {
-        if (!validateCheckoutResponse(payload, CARD_CONFIG.course_checkout)) {
-            showCheckoutError(t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
-            resetControls(trigger);
-            return payload;
-        }
-
+    const syncCheckoutState = (payload) => {
         if (window.CheckoutCommerce && typeof window.CheckoutCommerce.setState === 'function') {
             return window.CheckoutCommerce.setState(payload, 'course');
         }
@@ -410,23 +373,14 @@ $(() => {
             applyCustomerCard(cardId, courseId, $(this))
                 .then(({ data }) => {
                     const payload = data?.data || {};
-                    if (!validateCheckoutResponse(payload, CARD_CONFIG.course_checkout)) {
-                        showCheckoutError(t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
-                        resetControls($applyButton, $cardSelect);
-                        return;
-                    }
-
-                    syncCheckoutState(payload, { trigger: $applyButton });
+                    syncCheckoutState(payload);
                     window.Botble.showSuccess(data.message);
 
                     triggerCustomerCardEvent('customer-card.applied', {
                         discount: Number(payload?.totals?.card_discount_raw || payload.raw_discount || 0),
                     });
                 })
-                .catch((error) => {
-                    resetControls($applyButton, $cardSelect);
-                    handleRequestError(error);
-                });
+                .catch(handleRequestError);
         });
 
         /* REMOVE ------------------------------------------------- */
@@ -440,21 +394,12 @@ $(() => {
             removeCustomerCard($(this), courseId)
                 .then(({ data }) => {
                     const payload = data?.data || {};
-                    if (!validateCheckoutResponse(payload, CARD_CONFIG.course_checkout)) {
-                        showCheckoutError(t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
-                        resetControls($removeButton, $cardSelect);
-                        return;
-                    }
-
-                    syncCheckoutState(payload, { trigger: $removeButton });
+                    syncCheckoutState(payload);
                     window.Botble.showSuccess(data.message);
 
                     triggerCustomerCardEvent('customer-card.removed', {});
                 })
-                .catch((error) => {
-                    resetControls($removeButton, $cardSelect);
-                    handleRequestError(error);
-                });
+                .catch(handleRequestError);
         });
     }
 
