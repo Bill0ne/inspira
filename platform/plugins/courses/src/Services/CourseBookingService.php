@@ -11,9 +11,9 @@ use Botble\Hotel\Services\CustomerCardPricingService;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Botble\Payment\Models\Payment;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Arr;
 
 class CourseBookingService
 {
@@ -30,8 +30,8 @@ class CourseBookingService
             return null;
         }
 
-        // Kanal für reine Kundenkarten-Buchungen
-        $customerCardMethod = (string) PaymentMethodEnum::CUSTOMER_CARD();
+        // Einheitliche Darstellung für reine Kundenkarten-Buchungen
+        $customerCardMethod = $this->normalizePaymentChannel(PaymentMethodEnum::CUSTOMER_CARD());
 
         /**
          * ------------------------------------------------------------------
@@ -63,12 +63,21 @@ class CourseBookingService
         if ($payment) {
             $courseBooking->payment_id = $payment->getKey();
 
-            // Channel zuverlässig normalisieren (stripe, customer_card, cod, bank_transfer, …)
+            // Payment-Kanal in String konvertieren (stripe, customer_card, cod, bank_transfer, …)
             $channel = $this->normalizePaymentChannel($payment->payment_channel);
             $courseBooking->payment_method = $channel;
 
-            // Status sauber als String auflösen (z.B. "completed", "pending", …)
+            // Status als stabilen String lesen (z.B. "completed", "pending", …)
             $status = $this->resolveEnumValue($payment->status);
+
+            // Vergleichswerte aus Enum ableiten (als String)
+            $completed = $this->resolveEnumValue(PaymentStatusEnum::COMPLETED);
+            $pending   = $this->resolveEnumValue(PaymentStatusEnum::PENDING);
+            $failed    = $this->resolveEnumValue(PaymentStatusEnum::FAILED);
+            $fraud     = $this->resolveEnumValue(PaymentStatusEnum::FRAUD);
+            $canceled  = $this->resolveEnumValue(PaymentStatusEnum::CANCELED);
+            $refunding = $this->resolveEnumValue(PaymentStatusEnum::REFUNDING);
+            $refunded  = $this->resolveEnumValue(PaymentStatusEnum::REFUNDED);
 
             /**
              * ------------------------------------------------------------------
@@ -77,8 +86,8 @@ class CourseBookingService
              */
             switch ($status) {
                 // PAYMENT COMPLETED
-                case PaymentStatusEnum::COMPLETED:
-                    // Wenn Kundenkarte beteiligt und noch nicht verbraucht: erst PENDING
+                case $completed:
+                    // Kundenkarte beteiligt & noch nicht verbraucht → erst PENDING
                     if ($courseBooking->customer_card_id && ! $courseBooking->customer_card_consumed_at) {
                         $courseBooking->status = BookingStatusEnum::PENDING;
                     } else {
@@ -87,7 +96,7 @@ class CourseBookingService
                     break;
 
                 // PAYMENT PENDING
-                case PaymentStatusEnum::PENDING:
+                case $pending:
                     if (in_array($channel, ['cod', 'bank_transfer'], true)) {
                         $courseBooking->status = BookingStatusEnum::PENDING;
                     } else {
@@ -96,15 +105,15 @@ class CourseBookingService
                     break;
 
                 // PAYMENT FAILED / FRAUD / CANCELED
-                case PaymentStatusEnum::FAILED:
-                case PaymentStatusEnum::FRAUD:
-                case PaymentStatusEnum::CANCELED:
+                case $failed:
+                case $fraud:
+                case $canceled:
                     $courseBooking->status = BookingStatusEnum::FAILED;
                     break;
 
                 // PAYMENT REFUND / REFUNDING
-                case PaymentStatusEnum::REFUNDING:
-                case PaymentStatusEnum::REFUNDED:
+                case $refunding:
+                case $refunded:
                     $courseBooking->status = BookingStatusEnum::CANCELLED;
                     break;
             }
@@ -220,13 +229,15 @@ class CourseBookingService
             $paymentStatus = $this->resolveEnumValue($payment->status);
         }
 
+        $completedStatus = $this->resolveEnumValue(PaymentStatusEnum::COMPLETED);
+
         /**
          * ------------------------------------------------------------------
          *  FALL 1: RESTZAHLUNG > 0 → PAYMENT MUSS "completed" SEIN
          * ------------------------------------------------------------------
          */
         if ($courseBooking->amount > 0) {
-            if (! $payment || $paymentStatus !== PaymentStatusEnum::COMPLETED) {
+            if (! $payment || $paymentStatus !== $completedStatus) {
                 $this->markCustomerCardFinalizePending($courseBooking);
 
                 Log::warning('[CustomerCardFinalize] Payment not completed yet, skipping', [
@@ -242,7 +253,6 @@ class CourseBookingService
             /**
              * ------------------------------------------------------------------
              *  FALL 2: ZERO-AMOUNT → PURE KARTENZAHLUNG
-             *  Kein Completed-Payment erzwingen, aber sauber loggen.
              * ------------------------------------------------------------------
              */
             Log::info('[CustomerCardFinalize] Proceeding for zero-amount booking', [
@@ -392,8 +402,14 @@ class CourseBookingService
     /**
      * Liefert einen stabilen String-Wert aus Enum / Wert / Objekt.
      */
-    protected function resolveEnumValue(mixed $enum, string $default = 'unknown'): string
+    protected function resolveEnumValue(mixed $enum, ?string $default = 'unknown'): string
     {
+        // Botble-Enum mit getValue()
+        if (is_object($enum) && method_exists($enum, 'getValue')) {
+            return (string) $enum->getValue();
+        }
+
+        // Native PHP BackedEnum
         if ($enum instanceof \BackedEnum) {
             return (string) $enum->value;
         }
@@ -402,15 +418,11 @@ class CourseBookingService
             return $enum->name;
         }
 
-        if (is_object($enum) && method_exists($enum, 'getValue')) {
-            return (string) $enum->getValue();
-        }
-
         if (is_string($enum) || is_numeric($enum)) {
             return (string) $enum;
         }
 
-        return $default;
+        return (string) $default;
     }
 
     protected function normalizeCoverageType(mixed $coverageType): string
