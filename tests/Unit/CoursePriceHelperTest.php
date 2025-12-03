@@ -25,4 +25,12 @@ class CoursePriceHelperTest extends TestCase
     {
         $this->assertSame(-34.0, course_truncate_price(-33.9983));
     }
+
+    public function test_it_handles_higher_precision_net_values()
+    {
+        $net = 36.9731;
+        $gross = course_truncate_price($net * 1.19);
+
+        $this->assertSame(44.0, $gross);
+    }
 }
