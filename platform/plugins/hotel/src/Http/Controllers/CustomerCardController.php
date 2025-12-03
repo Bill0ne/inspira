@@ -607,7 +607,11 @@ class CustomerCardController extends BaseController
 
         $usages = CustomerCardUsage::query()
             ->whereIn('card_id', $assignedCardIds)
-            ->with(['course', 'booking.room.room', 'card.customer'])
+            ->with([
+                'course',
+                'courseBooking.course',
+                'card.customer',
+            ])
             ->orderByDesc('created_at')
             ->get();
 
