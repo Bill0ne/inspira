@@ -98,6 +98,7 @@ $(function () {
     if ($priceHelper.length) {
         const helperData = $priceHelper.data();
         const taxRates = helperData.taxRates || {};
+        const defaultTax = Number(helperData.defaultTax ?? 0);
         const currency = helperData.currency || {};
         const selectedTaxId = helperData.selectedTax;
         const $priceField = $(helperData.priceField || '#price');
@@ -137,7 +138,8 @@ $(function () {
             const rawPrice = ($priceField.val() || '').toString().replace(',', '.');
             const price = parseFloat(rawPrice) || 0;
             const taxId = $taxField.val() || selectedTaxId;
-            const taxValue = Number(taxRates[taxId]) || 0;
+            const hasTaxRate = Object.prototype.hasOwnProperty.call(taxRates, taxId);
+            const taxValue = hasTaxRate ? Number(taxRates[taxId]) : defaultTax;
             const gross = Math.round(price * (1 + taxValue / 100) * 100) / 100;
 
             $taxText.text(`${taxValue.toFixed(2)}%`);
