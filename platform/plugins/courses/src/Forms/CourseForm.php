@@ -183,6 +183,10 @@ if ($course && $course->getKey()) {
                 NumberFieldOption::make()
                     ->label(trans('plugins/courses::courses.course.price'))
                     ->wrapperAttributes(['class' => 'form-group col-md-6'])
+                    ->attributes([
+                        'step' => '0.0001',
+                        'lang' => 'en',
+                    ])
                     ->helperText(view('plugins/courses::partials.price-helper', [
                         'grossPreview' => course_format_price($grossPreview),
                         'selectedTaxPercentage' => $selectedTaxPercentage,
