@@ -42,6 +42,11 @@ class CustomerCardUsage extends BaseModel
         return $this->belongsTo(CourseBooking::class, 'course_booking_id');
     }
 
+    public function booking(): BelongsTo
+    {
+        return $this->courseBooking();
+    }
+
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class, 'course_id');
