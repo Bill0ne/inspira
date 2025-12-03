@@ -47,6 +47,7 @@ class CourseForm extends FormAbstract
         $taxes = [];
         $taxRates = [];
         $selectedTaxPercentage = 0;
+        $selectedTaxId = null;
         $currency = get_application_currency();
 
         $currencyFormat = [
@@ -63,6 +64,7 @@ class CourseForm extends FormAbstract
 
             $taxes = $taxCollection->pluck('title', 'id')->all();
             $taxRates = $taxCollection->mapWithKeys(fn (Tax $tax) => [$tax->getKey() => (float) $tax->percentage])->all();
+            $selectedTaxId = $course?->tax_id ?? $taxCollection->first()?->getKey();
             $selectedTaxPercentage = (float) ($course?->tax?->percentage ?? $taxCollection->first()?->percentage ?? 0);
         }
 
@@ -190,6 +192,7 @@ if ($course && $course->getKey()) {
                     ->helperText(view('plugins/courses::partials.price-helper', [
                         'grossPreview' => course_format_price($grossPreview),
                         'selectedTaxPercentage' => $selectedTaxPercentage,
+                        'selectedTaxId' => $selectedTaxId,
                         'taxRates' => $taxRates,
                         'currencyFormat' => $currencyFormat,
                     ])->render())
@@ -326,6 +329,7 @@ if ($course && $course->getKey()) {
                     'class' => 'form-control select-full',
                 ],
                 'choices' => $taxes,
+                'value' => $selectedTaxId,
             ])
             ->setBreakFieldPoint('thumbnail');
     }

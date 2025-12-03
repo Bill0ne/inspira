@@ -99,6 +99,7 @@ $(function () {
         const helperData = $priceHelper.data();
         const taxRates = helperData.taxRates || {};
         const currency = helperData.currency || {};
+        const selectedTaxId = helperData.selectedTax;
         const $priceField = $(helperData.priceField || '#price');
         const $taxField = $(helperData.taxField || '#tax_id');
         const $taxText = $priceHelper.find('[data-course-price-tax]');
@@ -135,7 +136,7 @@ $(function () {
         const calculateGross = () => {
             const rawPrice = ($priceField.val() || '').toString().replace(',', '.');
             const price = parseFloat(rawPrice) || 0;
-            const taxId = $taxField.val();
+            const taxId = $taxField.val() || selectedTaxId;
             const taxValue = Number(taxRates[taxId]) || 0;
             const gross = Math.round(price * (1 + taxValue / 100) * 100) / 100;
 
