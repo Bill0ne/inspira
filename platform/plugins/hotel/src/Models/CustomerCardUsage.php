@@ -4,6 +4,7 @@ namespace Botble\Hotel\Models;
 
 use Botble\Base\Models\BaseModel;
 use Botble\Hotel\Models\CustomerCard;
+use Botble\Hotel\Models\Booking;
 use Botble\Courses\Models\Course;
 use Botble\Courses\Models\CourseBooking;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ class CustomerCardUsage extends BaseModel
 
     protected $fillable = [
         'card_id',
+        'booking_id',
         'course_booking_id',
         'course_id',
         'units_used',
@@ -44,7 +46,7 @@ class CustomerCardUsage extends BaseModel
 
     public function booking(): BelongsTo
     {
-        return $this->courseBooking();
+        return $this->belongsTo(Booking::class, 'booking_id');
     }
 
     public function course(): BelongsTo

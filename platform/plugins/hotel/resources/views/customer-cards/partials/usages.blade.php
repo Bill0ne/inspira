@@ -78,6 +78,8 @@
                             {{ $usage->course->name }}
                         @elseif ($usage->courseBooking)
                             {{ $usage->courseBooking->course?->name ?? trans('plugins/hotel::customer-card.table.room_booking_fallback') }}
+                        @elseif ($usage->booking)
+                            {{ $usage->booking->room?->room?->name ?? trans('plugins/hotel::customer-card.table.room_booking_fallback') }}
                         @else
                             —
                         @endif
