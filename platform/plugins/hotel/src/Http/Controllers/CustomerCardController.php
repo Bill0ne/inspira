@@ -27,6 +27,7 @@ use Botble\Courses\Services\CourseCheckoutStateService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Schema;
 
 class CustomerCardController extends BaseController
 {
@@ -605,11 +606,20 @@ class CustomerCardController extends BaseController
             $assignedCardIds = $orders->pluck('assigned_card_id')->filter()->all();
         }
 
-        $usages = CustomerCardUsage::query()
+        $usagesQuery = CustomerCardUsage::query()
             ->whereIn('card_id', $assignedCardIds)
-            ->with(['course', 'booking.room.room', 'card.customer'])
-            ->orderByDesc('created_at')
-            ->get();
+            ->with([
+                'course',
+                'card.customer',
+            ]);
+
+        if (Schema::hasColumn('ht_customer_card_usages', 'course_booking_id')) {
+            $usagesQuery->with(['courseBooking.course']);
+        } elseif (Schema::hasColumn('ht_customer_card_usages', 'booking_id')) {
+            $usagesQuery->with(['booking.room.room']);
+        }
+
+        $usages = $usagesQuery->orderByDesc('created_at')->get();
 
         return $response->setData([
             'html' => view(
