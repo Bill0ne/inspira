@@ -17,6 +17,8 @@ class BookingService
          */
         $booking = Booking::query()->find($bookingId);
 
+        $originalPaymentId = $booking?->payment_id;
+
         if (! $booking) {
             return null;
         }
@@ -33,6 +35,10 @@ class BookingService
 
                 $booking->save();
             }
+        }
+
+        if ($originalPaymentId && $booking->payment_id === $originalPaymentId) {
+            return $booking;
         }
 
         BookingCreated::dispatch($booking);
