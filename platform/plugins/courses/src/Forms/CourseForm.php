@@ -44,9 +44,10 @@ class CourseForm extends FormAbstract
                 return view('plugins/courses::extra-actions', compact('course'))->render();
             });
         }
+        $defaultTaxPercentage = 19.0;
         $taxes = [];
         $taxRates = [];
-        $selectedTaxPercentage = 0;
+        $selectedTaxPercentage = $defaultTaxPercentage;
         $selectedTaxId = null;
         $currency = get_application_currency();
 
@@ -62,10 +63,12 @@ class CourseForm extends FormAbstract
         if (is_plugin_active('hotel')) {
             $taxCollection = Tax::query()->get(['id', 'title', 'percentage']);
 
-            $taxes = $taxCollection->pluck('title', 'id')->all();
-            $taxRates = $taxCollection->mapWithKeys(fn (Tax $tax) => [$tax->getKey() => (float) $tax->percentage])->all();
-            $selectedTaxId = $course?->tax_id ?? $taxCollection->first()?->getKey();
-            $selectedTaxPercentage = (float) ($course?->tax?->percentage ?? $taxCollection->first()?->percentage ?? 0);
+            if ($taxCollection->isNotEmpty()) {
+                $taxes = $taxCollection->pluck('title', 'id')->all();
+                $taxRates = $taxCollection->mapWithKeys(fn (Tax $tax) => [$tax->getKey() => (float) $tax->percentage])->all();
+                $selectedTaxId = $course?->tax_id ?? $taxCollection->first()?->getKey();
+                $selectedTaxPercentage = (float) ($course?->tax?->percentage ?? $taxCollection->first()?->percentage ?? $defaultTaxPercentage);
+            }
         }
 
         $basePrice = (float) ($course?->price ?? 0);
@@ -193,6 +196,7 @@ if ($course && $course->getKey()) {
                         'grossPreview' => course_format_price($grossPreview),
                         'selectedTaxPercentage' => $selectedTaxPercentage,
                         'selectedTaxId' => $selectedTaxId,
+                        'defaultTaxPercentage' => $defaultTaxPercentage,
                         'taxRates' => $taxRates,
                         'currencyFormat' => $currencyFormat,
                     ])->render())
