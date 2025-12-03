@@ -178,7 +178,7 @@ class CustomerDashboardController
             ]);
 
             return $response
-                ->setNextUrl(route('customer.cards'))
+                ->setNextUrl(route('customer.cards.success'))
                 ->setMessage(trans('plugins/hotel::customer-card.purchase.success_message'));
         }
 
@@ -215,7 +215,7 @@ class CustomerDashboardController
             ]);
 
             return $response
-                ->setNextUrl(route('customer.cards'))
+                ->setNextUrl(route('customer.cards.success'))
                 ->setMessage(trans('plugins/hotel::customer-card.purchase.success_message'));
         }
 
@@ -250,8 +250,8 @@ class CustomerDashboardController
             ]),
             'customer_id' => $user->getKey(),
             'customer_type' => get_class($user),
-            'return_url' => $request->input('return_url', route('customer.cards')),
-            'callback_url' => $request->input('callback_url', route('customer.cards')),
+            'return_url' => $request->input('return_url', route('customer.cards.success')),
+            'callback_url' => $request->input('callback_url', route('customer.cards.success')),
             'order_type' => CustomerCardOrder::class,
         ], $request);
 
@@ -292,7 +292,30 @@ class CustomerDashboardController
         }
 
         return $response
-            ->setNextUrl(route('customer.cards'))
+            ->setNextUrl(route('customer.cards.success'))
             ->setMessage(trans('plugins/hotel::customer-card.purchase.pending_message'));
+    }
+
+    public function successCard(CustomerCardService $customerCardService)
+    {
+        $customer = auth('customer')->user();
+
+        $activeCard = CustomerCard::query()
+            ->active()
+            ->where('assigned_to', $customer->getKey())
+            ->orderByDesc('created_at')
+            ->first();
+
+        if (! $activeCard) {
+            return redirect()->route('customer.cards');
+        }
+
+        $statusTone = $activeCard->status_color ?? 'success';
+
+        return Theme::scope(
+            'hotel.customers.card-success',
+            compact('activeCard', 'customer', 'statusTone'),
+            'plugins/hotel::themes.customers.card-success'
+        )->render();
     }
 }
