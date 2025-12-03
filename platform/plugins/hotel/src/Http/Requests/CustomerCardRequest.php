@@ -24,11 +24,14 @@ class CustomerCardRequest extends Request
 
     public function rules(): array
     {
+        $validUntilRules = $this->validUntilRules();
+
         if ($this->filled('template_id')) {
             return [
                 'template_id' => ['required', 'integer', 'exists:ht_customer_cards,id'],
                 'assigned_to' => ['required', 'integer', 'exists:ht_customers,id'],
-                'valid_until' => ['nullable', 'date_format:' . BaseHelper::getDateFormat(), 'after:today'],
+                'valid_until' => $validUntilRules,
+                'units_remaining' => ['sometimes', 'integer', 'min:0'],
                 'is_active' => ['sometimes', 'boolean'],
             ];
         }
@@ -39,10 +42,22 @@ class CustomerCardRequest extends Request
             'base_price' => ['required', 'numeric', 'min:0'],
             'discount_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'units_total' => ['required', 'integer', 'min:1'],
-            'valid_until' => ['nullable', 'date_format:' . BaseHelper::getDateFormat(), 'after:today'],
+            'units_remaining' => ['sometimes', 'integer', 'min:0'],
+            'valid_until' => $validUntilRules,
             'is_active' => ['sometimes', 'boolean'],
             'is_single_purchase' => ['sometimes', 'boolean'],
             'assigned_to' => ['nullable', 'integer', 'exists:ht_customers,id'],
         ];
+    }
+
+    protected function validUntilRules(): array
+    {
+        $rules = ['nullable', 'date_format:' . BaseHelper::getDateFormat()];
+
+        if ($this->isMethod('post')) {
+            $rules[] = 'after:today';
+        }
+
+        return $rules;
     }
 }
