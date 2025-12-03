@@ -45,6 +45,10 @@ class HookServiceProvider extends ServiceProvider
                     );
                 }
 
+                if (session('order_type') === CustomerCardOrder::class) {
+                    return route('customer.cards.success');
+                }
+
                 return url('/');
             }, 999);
         }
