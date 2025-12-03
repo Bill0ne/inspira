@@ -289,6 +289,11 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
                 ->name('rebook-usage')
                 ->permission('customer-cards.edit');
 
+            // Fallback for legacy edit URLs that post to /edit/{id} instead of the RESTful /{id}
+            Route::match(['post', 'put', 'patch'], 'edit/{customer_card}', [CustomerCardController::class, 'update'])
+                ->name('update-legacy')
+                ->permission('customer-cards.edit');
+
             Route::resource('', CustomerCardController::class)
                 ->parameters(['' => 'customer_card']);
 
