@@ -314,8 +314,9 @@
     var $cardDiscountInput = $root.find('input[name="customer_card_discount"]');
     var $cardSection = $root.find('[data-bb-customer-card-section]');
     var cardState = state.card;
+    var hasActiveCard = !!(cardState && cardState.id);
 
-    if (cardState && cardState.id) {
+    if (hasActiveCard) {
       if ($cardSelect.length) $cardSelect.val(String(cardState.id));
       if ($cardInput.length) $cardInput.val(cardState.id);
       if ($cardIdInput.length) $cardIdInput.val(cardState.id);
@@ -331,9 +332,6 @@
         if (cardText) {
           $infoDiscount.text(cardText);
         }
-      }
-      if ($cardSection.length) {
-        $cardSection.removeClass('d-none');
       }
     } else {
       if ($cardSelect.length) {
@@ -365,16 +363,23 @@
         $cardUnitPriceText.text('-');
       }
       $totalInput.data('active-discount', 0).data('minimum-fee', 0);
-      if ($cardSection.length) {
-        $cardSection.addClass('d-none');
-      }
     }
 
     var couponState = state.coupon || {};
     var couponCode = couponState.code || state.coupon_code || '';
+    var hasActiveCoupon = !!couponCode;
     if (couponCode) {
       $root.find('input[name="coupon_code"]').val(couponCode);
       $root.find('input[name="coupon_hidden"]').val(couponCode);
+    }
+
+    var $couponContainer = getCouponContainer(ctxType);
+    if ($couponContainer.length) {
+      $couponContainer.toggleClass('d-none', hasActiveCard);
+    }
+
+    if ($cardSection.length) {
+      $cardSection.toggleClass('d-none', hasActiveCoupon);
     }
 
     if (state.views && state.views.coupon_box) {
