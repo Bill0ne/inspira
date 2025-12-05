@@ -61,9 +61,27 @@ $(function () {
             'X-CSRF-TOKEN': csrfToken(),
         };
 
-        return axios.create({
-            headers,
-        });
+        const httpClient = typeof axios !== 'undefined' ? axios : window?.axios;
+
+        if (httpClient?.create) {
+            return httpClient.create({
+                headers,
+            });
+        }
+
+        const ajaxRequest = (method, url, payload = {}) =>
+            $.ajax({
+                url,
+                method,
+                headers,
+                data: payload,
+                context: $context?.get?.(0),
+            });
+
+        return {
+            get: (url) => ajaxRequest('GET', url),
+            post: (url, data) => ajaxRequest('POST', url, data),
+        };
     };
 
     const reloadTables = ($button) => {
