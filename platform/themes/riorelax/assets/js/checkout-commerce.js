@@ -438,7 +438,8 @@
       return;
     }
 
-    var nextState = setCheckoutState(response.data || response);
+    var payload = $.extend(true, { card: null }, response.data || response);
+    var nextState = setCheckoutState(payload);
     if (!nextState) {
       handleRequestError(response);
       return;
@@ -455,7 +456,8 @@
       return;
     }
 
-    var nextState = setCheckoutState(response.data || response);
+    var payload = $.extend(true, { card: null }, response.data || response);
+    var nextState = setCheckoutState(payload);
     if (!nextState) {
       handleRequestError(response);
       return;
@@ -738,11 +740,14 @@
         }
 
         callTheme('showSuccess', message || 'Gutschein angewendet.');
-        var state = setCheckoutState(data, ctx.type);
+
+        var payload = $.extend(true, { coupon: { code: code }, coupon_code: code }, data);
+        var state = setCheckoutState(payload, ctx.type);
         if (state && state.coupon && state.coupon.code) {
           setStoredCouponState(ctx, true);
         }
         reloadPaymentList(ctx.type);
+        refreshCouponBox(null, ctx.type);
 
         // Event für andere Module (z.B. course-checkout.js)
         $(document).trigger('coupon.applied', {
@@ -792,11 +797,14 @@
         }
 
         callTheme('showSuccess', message || 'Gutschein entfernt.');
-        var state = setCheckoutState(data, ctx.type);
+
+        var payload = $.extend(true, { coupon: null, coupon_code: '' }, data);
+        var state = setCheckoutState(payload, ctx.type);
         if (!state.coupon || !state.coupon.code) {
           setStoredCouponState(ctx, false);
         }
         reloadPaymentList(ctx.type);
+        refreshCouponBox(null, ctx.type);
 
         // Event für andere Module
         $(document).trigger('coupon.removed', {
