@@ -474,7 +474,7 @@ textarea.form-control{min-height:100px;}
 
                 @if ($customerCardsAllowed)
                     {{-- KUNDENKARTE --}}
-                    <div class="checkout-action-card mb-3">
+                    <div class="checkout-action-card mb-3" data-bb-customer-card-section>
                         <div class="checkout-action-card__header">
                             <div>
                                 <span class="checkout-action-card__eyebrow">Kundenkarte</span>
