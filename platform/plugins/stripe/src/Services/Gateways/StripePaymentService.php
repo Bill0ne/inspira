@@ -110,6 +110,22 @@ class StripePaymentService extends StripePaymentAbstract
 
         // The amount already includes the payment fee from the checkout controller
         // We also add the payment fee as a separate line item for transparency
+        if (! $lineItems) {
+            $this->setErrorMessage(trans('plugins/payment::payment.could_not_get_stripe_token'));
+
+            Log::warning('Stripe checkout aborted: missing line items for payment session', PaymentHelper::formatLog(
+                [
+                    'order_id' => Arr::get($data, 'order_id'),
+                    'order_type' => Arr::get($data, 'order_type'),
+                ],
+                __LINE__,
+                __FUNCTION__,
+                __CLASS__
+            ));
+
+            return null;
+        }
+
         $requestData = [
             'line_items' => $lineItems,
             'mode' => 'payment',
