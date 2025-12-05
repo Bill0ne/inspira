@@ -1,29 +1,30 @@
 $(() => {
 
-    /* ----------------------------------------------------------
-     *  BOTBLE FALLBACK (NEU)
-     * ---------------------------------------------------------- */
-    window.Botble = window.Botble || {
-        request: {
-            post: (url, data) => $.post(url, data).then(res => ({ data: res })),
-            get: (url) => $.get(url).then(res => ({ data: res })),
-            withButtonLoading(button) {
-                button.prop('disabled', true).addClass('button-loading');
-                return {
-                    post: (url, data) =>
-                        $.post(url, data)
-                            .then(res => ({ data: res }))
-                            .always(() => button.prop('disabled', false).removeClass('button-loading')),
-                    get: (url) =>
-                        $.get(url)
-                            .then(res => ({ data: res }))
-                            .always(() => button.prop('disabled', false).removeClass('button-loading')),
-                };
-            },
-        },
-        showSuccess: (msg) => console.log('Success:', msg),
-        showError: (msg) => console.error('Error:', msg),
-        handleError: (err) => console.error('Request error:', err),
+    const showSuccess = (message) => {
+        if (window.Botble?.showSuccess) {
+            window.Botble.showSuccess(message);
+            return;
+        }
+
+        console.log('Success:', message);
+    };
+
+    const showError = (message) => {
+        if (window.Botble?.showError) {
+            window.Botble.showError(message);
+            return;
+        }
+
+        console.error('Error:', message);
+    };
+
+    const handleError = (error) => {
+        if (window.Botble?.handleError) {
+            window.Botble.handleError(error);
+            return;
+        }
+
+        console.error('Request error:', error);
     };
 
     const extractErrorMessage = (error) => {
@@ -83,11 +84,11 @@ $(() => {
         const message = extractErrorMessage(error);
 
         if (message) {
-            window.Botble.showError(message);
+            showError(message);
             return;
         }
 
-        window.Botble.handleError(error);
+        handleError(error);
     };
 
     const isCustomerAuthenticated = () => !!CARD_CONFIG.isAuthenticated;
@@ -101,7 +102,7 @@ $(() => {
             return true;
         }
 
-        window.Botble.showError(t('messages.route_unavailable', 'Der Kundenkarten-Service ist aktuell nicht verfügbar.'));
+        showError(t('messages.route_unavailable', 'Der Kundenkarten-Service ist aktuell nicht verfügbar.'));
         return false;
     };
 
@@ -110,7 +111,7 @@ $(() => {
             return true;
         }
 
-        window.Botble.showError(t('messages.login_required', 'Bitte zuerst einloggen.'));
+        showError(t('messages.login_required', 'Bitte zuerst einloggen.'));
         return false;
     };
 
@@ -124,7 +125,7 @@ $(() => {
             return;
         }
 
-        window.Botble.showError(message || t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
+        showError(message || t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
     };
 
     const validateCheckoutResponse = (payload, requireCourse = false) => {
@@ -148,49 +149,55 @@ $(() => {
     /* ----------------------------------------------------------
      *  UNIVERSAL REQUEST WRAPPER
      * ---------------------------------------------------------- */
-    const request = (url, payload = {}, $trigger = null) => {
-        if (!url) return Promise.reject(new Error('Missing URL'));
-
-        const data = { _token: csrfToken(), ...payload };
-
-        let client = window.Botble && window.Botble.request;
+    const createRequestClient = ($trigger = null) => {
+        let client = window.Botble?.request;
 
         if (client && $trigger && typeof client.withButtonLoading === 'function') {
             client = client.withButtonLoading($trigger);
         }
 
-        if (client && typeof client.post === 'function') {
-            return client.post(url, data);
+        if (client && (typeof client.post === 'function' || typeof client.get === 'function')) {
+            return client;
         }
 
-        return $.ajax({
-            url,
-            type: 'POST',
-            data,
-            dataType: 'json',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken(),
-                'Accept': 'application/json',
-            },
-            beforeSend: () => {
-                if ($trigger) {
-                    $trigger.addClass('button-loading').attr('disabled', true);
-                }
-            },
-            complete: () => {
-                if ($trigger) {
-                    $trigger.removeClass('button-loading').attr('disabled', false);
-                }
-            },
-        })
-            .then((response) => ({ data: response }))
-            .catch((error) => {
-                const message = extractErrorMessage(error);
-                if (message) {
-                    window.Botble.showError(message);
-                }
-                return Promise.reject(error);
-            });
+        const ajaxRequest = (method, url, data = {}) =>
+            $.ajax({
+                url,
+                type: method,
+                data,
+                dataType: 'json',
+                headers: {
+                    Accept: 'application/json',
+                    ...(method === 'POST' ? { 'X-CSRF-TOKEN': csrfToken() } : {}),
+                },
+                beforeSend: () => {
+                    if ($trigger) {
+                        $trigger.addClass('button-loading').attr('disabled', true);
+                    }
+                },
+                complete: () => {
+                    if ($trigger) {
+                        $trigger.removeClass('button-loading').attr('disabled', false);
+                    }
+                },
+            }).then((response) => ({ data: response }));
+
+        return {
+            post: (url, data = {}) => ajaxRequest('POST', url, { _token: csrfToken(), ...data }),
+            get: (url, data = {}) => ajaxRequest('GET', url, data),
+        };
+    };
+
+    const request = (url, payload = {}, $trigger = null) => {
+        if (!url) return Promise.reject(new Error('Missing URL'));
+
+        const client = createRequestClient($trigger);
+
+        if (typeof client.post === 'function') {
+            return client.post(url, payload);
+        }
+
+        return Promise.reject(new Error('No request client available'));
     };
 
     const triggerCustomerCardEvent = (eventName, detail = {}) => {
@@ -399,7 +406,7 @@ $(() => {
 
             const cardId = Number($cardSelect.val());
             if (!cardId) {
-                window.Botble.showError(t('messages.select_card'));
+                showError(t('messages.select_card'));
                 return;
             }
 
@@ -417,7 +424,7 @@ $(() => {
                     }
 
                     syncCheckoutState(payload, { trigger: $applyButton });
-                    window.Botble.showSuccess(data.message);
+                    showSuccess(data.message);
 
                     triggerCustomerCardEvent('customer-card.applied', {
                         discount: Number(payload?.totals?.card_discount_raw || payload.raw_discount || 0),
@@ -447,7 +454,7 @@ $(() => {
                     }
 
                     syncCheckoutState(payload, { trigger: $removeButton });
-                    window.Botble.showSuccess(data.message);
+                    showSuccess(data.message);
 
                     triggerCustomerCardEvent('customer-card.removed', {});
                 })
@@ -457,130 +464,5 @@ $(() => {
                 });
         });
     }
-
-    /* ----------------------------------------------------------
-     *  USAGE MODAL
-     * ---------------------------------------------------------- */
-    const adjustUsageSelector = '[data-bb-customer-card="usage-adjust"]';
-
-    $(document).on('click', adjustUsageSelector, function (event) {
-        event.preventDefault();
-
-        const $button = $(this);
-        const url = $button.data('url');
-        const direction = $button.data('direction');
-        const amount = Number($button.data('amount') || 1) || 1;
-        const confirmMessage = $button.data('confirm') || t('messages.manual_usage_increase');
-        const confirmTitle = $button.data('confirmTitle') || t('messages.manual_usage_title');
-
-        if (!url || !direction) {
-            return;
-        }
-
-        const performRequest = () => {
-            toggleButton($button, true);
-
-            window.Botble.request
-                .post(url, {
-                    _token: csrfToken(),
-                    direction,
-                    amount,
-                })
-                .then(({ data }) => {
-                    toggleButton($button, false);
-                    window.Botble.showSuccess(data?.message || t('messages.manual_usage_success'));
-
-                    const $table = $button.closest('table');
-                    const tableId = $table?.attr('id');
-
-                    if (tableId && window.LaravelDataTables?.[tableId]?.ajax?.reload) {
-                        window.LaravelDataTables[tableId].ajax.reload(null, false);
-                    } else if (window.LaravelDataTables) {
-                        const tables = Object.values(window.LaravelDataTables);
-                        if (tables?.length && tables[0]?.ajax?.reload) {
-                            tables[0].ajax.reload(null, false);
-                        } else {
-                            window.location.reload();
-                        }
-                    } else {
-                        window.location.reload();
-                    }
-                })
-                .catch((error) => {
-                    toggleButton($button, false);
-                    handleRequestError(error);
-                });
-        };
-
-        if (window.Botble.showConfirm) {
-            window.Botble.showConfirm({
-                title: confirmTitle,
-                message: confirmMessage,
-                yes_button_text: t('general.yes', 'Ja'),
-                no_button_text: t('general.no', 'Nein'),
-                callback: (isConfirmed) => {
-                    if (isConfirmed) {
-                        performRequest();
-                    }
-                },
-            });
-
-            return;
-        }
-
-        if (confirm(confirmMessage)) {
-            performRequest();
-        }
-    });
-
-    const usageSelector = '[data-bb-customer-card="usage"]';
-
-    const ensureUsageModal = () => {
-        let $modal = $('#customer-card-usage-modal');
-        if ($modal.length) return $modal;
-
-        $modal = $(`
-            <div class="modal fade" id="customer-card-usage-modal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">${t('table.usage_title', 'Kartenverwendung')}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `);
-        $('body').append($modal);
-        return $modal;
-    };
-
-    $(document).on('click', usageSelector, function () {
-        const url = $(this).data('url');
-        const title = $(this).data('title') || t('table.usage_title', 'Kartenverwendung');
-
-        if (!url) return;
-
-        const $modal = ensureUsageModal();
-        $modal.find('.modal-title').text(title);
-        $modal.find('.modal-body').html(`<div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>`);
-
-        $modal.modal('show');
-
-        window.Botble.request
-            .get(url)
-            .then(({ data }) => {
-                if (data?.data?.html) {
-                    $modal.find('.modal-body').html(data.data.html);
-                }
-            })
-            .catch((error) => {
-                $modal.modal('hide');
-                handleRequestError(error);
-            });
-    });
 
 });

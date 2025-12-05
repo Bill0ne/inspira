@@ -1,29 +1,30 @@
 $(() => {
 
-    /* ----------------------------------------------------------
-     *  BOTBLE FALLBACK (NEU)
-     * ---------------------------------------------------------- */
-    window.Botble = window.Botble || {
-        request: {
-            post: (url, data) => $.post(url, data).then(res => ({ data: res })),
-            get: (url) => $.get(url).then(res => ({ data: res })),
-            withButtonLoading(button) {
-                button.prop('disabled', true).addClass('button-loading');
-                return {
-                    post: (url, data) =>
-                        $.post(url, data)
-                            .then(res => ({ data: res }))
-                            .always(() => button.prop('disabled', false).removeClass('button-loading')),
-                    get: (url) =>
-                        $.get(url)
-                            .then(res => ({ data: res }))
-                            .always(() => button.prop('disabled', false).removeClass('button-loading')),
-                };
-            },
-        },
-        showSuccess: (msg) => console.log('Success:', msg),
-        showError: (msg) => console.error('Error:', msg),
-        handleError: (err) => console.error('Request error:', err),
+    const showSuccess = (message) => {
+        if (window.Botble?.showSuccess) {
+            window.Botble.showSuccess(message);
+            return;
+        }
+
+        console.log('Success:', message);
+    };
+
+    const showError = (message) => {
+        if (window.Botble?.showError) {
+            window.Botble.showError(message);
+            return;
+        }
+
+        console.error('Error:', message);
+    };
+
+    const handleError = (error) => {
+        if (window.Botble?.handleError) {
+            window.Botble.handleError(error);
+            return;
+        }
+
+        console.error('Request error:', error);
     };
 
     const extractErrorMessage = (error) => {
@@ -83,11 +84,11 @@ $(() => {
         const message = extractErrorMessage(error);
 
         if (message) {
-            window.Botble.showError(message);
+            showError(message);
             return;
         }
 
-        window.Botble.handleError(error);
+        handleError(error);
     };
 
     const isCustomerAuthenticated = () => !!CARD_CONFIG.isAuthenticated;
@@ -101,7 +102,7 @@ $(() => {
             return true;
         }
 
-        window.Botble.showError(t('messages.route_unavailable', 'Der Kundenkarten-Service ist aktuell nicht verfügbar.'));
+        showError(t('messages.route_unavailable', 'Der Kundenkarten-Service ist aktuell nicht verfügbar.'));
         return false;
     };
 
@@ -110,56 +111,93 @@ $(() => {
             return true;
         }
 
-        window.Botble.showError(t('messages.login_required', 'Bitte zuerst einloggen.'));
+        showError(t('messages.login_required', 'Bitte zuerst einloggen.'));
         return false;
+    };
+
+    const showCheckoutError = (message) => {
+        const $inlineError = $('[data-bb-customer-card="error"], .customer-card-error');
+
+        if ($inlineError.length) {
+            $inlineError
+                .removeClass('d-none')
+                .text(message || t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
+            return;
+        }
+
+        showError(message || t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
+    };
+
+    const validateCheckoutResponse = (payload, requireCourse = false) => {
+        if (!payload || typeof payload !== 'object') return false;
+
+        const totals = payload.totals;
+        if (!totals || typeof totals !== 'object') return false;
+
+        const requiredTotals = ['total_raw', 'minimum_fee_raw', 'card_discount_raw'];
+        const hasTotals = requiredTotals.every((key) => Object.prototype.hasOwnProperty.call(totals, key));
+        const hasCourse = !requireCourse || (payload.course && Number(payload.course.id));
+
+        return hasTotals && hasCourse;
+    };
+
+    const resetControls = ($button = null, ...controls) => {
+        toggleButton($button, false);
+        controls.filter(Boolean).forEach(($control) => $control.prop('disabled', false).removeClass('button-loading'));
     };
 
     /* ----------------------------------------------------------
      *  UNIVERSAL REQUEST WRAPPER
      * ---------------------------------------------------------- */
-    const request = (url, payload = {}, $trigger = null) => {
-        if (!url) return Promise.reject(new Error('Missing URL'));
-
-        const data = { _token: csrfToken(), ...payload };
-
-        let client = window.Botble && window.Botble.request;
+    const createRequestClient = ($trigger = null) => {
+        let client = window.Botble?.request;
 
         if (client && $trigger && typeof client.withButtonLoading === 'function') {
             client = client.withButtonLoading($trigger);
         }
 
-        if (client && typeof client.post === 'function') {
-            return client.post(url, data);
+        if (client && (typeof client.post === 'function' || typeof client.get === 'function')) {
+            return client;
         }
 
-        return $.ajax({
-            url,
-            type: 'POST',
-            data,
-            dataType: 'json',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken(),
-                'Accept': 'application/json',
-            },
-            beforeSend: () => {
-                if ($trigger) {
-                    $trigger.addClass('button-loading').attr('disabled', true);
-                }
-            },
-            complete: () => {
-                if ($trigger) {
-                    $trigger.removeClass('button-loading').attr('disabled', false);
-                }
-            },
-        })
-            .then((response) => ({ data: response }))
-            .catch((error) => {
-                const message = extractErrorMessage(error);
-                if (message) {
-                    window.Botble.showError(message);
-                }
-                return Promise.reject(error);
-            });
+        const ajaxRequest = (method, url, data = {}) =>
+            $.ajax({
+                url,
+                type: method,
+                data,
+                dataType: 'json',
+                headers: {
+                    Accept: 'application/json',
+                    ...(method === 'POST' ? { 'X-CSRF-TOKEN': csrfToken() } : {}),
+                },
+                beforeSend: () => {
+                    if ($trigger) {
+                        $trigger.addClass('button-loading').attr('disabled', true);
+                    }
+                },
+                complete: () => {
+                    if ($trigger) {
+                        $trigger.removeClass('button-loading').attr('disabled', false);
+                    }
+                },
+            }).then((response) => ({ data: response }));
+
+        return {
+            post: (url, data = {}) => ajaxRequest('POST', url, { _token: csrfToken(), ...data }),
+            get: (url, data = {}) => ajaxRequest('GET', url, data),
+        };
+    };
+
+    const request = (url, payload = {}, $trigger = null) => {
+        if (!url) return Promise.reject(new Error('Missing URL'));
+
+        const client = createRequestClient($trigger);
+
+        if (typeof client.post === 'function') {
+            return client.post(url, payload);
+        }
+
+        return Promise.reject(new Error('No request client available'));
     };
 
     const triggerCustomerCardEvent = (eventName, detail = {}) => {
@@ -205,6 +243,25 @@ $(() => {
 
     CARD_CONFIG.applyCustomerCard = applyCustomerCard;
     CARD_CONFIG.removeCustomerCard = removeCustomerCard;
+
+    const syncCheckoutState = (payload, { trigger = null } = {}) => {
+        if (!validateCheckoutResponse(payload, CARD_CONFIG.course_checkout)) {
+            showCheckoutError(t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
+            resetControls(trigger);
+            return payload;
+        }
+
+        if (window.CheckoutCommerce && typeof window.CheckoutCommerce.setState === 'function') {
+            return window.CheckoutCommerce.setState(payload, 'course');
+        }
+
+        if (typeof window.renderCheckoutUI === 'function') {
+            window.CheckoutState = payload || {};
+            return window.renderCheckoutUI('course');
+        }
+
+        return payload;
+    };
 
     /* ----------------------------------------------------------
      *  ADMIN FORM SYNC
@@ -349,7 +406,7 @@ $(() => {
 
             const cardId = Number($cardSelect.val());
             if (!cardId) {
-                window.Botble.showError(t('messages.select_card'));
+                showError(t('messages.select_card'));
                 return;
             }
 
@@ -359,23 +416,24 @@ $(() => {
 
             applyCustomerCard(cardId, courseId, $(this))
                 .then(({ data }) => {
-                    window.Botble.showSuccess(data.message);
                     const payload = data?.data || {};
-
-                    if (payload.discount) {
-                        $infoBox.removeClass('d-none')
-                            .find('[data-bb-customer-card="discount"]').text(payload.discount);
+                    if (!validateCheckoutResponse(payload, CARD_CONFIG.course_checkout)) {
+                        showCheckoutError(t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
+                        resetControls($applyButton, $cardSelect);
+                        return;
                     }
 
-                    updateTotals(Number(payload.raw_discount || 0), payload.discount);
-                    $cardInput.val(cardId);
-                    $removeButton.removeClass('d-none');
+                    syncCheckoutState(payload, { trigger: $applyButton });
+                    showSuccess(data.message);
 
                     triggerCustomerCardEvent('customer-card.applied', {
-                        discount: Number(payload.raw_discount || 0),
+                        discount: Number(payload?.totals?.card_discount_raw || payload.raw_discount || 0),
                     });
                 })
-                .catch(handleRequestError);
+                .catch((error) => {
+                    resetControls($applyButton, $cardSelect);
+                    handleRequestError(error);
+                });
         });
 
         /* REMOVE ------------------------------------------------- */
@@ -388,72 +446,23 @@ $(() => {
 
             removeCustomerCard($(this), courseId)
                 .then(({ data }) => {
-                    window.Botble.showSuccess(data.message);
+                    const payload = data?.data || {};
+                    if (!validateCheckoutResponse(payload, CARD_CONFIG.course_checkout)) {
+                        showCheckoutError(t('messages.checkout_unavailable', 'Die Checkout-Antwort ist unvollständig.'));
+                        resetControls($removeButton, $cardSelect);
+                        return;
+                    }
 
-                    $infoBox.addClass('d-none');
-                    $cardSelect.val('');
-                    $removeButton.addClass('d-none');
-                    $cardInput.val('');
-
-                    updateTotals(0);
+                    syncCheckoutState(payload, { trigger: $removeButton });
+                    showSuccess(data.message);
 
                     triggerCustomerCardEvent('customer-card.removed', {});
                 })
-                .catch(handleRequestError);
+                .catch((error) => {
+                    resetControls($removeButton, $cardSelect);
+                    handleRequestError(error);
+                });
         });
     }
-
-    /* ----------------------------------------------------------
-     *  USAGE MODAL
-     * ---------------------------------------------------------- */
-    const usageSelector = '[data-bb-customer-card="usage"]';
-
-    const ensureUsageModal = () => {
-        let $modal = $('#customer-card-usage-modal');
-        if ($modal.length) return $modal;
-
-        $modal = $(`
-            <div class="modal fade" id="customer-card-usage-modal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">${t('table.usage_title', 'Kartenverwendung')}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `);
-        $('body').append($modal);
-        return $modal;
-    };
-
-    $(document).on('click', usageSelector, function () {
-        const url = $(this).data('url');
-        const title = $(this).data('title') || t('table.usage_title', 'Kartenverwendung');
-
-        if (!url) return;
-
-        const $modal = ensureUsageModal();
-        $modal.find('.modal-title').text(title);
-        $modal.find('.modal-body').html(`<div class="text-center py-4">${t('messages.loading', 'Loading...')}</div>`);
-
-        $modal.modal('show');
-
-        window.Botble.request
-            .get(url)
-            .then(({ data }) => {
-                if (data?.data?.html) {
-                    $modal.find('.modal-body').html(data.data.html);
-                }
-            })
-            .catch((error) => {
-                $modal.modal('hide');
-                handleRequestError(error);
-            });
-    });
 
 });

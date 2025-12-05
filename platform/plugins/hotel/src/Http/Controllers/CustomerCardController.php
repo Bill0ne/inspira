@@ -43,7 +43,7 @@ class CustomerCardController extends BaseController
         $this->pageTitle(trans('plugins/hotel::customer-card.assignments.title'));
 
         Assets::addScriptsDirectly([
-            'vendor/core/plugins/hotel/js/customer-card.js',
+            'vendor/core/plugins/hotel/js/customer-card-admin.js',
         ]);
 
         return $table
@@ -56,7 +56,7 @@ class CustomerCardController extends BaseController
         $this->pageTitle(trans('plugins/hotel::customer-card.templates.title'));
 
         Assets::addScriptsDirectly([
-            'vendor/core/plugins/hotel/js/customer-card.js',
+            'vendor/core/plugins/hotel/js/customer-card-admin.js',
         ]);
 
         return $table
