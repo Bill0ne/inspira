@@ -18,6 +18,7 @@ use Botble\Courses\Models\CourseSession;
 use Botble\Courses\Models\CourseBooking;
 use Botble\SeoHelper\SeoOpenGraph;
 use Botble\Base\Facades\Html;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Botble\Courses\Models\CourseCategory;
 use Botble\Optimize\Facades\OptimizerHelper;
@@ -47,6 +48,7 @@ use Botble\Hotel\Supports\HotelSupport;
 class PublicController extends Controller
 {
     protected const MINIMUM_ONLINE_PAYMENT_AMOUNT = 0.9;
+    protected const COURSE_BOOKING_TOKEN_TTL_SECONDS = 1800;
 
     public function __construct(
         protected GetCourseService $getCourseService
@@ -170,8 +172,14 @@ class PublicController extends Controller
 
         $token = md5(Str::random(40));
 
+        $payload = $this->buildBookingSessionPayload(
+            $request->except(['_token']),
+            $course,
+            $session
+        );
+
         session([
-            $token => $request->except(['_token']),
+            $token => $payload,
             'course_checkout_token' => $token,
             'checkout_token' => $token,
             'checkout_context' => \Botble\Hotel\Supports\HotelSupport::CONTEXT_COURSE,
@@ -201,10 +209,19 @@ class PublicController extends Controller
 
         abort_if(empty($sessionData), 404);
 
-        Theme::breadcrumb()->add(__('Booking'), route('public.courses'));
+        $course = Course::query()->find(Arr::get($sessionData, 'course_id'));
+        $session = CourseSession::query()->find(Arr::get($sessionData, 'session_id'));
 
-        $course = Course::query()->findOrFail(Arr::get($sessionData, 'course_id'));
-        $session = CourseSession::query()->findOrFail(Arr::get($sessionData, 'session_id'));
+        if (! $course || ! $session || ! $this->bookingSessionIsValid($sessionData, $course, $session)) {
+            session()->forget($token);
+            HotelHelper::clearCheckoutData();
+
+            return redirect()
+                ->route('public.courses')
+                ->with('error_msg', __('Your booking session has expired. Please start again.'));
+        }
+
+        Theme::breadcrumb()->add(__('Booking'), route('public.courses'));
 
         $customerCardsAllowed = (bool) $course->accept_customer_card;
 
@@ -350,6 +367,20 @@ class PublicController extends Controller
             abort(404);
         }
 
+        $sessionPayload = session($token);
+        $payloadCourse = Course::query()->find((int) Arr::get($sessionPayload, 'course_id'));
+        $payloadSession = CourseSession::query()->find((int) Arr::get($sessionPayload, 'session_id'));
+
+        if (! $payloadCourse || ! $payloadSession || ! $this->bookingSessionIsValid($sessionPayload, $payloadCourse, $payloadSession)) {
+            session()->forget($token);
+            HotelHelper::clearCheckoutData();
+
+            return $response
+                ->setError()
+                ->setNextUrl(route('public.courses'))
+                ->setMessage(__('Your booking session has expired. Please start again.'));
+        }
+
         /** @var \Botble\Hotel\Models\Coupon|null $appliedCoupon */
         $appliedCoupon = null;
 
@@ -364,7 +395,7 @@ class PublicController extends Controller
         $customerCard = null;
 
         $courseId = (int) Arr::get($sessionData, 'course_id');
-        $course = Course::query()->find($courseId);
+        $course = Course::query()->find($courseId) ?? $payloadCourse;
         $customerCardsAllowed = (bool) ($course?->accept_customer_card);
 
         if (! $customerCardsAllowed) {
@@ -550,10 +581,6 @@ class PublicController extends Controller
         session()->put('course_booking_transaction_id', $booking->transaction_id);
 
         if ($booking->amount <= 0) {
-            if ($appliedCoupon) {
-                $appliedCoupon->increment('total_used');
-            }
-
             $payment = null;
 
             $courseBookingService = app(CourseBookingService::class);
@@ -642,10 +669,6 @@ class PublicController extends Controller
             }
 
             if ($checkoutUrl = Arr::get($data, 'checkoutUrl')) {
-                if ($appliedCoupon) {
-                    $appliedCoupon->increment('total_used');
-                }
-
                 return $response
                     ->setError($data['error'])
                     ->setNextUrl($checkoutUrl)
@@ -738,6 +761,56 @@ class PublicController extends Controller
         $state = $checkoutStateService->buildState($course, $request->input('coupon_code'));
 
         return $response->setData($state);
+    }
+
+    protected function buildBookingSessionPayload(
+        array $payload,
+        Course $course,
+        CourseSession $session
+    ): array {
+        $issuedAt = Carbon::now();
+
+        return array_merge($payload, [
+            '__issued_at' => $issuedAt->timestamp,
+            '__signature' => $this->signBookingState($course, $session, $issuedAt),
+        ]);
+    }
+
+    protected function bookingSessionIsValid(
+        array $sessionData,
+        Course $course,
+        CourseSession $session
+    ): bool {
+        $issuedAtTimestamp = Arr::get($sessionData, '__issued_at');
+        $signature = Arr::get($sessionData, '__signature');
+
+        if (! $issuedAtTimestamp || ! $signature) {
+            return false;
+        }
+
+        $issuedAt = Carbon::createFromTimestamp((int) $issuedAtTimestamp);
+
+        if ($issuedAt->addSeconds(self::COURSE_BOOKING_TOKEN_TTL_SECONDS)->isPast()) {
+            return false;
+        }
+
+        $expectedSignature = $this->signBookingState($course, $session, $issuedAt);
+
+        return hash_equals($expectedSignature, (string) $signature);
+    }
+
+    protected function signBookingState(Course $course, CourseSession $session, Carbon $issuedAt): string
+    {
+        $priceSnapshot = course_truncate_price((float) $course->getPriceWithTax($course->getCourseTotalPrice()));
+
+        $payload = implode('|', [
+            $course->getKey(),
+            $session->getKey(),
+            $priceSnapshot,
+            $issuedAt->timestamp,
+        ]);
+
+        return hash_hmac('sha256', $payload, (string) config('app.key'));
     }
 
     protected function calculateDynamicPrice(
