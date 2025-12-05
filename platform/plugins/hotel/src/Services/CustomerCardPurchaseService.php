@@ -105,6 +105,23 @@ class CustomerCardPurchaseService
     {
         $this->attachPayment($order, $payment->getKey());
 
+        $paidAmount = (float) $payment->amount;
+        $expectedAmount = (float) $order->amount;
+        $expectedCurrency = strtoupper(get_application_currency()->title);
+        $paidCurrency = $payment->currency ? strtoupper($payment->currency) : $expectedCurrency;
+
+        if (
+            $expectedAmount > 0
+            && $paidAmount > 0
+            && abs($paidAmount - $expectedAmount) > 0.01
+        ) {
+            return $this->markAsFailed($order);
+        }
+
+        if ($payment->currency && $paidCurrency !== $expectedCurrency) {
+            return $this->markAsFailed($order);
+        }
+
         switch ($payment->status) {
             case PaymentStatusEnum::COMPLETED:
                 return $this->finalizeOrder($order);

@@ -285,6 +285,9 @@ class CustomerDashboardController
         if ($data['error'] || ! $data['charge_id']) {
             $order->update(['status' => 'failed']);
 
+            session()->forget('selected_payment_method');
+            session()->forget('order_type');
+
             return $response
                 ->setError()
                 ->setNextUrl(route('customer.cards.checkout', $customerCard))

@@ -63,6 +63,41 @@ class CourseBookingService
         if ($payment) {
             $courseBooking->payment_id = $payment->getKey();
 
+            $expectedAmount = (float) $courseBooking->payment_split_online_gross;
+            $paidAmount = (float) $payment->amount;
+            $expectedCurrency = strtoupper(get_application_currency()->title);
+            $paidCurrency = $payment->currency ? strtoupper($payment->currency) : $expectedCurrency;
+
+            if (
+                $expectedAmount > 0
+                && $paidAmount > 0
+                && abs($paidAmount - $expectedAmount) > 0.01
+            ) {
+                Log::warning('[CourseBooking] Payment amount mismatch detected', [
+                    'booking_id' => $courseBooking->getKey(),
+                    'expected' => $expectedAmount,
+                    'paid' => $paidAmount,
+                ]);
+
+                $courseBooking->status = BookingStatusEnum::FAILED;
+                $courseBooking->save();
+
+                return $courseBooking;
+            }
+
+            if ($payment->currency && $paidCurrency !== $expectedCurrency) {
+                Log::warning('[CourseBooking] Payment currency mismatch detected', [
+                    'booking_id' => $courseBooking->getKey(),
+                    'expected' => $expectedCurrency,
+                    'paid' => $paidCurrency,
+                ]);
+
+                $courseBooking->status = BookingStatusEnum::FAILED;
+                $courseBooking->save();
+
+                return $courseBooking;
+            }
+
             // Payment-Kanal in String konvertieren (stripe, customer_card, cod, bank_transfer, …)
             $channel = $this->normalizePaymentChannel($payment->payment_channel);
             $courseBooking->payment_method = $channel;
