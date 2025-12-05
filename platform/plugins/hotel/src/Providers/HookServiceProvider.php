@@ -31,6 +31,19 @@ class HookServiceProvider extends ServiceProvider
 
         if (defined('PAYMENT_FILTER_REDIRECT_URL')) {
             add_filter(PAYMENT_FILTER_REDIRECT_URL, function ($checkoutToken) {
+                // Fallback: Falls die Session geleert wurde, aber der Payment-Callback
+                // nur den Checkout-/Charge-Token mitbringt, können wir den Order-Typ
+                // aus der gespeicherten Zahlung rekonstruieren.
+                $payment = Payment::query()
+                    ->where('charge_id', $checkoutToken)
+                    ->orWhere('payment_channel', $checkoutToken)
+                    ->latest('created_at')
+                    ->first();
+
+                if ($payment && $payment->order_type && ! session()->has('order_type')) {
+                    session(['order_type' => $payment->order_type]);
+                }
+
                 if (session()->has('course_booking_transaction_id')) {
                     return route(
                         'public.course.booking.information',
@@ -87,6 +100,11 @@ class HookServiceProvider extends ServiceProvider
 
                 // Typ der Bestellung (Hotel-Booking, CourseBooking, CustomerCardOrder, …)
                 $orderType = $data['order_type'] ?? session('order_type');
+
+                // Session-Wert nach Verwendung aufräumen, um spätere Zahlungen nicht zu beeinflussen
+                if (! array_key_exists('order_type', $data) && session()->has('order_type')) {
+                    session()->forget('order_type');
+                }
 
                 switch ($orderType) {
                     case \Botble\Courses\Models\CourseBooking::class: {
