@@ -29,6 +29,9 @@ mix
     .js(source + '/resources/assets/js/coupon.js', dist + '/js')
     .copy(dist + '/js/coupon.js', source + '/public/js')
 
+    .js(source + '/resources/assets/js/customer-card-admin.js', dist + '/js')
+    .copy(dist + '/js/customer-card-admin.js', source + '/public/js')
+
     .js(source + '/resources/assets/js/customer-card.js', dist + '/js')
     .copy(dist + '/js/customer-card.js', source + '/public/js')
 
