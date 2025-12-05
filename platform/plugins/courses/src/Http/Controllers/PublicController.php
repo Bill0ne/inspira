@@ -789,8 +789,9 @@ class PublicController extends Controller
         }
 
         $issuedAt = Carbon::createFromTimestamp((int) $issuedAtTimestamp);
+        $expiresAt = $issuedAt->copy()->addSeconds(self::COURSE_BOOKING_TOKEN_TTL_SECONDS);
 
-        if ($issuedAt->addSeconds(self::COURSE_BOOKING_TOKEN_TTL_SECONDS)->isPast()) {
+        if ($expiresAt->isPast()) {
             return false;
         }
 
