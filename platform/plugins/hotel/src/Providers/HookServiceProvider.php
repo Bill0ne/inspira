@@ -88,8 +88,6 @@ class HookServiceProvider extends ServiceProvider
                 // Typ der Bestellung (Hotel-Booking, CourseBooking, CustomerCardOrder, …)
                 $orderType = $data['order_type'] ?? session('order_type');
 
-                session()->forget('order_type');
-
                 switch ($orderType) {
                     case \Botble\Courses\Models\CourseBooking::class: {
                         /** @var \Botble\Courses\Services\CourseBookingService $service */
