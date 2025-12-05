@@ -196,8 +196,10 @@ class HookServiceProvider extends ServiceProvider
                         ]);
                     }
 
+                    $amount = (float) $request->input('amount', Arr::get($data, 'amount', 0));
+
                     return array_merge($data, [
-                        'amount'          => (float) $request->input('amount', Arr::get($data, 'amount', 0)),
+                        'amount'          => $amount,
                         'currency'        => strtoupper(get_application_currency()->title),
                         'order_id'        => $orderIds,
                         'order_type'      => CustomerCardOrder::class,
@@ -205,7 +207,14 @@ class HookServiceProvider extends ServiceProvider
                         'callback_url'    => $request->input('callback_url', route('customer.cards')),
                         'customer_id'     => auth('customer')->check() ? auth('customer')->id() : null,
                         'customer_type'   => Customer::class,
-                        'products'        => [],
+                        'products'        => $amount > 0 ? [[
+                            'id'              => null,
+                            'name'            => 'Customer card',
+                            'image'           => null,
+                            'price'           => $amount,
+                            'price_per_order' => $amount,
+                            'qty'             => 1,
+                        ]] : [],
                         'orders'          => [],
                         'address'         => [],
                         'checkout_token'  => session('checkout_token'),
