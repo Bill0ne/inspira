@@ -151,7 +151,12 @@
                                 </ul>
                             </div>
                         @endif
-                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-100 btn-lg payment-checkout-btn"
+                            data-processing-text="{{ __('Wird verarbeitet...') }}"
+                            data-error-header="{{ __('Fehler') }}"
+                        >
                             {{ trans('plugins/hotel::customer-card.checkout.submit_button', ['price' => format_price($purchasePrice)]) }}
                         </button>
                     </form>
