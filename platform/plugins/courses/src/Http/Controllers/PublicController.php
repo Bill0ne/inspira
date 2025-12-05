@@ -621,14 +621,7 @@ class PublicController extends Controller
                 'customer_type' => Customer::class,
             ]);
 
-            if ($token = $request->input('token')) {
-                session()->forget($token);
-                HotelHelper::clearCheckoutData();
-            }
-
-            return $response
-                ->setNextUrl(route('public.course.booking.information', $booking->transaction_id))
-                ->setMessage(__('Course Booking successfully!'));
+            $redirectUrl = route('public.course.booking.information', $booking->transaction_id);
         }
 
         $request->merge([
@@ -644,7 +637,9 @@ class PublicController extends Controller
             'charge_id' => null,
         ];
 
-        if (is_plugin_active('payment')) {
+        $requiresOnlinePayment = is_plugin_active('payment') && $booking->amount > 0;
+
+        if ($requiresOnlinePayment) {
             session()->put('selected_payment_method', $data['type']);
             session(['order_type' => CourseBooking::class]);
             $paymentData = apply_filters(PAYMENT_COURSE_FILTER_PAYMENT_DATA, [], $request);
@@ -686,7 +681,9 @@ class PublicController extends Controller
             }
 
             $redirectUrl = route('public.course.booking.information', $booking->transaction_id);
-        } else {
+        }
+
+        if (! isset($redirectUrl)) {
             $redirectUrl = route('public.course.booking.information', $booking->transaction_id);
         }
 
