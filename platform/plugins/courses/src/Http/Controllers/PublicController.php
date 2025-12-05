@@ -644,7 +644,9 @@ class PublicController extends Controller
             'charge_id' => null,
         ];
 
-        if (is_plugin_active('payment')) {
+        $requiresOnlinePayment = is_plugin_active('payment') && $booking->amount > 0;
+
+        if ($requiresOnlinePayment) {
             session()->put('selected_payment_method', $data['type']);
             session(['order_type' => CourseBooking::class]);
             $paymentData = apply_filters(PAYMENT_COURSE_FILTER_PAYMENT_DATA, [], $request);
