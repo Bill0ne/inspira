@@ -621,14 +621,7 @@ class PublicController extends Controller
                 'customer_type' => Customer::class,
             ]);
 
-            if ($token = $request->input('token')) {
-                session()->forget($token);
-                HotelHelper::clearCheckoutData();
-            }
-
-            return $response
-                ->setNextUrl(route('public.course.booking.information', $booking->transaction_id))
-                ->setMessage(__('Course Booking successfully!'));
+            $redirectUrl = route('public.course.booking.information', $booking->transaction_id);
         }
 
         $request->merge([
@@ -688,7 +681,9 @@ class PublicController extends Controller
             }
 
             $redirectUrl = route('public.course.booking.information', $booking->transaction_id);
-        } else {
+        }
+
+        if (! isset($redirectUrl)) {
             $redirectUrl = route('public.course.booking.information', $booking->transaction_id);
         }
 
