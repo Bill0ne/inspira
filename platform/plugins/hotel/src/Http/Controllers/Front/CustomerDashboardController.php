@@ -69,6 +69,7 @@ class CustomerDashboardController
             });
 
         $usages = CustomerCardUsage::query()
+            ->withoutGlobalScopes()
             ->whereHas('card', function ($query) use ($user) {
                 $query->where('assigned_to', $user->getKey());
             })
