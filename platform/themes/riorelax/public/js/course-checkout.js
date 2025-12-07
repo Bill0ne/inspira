@@ -75,13 +75,31 @@ $(document).ready(function () {
                     return;
                 }
 
+                const currentState = window.CheckoutState || {};
+                const mergedState = $.extend(true, {}, currentState, data);
+                const existingCouponCode =
+                    (currentState.coupon && currentState.coupon.code) ||
+                    currentState.coupon_code ||
+                    '';
+                const incomingCouponCode =
+                    (mergedState.coupon && mergedState.coupon.code) ||
+                    mergedState.coupon_code ||
+                    '';
+                const couponCode = incomingCouponCode || existingCouponCode;
+
+                if (couponCode) {
+                    mergedState.coupon = mergedState.coupon || {};
+                    mergedState.coupon.code = couponCode;
+                    mergedState.coupon_code = couponCode;
+                }
+
                 if (
                     window.CheckoutCommerce &&
                     typeof window.CheckoutCommerce.setState === 'function'
                 ) {
-                    window.CheckoutCommerce.setState(data, 'course');
+                    window.CheckoutCommerce.setState(mergedState, 'course');
                 } else {
-                    window.CheckoutState = data || {};
+                    window.CheckoutState = mergedState || {};
                     if (typeof window.renderCheckoutUI === 'function') {
                         window.renderCheckoutUI('course');
                     }
