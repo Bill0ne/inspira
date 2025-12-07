@@ -15,15 +15,6 @@
                         <p>{!! BaseHelper::clean($description) !!}</p>
                     @endif
 
-                    <div class="mt-3 d-flex justify-content-center">
-                        <a
-                            href="https://inspira-zentrum.de/de/kurse"
-                            class="btn btn-sm btn-outline-primary rounded-0 px-3 d-inline-flex align-items-center gap-2 text-primary"
-                        >
-                            Mehr Kurse
-                            <span class="text-secondary">→</span>
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
@@ -34,6 +25,16 @@
                     {!! Theme::partial('courses.item', compact('course')) !!}
                 </div>
             @endforeach
+        </div>
+
+        <div class="text-center mt-40">
+            <a
+                href="https://inspira-zentrum.de/de/kurse"
+                class="d-inline-flex align-items-center gap-2 text-primary fw-semibold"
+            >
+                Mehr Kurse
+                <i class="far fa-arrow-right"></i>
+            </a>
         </div>
     </div>
 </section>
