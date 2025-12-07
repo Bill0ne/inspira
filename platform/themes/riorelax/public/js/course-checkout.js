@@ -3,6 +3,23 @@ $(document).ready(function () {
     let isRefreshingCoupon = false;
     let pendingCouponRefresh = false;
 
+    const toggleIncompatibleActions = () => {
+        const $couponBox = $('#courseCouponBox');
+        const $cardSection = $('[data-bb-customer-card-section]');
+
+        const state = window.CheckoutState || {};
+        const hasCard = !!(state.card && state.card.id);
+        const hasCoupon = !!((state.coupon && state.coupon.code) || state.coupon_code);
+
+        if ($couponBox.length) {
+            $couponBox.toggleClass('d-none', hasCard);
+        }
+
+        if ($cardSection.length) {
+            $cardSection.toggleClass('d-none', hasCoupon);
+        }
+    };
+
     // Zentrale Funktion: holt alle Beträge vom Backend (/course/ajax/calculate-amount)
     const refreshCourseCoupon = () => {
         if (isRefreshingCoupon) {
@@ -70,6 +87,8 @@ $(document).ready(function () {
                     }
                 }
 
+                toggleIncompatibleActions();
+
                 const reloadPromise =
                     window.CheckoutCommerce &&
                     typeof window.CheckoutCommerce.reloadPaymentList === 'function'
@@ -107,4 +126,6 @@ $(document).ready(function () {
     $(document).on('coupon.applied coupon.removed', function () {
         refreshCourseCoupon();
     });
+
+    toggleIncompatibleActions();
 });

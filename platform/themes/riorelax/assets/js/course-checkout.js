@@ -8,8 +8,26 @@ $(document).ready(function () {
         }
     };
 
+    const toggleIncompatibleActions = () => {
+        const $couponBox = $('#courseCouponBox');
+        const $cardSection = $('[data-bb-customer-card-section]');
+
+        const state = window.CheckoutState || {};
+        const hasCard = !!(state.card && state.card.id);
+        const hasCoupon = !!((state.coupon && state.coupon.code) || state.coupon_code);
+
+        if ($couponBox.length) {
+            $couponBox.toggleClass('d-none', hasCard);
+        }
+
+        if ($cardSection.length) {
+            $cardSection.toggleClass('d-none', hasCoupon);
+        }
+    };
+
     const refreshCourseCheckout = () => {
         renderFromState();
+        toggleIncompatibleActions();
 
         if (window.CheckoutCommerce && typeof window.CheckoutCommerce.reloadPaymentList === 'function') {
             return window.CheckoutCommerce.reloadPaymentList('course');
@@ -22,10 +40,13 @@ $(document).ready(function () {
     window.RioRelaxCourseCheckout.refreshCourseCoupon = refreshCourseCheckout;
 
     $(document).off('.courseCheckout');
-    $(document).on(
-        'customer-card.applied.courseCheckout customer-card.removed.courseCheckout coupon.applied.courseCheckout coupon.removed.courseCheckout',
-        function () {
-            refreshCourseCheckout();
-        }
-    );
+    $(document)
+        .on(
+            'customer-card.applied.courseCheckout customer-card.removed.courseCheckout coupon.applied.courseCheckout coupon.removed.courseCheckout',
+            function () {
+                refreshCourseCheckout();
+            }
+        );
+
+    toggleIncompatibleActions();
 });
