@@ -3,6 +3,45 @@ $(document).ready(function () {
     let isRefreshingCoupon = false;
     let pendingCouponRefresh = false;
 
+    const $document = $(document);
+
+    const findCouponBox = () => $('#courseCouponBox');
+    const findCardSection = () => $('[data-bb-customer-card-section]');
+
+    const resolveCouponInputValue = () => {
+        const $couponBox = findCouponBox();
+        if (!$couponBox.length) {
+            return '';
+        }
+
+        const hiddenValue = ($couponBox.find('input[name=coupon_hidden]').val() || '').trim();
+        if (hiddenValue) {
+            return hiddenValue;
+        }
+
+        return ($couponBox.find('input[name=coupon_code]').val() || '').trim();
+    };
+
+    const syncCardSectionVisibility = () => {
+        const $cardSection = findCardSection();
+        if (!$cardSection.length) {
+            return;
+        }
+
+        const $couponBox = findCouponBox();
+        const hasCouponFeedback = $couponBox.find('.coupon-feedback').length > 0;
+        const hasCouponValue = !!resolveCouponInputValue();
+        const shouldHideCard = hasCouponFeedback || hasCouponValue;
+
+        $cardSection.toggleClass('d-none', shouldHideCard);
+    };
+
+    const bindCouponInputWatcher = () => {
+        $document
+            .off('input.courseCoupon change.courseCoupon', '#courseCouponBox input[name=coupon_code]')
+            .on('input.courseCoupon change.courseCoupon', '#courseCouponBox input[name=coupon_code]', syncCardSectionVisibility);
+    };
+
     // Zentrale Funktion: holt alle Beträge vom Backend (/course/ajax/calculate-amount)
     const refreshCourseCoupon = () => {
         if (isRefreshingCoupon) {
@@ -79,6 +118,7 @@ $(document).ready(function () {
                 reloadPromise.always(() => {
                     finishRefresh();
                     $(document).trigger('customer-card.totals-updated', data);
+                    syncCardSectionVisibility();
                 });
 
             })
@@ -93,6 +133,9 @@ $(document).ready(function () {
     window.RioRelaxCourseCheckout = window.RioRelaxCourseCheckout || {};
     window.RioRelaxCourseCheckout.refreshCourseCoupon = refreshCourseCoupon;
 
+    bindCouponInputWatcher();
+    syncCardSectionVisibility();
+
     // ⚠️ WICHTIG:
     // KEINE eigenen Event-Handler mehr für:
     //  - .toggle-coupon-form
@@ -101,10 +144,14 @@ $(document).ready(function () {
     // Das übernimmt checkout-commerce.js exklusiv.
 
     // Reaktion auf Kundenkarten-Ereignisse:
-    $(document).on('customer-card.applied customer-card.removed', refreshCourseCoupon);
+    $(document).on('customer-card.applied customer-card.removed', () => {
+        syncCardSectionVisibility();
+        refreshCourseCoupon();
+    });
 
     // Reaktion auf Coupon-Ereignisse aus checkout-commerce.js:
     $(document).on('coupon.applied coupon.removed', function () {
+        syncCardSectionVisibility();
         refreshCourseCoupon();
     });
 });
