@@ -552,27 +552,47 @@
     $el.toggleClass('button-loading', !!isLoading);
   }
 
-  function reloadPaymentList(context) {
-    var ctx = getActiveContext(context);
-    if (!ctx) return $.Deferred().resolve();
-    var root = getContextRoot(ctx) || document;
-    var $list = $(root).find('.payment-checkout-form .list_payment_method');
-    if (!$list.length) return $.Deferred().resolve();
+    function reloadPaymentList(context) {
+      var ctx = getActiveContext(context);
+      if (!ctx) return $.Deferred().resolve();
+      var root = getContextRoot(ctx) || document;
+      var $list = $(root).find('.payment-checkout-form .list_payment_method');
+      if (!$list.length) return $.Deferred().resolve();
 
-    var selected = $list.find('input[name="payment_method"]:checked').val();
-    var dfd = $.Deferred();
+      var selected = $list.find('input[name="payment_method"]:checked').val();
+      var dfd = $.Deferred();
 
-    $list.load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function (resp, status) {
-      if (status === 'error') return dfd.reject();
-      if (selected) {
-        $list.find('input[name="payment_method"][value="' + selected + '"]').prop('checked', true).trigger('change');
-      }
-      syncCustomerCardPayment(context);
-      dfd.resolve();
-    });
+      $.ajax({
+        url: window.location.href,
+        type: 'GET',
+        dataType: 'html',
+      })
+        .done(function (html) {
+          var $html = $('<div>').html(html);
+          var $fresh = $html.find('.payment-checkout-form .list_payment_method');
 
-    return dfd.promise();
-  }
+          if (!$fresh.length) {
+            return dfd.reject();
+          }
+
+          $list.empty().append($fresh.children());
+
+          if (selected) {
+            $list
+              .find('input[name="payment_method"][value="' + selected + '"]')
+              .prop('checked', true)
+              .trigger('change');
+          }
+
+          syncCustomerCardPayment(context);
+          dfd.resolve();
+        })
+        .fail(function () {
+          dfd.reject();
+        });
+
+      return dfd.promise();
+    }
 
   // Expose für andere Module (Hotel-Recalc ruft das auf)
   var checkoutApi = {
