@@ -45,6 +45,12 @@
                                     <p class="text-secondary text-truncate mt-n1 mb-0">
                                         {{ implode(' - ', [$booking->address->phone, $booking->address->email]) }}
                                     </p>
+                                    @if ($booking->requests)
+                                        <p class="text-primary text-truncate small mb-0">
+                                            <x-core::icon name="ti ti-message-circle-2" class="me-1" />
+                                            {{ \Illuminate\Support\Str::limit($booking->requests, 80) }}
+                                        </p>
+                                    @endif
                                 </div>
                             </div>
                         </div>
