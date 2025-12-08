@@ -511,6 +511,15 @@
       hiddenInput: ctxInfo && ctxInfo.$box ? ctxInfo.$box.find('input[name=coupon_hidden]').val() : '',
     };
 
+    // API responses may return an object with rendered views; extract the markup first
+    if (html && typeof html === 'object') {
+      if (html.views && html.views.coupon_box) {
+        html = html.views.coupon_box;
+      } else if (html.coupon_box) {
+        html = html.coupon_box;
+      }
+    }
+
     if (typeof html === 'string') {
       $container.html(html);
       if (ctxInfo) {
