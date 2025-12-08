@@ -6,6 +6,10 @@
   'use strict';
   if (!$) return;
 
+  /* -----------------------------------------------------------------
+   *  HILFSFUNKTIONEN – CONTEXT (COURSE / HOTEL)
+   * ----------------------------------------------------------------- */
+
   function getContextRoot(context) {
     if (!context) return null;
     return document.querySelector('[data-checkout-context="' + context + '"]');
@@ -13,12 +17,17 @@
 
   function hasContext(context) {
     var root = getContextRoot(context) || document;
+
     if (context === 'course') {
-      return !!root.querySelector('input[name="course_id"]') || !!document.querySelector('input[name="course_id"]');
+      return !!root.querySelector('input[name="course_id"]') ||
+             !!document.querySelector('input[name="course_id"]');
     }
+
     if (context === 'hotel') {
-      return !!root.querySelector('input[name="room_id"]') || !!document.querySelector('input[name="room_id"]');
+      return !!root.querySelector('input[name="room_id"]') ||
+             !!document.querySelector('input[name="room_id"]');
     }
+
     return false;
   }
 
@@ -48,13 +57,16 @@
 
   function createContextObject(type, fallbackRoot) {
     if (!type) return null;
+
     var root = getContextRoot(type) || fallbackRoot;
     if (!root) return null;
+
     var selector = type === 'hotel' ? '#hotelCouponBox' : '#courseCouponBox';
     var target = root.querySelector(selector);
     if (!target) {
       target = root.querySelector('.coupon-wrapper');
     }
+
     return {
       type: type,
       root: root,
@@ -65,19 +77,23 @@
 
   function resolveContext(element) {
     var el = element && element.nodeType ? element : null;
+
     while (el) {
       if (el.nodeType !== 1) {
         el = el.parentElement || el.parentNode;
         continue;
       }
+
       if (el.hasAttribute('data-checkout-context')) {
         var type = el.getAttribute('data-checkout-context');
         if (type && hasContext(type)) {
           return createContextObject(type, el);
         }
       }
+
       el = el.parentElement;
     }
+
     return null;
   }
 
@@ -89,17 +105,22 @@
   function getCouponContainer(context) {
     var root = ensureContextRoot(context);
     if (!root) return $();
+
     var id = context === 'hotel' ? '#hotelCouponBox' : '#courseCouponBox';
     var target = root.querySelector(id);
     if (!target) {
       target = root.querySelector('.coupon-wrapper');
     }
+
     return $(target || []);
   }
 
+  /* -----------------------------------------------------------------
+   *  COUPON-STATE SPEICHERN (OFFEN / ZU)
+   * ----------------------------------------------------------------- */
+
   var COUPON_STATE_ATTR = 'data-coupon-open';
   var COUPON_OPEN_CLASS = 'coupon-form-open';
-
   var activeCouponRequest = null;
 
   function getStoredCouponState(ctx) {
@@ -117,6 +138,7 @@
 
   function applyCouponFormState(ctx, isOpen, options) {
     if (!ctx || !ctx.$box || !ctx.$box.length) return;
+
     var $form = ctx.$box.find('.coupon-form');
     if (!$form.length) return;
 
@@ -145,10 +167,16 @@
   function restoreCouponFormState(context) {
     var ctxType = getActiveContext(context);
     if (!ctxType) return;
+
     var ctx = createContextObject(ctxType);
     if (!ctx) return;
+
     applyCouponFormState(ctx);
   }
+
+  /* -----------------------------------------------------------------
+   *  GENERELLE HILFSFUNKTIONEN
+   * ----------------------------------------------------------------- */
 
   function getCsrf() {
     var meta = document.querySelector('meta[name="csrf-token"]');
@@ -158,6 +186,7 @@
   function callTheme(method, value, fallback) {
     var theme = win.RiorelaxTheme || {};
     var fn = theme && typeof theme[method] === 'function' ? theme[method] : null;
+
     if (fn) {
       fn.call(theme, value);
     } else if (typeof fallback === 'function') {
@@ -166,6 +195,7 @@
   }
 
   win.CheckoutState = win.CheckoutState || { card: null, coupon: null, totals: {} };
+
   var removeUrl =
     (win.customerCard && win.customerCard.routes && win.customerCard.routes.remove) || null;
 
@@ -186,6 +216,10 @@
       win.Botble.showError('Es ist ein Fehler beim Aktualisieren des Checkouts aufgetreten.');
     }
   }
+
+  /* -----------------------------------------------------------------
+   *  CUSTOMER CARD – PAYMENT SYNC
+   * ----------------------------------------------------------------- */
 
   function syncCustomerCardPayment(context) {
     var ctxType = getActiveContext(context);
@@ -226,6 +260,10 @@
     }
   }
 
+  /* -----------------------------------------------------------------
+   *  RENDER CHECKOUT UI (TOTEN / DISCOUNT / CARD-INFO / COUPON)
+   * ----------------------------------------------------------------- */
+
   function renderCheckoutUI(context) {
     var state = win.CheckoutState || {};
     var totals = state.totals || {};
@@ -233,27 +271,29 @@
     var root = getContextRoot(ctxType) || document;
     var $root = $(root);
 
-    var amountText = totals.sub_total_display ?? state.sub_total;
+    // Beträge
+    var amountText = totals.sub_total_display != null ? totals.sub_total_display : state.sub_total;
     if (typeof amountText !== 'undefined') {
       $root.find('.amount-text').text(amountText);
     }
 
-    var discountText = totals.discount_display ?? state.discount_amount;
+    var discountText = totals.discount_display != null ? totals.discount_display : state.discount_amount;
     if (typeof discountText !== 'undefined') {
       $root.find('.discount-text').text(discountText);
     }
 
-    var taxText = totals.tax_display ?? state.tax_amount;
+    var taxText = totals.tax_display != null ? totals.tax_display : state.tax_amount;
     if (typeof taxText !== 'undefined') {
       $root.find('.tax-text').text(taxText);
     }
 
-    var totalText = totals.total_display ?? state.total_amount;
+    var totalText = totals.total_display != null ? totals.total_display : state.total_amount;
     if (typeof totalText !== 'undefined') {
       $root.find('.total-amount-text').text(totalText);
     }
 
-    var amountRaw = totals.total_raw ?? state.amount_raw;
+    // Raw-Amount (für Payment & Kartenlogik)
+    var amountRaw = totals.total_raw != null ? totals.total_raw : state.amount_raw;
     var $amountInput = $root.find('input[name="amount"]');
     if ($amountInput.length && typeof amountRaw !== 'undefined') {
       $amountInput.val(amountRaw);
@@ -272,18 +312,32 @@
       }
     }
 
+    // Payment-Methoden mit Kartenlogik synchronisieren
     syncCustomerCardPayment(context);
 
+    // Card-spezifische Anzeige
     var $cardDiscountRow = $root.find('.card-discount-row');
     var $cardDiscountText = $root.find('.card-discount-text');
+    var $cardUnitPriceRow = $root.find('.card-unit-price-row');
+    var $cardUnitPriceText = $root.find('.card-unit-price-text');
+
     if ($cardDiscountRow.length) {
-      var cardDiscountRaw = totals.card_discount_raw ?? 0;
+      var cardDiscountRaw = totals.card_discount_raw != null ? totals.card_discount_raw : 0;
       $cardDiscountRow.toggleClass('d-none', !(cardDiscountRaw > 0));
       if (totals.card_discount_display) {
         $cardDiscountText.text(totals.card_discount_display);
       }
     }
 
+    if ($cardUnitPriceRow.length) {
+      var cardUnitPriceRaw = totals.card_unit_price_raw != null ? totals.card_unit_price_raw : 0;
+      $cardUnitPriceRow.toggleClass('d-none', !(cardUnitPriceRaw > 0));
+      if (totals.card_unit_price_display) {
+        $cardUnitPriceText.text(totals.card_unit_price_display);
+      }
+    }
+
+    // Mindestgebühr anzeigen
     var $minimumFeeRow = $root.find('.minimum-fee-row');
     if ($minimumFeeRow.length && 'minimum_fee_raw' in totals) {
       $minimumFeeRow.toggleClass('d-none', !((totals.minimum_fee_raw || 0) > 0));
@@ -292,6 +346,7 @@
       }
     }
 
+    // Customer-Card Inputs
     var $cardSelect = $('#customer_card_select');
     var $removeButton = $('[data-bb-customer-card="remove"]');
     var $infoBox = $('[data-bb-customer-card="info"]');
@@ -312,9 +367,11 @@
       if ($cardUnitsInput.length) $cardUnitsInput.val(cardState.units_used || 1);
       if ($cardCoverageInput.length) $cardCoverageInput.val(cardState.coverage_type || 'none');
       if ($cardDiscountInput.length) $cardDiscountInput.val(cardState.discount || 0);
+
       if ($removeButton.length) {
         $removeButton.removeClass('d-none').prop('disabled', false);
       }
+
       if ($infoBox.length) {
         $infoBox.toggleClass('d-none', !((totals.card_discount_raw || 0) > 0));
         var cardText = totals.card_discount_display_plain || cardState.discount_display;
@@ -323,6 +380,7 @@
         }
       }
     } else {
+      // Keine aktive Karte: alles zurücksetzen
       if ($cardSelect.length) {
         $cardSelect.val('');
         var $firstOption = $cardSelect.find('option').first();
@@ -331,33 +389,49 @@
           $firstOption.text('Keine Karte auswählen');
         }
       }
+
       if ($cardInput.length) $cardInput.val('');
       if ($cardIdInput.length) $cardIdInput.val('');
       if ($cardUnitsInput.length) $cardUnitsInput.val('');
       if ($cardCoverageInput.length) $cardCoverageInput.val('');
       if ($cardDiscountInput.length) $cardDiscountInput.val('');
+
       if ($removeButton.length) {
         $removeButton.addClass('d-none').prop('disabled', true);
       }
+
       if ($infoBox.length) {
         $infoBox.addClass('d-none');
         $infoDiscount.text('');
       }
+
       if ($cardDiscountRow.length) {
         $cardDiscountRow.addClass('d-none');
         $cardDiscountText.text('-');
       }
-      $totalInput.data('active-discount', 0).data('minimum-fee', 0);
+
+      if ($cardUnitPriceRow.length) {
+        $cardUnitPriceRow.addClass('d-none');
+        $cardUnitPriceText.text('-');
+      }
+
+      // FIX: hier gab es vorher den Fehler mit $totalInput (nicht definiert)
+      if ($amountInput.length) {
+        $amountInput.data('active-discount', 0).data('minimum-fee', 0);
+      }
     }
 
+    // Coupon-State
     var couponState = state.coupon || {};
     var couponCode = couponState.code || state.coupon_code || '';
     var hasActiveCoupon = !!couponCode;
+
     if (couponCode) {
       $root.find('input[name="coupon_code"]').val(couponCode);
       $root.find('input[name="coupon_hidden"]').val(couponCode);
     }
 
+    // Wenn Karte aktiv -> Coupon verstecken; wenn Coupon aktiv -> Card-Bereich verstecken
     var $couponContainer = getCouponContainer(ctxType);
     if ($couponContainer.length) {
       $couponContainer.toggleClass('d-none', hasActiveCard);
@@ -367,12 +441,17 @@
       $cardSection.toggleClass('d-none', hasActiveCoupon);
     }
 
+    // Falls das Backend ein neues Coupon-HTML liefert
     if (state.views && state.views.coupon_box) {
       refreshCouponBox(state.views.coupon_box, ctxType);
     }
 
     return state;
   }
+
+  /* -----------------------------------------------------------------
+   *  STATE MANAGEMENT
+   * ----------------------------------------------------------------- */
 
   var renderTimer = null;
 
@@ -413,9 +492,45 @@
     setCheckoutState(data, context);
   }
 
+  /* -----------------------------------------------------------------
+   *  PAYMENT LIST RELOAD
+   * ----------------------------------------------------------------- */
+
+  function reloadPaymentList(context) {
+    var ctx = getActiveContext(context);
+    if (!ctx) return $.Deferred().resolve();
+
+    var root = getContextRoot(ctx) || document;
+    var $list = $(root).find('.payment-checkout-form .list_payment_method');
+    if (!$list.length) return $.Deferred().resolve();
+
+    var selected = $list.find('input[name="payment_method"]:checked').val();
+    var dfd = $.Deferred();
+
+    $list.load(win.location.href + ' .payment-checkout-form .list_payment_method > *', function (resp, status) {
+      if (status === 'error') return dfd.reject();
+
+      if (selected) {
+        $list
+          .find('input[name="payment_method"][value="' + selected + '"]')
+          .prop('checked', true)
+          .trigger('change');
+      }
+
+      syncCustomerCardPayment(context);
+      dfd.resolve();
+    });
+
+    return dfd.promise();
+  }
+
   function refreshPaymentMethods(context) {
     return reloadPaymentList(context);
   }
+
+  /* -----------------------------------------------------------------
+   *  CUSTOMER CARD – SERVER-ANTWORTEN
+   * ----------------------------------------------------------------- */
 
   function handleCardApplyResponse(response) {
     if (!response || response.success === false || response.error) {
@@ -455,6 +570,10 @@
 
   win.handleCardRemoveResponse = handleCardRemoveResponse;
 
+  /* -----------------------------------------------------------------
+   *  SHARED PAYLOAD FÜR AJAX (COURSE / HOTEL)
+   * ----------------------------------------------------------------- */
+
   function getSharedPayload(context) {
     var payload = {};
     var ctx = context || getActiveContext();
@@ -465,14 +584,19 @@
 
     if (context === 'course' || !context) {
       var courseRoot = getContextRoot('course') || document;
-      var courseInput = courseRoot.querySelector('input[name="course_id"]') || document.querySelector('input[name="course_id"]');
+      var courseInput =
+        courseRoot.querySelector('input[name="course_id"]') ||
+        document.querySelector('input[name="course_id"]');
       if (courseInput && courseInput.value) {
         payload.course_id = courseInput.value;
       }
     }
+
     if (context === 'hotel' || !context) {
       var roomRoot = getContextRoot('hotel') || document;
-      var roomInput = roomRoot.querySelector('input[name="room_id"]') || document.querySelector('input[name="room_id"]');
+      var roomInput =
+        roomRoot.querySelector('input[name="room_id"]') ||
+        document.querySelector('input[name="room_id"]');
       if (roomInput && roomInput.value) {
         payload.room_id = roomInput.value;
       }
@@ -481,11 +605,17 @@
     return payload;
   }
 
+  /* -----------------------------------------------------------------
+   *  COUPON BOX REFRESH
+   * ----------------------------------------------------------------- */
+
   function refreshCouponBox(html, context) {
     var ctx = getActiveContext(context);
     if (!ctx) return;
+
     var $container = getCouponContainer(ctx);
     if (!$container.length) return;
+
     var ctxInfo = createContextObject(ctx);
     if (ctxInfo) {
       ctxInfo.$box = $container;
@@ -493,10 +623,10 @@
 
     var previousValues = {
       codeInput: ctxInfo && ctxInfo.$box ? ctxInfo.$box.find('input[name=coupon_code]').val() : '',
-      hiddenInput: ctxInfo && ctxInfo.$box ? ctxInfo.$box.find('input[name=coupon_hidden]').val() : '',
+      hiddenInput: ctxInfo && ctxInfo.$box ? ctxInfo.$box.find('input[name=coupon_hidden]').val() : ''
     };
 
-    // API-Antworten liefern ein Objekt mit Views; hier das Markup extrahieren
+    // API Responses können Objekt mit Views sein
     if (html && typeof html === 'object') {
       if (html.views && html.views.coupon_box) {
         html = html.views.coupon_box;
@@ -507,6 +637,7 @@
 
     if (typeof html === 'string') {
       $container.html(html);
+
       if (ctxInfo) {
         if (previousValues.hiddenInput && !$container.find('input[name=coupon_hidden]').val()) {
           $container.find('input[name=coupon_hidden]').val(previousValues.hiddenInput);
@@ -518,15 +649,18 @@
 
         var hasApplied = $container.find('.coupon-feedback').length > 0;
         var storedState = getStoredCouponState(ctxInfo);
+
         if (hasApplied && typeof storedState !== 'boolean') {
           applyCouponFormState(ctxInfo, true);
         } else {
           applyCouponFormState(ctxInfo);
         }
       }
+
       return;
     }
 
+    // Fallback: HTML per AJAX nachladen
     var $target = $container.find('.coupon-box');
     if (!$target.length) {
       $target = $container;
@@ -537,7 +671,7 @@
 
     $.ajax({
       url: refreshUrl,
-      type: 'GET',
+      type: 'GET'
     })
       .done(function (res) {
         if (res && res.data) {
@@ -551,6 +685,10 @@
       });
   }
 
+  /* -----------------------------------------------------------------
+   *  BUTTON-LOADING
+   * ----------------------------------------------------------------- */
+
   function toggleLoading($el, isLoading) {
     if (!$el || !$el.length) return;
 
@@ -561,49 +699,10 @@
     $el.toggleClass('button-loading', !!isLoading);
   }
 
-    function reloadPaymentList(context) {
-      var ctx = getActiveContext(context);
-      if (!ctx) return $.Deferred().resolve();
-      var root = getContextRoot(ctx) || document;
-      var $list = $(root).find('.payment-checkout-form .list_payment_method');
-      if (!$list.length) return $.Deferred().resolve();
+  /* -----------------------------------------------------------------
+   *  API NACH AUSSEN
+   * ----------------------------------------------------------------- */
 
-      var selected = $list.find('input[name="payment_method"]:checked').val();
-      var dfd = $.Deferred();
-
-      $.ajax({
-        url: window.location.href,
-        type: 'GET',
-        dataType: 'html',
-      })
-        .done(function (html) {
-          var $html = $('<div>').html(html);
-          var $fresh = $html.find('.payment-checkout-form .list_payment_method');
-
-          if (!$fresh.length) {
-            return dfd.reject();
-          }
-
-          $list.empty().append($fresh.children());
-
-          if (selected) {
-            $list
-              .find('input[name="payment_method"][value="' + selected + '"]')
-              .prop('checked', true)
-              .trigger('change');
-          }
-
-          syncCustomerCardPayment(context);
-          dfd.resolve();
-        })
-        .fail(function () {
-          dfd.reject();
-        });
-
-      return dfd.promise();
-    }
-
-  // Expose für andere Module (Hotel-Recalc ruft das auf)
   var checkoutApi = {
     setState: setCheckoutState,
     renderCheckoutUI: renderCheckoutUI,
@@ -616,33 +715,42 @@
     isCourseCheckout: {
       get: function () {
         return hasContext('course');
-      },
+      }
     },
     isHotelCheckout: {
       get: function () {
         return hasContext('hotel');
-      },
-    },
+      }
+    }
   });
 
   win.CheckoutCommerce = checkoutApi;
 
+  /* -----------------------------------------------------------------
+   *  EVENTS BINDEN (NUR EINMAL)
+   * ----------------------------------------------------------------- */
+
   var $document = $(document);
 
-  // Sicherstellen, dass wir Events nur einmal binden
   $document.off('click', '.toggle-coupon-form');
   $document.off('click', '.apply-coupon-code');
   $document.off('click', '.remove-coupon-code');
   $document.off('click', '[data-card-remove]');
   $('[data-bb-customer-card="apply"], [data-bb-customer-card="remove"]').off('click');
 
-  var applyUrl = (win.customerCard && win.customerCard.routes && win.customerCard.routes.apply) || null;
+  var applyUrl =
+    (win.customerCard && win.customerCard.routes && win.customerCard.routes.apply) || null;
+
   var cardRequestInFlight = false;
+
+  /* ---------------------- Kundenkarte anwenden ---------------------- */
 
   $document.on('click', '[data-bb-customer-card="apply"]', function (e) {
     e.preventDefault();
+
     var $btn = $(this);
     if (cardRequestInFlight) return;
+
     cardRequestInFlight = true;
     $btn.prop('disabled', true);
 
@@ -666,7 +774,7 @@
       url: applyUrl,
       type: 'POST',
       headers: { 'X-CSRF-TOKEN': getCsrf() },
-      data: $.extend({ card_id: cardId }, getSharedPayload(getActiveContext())),
+      data: $.extend({ card_id: cardId }, getSharedPayload(getActiveContext()))
     })
       .done(handleCardApplyResponse)
       .fail(handleRequestError)
@@ -676,10 +784,14 @@
       });
   });
 
+  /* ---------------------- Kundenkarte entfernen ---------------------- */
+
   $document.on('click', '[data-card-remove]', function (e) {
     e.preventDefault();
+
     var $trigger = $(this);
     if (cardRequestInFlight) return;
+
     cardRequestInFlight = true;
     $trigger.prop('disabled', true);
 
@@ -699,52 +811,59 @@
       });
   });
 
-  $document
-    .on('click', '.toggle-coupon-form', function (e) {
-      var ctx = resolveContext(e.currentTarget);
-      if (!ctx) return;
-      if (!hasContext(ctx.type)) return;
-      var $form = ctx.$box.find('.coupon-form');
-      if (!$form.length) return;
-      var willOpen = !$form.is(':visible');
-      applyCouponFormState(ctx, willOpen, { animate: true });
+  /* ---------------------- Coupon – UI Toggeln ---------------------- */
+
+  $document.on('click', '.toggle-coupon-form', function (e) {
+    var ctx = resolveContext(e.currentTarget);
+    if (!ctx) return;
+    if (!hasContext(ctx.type)) return;
+
+    var $form = ctx.$box.find('.coupon-form');
+    if (!$form.length) return;
+
+    var willOpen = !$form.is(':visible');
+    applyCouponFormState(ctx, willOpen, { animate: true });
+  });
+
+  /* ---------------------- Coupon anwenden ---------------------- */
+
+  $document.on('click', '.apply-coupon-code', function (e) {
+    e.preventDefault();
+
+    var $btn = $(e.currentTarget);
+    var ctx = resolveContext(e.currentTarget);
+    if (!ctx) return;
+    if (!hasContext(ctx.type)) return;
+
+    var url = $btn.data('url');
+    var $codeInput = ctx.$box.find('input[name=coupon_code]');
+    var code = ($codeInput.val() || '').trim();
+
+    if (!url) return;
+
+    if (!code.length) {
+      callTheme('showError', 'Bitte Gutscheincode eingeben.', function (msg) {
+        if (win.alert) alert(msg);
+      });
+      return;
+    }
+
+    if (!ensureCourseContext('Coupon anwenden')) return;
+    if (activeCouponRequest) return;
+
+    activeCouponRequest = $.ajax({
+      url: url,
+      type: 'POST',
+      headers: { 'X-CSRF-TOKEN': getCsrf() },
+      data: $.extend({ coupon_code: code }, getSharedPayload(ctx.type)),
+      beforeSend: function () {
+        toggleLoading($btn, true);
+      }
     })
-    .on('click', '.apply-coupon-code', function (e) {
-      e.preventDefault();
-
-      var $btn = $(e.currentTarget);
-      var ctx = resolveContext(e.currentTarget);
-      if (!ctx) return;
-      if (!hasContext(ctx.type)) return;
-      var url  = $btn.data('url');
-      var $codeInput = ctx.$box.find('input[name=coupon_code]');
-      var code = ($codeInput.val() || '').trim();
-
-      if (!url) return;
-      if (!code.length) {
-        callTheme('showError', 'Bitte Gutscheincode eingeben.', function (msg) {
-          if (win.alert) alert(msg);
-        });
-        return;
-      }
-
-      if (!ensureCourseContext('Coupon anwenden')) return;
-
-      if (activeCouponRequest) {
-        return;
-      }
-
-      activeCouponRequest = $.ajax({
-        url: url,
-        type: 'POST',
-        headers: { 'X-CSRF-TOKEN': getCsrf() },
-        data: $.extend({ coupon_code: code }, getSharedPayload(ctx.type)),
-        beforeSend: function () { toggleLoading($btn, true); }
-      })
       .done(function (res) {
-        var error   = res && res.error;
+        var error = res && res.error;
         var message = res && res.message;
-        var data    = res && res.data;
+        var data = res && res.data;
 
         if (error) {
           callTheme('showError', message || 'Fehler beim Anwenden des Gutscheins.', function (msg) {
@@ -757,16 +876,18 @@
 
         var payload = $.extend(true, { coupon: { code: code }, coupon_code: code }, data);
         var state = setCheckoutState(payload, ctx.type);
+
         if (state && state.coupon && state.coupon.code) {
           setStoredCouponState(ctx, true);
         }
+
         reloadPaymentList(ctx.type);
         refreshCouponBox(null, ctx.type);
 
         // Event für andere Module (z.B. course-checkout.js)
         $(document).trigger('coupon.applied', {
           context: ctx.type,
-          response: res,
+          response: res
         });
       })
       .fail(handleRequestError)
@@ -774,34 +895,37 @@
         toggleLoading($btn, false);
         activeCouponRequest = null;
       });
-    })
-    .on('click', '.remove-coupon-code', function (e) {
-      e.preventDefault();
+  });
 
-      var $btn = $(e.currentTarget);
-      var ctx = resolveContext(e.currentTarget);
-      if (!ctx) return;
-      if (!hasContext(ctx.type)) return;
-      var url  = $btn.data('url');
-      if (!url) return;
+  /* ---------------------- Coupon entfernen ---------------------- */
 
-      if (!ensureCourseContext('Coupon entfernen')) return;
+  $document.on('click', '.remove-coupon-code', function (e) {
+    e.preventDefault();
 
-      if (activeCouponRequest) {
-        return;
+    var $btn = $(e.currentTarget);
+    var ctx = resolveContext(e.currentTarget);
+    if (!ctx) return;
+    if (!hasContext(ctx.type)) return;
+
+    var url = $btn.data('url');
+    if (!url) return;
+
+    if (!ensureCourseContext('Coupon entfernen')) return;
+    if (activeCouponRequest) return;
+
+    activeCouponRequest = $.ajax({
+      url: url,
+      type: 'POST',
+      headers: { 'X-CSRF-TOKEN': getCsrf() },
+      data: getSharedPayload(ctx.type),
+      beforeSend: function () {
+        toggleLoading($btn, true);
       }
-
-      activeCouponRequest = $.ajax({
-        url: url,
-        type: 'POST',
-        headers: { 'X-CSRF-TOKEN': getCsrf() },
-        data: getSharedPayload(ctx.type),
-        beforeSend: function () { toggleLoading($btn, true); }
-      })
+    })
       .done(function (res) {
-        var error   = res && res.error;
+        var error = res && res.error;
         var message = res && res.message;
-        var data    = res && res.data;
+        var data = res && res.data;
 
         if (error) {
           callTheme('showError', message || 'Fehler beim Entfernen des Gutscheins.', function (msg) {
@@ -814,16 +938,17 @@
 
         var payload = $.extend(true, { coupon: null, coupon_code: '' }, data);
         var state = setCheckoutState(payload, ctx.type);
+
         if (!state.coupon || !state.coupon.code) {
           setStoredCouponState(ctx, false);
         }
+
         reloadPaymentList(ctx.type);
         refreshCouponBox(null, ctx.type);
 
-        // Event für andere Module
         $(document).trigger('coupon.removed', {
           context: ctx.type,
-          response: res,
+          response: res
         });
       })
       .fail(handleRequestError)
@@ -831,6 +956,5 @@
         toggleLoading($btn, false);
         activeCouponRequest = null;
       });
-    });
-
+  });
 })(window, window.jQuery);
