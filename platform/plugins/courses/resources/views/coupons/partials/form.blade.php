@@ -21,7 +21,7 @@
     </div>
 
     @php
-        $hasCoupon = $couponCode && (float) $couponAmount > 0;
+        $hasCoupon = ! empty($couponCode);
     @endphp
     <div class="coupon-form mt-3 checkout-action-form" @style(['display: none' => ! $hasCoupon])>
         @if ($hasCoupon)
