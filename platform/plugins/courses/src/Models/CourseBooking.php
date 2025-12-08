@@ -27,6 +27,7 @@ class CourseBooking extends BaseModel
         'coupon_code',
         'tax_amount',
         'status',
+        'requests',
         'additional_info',
         'course_session_id',
         'rule_discount',
