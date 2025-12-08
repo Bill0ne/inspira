@@ -135,6 +135,36 @@
   gap:6px;
 }
 
+.booking-ticket .request-box {
+  margin-top:18px;
+  background:#fff;
+  border:1px solid #E5E7EB;
+  border-radius:10px;
+  padding:14px 16px;
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  box-shadow:0 4px 12px rgba(0,0,0,.04);
+}
+
+.booking-ticket .request-box .icon {
+  color:var(--mint);
+  font-size:20px;
+  line-height:1;
+}
+
+.booking-ticket .request-box .title {
+  font:700 14px/1.2 system-ui;
+  margin:0 0 6px;
+  color:#0F172A;
+}
+
+.booking-ticket .request-box .text {
+  margin:0;
+  color:#475569;
+  font:500 13px/1.5 system-ui;
+}
+
 /* TRENNLINIE */
 .booking-ticket__divider {
   position:absolute;
@@ -278,6 +308,18 @@
       <div class="field" style="margin-top:14px">
         <small>Inspira Zentrum<br>Max-Lang-Str. 36, 70771 Leinfelden-Echterdingen</small>
       </div>
+
+      @if($booking?->requests)
+        <div class="request-box">
+          <div class="icon">
+            <x-core::icon name="ti ti-message-circle-2" />
+          </div>
+          <div>
+            <p class="title">{{ __('Booking request') }}</p>
+            <p class="text">{{ $booking->requests }}</p>
+          </div>
+        </div>
+      @endif
     </div>
 
     {{-- LINIE --}}

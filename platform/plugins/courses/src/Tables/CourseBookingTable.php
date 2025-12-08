@@ -42,6 +42,16 @@ class CourseBookingTable extends TableAbstract
         $data = $this->table
             ->eloquent($this->query())
             ->formatColumn('amount', PriceFormatter::class)
+            ->addColumn('request_flag', function (CourseBooking $item) {
+                if (! $item->requests) {
+                    return '&mdash;';
+                }
+
+                return Html::tag('i', '', [
+                    'class' => 'ti ti-message-circle-2 text-primary',
+                    'title' => __('Booking request'),
+                ])->toHtml();
+            })
 
             ->editColumn('customer_id', function (CourseBooking $item) {
                 if ($item->customer && $item->customer->id) {
@@ -182,6 +192,7 @@ class CourseBookingTable extends TableAbstract
                 'payment_method',
                 'course_id',
                 'customer_id',
+                'requests',
             ])
             ->with(['customer', 'course'])
             ->where('status', '!=', \Botble\Hotel\Enums\BookingStatusEnum::AWAITING_PAYMENT);
@@ -197,6 +208,13 @@ class CourseBookingTable extends TableAbstract
     {
         $columns = [
             IdColumn::make(),
+
+            Column::make('request_flag')
+                ->title(__('Booking request'))
+                ->alignCenter()
+                ->orderable(false)
+                ->searchable(false)
+                ->width(90),
 
             Column::make('customer_id')
                 ->title(trans('plugins/hotel::booking.customer'))
