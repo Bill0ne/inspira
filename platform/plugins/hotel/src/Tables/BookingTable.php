@@ -44,6 +44,16 @@ class BookingTable extends TableAbstract
         $data = $this->table
             ->eloquent($this->query())
             ->formatColumn('amount', PriceFormatter::class)
+            ->addColumn('request_flag', function (Booking $item) {
+                if (! $item->requests) {
+                    return '&mdash;';
+                }
+
+                return Html::tag('i', '', [
+                    'class' => 'ti ti-message-circle-2 text-primary',
+                    'title' => trans('plugins/hotel::hotel.booking_request'),
+                ])->toHtml();
+            })
             ->editColumn('customer_id', function (Booking $item) {
                 return $item->address->id ? BaseHelper::clean(
                     $item->address->first_name . ' ' . $item->address->last_name
@@ -128,6 +138,7 @@ class BookingTable extends TableAbstract
                 'status',
                 'amount',
                 'payment_id',
+                'requests',
             ])
             ->with(['address', 'room']);
 
@@ -142,6 +153,12 @@ class BookingTable extends TableAbstract
     {
         $columns = [
                 IdColumn::make(),
+                Column::make('request_flag')
+                    ->title(trans('plugins/hotel::hotel.booking_request'))
+                    ->orderable(false)
+                    ->searchable(false)
+                    ->alignCenter()
+                    ->width(70),
                 Column::make('customer_id')
                     ->title(trans('plugins/hotel::booking.customer'))
                     ->alignLeft()

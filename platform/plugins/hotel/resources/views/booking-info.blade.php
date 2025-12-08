@@ -110,6 +110,20 @@
         @endif
     </x-core::datagrid>
 
+    @if ($booking->requests)
+        <div class="card shadow-sm mb-4 border-0 bg-light">
+            <div class="card-body d-flex align-items-start gap-3">
+                <div class="text-primary fs-4">
+                    <x-core::icon name="ti ti-message-circle-2" />
+                </div>
+                <div>
+                    <h5 class="mb-1">{{ __('Booking request') }}</h5>
+                    <p class="mb-0 text-muted">{{ $booking->requests }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="mb-4">
         <h4>{{ __('Room') }}</h4>
         <x-core::table>
