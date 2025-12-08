@@ -544,14 +544,34 @@
     var selected = $list.find('input[name="payment_method"]:checked').val();
     var dfd = $.Deferred();
 
-    $list.load(window.location.href + ' .payment-checkout-form .list_payment_method > *', function (resp, status) {
-      if (status === 'error') return dfd.reject();
-      if (selected) {
-        $list.find('input[name="payment_method"][value="' + selected + '"]').prop('checked', true).trigger('change');
-      }
-      syncCustomerCardPayment(context);
-      dfd.resolve();
-    });
+    $.ajax({
+      url: window.location.href,
+      type: 'GET',
+      dataType: 'html',
+    })
+      .done(function (html) {
+        var $html = $('<div>').html(html);
+        var $fresh = $html.find('.payment-checkout-form .list_payment_method');
+
+        if (!$fresh.length) {
+          return dfd.reject();
+        }
+
+        $list.empty().append($fresh.children());
+
+        if (selected) {
+          $list
+            .find('input[name="payment_method"][value="' + selected + '"]')
+            .prop('checked', true)
+            .trigger('change');
+        }
+
+        syncCustomerCardPayment(context);
+        dfd.resolve();
+      })
+      .fail(function () {
+        dfd.reject();
+      });
 
     return dfd.promise();
   }
