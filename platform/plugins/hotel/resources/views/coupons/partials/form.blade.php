@@ -5,9 +5,9 @@
 <div class="order-detail-box mb-20" data-refresh-url="{{ route('coupon.refresh') }}">
     <button class="btn-link ps-0 text-decoration-none toggle-coupon-form" type="button">{{ trans('plugins/hotel::coupon.toggle_coupon_form_text') }}</button>
 
-    <div class="card coupon-form mt-3" @style(['display: none' => ! ($couponCode && $couponAmount)])>
+    <div class="card coupon-form mt-3" @style(['display: none' => ! $couponCode])>
         <div class="card-body">
-            @if ($couponCode && $couponAmount)
+            @if ($couponCode)
                 <div class="d-flex align-items-center justify-content-between alert alert-success mb-0 w-100 flex-wrap gap-2">
                     <span class="fw-semibold">{{ __('Coupon code: :code', ['code' => $couponCode]) }}</span>
                     <input name="coupon_hidden" type="hidden" value="{{ $couponCode }}" />
