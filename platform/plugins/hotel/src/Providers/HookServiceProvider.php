@@ -107,21 +107,6 @@ class HookServiceProvider extends ServiceProvider
                 }
 
                 switch ($orderType) {
-                    case \Botble\Courses\Models\CourseBooking::class: {
-                        /** @var \Botble\Courses\Services\CourseBookingService $service */
-                        $service = app(\Botble\Courses\Services\CourseBookingService::class);
-
-                        // 1) Booking anhand des Payments aktualisieren
-                        $booking = $service->processBooking($orderId, $data['charge_id'] ?? null);
-
-                        // 2) Nur wenn eine Kundenkarte beteiligt ist → Finalisierung durchführen
-                        if ($booking && $booking->customer_card_id && $booking->customer_card_units_used > 0) {
-                            $service->finalizeCustomerCardUsage($booking);
-                        }
-
-                        return $booking;
-                    }
-
                     case \Botble\Hotel\Models\Booking::class:
                         return app(BookingService::class)
                             ->processBooking($orderId, $data['charge_id'] ?? null);
