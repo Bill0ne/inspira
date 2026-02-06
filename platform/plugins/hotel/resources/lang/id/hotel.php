@@ -15,6 +15,7 @@ return [
         'title' => 'Judul',
         'choose_services' => 'Pilih Layanan',
         'choose_places' => 'Pilih Tempat',
+        'show_price' => 'Show price',
     ],
 
     'login_form' => 'Formulir Login',

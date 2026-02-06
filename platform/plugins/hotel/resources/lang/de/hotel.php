@@ -15,6 +15,7 @@ return [
         'title' => 'Titel',
         'choose_services' => 'Dienstleistungen auswählen',
         'choose_places' => 'Orte auswählen',
+        'show_price' => 'Preis anzeigen',
     ],
     'login_form' => 'Anmeldeformular',
     'register_form' => 'Registrierungsformular',

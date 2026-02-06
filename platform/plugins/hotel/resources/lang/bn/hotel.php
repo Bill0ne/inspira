@@ -15,6 +15,7 @@ return [
         'title' => 'শিরোনাম',
         'choose_services' => 'সেবা নির্বাচন করুন',
         'choose_places' => 'স্থান নির্বাচন করুন',
+        'show_price' => 'Show price',
     ],
 
     'login_form' => 'লগইন ফর্ম',

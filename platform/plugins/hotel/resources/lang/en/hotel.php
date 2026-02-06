@@ -15,6 +15,7 @@ return [
         'title' => 'Title',
         'choose_services' => 'Choose Services',
         'choose_places' => 'Choose Places',
+        'show_price' => 'Show price',
     ],
 
     'login_form' => 'Login Form',

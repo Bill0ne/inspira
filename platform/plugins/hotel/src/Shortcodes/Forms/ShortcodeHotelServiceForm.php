@@ -2,12 +2,15 @@
 
 namespace Botble\Hotel\Shortcodes\Forms;
 
+use Botble\Base\Forms\FieldOptions\CheckboxFieldOption;
 use Botble\Base\Forms\FieldOptions\SelectFieldOption;
 use Botble\Base\Forms\FieldOptions\TextFieldOption;
+use Botble\Base\Forms\Fields\OnOffCheckboxField;
 use Botble\Base\Forms\Fields\SelectField;
 use Botble\Base\Forms\Fields\TextField;
 use Botble\Hotel\Models\Service;
 use Botble\Shortcode\Forms\ShortcodeForm;
+use Illuminate\Support\Arr;
 
 class ShortcodeHotelServiceForm extends ShortcodeForm
 {
@@ -37,6 +40,13 @@ class ShortcodeHotelServiceForm extends ShortcodeForm
                     ->searchable()
                     ->multiple()
                     ->toArray()
+            )
+            ->add(
+                'show_price',
+                OnOffCheckboxField::class,
+                CheckboxFieldOption::make()
+                    ->label(trans('plugins/hotel::hotel.shortcodes.show_price'))
+                    ->value(Arr::get($this->getModel(), 'show_price', true))
             );
     }
 }
