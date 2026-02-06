@@ -15,6 +15,7 @@ return [
         'title' => 'Título',
         'choose_services' => 'Elegir Servicios',
         'choose_places' => 'Elegir Lugares',
+        'show_price' => 'Show price',
     ],
 
     'login_form' => 'Formulario de Inicio de Sesión',

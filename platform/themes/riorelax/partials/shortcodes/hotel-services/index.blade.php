@@ -35,9 +35,11 @@
                         <div class="services-08-content">
                             <h3><a href="{{ $service->url }}"> {{ $service->name }} </a></h3>
 
-                            <div class="mb-3 h6 service-price">
-                                {{ format_price($service->price) . '/' . $service->price_type->label() }}
-                            </div>
+                            @if ($shortcode->show_price ?? true)
+                                <div class="mb-3 h6 service-price">
+                                    {{ format_price($service->price) . '/' . $service->price_type->label() }}
+                                </div>
+                            @endif
 
                             @if ($description = $service->description)
                                 <p title="{{ $description }}">{!! BaseHelper::clean(Str::limit($description, 80)) !!}</p>

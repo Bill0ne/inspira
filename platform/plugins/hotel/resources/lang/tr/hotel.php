@@ -15,6 +15,7 @@ return [
         'title' => 'Başlık',
         'choose_services' => 'Hizmetleri Seç',
         'choose_places' => 'Yerleri Seç',
+        'show_price' => 'Show price',
     ],
 
     'login_form' => 'Giriş Formu',

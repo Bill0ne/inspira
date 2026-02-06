@@ -15,6 +15,7 @@ return [
         'title' => 'शीर्षक',
         'choose_services' => 'सेवाएँ चुनें',
         'choose_places' => 'स्थान चुनें',
+        'show_price' => 'Show price',
     ],
 
     'login_form' => 'लॉगिन फॉर्म',

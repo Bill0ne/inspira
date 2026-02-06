@@ -15,6 +15,7 @@ return [
         'title' => 'Titre',
         'choose_services' => 'Choisir les Services',
         'choose_places' => 'Choisir les Lieux',
+        'show_price' => 'Show price',
     ],
 
     'login_form' => 'Formulaire de Connexion',

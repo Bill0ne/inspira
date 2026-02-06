@@ -15,6 +15,7 @@ return [
         'title' => 'العنوان',
         'choose_services' => 'اختر الخدمات',
         'choose_places' => 'اختر الأماكن',
+        'show_price' => 'Show price',
     ],
 
     'login_form' => 'نموذج تسجيل الدخول',

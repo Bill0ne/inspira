@@ -15,6 +15,7 @@ return [
         'title' => 'Tiêu đề',
         'choose_services' => 'Chọn Dịch vụ',
         'choose_places' => 'Chọn Địa điểm',
+        'show_price' => 'Show price',
     ],
 
     'login_form' => 'Biểu mẫu Đăng nhập',
