@@ -1,0 +1,26 @@
+name: SSH Connectivity Test (Hostinger)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show runner public IP
+        run: |
+          echo "Runner public IP:"
+          curl -s https://api.ipify.org || true
+          echo
+
+      - name: TCP test to Hostinger SSH (65002)
+        run: |
+          sudo apt-get update -y >/dev/null
+          sudo apt-get install -y netcat-openbsd >/dev/null
+          echo "Testing TCP connectivity to 145.223.35.233:65002 ..."
+          nc -vz -w 5 145.223.35.233 65002
+
+      - name: SSH handshake test (no auth) with timeout
+        run: |
+          echo "Testing SSH handshake (connect timeout 5s) ..."
+          timeout 8s bash -lc 'ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 -p 65002 u296731902@145.223.35.233 true' || true
