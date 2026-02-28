@@ -37,7 +37,9 @@ class Review {
         $loadingSpinner.removeClass('d-none')
         $reviewList.addClass('blur')
 
-        const url = `${$reviewList.data('url')}&page=${this.currentPage}`
+        const baseUrl = $reviewList.data('url')
+        const separator = baseUrl.includes('?') ? '&' : '?'
+        const url = `${baseUrl}${separator}page=${this.currentPage}`
 
         $.get(url, (response) => {
             $reviewList.html(response.data)
