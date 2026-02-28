@@ -38,7 +38,13 @@ export default {
                 },
                 eventClick: (info) => {
                     this.booking = info.event.extendedProps.detail
-                    $('#view-booking-event-link').attr('href', info.event.extendedProps.detailUrl)
+                    const detailUrl = info.event.extendedProps.detailUrl
+                    const $link = $('#view-booking-event-link')
+                    if (detailUrl) {
+                        $link.attr('href', detailUrl).removeClass('d-none')
+                    } else {
+                        $link.addClass('d-none')
+                    }
                     $('#view-booking-event').modal('show')
                 },
             })
@@ -52,9 +58,14 @@ export default {
 <template>
     <div class="card">
         <div class="card-header">
-            <h4 class="card-title">
-                <slot name="title"></slot>
-            </h4>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 w-100">
+                <h4 class="card-title mb-0">
+                    <slot name="title"></slot>
+                </h4>
+                <div class="ms-auto">
+                    <slot name="actions"></slot>
+                </div>
+            </div>
         </div>
 
         <div class="card-body" ref="calendar"></div>
