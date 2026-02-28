@@ -41,6 +41,11 @@ Route::group(['namespace' => 'Botble\Contact\Http\Controllers'], function (): vo
                 'as' => 'public.send.contact',
                 'uses' => 'PublicController@postSendContact',
             ]);
+
+            Route::post('room-request/send', [
+                'as' => 'public.send.room-request',
+                'uses' => 'PublicController@postSendRoomRequest',
+            ]);
         });
     }
 });

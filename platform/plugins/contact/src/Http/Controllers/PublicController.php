@@ -9,16 +9,38 @@ use Botble\Contact\Enums\CustomFieldType;
 use Botble\Contact\Events\SentContactEvent;
 use Botble\Contact\Forms\Fronts\ContactForm;
 use Botble\Contact\Http\Requests\ContactRequest;
+use Botble\Contact\Http\Requests\RoomContactRequest;
 use Botble\Contact\Models\Contact;
 use Botble\Contact\Models\CustomField;
+use Carbon\CarbonImmutable;
 use Exception;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class PublicController extends BaseController
 {
     public function postSendContact(ContactRequest $request)
+    {
+        return $this->sendContact($request);
+    }
+
+    public function postSendRoomRequest(RoomContactRequest $request)
+    {
+        $roomName = (string) DB::table('hc_rooms')->where('id', $request->integer('room_id'))->value('name');
+        $roomName = $roomName ?: (string) $request->input('room_name');
+
+        $request->merge([
+            'room_name' => $roomName,
+            'subject' => __('Raumanfrage: :room', ['room' => $roomName]),
+            'content' => $this->buildRoomRequestContent($request),
+        ]);
+
+        return $this->sendContact($request);
+    }
+
+    protected function sendContact(ContactRequest $request)
     {
         $blacklistDomains = setting('blacklist_email_domains');
 
@@ -157,5 +179,29 @@ class PublicController extends BaseController
                 ->setError()
                 ->setMessage(__("Can't send message on this time, please try again later!"));
         }
+    }
+
+    protected function buildRoomRequestContent(RoomContactRequest $request): string
+    {
+        $timezone = config('app.timezone') ?: 'UTC';
+
+        $from = CarbonImmutable::createFromFormat('Y-m-d\TH:i', $request->input('time_from'), $timezone)
+            ->format('Y-m-d H:i');
+
+        $to = CarbonImmutable::createFromFormat('Y-m-d\TH:i', $request->input('time_to'), $timezone)
+            ->format('Y-m-d H:i');
+
+        $meta = [
+            __('Raum') . ': ' . $request->input('room_name'),
+            __('Name') . ': ' . $request->input('name'),
+            __('Firma') . ': ' . ($request->input('company') ?: '-'),
+            __('Email') . ': ' . $request->input('email'),
+            __('Telefon') . ': ' . $request->input('phone'),
+            __('Anzahl Personen') . ': ' . $request->integer('persons'),
+            __('Zeit von') . ': ' . $from . ' (' . $timezone . ')',
+            __('Zeit bis') . ': ' . $to . ' (' . $timezone . ')',
+        ];
+
+        return "[Raumanfrage]\n" . implode("\n", $meta) . "\n\n" . trim((string) $request->input('content'));
     }
 }

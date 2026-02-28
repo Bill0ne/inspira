@@ -5,7 +5,6 @@
     $displayPriceDiffers = false;
     $priceUnitLabel = __('hour_lowercase');
     $priceInquiryText = HotelHelper::getRoomPriceInquiryText();
-    $priceInquiryUrl = 'https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf';
 
     /* === Fallback-Bild === */
     $image = $room->images && count($room->images) > 0
@@ -183,16 +182,27 @@
     @endif
 
     @if (HotelHelper::isBookingEnabled())
-      <a
-        href="{{ $canShowRoomPrices
-            ? $room->url . '?start_date=' . BaseHelper::stringify(request()->query('start_date', $startDate)) . '&end_date=' . BaseHelper::stringify(request()->query('end_date', $endDate))
-            : $priceInquiryUrl }}"
-        class="btn-room-cart"
-        onclick="event.stopPropagation()"
-      >
-        <i class="fal fa-calendar-check me-2"></i>
-        {{ $canShowRoomPrices ? __('Jetzt buchen') : __('Anfragen') }}
-      </a>
+      @if ($canShowRoomPrices)
+        <a
+          href="{{ $room->url . '?start_date=' . BaseHelper::stringify(request()->query('start_date', $startDate)) . '&end_date=' . BaseHelper::stringify(request()->query('end_date', $endDate)) }}"
+          class="btn-room-cart"
+          onclick="event.stopPropagation()"
+        >
+          <i class="fal fa-calendar-check me-2"></i>
+          {{ __('Jetzt buchen') }}
+        </a>
+      @else
+        <button
+          type="button"
+          class="btn-room-cart"
+          data-room-request-trigger
+          data-room-id="{{ $room->id }}"
+          onclick="event.stopPropagation()"
+        >
+          <i class="fal fa-paper-plane me-2"></i>
+          {{ __('Anfragen') }}
+        </button>
+      @endif
     @endif
 
     <a class="more-link" href="{{ $room->url }}" onclick="event.stopPropagation()">

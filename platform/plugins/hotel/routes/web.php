@@ -366,6 +366,10 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
                     ->name('customer.cards.purchase');
             });
 
+            Route::get('rooms/{room}/popup', 'PublicController@getRoomPopup')
+                ->name('public.rooms.popup')
+                ->whereNumber('room');
+
             Route::get('ajax/calculate-amount', 'PublicController@ajaxCalculateBookingAmount')
                 ->name('public.booking.ajax.calculate-amount');
 

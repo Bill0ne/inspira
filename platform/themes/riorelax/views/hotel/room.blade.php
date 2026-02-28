@@ -11,7 +11,6 @@
     $displayPriceDiffers = false;
     $priceUnitLabel = __('hour_lowercase');
     $priceInquiryText = HotelHelper::getRoomPriceInquiryText();
-    $priceInquiryUrl = 'https://inspira-zentrum.net/de/nimm-kontakt-mit-uns-auf';
 @endphp
 <div class="about-area5 about-p p-relative room-details room-details--rooms">
     <div class="container pt-60 pb-40">
@@ -60,9 +59,14 @@
                                     {!! Theme::partial('hotel.forms.form', ['availableForBooking' => true, 'style' => 1, 'room' => $room]) !!}
                                 @else
                                     <div class="room-booking-card__cta">
-                                        <a class="room-booking-card__cta-btn" href="{{ $priceInquiryUrl }}">
-                                            {{ __('Request now') }}
-                                        </a>
+                                        <button
+                                            type="button"
+                                            class="room-booking-card__cta-btn"
+                                            data-room-request-trigger
+                                            data-room-id="{{ $room->id }}"
+                                        >
+                                            {{ __('Anfragen') }}
+                                        </button>
                                     </div>
                                 @endif
                                 </div>
