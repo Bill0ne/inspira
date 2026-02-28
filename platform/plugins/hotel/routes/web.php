@@ -123,6 +123,11 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
             'uses' => 'BookingCalendarController@index',
             'as' => 'booking.calendar.index',
         ]);
+        Route::post('/booking-calendar/manual', [
+            'uses' => 'BookingCalendarController@storeManual',
+            'as' => 'booking.calendar.manual.store',
+            'permission' => 'booking.calendar.index',
+        ]);
 
         Route::group(['prefix' => 'sync-calendars', 'as' => 'ical.'], function (): void {
             Route::get('', [

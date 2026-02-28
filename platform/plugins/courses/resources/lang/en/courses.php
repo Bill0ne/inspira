@@ -37,7 +37,9 @@ return [
         'start_date' => 'Start Date',
         'end_date' => 'End Date',
         'available_seats' => 'Available Seats',
+        'booked_count' => 'Bookings',
     ],
+    'calendar_item_title' => ':course (:booked bookings, :seats seats)',
 
     'table' => [
         'overview' => 'Course',
