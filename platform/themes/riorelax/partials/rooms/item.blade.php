@@ -145,7 +145,7 @@
 }
 </style>
 
-<div class="room-card" onclick="window.location='{{ $room->url }}'">
+<div class="room-card" onclick="if (event.target.closest('a, button, [data-room-request-trigger]')) return; window.location='{{ $room->url }}'">
   {{-- === Bild === --}}
   <div class="room-thumb">
     <img src="{{ $image }}" alt="{{ $room->name }}">
@@ -186,7 +186,6 @@
         <a
           href="{{ $room->url . '?start_date=' . BaseHelper::stringify(request()->query('start_date', $startDate)) . '&end_date=' . BaseHelper::stringify(request()->query('end_date', $endDate)) }}"
           class="btn-room-cart"
-          onclick="event.stopPropagation()"
         >
           <i class="fal fa-calendar-check me-2"></i>
           {{ __('Jetzt buchen') }}
@@ -197,7 +196,6 @@
           class="btn-room-cart"
           data-room-request-trigger
           data-room-id="{{ $room->id }}"
-          onclick="event.stopPropagation()"
         >
           <i class="fal fa-paper-plane me-2"></i>
           {{ __('Anfragen') }}
@@ -205,7 +203,7 @@
       @endif
     @endif
 
-    <a class="more-link" href="{{ $room->url }}" onclick="event.stopPropagation()">
+    <a class="more-link" href="{{ $room->url }}">
       {{ __('Mehr Infos') }}
     </a>
   </div>

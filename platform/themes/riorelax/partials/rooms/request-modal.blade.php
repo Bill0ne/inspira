@@ -62,7 +62,7 @@
 
             <div class="room-request-field">
                 <label for="room-request-content">{{ __('Persönliche Nachricht an Inspira') }}*</label>
-                <textarea id="room-request-content" name="content" rows="4" required></textarea>
+                <textarea id="room-request-content" name="content" rows="3" required></textarea>
                 <small data-error-for="content"></small>
             </div>
 
@@ -90,15 +90,15 @@
 <style>
 .room-request-modal{position:fixed;inset:0;z-index:9999;display:none}.room-request-modal.is-open{display:block}
 .room-request-modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
-.room-request-modal__dialog{position:relative;background:#fff;max-width:920px;width:min(92vw,920px);max-height:90vh;margin:5vh auto;padding:20px;border-radius:12px;overflow:auto}
+.room-request-modal__dialog{position:relative;background:#fff;max-width:640px;width:min(92vw,640px);max-height:90vh;margin:4vh auto;padding:14px 14px 12px;border-radius:10px;overflow:auto}
 .room-request-modal__close{position:absolute;right:12px;top:8px;border:none;background:transparent;font-size:28px;line-height:1}
-.room-request-card{display:grid;grid-template-columns:220px 1fr;gap:16px;margin-bottom:16px}.room-request-card__image{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:#f3f3f3}
-.room-request-card__title{margin:0 0 8px}.room-request-card__features{display:flex;gap:8px;flex-wrap:wrap}.room-request-card__features img{width:20px;height:20px}
-.room-request-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.room-request-field label{display:block;font-size:13px;margin-bottom:4px}.room-request-field input,.room-request-field textarea{width:100%;border:1px solid #d9d9d9;border-radius:8px;padding:10px}
-.room-request-field small{display:block;color:#c0392b;min-height:16px;margin-top:2px}.room-request-field--terms{margin-top:8px}.room-request-checkbox{display:flex!important;align-items:flex-start;gap:8px}.room-request-checkbox input{width:auto;margin-top:4px}.room-request-checkbox a{text-decoration:underline}.room-request-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.room-request-card{display:grid;grid-template-columns:170px 1fr;gap:10px;margin-bottom:10px}.room-request-card__image{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:6px;background:#f3f3f3}
+.room-request-card__title{margin:0 0 4px;font-size:22px;line-height:1.15}.room-request-card__features{display:flex;gap:6px;flex-wrap:wrap}.room-request-card__features img{width:18px;height:18px}
+.room-request-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.room-request-field label{display:block;font-size:12px;margin-bottom:2px}.room-request-field input,.room-request-field textarea{width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:7px 9px}
+.room-request-field small{display:block;color:#c0392b;min-height:14px;margin-top:1px}.room-request-field--terms{margin-top:4px}.room-request-checkbox{display:flex!important;align-items:flex-start;gap:8px;font-size:13px}.room-request-checkbox input{width:auto;margin-top:3px}.room-request-checkbox a{text-decoration:underline}.room-request-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}.room-request-actions .btn{min-width:130px;padding:8px 14px}
 .room-request-status{min-height:20px}.room-request-status.is-success{color:#2d7a2d}.room-request-status.is-error{color:#c0392b}
-@media (max-width:767px){.room-request-card{grid-template-columns:1fr}.room-request-grid{grid-template-columns:1fr}}
+@media (max-width:767px){.room-request-modal__dialog{margin:2vh auto;padding:12px}.room-request-card{grid-template-columns:1fr}.room-request-grid{grid-template-columns:1fr}.room-request-actions .btn{min-width:0;flex:1}}
 </style>
 
 <script>

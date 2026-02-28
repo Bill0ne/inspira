@@ -4,6 +4,7 @@ namespace Botble\Contact\Http\Requests;
 
 use Botble\Base\Rules\EmailRule;
 use Botble\Base\Rules\PhoneNumberRule;
+use Botble\Hotel\Models\Room;
 use Illuminate\Validation\Rule;
 
 class RoomContactRequest extends ContactRequest
@@ -16,7 +17,7 @@ class RoomContactRequest extends ContactRequest
         $rules['email'] = ['required', new EmailRule(), 'max:80'];
         $rules['phone'] = ['required', new PhoneNumberRule()];
         $rules['company'] = ['nullable', 'string', 'max:120'];
-        $rules['room_id'] = ['required', 'integer', Rule::exists('hc_rooms', 'id')];
+        $rules['room_id'] = ['required', 'integer', Rule::exists((new Room())->getTable(), 'id')];
         $rules['room_name'] = ['required', 'string', 'max:255'];
         $rules['persons'] = ['required', 'integer', 'min:1'];
         $rules['time_from'] = ['required', 'date_format:Y-m-d\TH:i'];
