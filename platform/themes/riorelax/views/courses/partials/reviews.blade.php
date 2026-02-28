@@ -66,7 +66,7 @@
         @endif
 
         <div class="reviews-list mb-20 {{ $model->approved_review_count ? 'mt-10' : '' }}"
-             data-url="{{ route('customer.ajax.course.review.index', $model->slug) }}">
+             data-url="{{ route('customer.ajax.course.review.index', $model->slug) }}?">
         </div>
     </div>
 </div>
