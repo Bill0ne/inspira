@@ -27,6 +27,8 @@
 
 @yield('main')
 
+{!! Theme::partial('rooms.request-modal') !!}
+
 {!! Theme::footer() !!}
 @if (session()->has('success_msg') || session()->has('error_msg') || (isset($errors) && $errors->count() > 0) || isset($error_msg))
     <script type="text/javascript">

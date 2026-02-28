@@ -179,6 +179,34 @@ class PublicController extends Controller
         return Theme::scope('hotel.room', compact('room', 'images', 'relatedRooms', 'startDate', 'endDate', 'adults'))->render();
     }
 
+
+    public function getRoomPopup(Room $room, BaseHttpResponse $response)
+    {
+        $room->loadMissing('amenities');
+
+        $image = $room->images && count($room->images) > 0
+            ? RvMedia::getImageUrl(Arr::first($room->images), 'medium')
+            : RvMedia::getImageUrl('default-room.jpg', 'medium', false, RvMedia::getDefaultImage());
+
+        return $response->setData([
+            'id' => $room->getKey(),
+            'name' => $room->name,
+            'image_url' => $image,
+            'features' => $room->amenities
+                ->take(5)
+                ->map(function ($amenity) {
+                    return [
+                        'name' => $amenity->name,
+                        'icon_url' => $amenity->getMetaData('icon_image', true)
+                            ? RvMedia::getImageUrl($amenity->getMetaData('icon_image', true))
+                            : null,
+                    ];
+                })
+                ->values()
+                ->all(),
+        ]);
+    }
+
     public function getRoomCategory(string $key)
     {
         $slug = SlugHelper::getSlug($key, SlugHelper::getPrefix(RoomCategory::class));
