@@ -12,10 +12,10 @@ use Botble\Contact\Http\Requests\ContactRequest;
 use Botble\Contact\Http\Requests\RoomContactRequest;
 use Botble\Contact\Models\Contact;
 use Botble\Contact\Models\CustomField;
+use Botble\Hotel\Models\Room;
 use Carbon\CarbonImmutable;
 use Exception;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -28,7 +28,7 @@ class PublicController extends BaseController
 
     public function postSendRoomRequest(RoomContactRequest $request)
     {
-        $roomName = (string) DB::table('hc_rooms')->where('id', $request->integer('room_id'))->value('name');
+        $roomName = (string) Room::query()->whereKey($request->integer('room_id'))->value('name');
         $roomName = $roomName ?: (string) $request->input('room_name');
 
         $request->merge([
