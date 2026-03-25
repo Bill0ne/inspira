@@ -6,6 +6,7 @@
     <calendar-booking-reports-component
         v-cloak
         events-url="{{ route('booking.reports.records.index') }}"
+        kpis-url="{{ route('booking.calendar.kpis') }}"
     >
         <template v-slot:title>
             {{ trans('plugins/hotel::booking.calendar') }}
@@ -13,38 +14,12 @@
         <template v-slot:actions>
             <x-core::button
                 color="primary"
+                icon="ti ti-plus"
                 data-bs-toggle="modal"
                 data-bs-target="#manual-booking-modal"
             >
                 {{ trans('plugins/hotel::booking.manual_booking') }}
             </x-core::button>
-        </template>
-
-        <template v-slot:event="{ booking }">
-            <x-core::modal
-                id="view-booking-event"
-                type="info"
-                v-if="booking"
-                :title="trans('plugins/hotel::booking.name')"
-                size="lg"
-            >
-                <div v-html="booking"></div>
-
-                <x-slot name="footer">
-                    <x-core::button data-bs-dismiss="modal">
-                        {{ trans('core/base::forms.cancel') }}
-                    </x-core::button>
-                    <x-core::button
-                        tag="a"
-                        href="#"
-                        target="_blank"
-                        id="view-booking-event-link"
-                        color="primary"
-                    >
-                        {{ trans('core/base::forms.edit') }}
-                    </x-core::button>
-                </x-slot>
-            </x-core::modal>
         </template>
 
         <template v-slot:loading>
@@ -131,4 +106,75 @@
             toggleTargets()
         })()
     </script>
+    <style>
+        /* Smart Calendar Styles */
+        .fc .fc-toolbar-title {
+            font-size: 1.25rem !important;
+            font-weight: 600;
+        }
+
+        .fc .fc-button {
+            font-size: 0.8125rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            text-transform: none;
+        }
+
+        .fc .fc-button-primary {
+            background-color: var(--bb-primary, #206bc4);
+            border-color: var(--bb-primary, #206bc4);
+        }
+
+        .fc .fc-button-primary:not(:disabled).fc-button-active,
+        .fc .fc-button-primary:not(:disabled):active {
+            background-color: var(--bb-primary, #206bc4);
+            border-color: var(--bb-primary, #206bc4);
+            opacity: 0.9;
+        }
+
+        .fc .fc-today-button {
+            font-weight: 600;
+        }
+
+        .fc .fc-day-today {
+            background-color: rgba(var(--bb-primary-rgb, 32, 107, 196), 0.04) !important;
+        }
+
+        .fc .fc-event {
+            border-radius: 6px !important;
+            font-size: 12px !important;
+            padding: 2px 6px !important;
+            cursor: pointer;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        .fc .fc-event:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+
+        .fc .fc-daygrid-event {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fc .fc-timegrid-event .fc-event-title {
+            font-size: 11px;
+        }
+
+        #smart-event-detail-modal .modal-content {
+            border-radius: 12px;
+        }
+
+        #smart-event-detail-modal .list-group-item {
+            border: none;
+            padding-top: 0.625rem;
+            padding-bottom: 0.625rem;
+        }
+
+        #smart-event-detail-modal .list-group-item + .list-group-item {
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+    </style>
 @endpush
