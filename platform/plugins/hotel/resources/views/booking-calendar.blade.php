@@ -107,7 +107,7 @@
         })()
     </script>
     <style>
-        /* Smart Calendar Styles */
+        /* Smart Calendar - Toolbar */
         .fc .fc-toolbar-title {
             font-size: 1.25rem !important;
             font-weight: 600;
@@ -136,33 +136,107 @@
             font-weight: 600;
         }
 
+        /* Today column highlight */
         .fc .fc-day-today {
             background-color: rgba(var(--bb-primary-rgb, 32, 107, 196), 0.04) !important;
         }
 
-        .fc .fc-event {
-            border-radius: 6px !important;
-            font-size: 12px !important;
-            padding: 2px 6px !important;
-            cursor: pointer;
-            transition: opacity 0.15s ease, transform 0.15s ease;
+        /* Time grid - slot styling */
+        .fc .fc-timegrid-slot {
+            height: 2.5em;
         }
 
-        .fc .fc-event:hover {
-            opacity: 0.85;
-            transform: translateY(-1px);
+        .fc .fc-timegrid-slot-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-weight: 500;
         }
 
-        .fc .fc-daygrid-event {
+        .fc .fc-timegrid-axis {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        .fc .fc-timegrid-now-indicator-line {
+            border-color: #e53e3e;
+            border-width: 2px;
+        }
+
+        .fc .fc-timegrid-now-indicator-arrow {
+            border-top-color: #e53e3e;
+        }
+
+        /* Chip-style events - TimeGrid */
+        .fc .fc-timegrid-event {
+            border-radius: 16px !important;
+            font-size: 11.5px !important;
+            font-weight: 500;
+            padding: 2px 8px !important;
+            border: none !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin: 1px 2px !important;
+            overflow: hidden;
+        }
+
+        .fc .fc-timegrid-event .fc-event-main {
+            padding: 2px 4px;
+            overflow: hidden;
+        }
+
+        .fc .fc-timegrid-event .fc-event-title {
+            font-size: 11px;
+            line-height: 1.3;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .fc .fc-timegrid-event .fc-event-title {
-            font-size: 11px;
+        .fc .fc-timegrid-event .fc-event-time {
+            font-size: 10px;
+            font-weight: 600;
+            opacity: 0.8;
         }
 
+        /* Chip-style events - DayGrid (Monatsansicht) */
+        .fc .fc-daygrid-event {
+            border-radius: 16px !important;
+            font-size: 11.5px !important;
+            font-weight: 500;
+            padding: 2px 8px !important;
+            border: none !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Overlap: nebeneinander in der Stundenansicht */
+        .fc .fc-timegrid-event-harness {
+            margin-right: 2px;
+        }
+
+        /* All-day row */
+        .fc .fc-daygrid-body-natural .fc-daygrid-day-events {
+            margin-bottom: 0;
+        }
+
+        .fc .fc-timegrid-col-events {
+            margin: 0 2px;
+        }
+
+        /* Column headers */
+        .fc .fc-col-header-cell {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            padding: 8px 4px;
+        }
+
+        /* Calendar min height for week/day view */
+        .fc .fc-timegrid {
+            min-height: 600px;
+        }
+
+        /* Detail Modal */
         #smart-event-detail-modal .modal-content {
             border-radius: 12px;
         }
@@ -175,6 +249,30 @@
 
         #smart-event-detail-modal .list-group-item + .list-group-item {
             border-top: 1px solid rgba(0,0,0,0.06);
+        }
+
+        /* Legende unter dem Kalender */
+        .calendar-legend {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 0.75rem 1rem;
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .calendar-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.8125rem;
+            color: #6c757d;
+        }
+
+        .calendar-legend-chip {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
         }
     </style>
 @endpush
