@@ -25,7 +25,7 @@ public/storage/
 
 # Dependencies (werden auf LIVE neu installiert)
 node_modules/
-vendor/
+/vendor/
 
 # Dev-only
 tests/
