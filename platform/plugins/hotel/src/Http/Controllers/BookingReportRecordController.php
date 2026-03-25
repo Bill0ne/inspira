@@ -7,6 +7,7 @@ use Botble\Courses\Models\CourseSession;
 use Botble\Hotel\Models\ManualBooking;
 use Botble\Hotel\Enums\BookingStatusEnum;
 use Botble\Hotel\Models\Booking;
+use Carbon\Carbon;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,6 +45,9 @@ class BookingReportRecordController extends BaseController
         do_action('booking_reports_after_get_records', $bookingRecords);
 
         $json = $bookingRecords->map(function (Booking $booking) {
+            $guests = ($booking->number_of_guests ?: 0) + ($booking->number_of_children ?: 0);
+            $roomName = $booking->room->room_name ?? __('Room');
+
             return [
                 'id' => 'room-' . $booking->getKey(),
                 'textColor' => match ($booking->status->getValue()) {
@@ -59,24 +63,39 @@ class BookingReportRecordController extends BaseController
                     default => '#0d6efd',
                 },
                 'borderColor' => 'transparent',
-                'title' => trans('plugins/hotel::booking.calendar_item_title', [
-                    'room' => $booking->room->room_name,
-                    'number_of_rooms' => $booking->room->number_of_rooms,
-                    'number_of_guests' => $booking->number_of_guests,
-                    'number_of_children' => $booking->number_of_children,
-                ]),
-                'detail' => apply_filters('booking_reports_detail_render', view('plugins/hotel::booking-info', [
-                    'booking' => $booking,
-                    'displayBookingStatus' => true,
-                ])->render(), $booking),
-                'detailUrl' => route('booking.edit', $booking),
+                'title' => "\u{1F3E8} " . $roomName . ' · ' . $guests . "\u{1F464}",
                 'start' => $booking->room->start_date,
                 'end' => $booking->room->end_date,
+                'extendedProps' => [
+                    'cardType' => 'room',
+                    'name' => $roomName,
+                    'detail' => apply_filters('booking_reports_detail_render', view('plugins/hotel::booking-info', [
+                        'booking' => $booking,
+                        'displayBookingStatus' => true,
+                    ])->render(), $booking),
+                    'detailUrl' => route('booking.edit', $booking),
+                    'status' => $booking->status->label(),
+                    'statusColor' => match ($booking->status->getValue()) {
+                        'pending' => 'warning',
+                        'completed' => 'success',
+                        'cancelled' => 'danger',
+                        'processing' => 'info',
+                        'awaiting_payment' => 'primary',
+                        default => 'secondary',
+                    },
+                    'dateRange' => $booking->room
+                        ? Carbon::parse($booking->room->start_date)->format('d.m.Y') . ' - ' . Carbon::parse($booking->room->end_date)->format('d.m.Y')
+                        : '',
+                    'guests' => $booking->number_of_guests ?: 0,
+                    'children' => $booking->number_of_children ?: 0,
+                    'amount' => $booking->amount ? format_price($booking->amount) : null,
+                    'bookingNumber' => $booking->booking_number,
+                ],
             ];
         })->values();
 
         $courseSessions = CourseSession::query()
-            ->with('course')
+            ->with(['course', 'course.instructor', 'course.room'])
             ->withCount([
                 'bookings as booked_count' => function (Builder $query): void {
                     $query->whereIn('status', [
@@ -97,24 +116,32 @@ class BookingReportRecordController extends BaseController
             $courseName = $session->course?->name ?? trans('plugins/courses::courses.course.name');
             $bookedCount = $session->booked_count ?? 0;
             $availableSeats = $session->available_seats ?? 0;
-            $title = trans('plugins/courses::courses.calendar_item_title', [
-                'course' => $courseName,
-                'booked' => $bookedCount,
-                'seats' => $availableSeats,
-            ]);
+            $instructorName = $session->course?->instructor?->name ?? null;
+            $roomName = $session->course?->room?->name ?? null;
 
             return [
                 'id' => 'course-session-' . $session->getKey(),
                 'textColor' => '#05264d',
                 'backgroundColor' => '#9ecbff',
                 'borderColor' => 'transparent',
-                'title' => $title,
-                'detail' => apply_filters('booking_reports_course_detail_render', view('plugins/courses::session-info', [
-                    'session' => $session,
-                ])->render(), $session),
-                'detailUrl' => $session->course_id ? route('course.edit', $session->course_id) : null,
+                'title' => "\u{1F4DA} " . $courseName . ' · ' . $bookedCount . '/' . $availableSeats . "\u{1F464}",
                 'start' => $session->start_date,
                 'end' => $session->end_date,
+                'extendedProps' => [
+                    'cardType' => 'course',
+                    'name' => $courseName,
+                    'detail' => apply_filters('booking_reports_course_detail_render', view('plugins/courses::session-info', [
+                        'session' => $session,
+                    ])->render(), $session),
+                    'detailUrl' => $session->course_id ? route('course.edit', $session->course_id) : null,
+                    'status' => __('Geplant'),
+                    'statusColor' => 'info',
+                    'dateRange' => Carbon::parse($session->start_date)->format('d.m.Y, H:i') . ' - ' . Carbon::parse($session->end_date)->format('H:i'),
+                    'bookedSeats' => $bookedCount,
+                    'availableSeats' => $availableSeats,
+                    'room' => $roomName,
+                    'instructor' => $instructorName,
+                ],
             ];
         });
 
@@ -137,16 +164,23 @@ class BookingReportRecordController extends BaseController
                 'textColor' => '#0f172a',
                 'backgroundColor' => '#ffd966',
                 'borderColor' => 'transparent',
-                'title' => trans('plugins/hotel::booking.manual_booking_title', [
-                    'target' => $target,
-                ]),
-                'detail' => view('plugins/hotel::manual-booking-info', [
-                    'booking' => $booking,
-                    'target' => $target,
-                ])->render(),
-                'detailUrl' => null,
+                'title' => "\u{1F4DD} " . $target,
                 'start' => $booking->start_at,
                 'end' => $booking->end_at,
+                'extendedProps' => [
+                    'cardType' => 'manual',
+                    'name' => $target,
+                    'detail' => view('plugins/hotel::manual-booking-info', [
+                        'booking' => $booking,
+                        'target' => $target,
+                    ])->render(),
+                    'detailUrl' => null,
+                    'status' => __('Manuell'),
+                    'statusColor' => 'warning',
+                    'dateRange' => Carbon::parse($booking->start_at)->format('d.m.Y, H:i') . ' - ' . Carbon::parse($booking->end_at)->format('d.m.Y, H:i'),
+                    'reason' => $booking->reason,
+                    'type' => $booking->type === 'room' ? __('Raum') : __('Kurs'),
+                ],
             ];
         });
 

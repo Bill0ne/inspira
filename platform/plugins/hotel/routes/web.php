@@ -129,6 +129,12 @@ Route::group(['namespace' => 'Botble\Hotel\Http\Controllers', 'middleware' => ['
             'permission' => 'booking.calendar.index',
         ]);
 
+        Route::get('/booking-calendar/kpis', [
+            'uses' => 'BookingCalendarController@kpis',
+            'as' => 'booking.calendar.kpis',
+            'permission' => 'booking.calendar.index',
+        ]);
+
         Route::group(['prefix' => 'sync-calendars', 'as' => 'ical.'], function (): void {
             Route::get('', [
                 'uses' => 'ICalController@index',
