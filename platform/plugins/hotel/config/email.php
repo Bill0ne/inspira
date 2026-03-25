@@ -16,6 +16,12 @@ return [
             'subject' => 'Booking Confirmation',
             'can_off' => true,
         ],
+        'room-booking-confirmation' => [
+            'title' => 'Raumbuchungsbestätigung',
+            'description' => 'E-Mail an den Kunden nach einer Raumbuchung',
+            'subject' => 'Ihre Raumbuchungsbestätigung',
+            'can_off' => true,
+        ],
         'booking-status-changed' => [
             'title' => 'plugins/hotel::booking.settings.email.templates.booking_status_changed_title',
             'description' => 'plugins/hotel::booking.settings.email.templates.booking_status_changed_description',

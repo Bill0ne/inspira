@@ -51,7 +51,7 @@ class SendConfirmationEmail implements ShouldQueue
                 'booking_link' => route('public.booking.information', $booking->transaction_id),
             ]);
 
-        EmailHandler::sendUsingTemplate('booking-confirmation', $booking->address->email);
+        EmailHandler::sendUsingTemplate('room-booking-confirmation', $booking->address->email);
         EmailHandler::sendUsingTemplate('booking-notice-to-admin');
     }
 }
