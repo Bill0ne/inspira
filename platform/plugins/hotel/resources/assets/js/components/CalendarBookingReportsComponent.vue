@@ -32,6 +32,7 @@ export default {
 
         if (this.$refs.calendar) {
             this.calendarInstance = new FullCalendar.Calendar(this.$refs.calendar, {
+                initialView: 'timeGridWeek',
                 fixedWeekCount: false,
                 headerToolbar: {
                     left: 'prev,next today',
@@ -49,6 +50,21 @@ export default {
                 editable: false,
                 dayMaxEvents: true,
                 nowIndicator: true,
+                allDaySlot: true,
+                allDayText: 'Ganztägig',
+                slotMinTime: '06:00:00',
+                slotMaxTime: '22:00:00',
+                slotDuration: '00:30:00',
+                slotLabelInterval: '01:00:00',
+                slotLabelFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                },
+                slotEventOverlap: true,
+                eventOverlap: true,
+                expandRows: true,
+                stickyHeaderDates: true,
                 events: {
                     url: this.eventsUrl,
                 },
@@ -77,10 +93,36 @@ export default {
                     })
                 },
                 eventDidMount: (info) => {
-                    info.el.style.cursor = 'pointer'
-                    info.el.style.borderRadius = '6px'
-                    info.el.style.fontSize = '12px'
-                    info.el.style.padding = '2px 6px'
+                    const el = info.el
+                    const cardType = info.event.extendedProps.cardType
+
+                    el.style.cursor = 'pointer'
+                    el.style.borderRadius = '16px'
+                    el.style.fontSize = '11.5px'
+                    el.style.fontWeight = '500'
+                    el.style.padding = '3px 10px'
+                    el.style.border = 'none'
+                    el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
+                    el.style.transition = 'transform 0.15s ease, box-shadow 0.15s ease'
+                    el.style.overflow = 'hidden'
+
+                    // Left border accent per type
+                    if (cardType === 'room') {
+                        el.style.borderLeft = '3px solid #0d6efd'
+                    } else if (cardType === 'course') {
+                        el.style.borderLeft = '3px solid #0563bb'
+                    } else {
+                        el.style.borderLeft = '3px solid #b8860b'
+                    }
+
+                    el.addEventListener('mouseenter', () => {
+                        el.style.transform = 'translateY(-1px)'
+                        el.style.boxShadow = '0 3px 8px rgba(0,0,0,0.15)'
+                    })
+                    el.addEventListener('mouseleave', () => {
+                        el.style.transform = 'translateY(0)'
+                        el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
+                    })
                 },
             })
 
@@ -264,6 +306,24 @@ export default {
             </div>
 
             <div class="card-body" ref="calendar"></div>
+
+            <div class="calendar-legend">
+                <span class="calendar-legend-item">
+                    <span class="calendar-legend-chip" style="background: #0d6efd;"></span> 🏨 Raumbuchung
+                </span>
+                <span class="calendar-legend-item">
+                    <span class="calendar-legend-chip" style="background: #ffc300;"></span> ⏳ Ausstehend
+                </span>
+                <span class="calendar-legend-item">
+                    <span class="calendar-legend-chip" style="background: #36c6d3;"></span> ✅ Bestätigt
+                </span>
+                <span class="calendar-legend-item">
+                    <span class="calendar-legend-chip" style="background: #9ecbff;"></span> 📚 Kurs-Session
+                </span>
+                <span class="calendar-legend-item">
+                    <span class="calendar-legend-chip" style="background: #ffd966;"></span> 📝 Manuell
+                </span>
+            </div>
 
             <slot name="loading" v-if="loading"></slot>
         </div>
