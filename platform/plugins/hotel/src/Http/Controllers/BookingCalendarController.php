@@ -13,13 +13,19 @@ use Botble\Hotel\Models\Booking;
 use Botble\Hotel\Models\BookingRoom;
 use Botble\Hotel\Models\ManualBooking;
 use Botble\Hotel\Models\Room;
+use Botble\Hotel\Services\AvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class BookingCalendarController extends BaseController
 {
+    public function __construct(protected AvailabilityService $availability)
+    {
+    }
+
     public function index()
     {
         $this->pageTitle(trans('plugins/hotel::booking.calendar'));
@@ -33,13 +39,50 @@ class BookingCalendarController extends BaseController
 
         $rooms = Room::query()->select(['id', 'name'])->orderBy('name')->get();
         $courses = Course::query()->select(['id', 'name'])->orderBy('name')->get();
+        $manualBookingsEnabled = Schema::hasTable('ht_manual_bookings');
 
-        return view('plugins/hotel::booking-calendar', compact('rooms', 'courses'));
+        return view('plugins/hotel::booking-calendar', compact('rooms', 'courses', 'manualBookingsEnabled'));
     }
 
     public function storeManual(ManualBookingRequest $request, BaseHttpResponse $response): BaseHttpResponse
     {
-        ManualBooking::query()->create($request->validated());
+        if (! Schema::hasTable('ht_manual_bookings')) {
+            return $response
+                ->setError()
+                ->setMessage(trans('plugins/hotel::booking.manual_booking_table_missing'))
+                ->setNextUrl(route('booking.calendar.index'));
+        }
+
+        $data = $request->validated();
+        $start = Carbon::parse($data['start_at']);
+        $end = Carbon::parse($data['end_at']);
+
+        // Konflikt-Prüfung VOR dem Anlegen
+        if ($data['type'] === 'room' && ! empty($data['room_id'])) {
+            $check = $this->availability->checkRoomAvailability((int) $data['room_id'], $start, $end);
+            if (! $check['available']) {
+                return $response
+                    ->setError()
+                    ->setMessage(trans('plugins/hotel::booking.conflict.conflict_detected', [
+                        'reason' => $check['reason'] ?? '',
+                    ]))
+                    ->setNextUrl(route('booking.calendar.index'));
+            }
+        }
+
+        if ($data['type'] === 'course' && ! empty($data['course_id'])) {
+            $conflicts = $this->availability->findCourseConflicts((int) $data['course_id'], $start, $end);
+            if ($conflicts->isNotEmpty()) {
+                return $response
+                    ->setError()
+                    ->setMessage(trans('plugins/hotel::booking.conflict.conflict_detected', [
+                        'reason' => $conflicts->first()['label'] ?? '',
+                    ]))
+                    ->setNextUrl(route('booking.calendar.index'));
+            }
+        }
+
+        ManualBooking::query()->create($data);
 
         return $response
             ->setMessage(trans('plugins/hotel::booking.manual_booking_created'))
@@ -49,25 +92,41 @@ class BookingCalendarController extends BaseController
 
     public function kpis(Request $request): JsonResponse
     {
-        $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth = Carbon::now()->endOfMonth();
-        $daysInMonth = $startOfMonth->daysInMonth;
+        // Datumsbereich vom Kalender (Vue) übernehmen, sonst aktueller Monat
+        try {
+            $start = $request->filled('start')
+                ? Carbon::parse($request->input('start'))->startOfDay()
+                : Carbon::now()->startOfMonth();
 
-        // --- 1. Raum-Auslastung (Monat) ---
-        $totalRooms = Room::query()->sum('number_of_rooms') ?: 1;
-        $totalRoomDaysAvailable = $totalRooms * $daysInMonth;
+            $end = $request->filled('end')
+                ? Carbon::parse($request->input('end'))->endOfDay()
+                : Carbon::now()->endOfMonth();
+        } catch (\Throwable) {
+            $start = Carbon::now()->startOfMonth();
+            $end = Carbon::now()->endOfMonth();
+        }
+
+        if ($end->lessThan($start)) {
+            [$start, $end] = [$end, $start];
+        }
+
+        $totalDays = max(1, (int) $start->copy()->startOfDay()->diffInDays($end->copy()->endOfDay()) + 1);
+
+        // --- 1. Raum-Auslastung ---
+        $totalRooms = (int) (Room::query()->sum('number_of_rooms') ?: 1);
+        $totalRoomDaysAvailable = $totalRooms * $totalDays;
 
         $bookedRoomDays = 0;
         $activeBookingRooms = BookingRoom::query()
             ->whereHas('booking', fn (Builder $q) => $q->whereNot('status', BookingStatusEnum::CANCELLED))
-            ->where('start_date', '<=', $endOfMonth)
-            ->where('end_date', '>=', $startOfMonth)
+            ->where('start_date', '<=', $end)
+            ->where('end_date', '>=', $start)
             ->get(['start_date', 'end_date', 'number_of_rooms']);
 
         foreach ($activeBookingRooms as $br) {
-            $start = Carbon::parse($br->start_date)->max($startOfMonth);
-            $end = Carbon::parse($br->end_date)->min($endOfMonth);
-            $days = $start->diffInDays($end) + 1;
+            $bStart = Carbon::parse($br->start_date)->max($start);
+            $bEnd = Carbon::parse($br->end_date)->min($end);
+            $days = max(1, (int) $bStart->diffInDays($bEnd) + 1);
             $bookedRoomDays += $days * ($br->number_of_rooms ?: 1);
         }
 
@@ -75,10 +134,10 @@ class BookingCalendarController extends BaseController
             ? round(($bookedRoomDays / $totalRoomDaysAvailable) * 100, 1)
             : 0;
 
-        // --- 2. Kurs-Auslastung (Monat) ---
+        // --- 2. Kurs-Auslastung ---
         $courseSessions = CourseSession::query()
-            ->where('start_date', '<=', $endOfMonth)
-            ->where('end_date', '>=', $startOfMonth)
+            ->where('start_date', '<=', $end)
+            ->where('end_date', '>=', $start)
             ->withCount([
                 'bookings as booked_count' => fn (Builder $q) => $q->whereIn('status', [
                     BookingStatusEnum::PENDING,
@@ -88,17 +147,18 @@ class BookingCalendarController extends BaseController
             ])
             ->get(['id', 'available_seats']);
 
-        $totalSeats = $courseSessions->sum('available_seats') ?: 1;
-        $totalBooked = $courseSessions->sum('booked_count');
-        $courseOccupancyPercent = round(($totalBooked / $totalSeats) * 100, 1);
+        $totalSeats = (int) ($courseSessions->sum('available_seats') ?: 0);
+        $totalBooked = (int) $courseSessions->sum('booked_count');
+        $courseOccupancyPercent = $totalSeats > 0
+            ? round(($totalBooked / $totalSeats) * 100, 1)
+            : 0;
 
-        // --- 3. Überschneidungen (Kurs + Raum am selben Raum/Tag) ---
+        // --- 3. Überschneidungen (Kurs in einem Raum, der parallel als Zimmer gebucht ist) ---
         $overlaps = 0;
-
         $courseSessionsWithRoom = CourseSession::query()
             ->with('course:id,room_id')
-            ->where('start_date', '<=', $endOfMonth)
-            ->where('end_date', '>=', $startOfMonth)
+            ->where('start_date', '<=', $end)
+            ->where('end_date', '>=', $start)
             ->get(['id', 'course_id', 'start_date', 'end_date']);
 
         foreach ($courseSessionsWithRoom as $session) {
@@ -108,8 +168,8 @@ class BookingCalendarController extends BaseController
             }
 
             $hasOverlap = BookingRoom::query()
+                ->where('room_id', $roomId)
                 ->whereHas('booking', fn (Builder $q) => $q->whereNot('status', BookingStatusEnum::CANCELLED))
-                ->whereHas('room', fn (Builder $q) => $q->where('id', $roomId))
                 ->where('start_date', '<', $session->end_date)
                 ->where('end_date', '>', $session->start_date)
                 ->exists();
@@ -149,7 +209,12 @@ class BookingCalendarController extends BaseController
                 'courses' => $pendingCourseBookings,
                 'total' => $pendingRoomBookings + $pendingCourseBookings,
             ],
-            'month' => $startOfMonth->translatedFormat('F Y'),
+            'range' => [
+                'start' => $start->toIso8601String(),
+                'end' => $end->toIso8601String(),
+                'days' => $totalDays,
+                'label' => $start->translatedFormat('d.m.Y') . ' – ' . $end->translatedFormat('d.m.Y'),
+            ],
         ]);
     }
 }

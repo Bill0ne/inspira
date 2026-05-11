@@ -17,4 +17,18 @@ class ManualBookingRequest extends Request
             'reason' => ['nullable', 'string', 'max:1000'],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        // Bei type=room → course_id leeren, bei type=course → room_id leeren.
+        // Verhindert, dass durch das disabled-Feld im Frontend versehentlich
+        // beide IDs gesendet werden (würde den DB-CHECK-Constraint verletzen).
+        $type = $this->input('type');
+
+        if ($type === 'room') {
+            $this->merge(['course_id' => null]);
+        } elseif ($type === 'course') {
+            $this->merge(['room_id' => null]);
+        }
+    }
 }
