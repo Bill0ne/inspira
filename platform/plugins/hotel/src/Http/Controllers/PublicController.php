@@ -22,6 +22,7 @@ use Botble\Hotel\Models\Place;
 use Botble\Hotel\Models\Room;
 use Botble\Hotel\Models\RoomCategory;
 use Botble\Hotel\Models\Service;
+use Botble\Hotel\Services\AvailabilityService;
 use Botble\Hotel\Services\CheckoutPricingService;
 use Botble\Hotel\Services\GetRoomService;
 use Botble\Media\Facades\RvMedia;
@@ -47,7 +48,8 @@ class PublicController extends Controller
 {
     public function __construct(
         protected GetRoomService $getRoomService,
-        protected CheckoutPricingService $checkoutPricingService
+        protected CheckoutPricingService $checkoutPricingService,
+        protected AvailabilityService $availability
     ) {
     }
 
@@ -346,44 +348,26 @@ class PublicController extends Controller
             }
 
             // --------------------------------------------------
-            // 🔹 Check if this room is attached to any course
+            // 🔹 Zentrale Verfügbarkeitsprüfung (Kurse, Buchungen, manuelle Sperren)
             // --------------------------------------------------
-            $attachedCourses = \Botble\Courses\Models\Course::query()->where('room_id', $room->id)
-                ->with('sessions')
-                ->get();
+            $check = $this->availability->checkRoomAvailability(
+                (int) $room->id,
+                $startDate,
+                $endDate,
+                (int) $rooms
+            );
 
-            if ($attachedCourses->isNotEmpty()) {
-                foreach ($attachedCourses as $course) {
-                    foreach ($course->sessions as $session) {
-                        if (!$session->start_date || !$session->end_date) {
-                            continue;
-                        }
-
-                        // Check for overlap between booking slot and session
-                        $sessionStart = Carbon::parse($session->start_date);
-                        $sessionEnd = Carbon::parse($session->end_date);
-
-                        $overlaps =
-                            $startDate->lessThan($sessionEnd) &&
-                            $endDate->greaterThan($sessionStart);
-
-                        if ($overlaps) {
-                            return $response
-                                ->setError()
-                                ->setMessage(__('Room ":room" is unavailable from :start to :end due to a scheduled course session (":course").', [
-                                    'room'   => $room->name ?? ('#' . $room->id),
-                                    'course' => $course->name ?? ('Course #' . $course->id),
-                                    'start'  => $sessionStart->format('d.m.Y H:i'),
-                                    'end'    => $sessionEnd->format('d.m.Y H:i'),
-                                ]))
-                                ->withInput();
-                        }
-                    }
-                }
+            if (! $check['available']) {
+                return $response
+                    ->setError()
+                    ->setMessage(trans('plugins/hotel::booking.conflict.conflict_detected', [
+                        'reason' => $check['reason'] ?? __('Room is not available in the selected period.'),
+                    ]))
+                    ->withInput();
             }
 
             // --------------------------------------------------
-            // 🔹 Continue with normal room availability check
+            // 🔹 Zusätzliche Room-Modell-Prüfung (Kapazität, Sonderdaten)
             // --------------------------------------------------
             $condition = [
                 'start_date' => $startDate,

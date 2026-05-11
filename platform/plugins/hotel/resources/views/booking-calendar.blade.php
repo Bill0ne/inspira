@@ -3,6 +3,13 @@
 @section('content')
     {!! do_action('booking_reports_before_component_render') !!}
 
+    @if (! ($manualBookingsEnabled ?? true))
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="ti ti-alert-triangle me-2"></i>
+            <div>{{ trans('plugins/hotel::booking.manual_booking_table_missing') }}</div>
+        </div>
+    @endif
+
     <calendar-booking-reports-component
         v-cloak
         events-url="{{ route('booking.reports.records.index') }}"
@@ -37,25 +44,25 @@
             @csrf
             <div class="row g-3">
                 <div class="col-lg-4">
-                    <label class="form-label" for="manual-booking-type">{{ trans('core/base::forms.type') }}</label>
+                    <label class="form-label" for="manual-booking-type">{{ trans('plugins/hotel::booking.manual_booking_type') }}</label>
                     <select class="form-select" id="manual-booking-type" name="type">
-                        <option value="room">{{ trans('plugins/hotel::booking.room') }}</option>
-                        <option value="course">{{ trans('plugins/courses::courses.course.name') }}</option>
+                        <option value="room">{{ trans('plugins/hotel::booking.manual_booking_type_room') }}</option>
+                        <option value="course">{{ trans('plugins/hotel::booking.manual_booking_type_course') }}</option>
                     </select>
                 </div>
                 <div class="col-lg-4" data-manual-booking-target="room">
-                    <label class="form-label" for="manual-booking-room">{{ trans('plugins/hotel::booking.room') }}</label>
+                    <label class="form-label" for="manual-booking-room">{{ trans('plugins/hotel::booking.manual_booking_type_room') }}</label>
                     <select class="form-select" id="manual-booking-room" name="room_id">
-                        <option value="">{{ trans('core/base::forms.select') }}</option>
+                        <option value="">{{ trans('plugins/hotel::booking.manual_booking_select_room') }}</option>
                         @foreach ($rooms as $room)
                             <option value="{{ $room->id }}">{{ $room->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-lg-4 d-none" data-manual-booking-target="course">
-                    <label class="form-label" for="manual-booking-course">{{ trans('plugins/courses::courses.course.name') }}</label>
-                    <select class="form-select" id="manual-booking-course" name="course_id">
-                        <option value="">{{ trans('core/base::forms.select') }}</option>
+                    <label class="form-label" for="manual-booking-course">{{ trans('plugins/hotel::booking.manual_booking_type_course') }}</label>
+                    <select class="form-select" id="manual-booking-course" name="course_id" disabled>
+                        <option value="">{{ trans('plugins/hotel::booking.manual_booking_select_course') }}</option>
                         @foreach ($courses as $course)
                             <option value="{{ $course->id }}">{{ $course->name }}</option>
                         @endforeach
@@ -92,18 +99,44 @@
 @push('footer')
     <script>
         (function () {
-            const typeSelect = document.getElementById('manual-booking-type')
-            const roomTarget = document.querySelector('[data-manual-booking-target="room"]')
-            const courseTarget = document.querySelector('[data-manual-booking-target="course"]')
+            const applyToggle = () => {
+                const typeSelect = document.getElementById('manual-booking-type')
+                const roomTarget = document.querySelector('[data-manual-booking-target="room"]')
+                const courseTarget = document.querySelector('[data-manual-booking-target="course"]')
+                const roomSelect = document.getElementById('manual-booking-room')
+                const courseSelect = document.getElementById('manual-booking-course')
 
-            const toggleTargets = () => {
+                if (! typeSelect || ! roomTarget || ! courseTarget) return
+
                 const isRoom = typeSelect.value === 'room'
                 roomTarget.classList.toggle('d-none', !isRoom)
                 courseTarget.classList.toggle('d-none', isRoom)
+
+                // Nur das aktive Feld an den Server senden
+                if (roomSelect) roomSelect.disabled = !isRoom
+                if (courseSelect) courseSelect.disabled = isRoom
             }
 
-            typeSelect?.addEventListener('change', toggleTargets)
-            toggleTargets()
+            // Direkter Listener (falls Element bereits im DOM)
+            document.getElementById('manual-booking-type')?.addEventListener('change', applyToggle)
+
+            // Delegation (falls Modal nachträglich gerendert wird)
+            document.addEventListener('change', (event) => {
+                if (event.target && event.target.id === 'manual-booking-type') {
+                    applyToggle()
+                }
+            })
+
+            // Beim Öffnen des Modals erneut anwenden
+            const modal = document.getElementById('manual-booking-modal')
+            modal?.addEventListener('shown.bs.modal', applyToggle)
+
+            // Initial-State setzen
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', applyToggle)
+            } else {
+                applyToggle()
+            }
         })()
     </script>
     <style>

@@ -24,8 +24,6 @@ export default {
     async mounted() {
         await this.$nextTick()
 
-        this.fetchKpis()
-
         if (this.calendarInstance) {
             this.calendarInstance.destroy()
         }
@@ -71,8 +69,9 @@ export default {
                 loading: (isLoading) => {
                     this.loading = isLoading
                 },
-                datesSet: () => {
-                    this.fetchKpis()
+                datesSet: (info) => {
+                    // info.start / info.end = aktuell sichtbarer Bereich des Kalenders
+                    this.fetchKpis(info?.start, info?.end)
                 },
                 eventClick: (info) => {
                     const props = info.event.extendedProps
@@ -134,11 +133,32 @@ export default {
     },
 
     methods: {
-        async fetchKpis() {
+        async fetchKpis(start, end) {
             if (!this.kpisUrl) return
             this.kpisLoading = true
+
+            const toIsoDate = (value) => {
+                if (! value) return null
+                const date = value instanceof Date ? value : new Date(value)
+                if (isNaN(date.getTime())) return null
+                const y = date.getFullYear()
+                const m = String(date.getMonth() + 1).padStart(2, '0')
+                const d = String(date.getDate()).padStart(2, '0')
+                return `${y}-${m}-${d}`
+            }
+
+            const params = new URLSearchParams()
+            const startIso = toIsoDate(start)
+            const endIso = toIsoDate(end)
+            if (startIso) params.append('start', startIso)
+            if (endIso) params.append('end', endIso)
+
+            const url = params.toString()
+                ? `${this.kpisUrl}?${params.toString()}`
+                : this.kpisUrl
+
             try {
-                const response = await fetch(this.kpisUrl, {
+                const response = await fetch(url, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json',
@@ -194,7 +214,10 @@ export default {
                                 <span class="avatar avatar-md rounded bg-primary-lt">🏨</span>
                             </div>
                             <div class="flex-grow-1 min-width-0">
-                                <div class="text-secondary small">Raum-Auslastung</div>
+                                <div class="text-secondary small">
+                                    Raum-Auslastung
+                                    <span v-if="kpis && kpis.range" class="text-muted">· {{ kpis.range.label }}</span>
+                                </div>
                                 <div class="d-flex align-items-baseline gap-2">
                                     <h3 class="mb-0" v-if="kpis">{{ kpis.room_occupancy.percent }}%</h3>
                                     <h3 class="mb-0" v-else>–</h3>

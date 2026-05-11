@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class BookingReportRecordController extends BaseController
 {
@@ -145,14 +146,16 @@ class BookingReportRecordController extends BaseController
             ];
         });
 
-        $manualBookings = ManualBooking::query()
-            ->with(['room', 'course'])
-            ->where(function (Builder $query) use ($startDate, $endDate): void {
-                $query
-                    ->whereDate('start_at', '<=', $endDate)
-                    ->whereDate('end_at', '>=', $startDate);
-            })
-            ->get();
+        $manualBookings = Schema::hasTable('ht_manual_bookings')
+            ? ManualBooking::query()
+                ->with(['room', 'course'])
+                ->where(function (Builder $query) use ($startDate, $endDate): void {
+                    $query
+                        ->whereDate('start_at', '<=', $endDate)
+                        ->whereDate('end_at', '>=', $startDate);
+                })
+                ->get()
+            : collect();
 
         $manualJson = $manualBookings->map(function (ManualBooking $booking) {
             $target = $booking->type === 'room'

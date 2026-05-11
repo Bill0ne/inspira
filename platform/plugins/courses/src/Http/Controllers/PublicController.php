@@ -27,6 +27,7 @@ use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Services\CustomerCardPricingService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Botble\Hotel\Services\AvailabilityService;
 use Botble\Hotel\Services\CustomerCardService;
 use Botble\Courses\Http\Requests\InitBookingRequest;
 use Botble\Courses\Http\Requests\CalculateBookingAmountRequest;
@@ -434,6 +435,7 @@ class PublicController extends Controller
 
             $session = CourseSession::query()
                 ->where('id', $request->input('session_id'))
+                ->with('course:id,room_id,name')
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -444,6 +446,17 @@ class PublicController extends Controller
                     ->setError()
                     ->setNextUrl(route('public.courses'))
                     ->setMessage(__('No seats available for this session.'));
+            }
+
+            // Zentrale Verfügbarkeitsprüfung: Raum frei, Kurs nicht manuell gesperrt
+            $availabilityCheck = app(AvailabilityService::class)->checkCourseSessionAvailability($session);
+            if (! $availabilityCheck['available']) {
+                DB::rollBack();
+
+                return $response
+                    ->setError()
+                    ->setNextUrl(route('public.courses'))
+                    ->setMessage($availabilityCheck['reason'] ?? __('Course session is not available.'));
             }
 
             $course = $course ?? Course::query()->findOrFail($request->input('course_id'));

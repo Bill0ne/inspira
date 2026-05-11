@@ -2,11 +2,16 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class () extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('ht_manual_bookings')) {
+            return;
+        }
+
         Schema::create('ht_manual_bookings', function (Blueprint $table): void {
             $table->id();
             $table->string('type');
@@ -18,10 +23,22 @@ return new class () extends Migration {
             $table->timestamps();
 
             $table->index(['type', 'start_at', 'end_at']);
-            $table->check("type in ('room', 'course')");
-            $table->check('end_at > start_at');
-            $table->check("(type = 'room' and room_id is not null and course_id is null) or (type = 'course' and course_id is not null and room_id is null)");
         });
+
+        // CHECK-Constraints werden hier als raw SQL angelegt, weil Botbles
+        // eigene Blueprint-Subklasse das fluente $table->check() nicht
+        // unterstützt. MySQL < 8.0.16 ignoriert CHECK still; die App-Layer
+        // (ManualBookingRequest) erzwingt die Regeln ohnehin.
+        if (DB::getDriverName() === 'mysql') {
+            try {
+                DB::statement("ALTER TABLE ht_manual_bookings ADD CONSTRAINT ht_manual_bookings_type_check CHECK (type in ('room', 'course'))");
+                DB::statement('ALTER TABLE ht_manual_bookings ADD CONSTRAINT ht_manual_bookings_dates_check CHECK (end_at > start_at)');
+                DB::statement("ALTER TABLE ht_manual_bookings ADD CONSTRAINT ht_manual_bookings_target_check CHECK ((type = 'room' AND room_id IS NOT NULL AND course_id IS NULL) OR (type = 'course' AND course_id IS NOT NULL AND room_id IS NULL))");
+            } catch (\Throwable) {
+                // Älteres MySQL (< 8.0.16) lehnt CHECK-Constraints ab – kein Problem,
+                // die Validierung passiert im Application-Layer.
+            }
+        }
     }
 
     public function down(): void
