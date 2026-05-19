@@ -134,21 +134,33 @@
     opacity: 1;
 }
 
-.services-active .slick-dots {
+.services-active .slick-dots,
+.services-controls .slick-dots {
     text-align: center;
+    line-height: 1;
+}
+
+.services-active .slick-dots {
     position: absolute;
     inset-inline-start: 0;
     inset-inline-end: 0;
     bottom: -40px;
-    line-height: 1;
 }
 
-.services-active .slick-dots li {
+.services-controls .slick-dots {
+    position: static;
+}
+
+.services-active .slick-dots li,
+.services-controls .slick-dots li {
     display: inline-block;
     margin: 0 5px;
+    width: auto;
+    height: auto;
 }
 
-.services-active .slick-dots li button {
+.services-active .slick-dots li button,
+.services-controls .slick-dots li button {
     text-indent: -99999px;
     border: none;
     padding: 0;
@@ -161,7 +173,8 @@
     transition: 0.3s;
 }
 
-.services-active .slick-dots li.slick-active button {
+.services-active .slick-dots li.slick-active button,
+.services-controls .slick-dots li.slick-active button {
     width: 50px;
     background: var(--primary-color);
 }
@@ -1230,19 +1243,13 @@
     .slick-dots          { order: 2; }
     .services-arrow-next { order: 3; }
 
+    /* Dot-Styling kommt aus dem Original-Block weiter oben
+     * (.services-active .slick-dots, .services-controls .slick-dots),
+     * sodass die Linien-Indikatoren identisch zur alten Darstellung
+     * bleiben. */
     .slick-dots {
-        position: static;
         margin: 0;
         padding: 0;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-
-        li {
-            margin: 0;
-            width: auto;
-            height: auto;
-        }
     }
 }
 
