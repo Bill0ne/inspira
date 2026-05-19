@@ -116,39 +116,49 @@ $(document).ready(function () {
     mainSlider()
 
     // services-active
-    $('.services-active').slick({
-        dots: true,
-        infinite: true,
-        arrows: false,
-        speed: 1000,
-        slidesToShow: 3,
-        slidesToScroll: 1,
-        rtl: RiorelaxTheme.isRtl(),
-        responsive: [
-            {
-                breakpoint: 1200,
-                settings: {
-                    slidesToShow: 3,
-                    slidesToScroll: 1,
-                    infinite: true,
-                    dots: true,
+    $('.services-active').each(function () {
+        const $slider = $(this)
+        const $controls = $slider.siblings('.services-controls')
+        const hasControls = $controls.length > 0
+
+        $slider.slick({
+            dots: true,
+            infinite: true,
+            arrows: hasControls,
+            speed: 1000,
+            slidesToShow: 3,
+            slidesToScroll: 1,
+            rtl: RiorelaxTheme.isRtl(),
+            appendArrows: hasControls ? $controls : undefined,
+            appendDots: hasControls ? $controls : undefined,
+            prevArrow: '<button type="button" class="services-arrow services-arrow-prev" aria-label="Vorherige Räume"><i class="fal fa-chevron-left"></i></button>',
+            nextArrow: '<button type="button" class="services-arrow services-arrow-next" aria-label="Nächste Räume"><i class="fal fa-chevron-right"></i></button>',
+            responsive: [
+                {
+                    breakpoint: 1200,
+                    settings: {
+                        slidesToShow: 3,
+                        slidesToScroll: 1,
+                        infinite: true,
+                        dots: true,
+                    },
                 },
-            },
-            {
-                breakpoint: 992,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1,
+                {
+                    breakpoint: 992,
+                    settings: {
+                        slidesToShow: 2,
+                        slidesToScroll: 1,
+                    },
                 },
-            },
-            {
-                breakpoint: 767,
-                settings: {
-                    slidesToShow: 1,
-                    slidesToScroll: 1,
+                {
+                    breakpoint: 767,
+                    settings: {
+                        slidesToShow: 1,
+                        slidesToScroll: 1,
+                    },
                 },
-            },
-        ],
+            ],
+        })
     })
 
     // team-active
