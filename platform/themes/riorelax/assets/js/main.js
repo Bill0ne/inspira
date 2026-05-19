@@ -118,7 +118,17 @@ $(document).ready(function () {
     // services-active
     $('.services-active').each(function () {
         const $slider = $(this)
-        const $controls = $slider.siblings('.services-controls')
+
+        // Controls-Container suchen: erst als Sibling, dann im Eltern-Element,
+        // dann im umgebenden section/.container -- damit Page-Builder-Wrapper
+        // den Lookup nicht brechen.
+        let $controls = $slider.siblings('.services-controls')
+        if (! $controls.length) {
+            $controls = $slider.parent().find('.services-controls').first()
+        }
+        if (! $controls.length) {
+            $controls = $slider.closest('section, .container').find('.services-controls').first()
+        }
         const hasControls = $controls.length > 0
 
         $slider.slick({
