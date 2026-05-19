@@ -1,8 +1,8 @@
 <section class="services-area pt-20 pb-40">
     @if ($rooms->isNotEmpty())
-        <div class="row g-4">
+        <div class="row g-4 justify-content-center">
             @foreach ($rooms as $room)
-                <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="col-12 col-md-6 col-lg-5">
                     {!! Theme::partial('rooms.item', compact('room', 'startDate', 'endDate', 'nights', 'adults')) !!}
                 </div>
             @endforeach
