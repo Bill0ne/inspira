@@ -31,16 +31,30 @@ class PublicController extends BaseController
         $roomName = (string) Room::query()->whereKey($request->integer('room_id'))->value('name');
         $roomName = $roomName ?: (string) $request->input('room_name');
 
+        $timezone = config('app.timezone') ?: 'UTC';
+        $from = CarbonImmutable::createFromFormat('Y-m-d\TH:i', $request->input('time_from'), $timezone);
+        $to = CarbonImmutable::createFromFormat('Y-m-d\TH:i', $request->input('time_to'), $timezone);
+
+        $customFields = array_filter([
+            (string) __('Raum') => $roomName,
+            (string) __('Firma') => trim((string) $request->input('company')),
+            (string) __('Anzahl Personen') => (string) $request->integer('persons'),
+            (string) __('Zeit von') => $from->translatedFormat('d.m.Y H:i'),
+            (string) __('Zeit bis') => $to->translatedFormat('d.m.Y H:i'),
+        ], fn ($value) => $value !== '' && $value !== null);
+
+        $userMessage = trim((string) $request->input('content'));
+
         $request->merge([
             'room_name' => $roomName,
             'subject' => __('Raumanfrage: :room', ['room' => $roomName]),
-            'content' => $this->buildRoomRequestContent($request),
+            'content' => $userMessage,
         ]);
 
-        return $this->sendContact($request);
+        return $this->sendContact($request, $customFields);
     }
 
-    protected function sendContact(ContactRequest $request)
+    protected function sendContact(ContactRequest $request, array $extraCustomFields = [])
     {
         $blacklistDomains = setting('blacklist_email_domains');
 
@@ -105,7 +119,7 @@ class PublicController extends BaseController
         try {
             $form = ContactForm::create();
 
-            $form->saving(function (ContactForm $form) use ($receiverEmails): void {
+            $form->saving(function (ContactForm $form) use ($receiverEmails, $extraCustomFields): void {
                 $data = $form->getRequestData();
 
                 if (Arr::has($data, 'contact_custom_fields')) {
@@ -131,6 +145,13 @@ class PublicController extends BaseController
 
                             return [$field->name => $value];
                         })->all();
+                }
+
+                if (! empty($extraCustomFields)) {
+                    $data['custom_fields'] = array_merge(
+                        (array) ($data['custom_fields'] ?? []),
+                        $extraCustomFields
+                    );
                 }
 
                 /**
@@ -181,27 +202,4 @@ class PublicController extends BaseController
         }
     }
 
-    protected function buildRoomRequestContent(RoomContactRequest $request): string
-    {
-        $timezone = config('app.timezone') ?: 'UTC';
-
-        $from = CarbonImmutable::createFromFormat('Y-m-d\TH:i', $request->input('time_from'), $timezone)
-            ->format('Y-m-d H:i');
-
-        $to = CarbonImmutable::createFromFormat('Y-m-d\TH:i', $request->input('time_to'), $timezone)
-            ->format('Y-m-d H:i');
-
-        $meta = [
-            __('Raum') . ': ' . $request->input('room_name'),
-            __('Name') . ': ' . $request->input('name'),
-            __('Firma') . ': ' . ($request->input('company') ?: '-'),
-            __('Email') . ': ' . $request->input('email'),
-            __('Telefon') . ': ' . $request->input('phone'),
-            __('Anzahl Personen') . ': ' . $request->integer('persons'),
-            __('Zeit von') . ': ' . $from . ' (' . $timezone . ')',
-            __('Zeit bis') . ': ' . $to . ' (' . $timezone . ')',
-        ];
-
-        return "[Raumanfrage]\n" . implode("\n", $meta) . "\n\n" . trim((string) $request->input('content'));
-    }
 }

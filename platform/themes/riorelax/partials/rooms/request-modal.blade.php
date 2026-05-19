@@ -1,9 +1,16 @@
+@php
+    $openingStart = \Botble\Hotel\Supports\OpeningHours::startLabel();
+    $openingEnd = \Botble\Hotel\Supports\OpeningHours::endLabel();
+@endphp
 <div
     id="room-request-modal"
     class="room-request-modal"
     aria-hidden="true"
     data-popup-url-template="{{ route('public.rooms.popup', ['room' => '__ROOM__']) }}"
     data-submit-url="{{ route('public.send.room-request') }}"
+    data-opening-start="{{ $openingStart }}"
+    data-opening-end="{{ $openingEnd }}"
+    data-opening-violation="{{ trans('plugins/hotel::booking.opening_hours_violation', ['start' => $openingStart, 'end' => $openingEnd]) }}"
 >
     <div class="room-request-modal__backdrop" data-room-request-close></div>
     <div class="room-request-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="room-request-title">
@@ -60,6 +67,10 @@
                 </div>
             </div>
 
+            <p class="room-request-hint">
+                {{ trans('plugins/hotel::booking.opening_hours_hint', ['start' => $openingStart, 'end' => $openingEnd]) }}
+            </p>
+
             <div class="room-request-field">
                 <label for="room-request-content">{{ __('Persönliche Nachricht an Inspira') }}*</label>
                 <textarea id="room-request-content" name="content" rows="3" required></textarea>
@@ -98,6 +109,7 @@
 .room-request-field label{display:block;font-size:12px;margin-bottom:2px}.room-request-field input,.room-request-field textarea{width:100%;border:1px solid #d9d9d9;border-radius:6px;padding:7px 9px}
 .room-request-field small{display:block;color:#c0392b;min-height:14px;margin-top:1px}.room-request-field--terms{margin-top:4px}.room-request-checkbox{display:flex!important;align-items:flex-start;gap:8px;font-size:13px}.room-request-checkbox input{width:auto;margin-top:3px}.room-request-checkbox a{text-decoration:underline}.room-request-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}.room-request-actions .btn{min-width:130px;padding:8px 14px}
 .room-request-status{min-height:20px}.room-request-status.is-success{color:#2d7a2d}.room-request-status.is-error{color:#c0392b}
+.room-request-hint{margin:6px 0 0;font-size:12px;color:#5E8E84}
 @media (max-width:767px){.room-request-modal__dialog{margin:2vh auto;padding:12px}.room-request-card{grid-template-columns:1fr}.room-request-grid{grid-template-columns:1fr}.room-request-actions .btn{min-width:0;flex:1}}
 </style>
 
@@ -213,9 +225,53 @@
     trapFocus(e);
   });
 
+  const parseHHMM = (value) => {
+    const m = (value || '').match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    const h = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+    if (h < 0 || h > 23 || mm < 0 || mm > 59) return null;
+    return h * 60 + mm;
+  };
+  const dateTimeMinutes = (value) => {
+    const m = (value || '').match(/^\d{4}-\d{2}-\d{2}T(\d{2}:\d{2})/);
+    return m ? parseHHMM(m[1]) : null;
+  };
+
+  const validateOpeningHours = () => {
+    const startMin = parseHHMM(modal.dataset.openingStart) ?? 600;
+    const endMin = parseHHMM(modal.dataset.openingEnd) ?? 1260;
+    const message = modal.dataset.openingViolation || 'Außerhalb der Öffnungszeiten.';
+
+    const checks = [
+      { field: 'time_from', el: form.querySelector('input[name="time_from"]') },
+      { field: 'time_to', el: form.querySelector('input[name="time_to"]') },
+    ];
+
+    let hasError = false;
+    checks.forEach(({ field, el }) => {
+      if (!el) return;
+      const minutes = dateTimeMinutes(el.value);
+      if (minutes === null) return;
+      if (minutes < startMin || minutes > endMin) {
+        const errEl = modal.querySelector(`[data-error-for="${field}"]`);
+        if (errEl) errEl.textContent = message;
+        hasError = true;
+      }
+    });
+
+    if (hasError) {
+      statusEl.textContent = message;
+      statusEl.classList.add('is-error');
+    }
+    return !hasError;
+  };
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     resetErrors();
+
+    if (!validateOpeningHours()) return;
+
     submitBtn.disabled = true;
     submitBtn.textContent = '{{ __('Senden...') }}';
 
