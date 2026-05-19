@@ -5,6 +5,7 @@ namespace Botble\Contact\Http\Requests;
 use Botble\Base\Rules\EmailRule;
 use Botble\Base\Rules\PhoneNumberRule;
 use Botble\Hotel\Models\Room;
+use Botble\Hotel\Rules\WithinOpeningHours;
 use Illuminate\Validation\Rule;
 
 class RoomContactRequest extends ContactRequest
@@ -20,8 +21,8 @@ class RoomContactRequest extends ContactRequest
         $rules['room_id'] = ['required', 'integer', Rule::exists((new Room())->getTable(), 'id')];
         $rules['room_name'] = ['required', 'string', 'max:255'];
         $rules['persons'] = ['required', 'integer', 'min:1'];
-        $rules['time_from'] = ['required', 'date_format:Y-m-d\TH:i'];
-        $rules['time_to'] = ['required', 'date_format:Y-m-d\TH:i', 'after:time_from'];
+        $rules['time_from'] = ['required', 'date_format:Y-m-d\TH:i', new WithinOpeningHours()];
+        $rules['time_to'] = ['required', 'date_format:Y-m-d\TH:i', 'after:time_from', new WithinOpeningHours()];
 
         return $rules;
     }
