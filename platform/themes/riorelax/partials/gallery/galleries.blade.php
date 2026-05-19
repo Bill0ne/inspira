@@ -27,6 +27,7 @@
                                 <a href="{{ $gallery->url }}">
                                     <figure class="gallery-image">
                                         <img src="{{ RvMedia::getImageUrl($gallery->image, 'medium') }}" alt="{{ $gallery->name }}" class="img" />
+                                        <span class="gallery-image__caption">{{ $galleryName }}</span>
                                     </figure>
                                 </a>
                             </div>
