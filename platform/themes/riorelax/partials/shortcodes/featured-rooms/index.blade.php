@@ -25,5 +25,6 @@
                 </div>
             @endforeach
         </div>
+        <div class="services-controls" aria-label="{{ __('Räume Navigation') }}"></div>
     </div>
 </section>
