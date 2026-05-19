@@ -45,6 +45,14 @@ return [
         // this event should call to assign some assets,
         // breadcrumb template.
         'beforeRenderTheme' => function (Theme $theme): void {
+            // Cache-Busting für lokal gepflegte Theme-Assets: erzwingt frischen
+            // Download, sobald die Datei neu kompiliert wurde — ohne dass User
+            // ihren Browser-Cache leeren müssen.
+            $themePublicPath = public_path('themes/riorelax');
+            $assetVersion = fn (string $relative): ?string => is_file($themePublicPath . '/' . $relative)
+                ? (string) filemtime($themePublicPath . '/' . $relative)
+                : null;
+
             if (BaseHelper::isRtlEnabled()) {
                 $theme->asset()->usePath()->add('bootstrap-css', 'plugins/bootstrap/bootstrap.rtl.min.css');
             } else {
@@ -56,9 +64,9 @@ return [
             $theme->asset()->usePath()->add('slick-css', 'plugins/slick/slick.css');
             $theme->asset()->usePath()->add('magnific-popup-css', 'plugins/magnific-popup/magnific-popup.css');
             $theme->asset()->usePath()->add('toastr-css', 'plugins/toastr/toastr.min.css');
-            $theme->asset()->usePath()->add('style-css', 'css/theme.css');
+            $theme->asset()->usePath()->add('style-css', 'css/theme.css', [], [], $assetVersion('css/theme.css'));
             $theme->asset()->usePath()->add('default-css', 'plugins/default.css');
-            $theme->asset()->usePath()->add('responsive-css', 'plugins/responsive.css');
+            $theme->asset()->usePath()->add('responsive-css', 'plugins/responsive.css', [], [], $assetVersion('plugins/responsive.css'));
             $theme->asset()->usePath()->add('datepicker-css', 'plugins/datepicker/bootstrap-datepicker.css');
 
             $theme->asset()->container('header')->usePath()->add('jquery', 'plugins/jquery.min.js');
@@ -76,8 +84,8 @@ return [
             $theme->asset()->container('footer')->usePath()->add('bootstrap-bundle-js', 'plugins/bootstrap/bootstrap.bundle.min.js');
             $theme->asset()->container('footer')->usePath()->add('datepicker-js', 'plugins/datepicker/bootstrap-datepicker.js');
             $theme->asset()->container('footer')->usePath()->add('toastr-js', 'plugins/toastr/toastr.min.js');
-            $theme->asset()->container('footer')->usePath()->add('main', 'js/main.js');
-            $theme->asset()->container('footer')->usePath()->add('script', 'js/script.js', ['datepicker-js', 'bootstrap-datepicker-locale']);
+            $theme->asset()->container('footer')->usePath()->add('main', 'js/main.js', [], [], $assetVersion('js/main.js'));
+            $theme->asset()->container('footer')->usePath()->add('script', 'js/script.js', ['datepicker-js', 'bootstrap-datepicker-locale'], [], $assetVersion('js/script.js'));
 
             if (function_exists('shortcode')) {
                 $theme->composer(['page', 'post', 'teams.team', 'hotel.room', 'hotel.service'], function (View $view): void {
