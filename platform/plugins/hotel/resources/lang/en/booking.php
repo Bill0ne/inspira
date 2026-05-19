@@ -113,4 +113,6 @@ return [
     'payment_method_helper' => 'Select the payment method used for this booking',
     'payment_status_helper' => 'Current status of the payment',
     'status_helper' => 'Current status of the booking',
+    'opening_hours_violation' => 'Bookings are only possible between :start and :end.',
+    'opening_hours_hint' => 'Opening hours: :start – :end',
 ];

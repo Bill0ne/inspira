@@ -72,12 +72,18 @@
 
         $minSlotDuration = 30;
         $widgetId = uniqid('booking-widget-');
+        $openingStart = \Botble\Hotel\Supports\OpeningHours::startLabel();
+        $openingEnd = \Botble\Hotel\Supports\OpeningHours::endLabel();
         $widgetMessages = [
             'incomplete' => __('Bitte alle Felder ausfüllen.'),
             'duration' => __('Jeder Slot muss mindestens :minutes Minuten dauern.', ['minutes' => $minSlotDuration]),
             'overlap' => __('Slots dürfen sich nicht überschneiden.'),
             'past' => __('Slots müssen in der Zukunft liegen.'),
             'invalid' => __('Bitte gültiges Datum und Zeit auswählen.'),
+            'opening' => trans('plugins/hotel::booking.opening_hours_violation', [
+                'start' => $openingStart,
+                'end' => $openingEnd,
+            ]),
         ];
     @endphp
 
@@ -148,18 +154,24 @@
             <input type="hidden" name="room_id" value="{{ $room->id }}">
         @endif
 
-        <div class="booking-widget" 
+        <div class="booking-widget"
              data-booking-widget
              data-widget-id="{{ $widgetId }}"
              data-min-duration="{{ $minSlotDuration }}"
+             data-opening-start="{{ $openingStart }}"
+             data-opening-end="{{ $openingEnd }}"
              data-error-incomplete="{{ $widgetMessages['incomplete'] }}"
              data-error-duration="{{ $widgetMessages['duration'] }}"
              data-error-overlap="{{ $widgetMessages['overlap'] }}"
              data-error-past="{{ $widgetMessages['past'] }}"
              data-error-invalid="{{ $widgetMessages['invalid'] }}"
+             data-error-opening="{{ $widgetMessages['opening'] }}"
         >
             <div class="booking-widget__header">
                 <h4 class="booking-widget__title">Wähle deinen Zeitraum</h4>
+                <p class="booking-widget__opening-hours">
+                    {{ trans('plugins/hotel::booking.opening_hours_hint', ['start' => $openingStart, 'end' => $openingEnd]) }}
+                </p>
             </div>
 
             @include(Theme::getThemeNamespace('partials.hotel.forms.booking-slots'), [

@@ -4,6 +4,7 @@ namespace Botble\Hotel\Http\Requests;
 
 use Botble\Base\Facades\BaseHelper;
 use Botble\Hotel\Facades\HotelHelper;
+use Botble\Hotel\Rules\WithinOpeningHours;
 use Botble\Support\Http\Requests\Request;
 
 class CheckoutRequest extends Request
@@ -14,6 +15,7 @@ class CheckoutRequest extends Request
 
         return [
             'room_id' => ['required', 'exists:ht_rooms,id'],
+            'slots.*' => [new WithinOpeningHours()],
             'slots.*.start_date' => [
                 'required',
                 'string',

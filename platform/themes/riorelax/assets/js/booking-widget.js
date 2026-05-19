@@ -144,20 +144,38 @@ const BookingWidget = (() => {
         return result
     }
 
-    function getMinStartTimeForDate(dateValue, increment) {
+    function getOpeningWindow(widget) {
+        const start = (widget && widget.dataset.openingStart) || '10:00'
+        const end = (widget && widget.dataset.openingEnd) || '21:00'
+        const startMinutes = timeStringToMinutes(start)
+        const endMinutes = timeStringToMinutes(end)
+
+        return {
+            start,
+            end,
+            startMinutes: startMinutes !== null ? startMinutes : 10 * 60,
+            endMinutes: endMinutes !== null ? endMinutes : 21 * 60,
+        }
+    }
+
+    function getMinStartTimeForDate(dateValue, increment, openingStart) {
+        const fallback = openingStart || '00:00'
         const selectedDate = parseDate(dateValue)
-        if (!selectedDate) return null
+        if (!selectedDate) return fallback
 
         const today = new Date()
         const todayDate = normalizeDate(today)
         const selectedDay = normalizeDate(selectedDate)
 
-        if (!isSameDay(selectedDay, todayDate)) return '00:00'
+        if (!isSameDay(selectedDay, todayDate)) return fallback
 
         const rounded = roundToIncrement(today, increment)
-        if (!isSameDay(rounded, selectedDate)) return '00:00'
+        if (!isSameDay(rounded, selectedDate)) return fallback
 
-        return minutesToTimeString(rounded.getHours() * 60 + rounded.getMinutes())
+        const nowMinutes = rounded.getHours() * 60 + rounded.getMinutes()
+        const openingMinutes = timeStringToMinutes(fallback) ?? 0
+
+        return minutesToTimeString(Math.max(nowMinutes, openingMinutes))
     }
 
     function assignInputIds(widget) {
@@ -246,6 +264,9 @@ const BookingWidget = (() => {
 
         const parsedSlots = []
         const now = new Date()
+        const opening = getOpeningWindow(widget)
+        const openingMessage = widget.dataset.errorOpening
+            || `Buchungen sind nur zwischen ${opening.start} und ${opening.end} Uhr möglich.`
 
         for (let index = 0; index < cards.length; index++) {
             const card = cards[index]
@@ -263,6 +284,13 @@ const BookingWidget = (() => {
 
             if (!date || !startTime || !endTime) {
                 return { valid: false, message: widget.dataset.errorInvalid || 'Bitte gültiges Datum und gültige Uhrzeit eingeben.' }
+            }
+
+            const startMinutesOfDay = timeToMinutes(startTime)
+            const endMinutesOfDay = timeToMinutes(endTime)
+
+            if (startMinutesOfDay < opening.startMinutes || endMinutesOfDay > opening.endMinutes) {
+                return { valid: false, message: openingMessage }
             }
 
             const start = combineDateTime(date, startTime)
@@ -313,27 +341,30 @@ const BookingWidget = (() => {
     function setupSlotCard(widget, card) {
         const minDuration = parseInt(widget.dataset.minDuration || '30', 10)
         const increment = 30
+        const opening = getOpeningWindow(widget)
+        const latestStartMinutes = Math.max(opening.startMinutes, opening.endMinutes - minDuration)
+        const latestStart = minutesToTimeString(latestStartMinutes)
 
         const dateInput = card.querySelector('[data-role="slot-date"]')
         const startInput = card.querySelector('[data-role="slot-start"]')
         const endInput = card.querySelector('[data-role="slot-end"]')
 
         function updateStart() {
-            const minStart = getMinStartTimeForDate(dateInput?.value, increment) || '00:00'
-            ensureTimeWithinBounds(startInput, { min: minStart, max: '23:30', increment })
+            const minStart = getMinStartTimeForDate(dateInput?.value, increment, opening.start) || opening.start
+            ensureTimeWithinBounds(startInput, { min: minStart, max: latestStart, increment })
             updateEnd()
         }
 
         function updateEnd() {
             const startValue = startInput?.value.trim() || ''
             const startMinutes = timeStringToMinutes(startValue)
-            let minEnd = '00:00'
+            let minEnd = opening.start
 
             if (startMinutes !== null) {
                 minEnd = minutesToTimeString(startMinutes + minDuration)
             }
 
-            ensureTimeWithinBounds(endInput, { min: minEnd, max: '23:59', increment })
+            ensureTimeWithinBounds(endInput, { min: minEnd, max: opening.end, increment })
             updateSlotValue(card)
         }
 
