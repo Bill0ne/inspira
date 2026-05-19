@@ -9,8 +9,10 @@ use Botble\Hotel\Models\Food;
 use Botble\Hotel\Models\Room;
 use Botble\Hotel\Models\Service;
 use Botble\Hotel\Services\CouponService;
+use Botble\Hotel\Supports\OpeningHours;
 use Carbon\Carbon;
 use DateTimeInterface;
+use InvalidArgumentException;
 use Throwable;
 
 class CheckoutPricingService
@@ -254,6 +256,8 @@ class CheckoutPricingService
             $endDate = $startDate->copy()->addHour();
         }
 
+        $this->assertWithinOpeningHours($startDate, $endDate);
+
         $minutes = max(60, $startDate->diffInMinutes($endDate));
 
         return [
@@ -262,6 +266,22 @@ class CheckoutPricingService
             'hours' => max(1, $endDate->diffInHours($startDate)),
             'minutes' => $minutes,
         ];
+    }
+
+    protected function assertWithinOpeningHours(Carbon $startDate, Carbon $endDate): void
+    {
+        $openingStart = OpeningHours::startMinutes();
+        $openingEnd = OpeningHours::endMinutes();
+
+        $startMinutes = $startDate->hour * 60 + $startDate->minute;
+        $endMinutes = $endDate->hour * 60 + $endDate->minute;
+
+        if ($startMinutes < $openingStart || $endMinutes > $openingEnd) {
+            throw new InvalidArgumentException(trans('plugins/hotel::booking.opening_hours_violation', [
+                'start' => OpeningHours::startLabel(),
+                'end' => OpeningHours::endLabel(),
+            ]));
+        }
     }
 
     protected function parseSlotDateValue(mixed $value, ?Carbon $reference = null): ?Carbon

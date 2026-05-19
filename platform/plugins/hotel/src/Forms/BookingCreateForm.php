@@ -24,6 +24,7 @@ use Botble\Hotel\Http\Requests\CreateBookingRequest;
 use Botble\Hotel\Models\Booking;
 use Botble\Hotel\Models\Food;
 use Botble\Hotel\Models\Service;
+use Botble\Hotel\Supports\OpeningHours;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Enums\PaymentStatusEnum;
 use Carbon\Carbon;
@@ -249,33 +250,7 @@ class BookingCreateForm extends FormAbstract
                 SelectFieldOption::make()
                 ->label(trans('plugins/hotel::booking.arrival_time'))
                 ->helperText(trans('plugins/hotel::booking.arrival_time_helper'))
-                ->choices([
-                    trans('plugins/hotel::booking.i_do_not_know') => trans('plugins/hotel::booking.i_do_not_know'),
-                    '12:00 - 1:00 ' . trans('plugins/hotel::booking.am') => '12:00 - 1:00 ' . trans('plugins/hotel::booking.am'),
-                    '1:00 - 2:00 ' . trans('plugins/hotel::booking.am') => '1:00 - 2:00 ' . trans('plugins/hotel::booking.am'),
-                    '2:00 - 3:00 ' . trans('plugins/hotel::booking.am') => '2:00 - 3:00 ' . trans('plugins/hotel::booking.am'),
-                    '3:00 - 4:00 ' . trans('plugins/hotel::booking.am') => '3:00 - 4:00 ' . trans('plugins/hotel::booking.am'),
-                    '4:00 - 5:00 ' . trans('plugins/hotel::booking.am') => '4:00 - 5:00 ' . trans('plugins/hotel::booking.am'),
-                    '5:00 - 6:00 ' . trans('plugins/hotel::booking.am') => '5:00 - 6:00 ' . trans('plugins/hotel::booking.am'),
-                    '6:00 - 7:00 ' . trans('plugins/hotel::booking.am') => '6:00 - 7:00 ' . trans('plugins/hotel::booking.am'),
-                    '7:00 - 8:00 ' . trans('plugins/hotel::booking.am') => '7:00 - 8:00 ' . trans('plugins/hotel::booking.am'),
-                    '8:00 - 9:00 ' . trans('plugins/hotel::booking.am') => '8:00 - 9:00 ' . trans('plugins/hotel::booking.am'),
-                    '9:00 - 10:00 ' . trans('plugins/hotel::booking.am') => '9:00 - 10:00 ' . trans('plugins/hotel::booking.am'),
-                    '10:00 - 11:00 ' . trans('plugins/hotel::booking.am') => '10:00 - 11:00 ' . trans('plugins/hotel::booking.am'),
-                    '11:00 - 12:00 ' . trans('plugins/hotel::booking.am') => '11:00 - 12:00 ' . trans('plugins/hotel::booking.am'),
-                    '12:00 - 1:00 ' . trans('plugins/hotel::booking.pm') => '12:00 - 1:00 ' . trans('plugins/hotel::booking.pm'),
-                    '1:00 - 2:00 ' . trans('plugins/hotel::booking.pm') => '1:00 - 2:00 ' . trans('plugins/hotel::booking.pm'),
-                    '2:00 - 3:00 ' . trans('plugins/hotel::booking.pm') => '2:00 - 3:00 ' . trans('plugins/hotel::booking.pm'),
-                    '3:00 - 4:00 ' . trans('plugins/hotel::booking.pm') => '3:00 - 4:00 ' . trans('plugins/hotel::booking.pm'),
-                    '4:00 - 5:00 ' . trans('plugins/hotel::booking.pm') => '4:00 - 5:00 ' . trans('plugins/hotel::booking.pm'),
-                    '5:00 - 6:00 ' . trans('plugins/hotel::booking.pm') => '5:00 - 6:00 ' . trans('plugins/hotel::booking.pm'),
-                    '6:00 - 7:00 ' . trans('plugins/hotel::booking.pm') => '6:00 - 7:00 ' . trans('plugins/hotel::booking.pm'),
-                    '7:00 - 8:00 ' . trans('plugins/hotel::booking.pm') => '7:00 - 8:00 ' . trans('plugins/hotel::booking.pm'),
-                    '8:00 - 9:00 ' . trans('plugins/hotel::booking.pm') => '8:00 - 9:00 ' . trans('plugins/hotel::booking.pm'),
-                    '9:00 - 10:00 ' . trans('plugins/hotel::booking.pm') => '9:00 - 10:00 ' . trans('plugins/hotel::booking.pm'),
-                    '10:00 - 11:00 ' . trans('plugins/hotel::booking.pm') => '10:00 - 11:00 ' . trans('plugins/hotel::booking.pm'),
-                    '11:00 - 12:00 ' . trans('plugins/hotel::booking.pm') => '11:00 - 12:00 ' . trans('plugins/hotel::booking.pm'),
-                ])
+                ->choices($this->buildArrivalTimeChoices())
                 ->defaultValue(trans('plugins/hotel::booking.i_do_not_know'))
                 ->colspan(1)
             )
@@ -361,5 +336,17 @@ class BookingCreateForm extends FormAbstract
                 ->colspan(2)
             )
             ->setBreakFieldPoint('status');
+    }
+
+    protected function buildArrivalTimeChoices(): array
+    {
+        $unknown = trans('plugins/hotel::booking.i_do_not_know');
+        $choices = [$unknown => $unknown];
+
+        foreach (OpeningHours::hourlySlots() as $label) {
+            $choices[$label] = $label;
+        }
+
+        return $choices;
     }
 }
