@@ -23,6 +23,7 @@ use Botble\Hotel\Models\Customer;
 use Botble\Hotel\Models\Food;
 use Botble\Hotel\Models\Room;
 use Botble\Hotel\Models\Service;
+use Botble\Hotel\Services\AvailabilityService;
 use Botble\Hotel\Tables\BookingTable;
 use Botble\Media\Facades\RvMedia;
 use Botble\Payment\Enums\PaymentMethodEnum;
@@ -31,6 +32,7 @@ use Botble\Payment\Models\Payment;
 use Botble\Payment\Services\Gateways\BankTransferPaymentService;
 use Botble\Payment\Services\Gateways\CodPaymentService;
 use Botble\Payment\Supports\PaymentHelper;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -39,7 +41,7 @@ use Illuminate\Support\Str;
 
 class BookingController extends BaseController
 {
-    public function __construct()
+    public function __construct(protected AvailabilityService $availability)
     {
         $this
             ->breadcrumb()
@@ -266,6 +268,28 @@ class BookingController extends BaseController
         $startDate = HotelHelper::dateFromRequest($request->input('start_date'));
         $endDate = HotelHelper::dateFromRequest($request->input('end_date'));
         $numberOfRooms = $request->input('rooms', 1);
+
+        // --------------------------------------------------
+        // 🔹 Verfügbarkeitsprüfung (bestehende Buchungen, Kurssessions, manuelle Sperren)
+        //    Verhindert Doppelbuchungen auch über das Admin-Backend.
+        // --------------------------------------------------
+        if ($startDate instanceof Carbon && $endDate instanceof Carbon) {
+            $check = $this->availability->checkRoomAvailability(
+                (int) $room->id,
+                $startDate,
+                $endDate,
+                (int) $numberOfRooms
+            );
+
+            if (! $check['available']) {
+                return $response
+                    ->setError()
+                    ->setMessage(trans('plugins/hotel::booking.conflict.conflict_detected', [
+                        'reason' => $check['reason'] ?? trans('plugins/hotel::booking.no_rooms_available'),
+                    ]))
+                    ->withInput();
+            }
+        }
 
         $room->total_price = $room->getRoomTotalPrice($startDate, $endDate, $numberOfRooms);
 

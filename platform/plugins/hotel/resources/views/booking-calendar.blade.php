@@ -51,13 +51,13 @@
                     </select>
                 </div>
                 <div class="col-lg-4" data-manual-booking-target="room">
-                    <label class="form-label" for="manual-booking-room">{{ trans('plugins/hotel::booking.manual_booking_type_room') }}</label>
-                    <select class="form-select" id="manual-booking-room" name="room_id">
-                        <option value="">{{ trans('plugins/hotel::booking.manual_booking_select_room') }}</option>
+                    <label class="form-label" for="manual-booking-room">{{ trans('plugins/hotel::booking.manual_booking_select_rooms') }}</label>
+                    <select class="form-select select-search-full" id="manual-booking-room" name="room_id[]" multiple data-placeholder="{{ trans('plugins/hotel::booking.manual_booking_select_rooms') }}">
                         @foreach ($rooms as $room)
                             <option value="{{ $room->id }}">{{ $room->name }}</option>
                         @endforeach
                     </select>
+                    <small class="form-hint">{{ trans('plugins/hotel::booking.manual_booking_select_rooms_hint') }}</small>
                 </div>
                 <div class="col-lg-4 d-none" data-manual-booking-target="course">
                     <label class="form-label" for="manual-booking-course">{{ trans('plugins/hotel::booking.manual_booking_type_course') }}</label>
@@ -69,12 +69,32 @@
                     </select>
                 </div>
                 <div class="col-lg-6">
-                    <label class="form-label" for="manual-booking-start">{{ trans('plugins/hotel::booking.start_date') }}</label>
-                    <input class="form-control" type="datetime-local" id="manual-booking-start" name="start_at" required>
+                    <x-core::form.date-picker
+                        name="start_at"
+                        id="manual-booking-start"
+                        :label="trans('plugins/hotel::booking.start_date')"
+                        data-date-format="Y-m-d H:i"
+                        :data-options="[
+                            'enableTime' => true,
+                            'time_24hr' => true,
+                            'minuteIncrement' => 15,
+                            'dateFormat' => 'Y-m-d H:i',
+                        ]"
+                    />
                 </div>
                 <div class="col-lg-6">
-                    <label class="form-label" for="manual-booking-end">{{ trans('plugins/hotel::booking.end_date') }}</label>
-                    <input class="form-control" type="datetime-local" id="manual-booking-end" name="end_at" required>
+                    <x-core::form.date-picker
+                        name="end_at"
+                        id="manual-booking-end"
+                        :label="trans('plugins/hotel::booking.end_date')"
+                        data-date-format="Y-m-d H:i"
+                        :data-options="[
+                            'enableTime' => true,
+                            'time_24hr' => true,
+                            'minuteIncrement' => 15,
+                            'dateFormat' => 'Y-m-d H:i',
+                        ]"
+                    />
                 </div>
                 <div class="col-12">
                     <label class="form-label" for="manual-booking-reason">{{ trans('plugins/hotel::booking.manual_booking_reason') }}</label>
@@ -103,7 +123,6 @@
                 const typeSelect = document.getElementById('manual-booking-type')
                 const roomTarget = document.querySelector('[data-manual-booking-target="room"]')
                 const courseTarget = document.querySelector('[data-manual-booking-target="course"]')
-                const roomSelect = document.getElementById('manual-booking-room')
                 const courseSelect = document.getElementById('manual-booking-course')
 
                 if (! typeSelect || ! roomTarget || ! courseTarget) return
@@ -112,8 +131,11 @@
                 roomTarget.classList.toggle('d-none', !isRoom)
                 courseTarget.classList.toggle('d-none', isRoom)
 
-                // Nur das aktive Feld an den Server senden
-                if (roomSelect) roomSelect.disabled = !isRoom
+                // Das inaktive Ziel wird zusätzlich serverseitig geleert
+                // (ManualBookingRequest::prepareForValidation), daher reicht hier
+                // das Ein-/Ausblenden. Das Course-Feld (natives Select) wird
+                // deaktiviert; das Raum-Select nutzt select2 und wird nicht per
+                // .disabled angefasst, um Sync-Probleme zu vermeiden.
                 if (courseSelect) courseSelect.disabled = isRoom
             }
 

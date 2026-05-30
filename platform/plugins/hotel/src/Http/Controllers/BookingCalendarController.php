@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class BookingCalendarController extends BaseController
@@ -54,40 +55,98 @@ class BookingCalendarController extends BaseController
         }
 
         $data = $request->validated();
-        $start = Carbon::parse($data['start_at']);
-        $end = Carbon::parse($data['end_at']);
 
-        // Konflikt-Prüfung VOR dem Anlegen
-        if ($data['type'] === 'room' && ! empty($data['room_id'])) {
-            $check = $this->availability->checkRoomAvailability((int) $data['room_id'], $start, $end);
-            if (! $check['available']) {
+        // Auf 15-Minuten-Raster runden (Frontend liefert bereits 15er-Schritte,
+        // dies ist die serverseitige Absicherung gegen abweichende Eingaben).
+        $start = $this->roundToQuarterHour(Carbon::parse($data['start_at']));
+        $end = $this->roundToQuarterHour(Carbon::parse($data['end_at']));
+
+        if ($end->lessThanOrEqualTo($start)) {
+            $end = $start->copy()->addMinutes(15);
+        }
+
+        // ----------------------------------------------------------------
+        // Räume: Mehrfachauswahl → pro Raum eine Sperre, jeweils mit Konfliktprüfung
+        // ----------------------------------------------------------------
+        if ($data['type'] === 'room') {
+            $roomIds = array_values(array_unique(array_map('intval', (array) ($data['room_id'] ?? []))));
+
+            $conflictMessages = [];
+            foreach ($roomIds as $roomId) {
+                $check = $this->availability->checkRoomAvailability($roomId, $start, $end);
+                if (! $check['available']) {
+                    $roomName = Room::query()->whereKey($roomId)->value('name') ?: ('#' . $roomId);
+                    $conflictMessages[] = $roomName . ': ' . ($check['reason'] ?? '');
+                }
+            }
+
+            if (! empty($conflictMessages)) {
                 return $response
                     ->setError()
                     ->setMessage(trans('plugins/hotel::booking.conflict.conflict_detected', [
-                        'reason' => $check['reason'] ?? '',
+                        'reason' => implode(' | ', $conflictMessages),
                     ]))
                     ->setNextUrl(route('booking.calendar.index'));
             }
+
+            DB::transaction(function () use ($roomIds, $start, $end, $data): void {
+                foreach ($roomIds as $roomId) {
+                    ManualBooking::query()->create([
+                        'type' => 'room',
+                        'room_id' => $roomId,
+                        'course_id' => null,
+                        'start_at' => $start,
+                        'end_at' => $end,
+                        'reason' => $data['reason'] ?? null,
+                    ]);
+                }
+            });
+
+            return $response
+                ->setMessage(trans('plugins/hotel::booking.manual_booking_created_multi', [
+                    'count' => count($roomIds),
+                ]))
+                ->setNextUrl(route('booking.calendar.index'))
+                ->setPreviousUrl(route('booking.calendar.index'));
         }
 
-        if ($data['type'] === 'course' && ! empty($data['course_id'])) {
-            $conflicts = $this->availability->findCourseConflicts((int) $data['course_id'], $start, $end);
-            if ($conflicts->isNotEmpty()) {
-                return $response
-                    ->setError()
-                    ->setMessage(trans('plugins/hotel::booking.conflict.conflict_detected', [
-                        'reason' => $conflicts->first()['label'] ?? '',
-                    ]))
-                    ->setNextUrl(route('booking.calendar.index'));
-            }
+        // ----------------------------------------------------------------
+        // Kurs: einzelne Sperre
+        // ----------------------------------------------------------------
+        $conflicts = $this->availability->findCourseConflicts((int) $data['course_id'], $start, $end);
+        if ($conflicts->isNotEmpty()) {
+            return $response
+                ->setError()
+                ->setMessage(trans('plugins/hotel::booking.conflict.conflict_detected', [
+                    'reason' => $conflicts->first()['label'] ?? '',
+                ]))
+                ->setNextUrl(route('booking.calendar.index'));
         }
 
-        ManualBooking::query()->create($data);
+        ManualBooking::query()->create([
+            'type' => 'course',
+            'room_id' => null,
+            'course_id' => (int) $data['course_id'],
+            'start_at' => $start,
+            'end_at' => $end,
+            'reason' => $data['reason'] ?? null,
+        ]);
 
         return $response
             ->setMessage(trans('plugins/hotel::booking.manual_booking_created'))
             ->setNextUrl(route('booking.calendar.index'))
             ->setPreviousUrl(route('booking.calendar.index'));
+    }
+
+    /**
+     * Rundet einen Zeitpunkt auf das nächste 15-Minuten-Raster.
+     */
+    protected function roundToQuarterHour(Carbon $time): Carbon
+    {
+        $time = $time->copy()->startOfMinute();
+        $minute = (int) round($time->minute / 15) * 15;
+
+        return $time->minute(0)->addMinutes($minute);
     }
 
     public function kpis(Request $request): JsonResponse
