@@ -1,0 +1,11 @@
+{
+    "id": "botble/community",
+    "name": "Community",
+    "namespace": "Botble\\Community\\",
+    "provider": "Botble\\Community\\Providers\\CommunityServiceProvider",
+    "author": "xtra studio",
+    "url": "",
+    "version": "1.0.0",
+    "description": "Manage community members linked to existing customers (identity cards + home slider).",
+    "minimum_core_version": "7.5.6"
+}
