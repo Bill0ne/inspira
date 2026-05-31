@@ -1852,10 +1852,15 @@ button.remove-coupon-code {
     }
 
     .room-details-slider {
-        flex: 1 1 auto;
+        // min-width:0 verhindert, dass Slicks breiter Track die Flex-Zeile
+        // sprengt und die Thumbnail-Spalte auf ~10px zusammendrückt.
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
     }
 
     .room-details-slider-nav {
+        flex: 0 0 150px;
         margin-top: 0;
         width: 150px;
 
@@ -1884,6 +1889,7 @@ button.remove-coupon-code {
         }
 
         @media (max-width: 991.98px) {
+            flex: 1 1 auto;
             width: 100%;
             margin-top: 12px;
 

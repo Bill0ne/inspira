@@ -14,13 +14,24 @@
 @endphp
 <style>
     /*
-     * Galerie-Thumbnails: feste Höhe + object-fit, damit die (vertikale) Slick-
-     * Thumbnail-Leiste nicht auf Höhe 0 kollabiert. Slick berechnet die Höhe der
-     * vertikalen Leiste beim Init aus den Slide-Höhen; ohne feste Höhe sind die
-     * Bilder beim Init noch nicht geladen → Höhe 0 → Thumbnails unsichtbar.
-     * Spiegelt die Regel in assets/sass/_custom.scss (.room-details--rooms ...),
+     * Galerie-Layout-Fix (.thumb ist display:flex):
+     * Slick gibt dem Haupt-Slider eine sehr breite Track-Breite. Ohne min-width:0
+     * sprengt dieser Flex-Inhalt die Zeile und drückt die Thumbnail-Spalte auf
+     * ~10px zusammen → Thumbnails unsichtbar. min-width:0 + overflow:hidden lassen
+     * den Slider korrekt schrumpfen; die Nav behält per flex:0 0 150px ihre Breite.
+     * Spiegelt die Regeln in assets/sass/_custom.scss (.room-details--rooms ...),
      * hier inline, damit der Fix auch ohne Asset-Neukompilierung sofort greift.
      */
+    .room-details--rooms .room-details-slider {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .room-details--rooms .room-details-slider-nav {
+        flex: 0 0 150px;
+    }
+
     .room-details--rooms .room-details-slider-nav img {
         height: 96px;
         object-fit: cover;
@@ -28,6 +39,10 @@
     }
 
     @media (max-width: 991.98px) {
+        .room-details--rooms .room-details-slider-nav {
+            flex: 1 1 auto;
+        }
+
         .room-details--rooms .room-details-slider-nav img {
             height: 80px;
         }
