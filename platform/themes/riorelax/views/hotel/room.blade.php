@@ -12,6 +12,27 @@
     $priceUnitLabel = __('hour_lowercase');
     $priceInquiryText = HotelHelper::getRoomPriceInquiryText();
 @endphp
+<style>
+    /*
+     * Galerie-Thumbnails: feste Höhe + object-fit, damit die (vertikale) Slick-
+     * Thumbnail-Leiste nicht auf Höhe 0 kollabiert. Slick berechnet die Höhe der
+     * vertikalen Leiste beim Init aus den Slide-Höhen; ohne feste Höhe sind die
+     * Bilder beim Init noch nicht geladen → Höhe 0 → Thumbnails unsichtbar.
+     * Spiegelt die Regel in assets/sass/_custom.scss (.room-details--rooms ...),
+     * hier inline, damit der Fix auch ohne Asset-Neukompilierung sofort greift.
+     */
+    .room-details--rooms .room-details-slider-nav img {
+        height: 96px;
+        object-fit: cover;
+        border-radius: 2px;
+    }
+
+    @media (max-width: 991.98px) {
+        .room-details--rooms .room-details-slider-nav img {
+            height: 80px;
+        }
+    }
+</style>
 <div class="about-area5 about-p p-relative room-details room-details--rooms">
     <div class="container pt-60 pb-40">
         <div class="row justify-content-center">

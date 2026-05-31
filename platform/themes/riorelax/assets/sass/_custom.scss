@@ -1872,8 +1872,14 @@ button.remove-coupon-code {
             margin-bottom: 0;
         }
 
+        // Feste Höhe + object-fit: garantiert, dass Slick die Höhe der
+        // vertikalen Thumbnail-Leiste auch vor dem vollständigen Laden der
+        // Bilder korrekt (≠ 0) berechnet, sonst kollabiert die Leiste.
         img {
             width: 100% !important;
+            height: 96px;
+            object-fit: cover;
+            border-radius: 2px;
             margin: 0;
         }
 
@@ -1887,6 +1893,10 @@ button.remove-coupon-code {
 
             .slick-slide:last-child {
                 margin-right: 0;
+            }
+
+            img {
+                height: 80px;
             }
         }
     }
