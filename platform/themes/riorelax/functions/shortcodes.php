@@ -693,6 +693,57 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
                 )
                 ->add('limit', NumberField::class, NumberFieldOption::make()->label(__('Limit'))->toArray());
         });
+
+        Shortcode::register(
+            'community-all',
+            __('Community All'),
+            __('Grid of all community members (4 per row, no slider)'),
+            function (ShortcodeCompiler $shortcode): ?string {
+                $query = \Botble\Community\Models\CommunityMember::query()
+                    ->where('status', 'published')
+                    ->with(['customer:id,first_name,last_name,avatar'])
+                    ->orderBy('name');
+
+                if ($memberIds = Shortcode::fields()->getIds('member_ids', $shortcode)) {
+                    $query->whereIn('id', $memberIds);
+                }
+
+                if ($limit = (int) $shortcode->limit) {
+                    $query->limit($limit);
+                }
+
+                $members = $query->get();
+
+                if ($members->isEmpty()) {
+                    return null;
+                }
+
+                return Theme::partial('shortcodes.community-all.index', compact('shortcode', 'members'));
+            }
+        );
+
+        Shortcode::setAdminConfig('community-all', function (array $attributes) {
+            return ShortcodeForm::createFromArray($attributes)
+                ->add('title', TextField::class, TextFieldOption::make()->label(__('Title'))->toArray())
+                ->add('subtitle', TextField::class, TextFieldOption::make()->label(__('Subtitle'))->toArray())
+                ->add(
+                    'member_ids',
+                    SelectField::class,
+                    SelectFieldOption::make()
+                        ->label(__('Choose members (leave empty for all published)'))
+                        ->choices(
+                            \Botble\Community\Models\CommunityMember::query()
+                                ->where('status', 'published')
+                                ->pluck('name', 'id')
+                                ->all()
+                        )
+                        ->selected(ShortcodeField::parseIds(Arr::get($attributes, 'member_ids')))
+                        ->multiple()
+                        ->searchable()
+                        ->toArray()
+                )
+                ->add('limit', NumberField::class, NumberFieldOption::make()->label(__('Limit'))->toArray());
+        });
     }
 
     Shortcode::register(
