@@ -40,6 +40,12 @@ return [
             'subject' => 'Passwort zurücksetzen',
             'can_off' => false,
         ],
+        'confirm-email' => [
+            'title' => 'E-Mail-Bestätigung (Kunde)',
+            'description' => 'E-Mail an den Kunden zur Bestätigung der E-Mail-Adresse nach der Registrierung',
+            'subject' => 'Bitte bestätigen Sie Ihre E-Mail-Adresse',
+            'can_off' => false,
+        ],
     ],
     'variables' => [
         'booking_type' => 'Booking Type',
@@ -54,5 +60,6 @@ return [
         'course_name' => 'Course Name',
         'session_name' => 'Session Name',
         'reset_link' => 'Passwort-Reset-Link',
+        'verify_link' => 'E-Mail-Bestätigungslink',
     ],
 ];
