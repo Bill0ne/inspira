@@ -7,6 +7,7 @@ use Botble\Base\Models\BaseModel;
 use Botble\Base\Supports\Avatar;
 use Botble\Hotel\Enums\ReviewStatusEnum;
 use Botble\Hotel\Notifications\ConfirmEmailNotification;
+use Botble\Hotel\Notifications\CustomerResetPasswordNotification;
 use Botble\Media\Facades\RvMedia;
 use Botble\Media\Models\MediaFile;
 use Exception;
@@ -169,6 +170,11 @@ class Customer extends BaseModel implements
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new ConfirmEmailNotification());
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new CustomerResetPasswordNotification($token));
     }
 
     public function hasBooked(Room $model): bool

@@ -9,7 +9,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\HtmlString;
 
-class ResetPasswordNotification extends Notification implements ShouldQueue
+class CustomerResetPasswordNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -24,11 +24,18 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
 
     public function toMail($notifiable): MailMessage
     {
+        // Reset-Link direkt aus Token + Kunden-E-Mail bauen (nicht aus request(),
+        // damit es auch im Queue-Worker ohne HTTP-Kontext korrekt funktioniert).
+        $resetLink = route('customer.password.reset', [
+            'token' => $this->token,
+            'email' => $notifiable->getEmailForPasswordReset(),
+        ]);
+
         $emailHandler = EmailHandler::setModule(HOTEL_MODULE_SCREEN_NAME)
             ->setType('plugins')
-            ->setTemplate('password-reminder')
+            ->setTemplate('customer-password-reset')
             ->addTemplateSettings(HOTEL_MODULE_SCREEN_NAME, config('plugins.hotel.email', []))
-            ->setVariableValue('reset_link', route('customer.password.reset', ['token' => $this->token, 'email' => request()->input('email')]));
+            ->setVariableValue('reset_link', $resetLink);
 
         return (new MailMessage())
             ->view(['html' => new HtmlString($emailHandler->getContent())])
