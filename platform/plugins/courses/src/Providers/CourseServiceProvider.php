@@ -71,7 +71,10 @@ class CourseServiceProvider extends ServiceProvider
         $this->app->register(EventServiceProvider::class);
 
         $this->app['events']->listen(RouteMatched::class, function (): void {
-            EmailHandler::addTemplateSettings(COURSE_MODULE_SCREEN_NAME, config('plugins.courses.email'));
+            // Register course email templates under the 'courses' module (matching the
+            // plugin folder) so the template body path resolves and the admin email
+            // settings page stays consistent with the module used when sending.
+            EmailHandler::addTemplateSettings('courses', config('plugins.courses.email'));
 
             Assets::addScripts(['booking-create'])
                 ->addStylesDirectly('vendor/core/plugins/hotel/css/hotel.css');
