@@ -59,6 +59,9 @@ jobs:
               yarn build || npm run build
             fi
 
+            echo "🗄️ Running migrations..."
+            php artisan migrate --force
+
             echo "🧹 Clearing & optimizing Laravel caches..."
             php artisan optimize:clear
             php artisan route:clear

@@ -1,17 +1,12 @@
 name: 🚀 Deploy to Inspira Design
 
 on:
-  # 🔹 Trigger nur bei Commits oder Pushes auf stage-desk
-  push:
-    branches:
-      - stage-desk
-    paths-ignore:
-      - README.md
-      - .github/**
-      - docs/**
-      - "*.md"
-
-  # 🔹 Optional: manuell starten (über Actions → "Run workflow")
+  # ⚠️ REDUNDANT zu deploy-stage.yml: deployt in exakt denselben Pfad
+  # (…/public_html/stage-env/) mit denselben Schritten.
+  # Der automatische Push-Trigger auf stage-desk wurde ENTFERNT, damit ein
+  # Push nach stage-desk nicht doppelt in dieselbe Umgebung deployt.
+  # EMPFEHLUNG: diesen Workflow entfernen (Entscheidung Nabil). Bis dahin nur
+  # noch manuell startbar.
   workflow_dispatch:
 
 jobs:
@@ -77,4 +72,4 @@ jobs:
 
       # 5️⃣ Erfolgsmeldung
       - name: 📨 Notify success
-        run: echo "✅ Inspira Live deployed from commit ${{ github.sha }} at $(date)"
+        run: echo "✅ Inspira Design (stage-env) deployed from commit ${{ github.sha }} at $(date)"

@@ -1,10 +1,15 @@
 name: 🚀 Deploy to Inspira LIVE (Safe Mode)
 
 on:
+  # 🔴 LIVE-Deploy ist bewusst vom Stage-Trigger getrennt.
+  # Auslöser NUR:
+  #   1) manueller Start (Actions → "Run workflow"), oder
+  #   2) Push/Merge auf den dedizierten Branch "live-desk" (Promotion stage-desk → live-desk).
+  # NICHT mehr auf stage-desk, damit ein Stage-Push nicht gleichzeitig Live deployt.
   workflow_dispatch:
   push:
     branches:
-      - stage-desk
+      - live-desk
 
 jobs:
   deploy:
