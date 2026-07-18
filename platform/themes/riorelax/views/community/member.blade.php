@@ -81,25 +81,6 @@
     .community-member__desc p {
         margin: 0 0 16px;
     }
-    .community-member__cta {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        background: var(--cm-green);
-        color: #fff;
-        padding: 13px 28px;
-        border-radius: 8px;
-        font-size: 15px;
-        font-weight: 600;
-        margin-top: 12px;
-        transition: background .2s ease, transform .2s ease;
-    }
-    .community-member__cta:hover {
-        background: var(--cm-green-dark);
-        color: #fff;
-        transform: translateY(-1px);
-    }
     .community-member__back {
         display: inline-flex;
         align-items: center;
@@ -152,10 +133,6 @@
                         {!! BaseHelper::clean($member->description) !!}
                     </div>
                 @endif
-
-                <a href="{{ url('contact') }}" class="community-member__cta">
-                    <i class="fal fa-paper-plane"></i> {{ trans('plugins/community::community.public.contact_cta') }}
-                </a>
             </div>
         </div>
     </div>

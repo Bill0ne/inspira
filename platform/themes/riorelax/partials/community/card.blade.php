@@ -83,39 +83,14 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
-        .community-card__footer {
-            margin-top: auto;
-            padding: 0 16px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .community-card__cta {
-            background: #578E88;
-            color: #fff;
-            padding: 10px 0;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            width: 100%;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background .2s ease;
-        }
-        .community-card__cta:hover {
-            background: #4B7C75;
-            color: #fff;
-        }
         .community-card__more {
+            align-self: flex-start;
+            margin-top: 4px;
             font-size: 12px;
             font-weight: 500;
             color: #578E88;
             text-decoration: underline;
             text-underline-offset: 2px;
-            text-align: center;
-            display: block;
         }
         .community-card__more:hover {
             color: #4B7C75;
@@ -142,12 +117,7 @@
         @if ($quote)
             <blockquote class="community-card__quote">{{ $quote }}</blockquote>
         @endif
-    </div>
 
-    <div class="community-card__footer">
-        <a href="{{ $memberUrl }}" class="community-card__cta">
-            <i class="fal fa-user"></i> {{ __('Profil ansehen') }}
-        </a>
         <a href="{{ $memberUrl }}" class="community-card__more">{{ __('Mehr Infos') }}</a>
     </div>
 </div>
