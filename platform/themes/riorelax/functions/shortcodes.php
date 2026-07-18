@@ -744,6 +744,43 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
                 )
                 ->add('limit', NumberField::class, NumberFieldOption::make()->label(__('Limit'))->toArray());
         });
+
+        Shortcode::register(
+            'community-full',
+            __('Community – Alle Mitglieder'),
+            __('Statisches Grid ALLER veröffentlichten Community-Mitglieder (4 pro Zeile, kompakt, alt → neu, ohne Slider)'),
+            function (ShortcodeCompiler $shortcode): ?string {
+                $query = \Botble\Community\Models\CommunityMember::query()
+                    ->where('status', 'published')
+                    ->with(['customer:id,first_name,last_name,avatar'])
+                    ->orderBy('created_at');
+
+                if ($limit = (int) $shortcode->limit) {
+                    $query->limit($limit);
+                }
+
+                $members = $query->get();
+
+                if ($members->isEmpty()) {
+                    return null;
+                }
+
+                return Theme::partial('shortcodes.community-full.index', compact('shortcode', 'members'));
+            }
+        );
+
+        Shortcode::setAdminConfig('community-full', function (array $attributes) {
+            return ShortcodeForm::createFromArray($attributes)
+                ->add('title', TextField::class, TextFieldOption::make()->label(__('Title'))->toArray())
+                ->add('subtitle', TextField::class, TextFieldOption::make()->label(__('Subtitle'))->toArray())
+                ->add(
+                    'limit',
+                    NumberField::class,
+                    NumberFieldOption::make()
+                        ->label(__('Limit (leer = alle Mitglieder)'))
+                        ->toArray()
+                );
+        });
     }
 
     Shortcode::register(

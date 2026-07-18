@@ -6,7 +6,7 @@
         ? RvMedia::getImageUrl($photo, 'medium', false, RvMedia::getDefaultImage())
         : RvMedia::getImageUrl('default-room.jpg', 'medium', false, RvMedia::getDefaultImage());
 
-    /* === Zitat sauber normalisieren: umschließende (auch doppelte) Anführungszeichen EINMAL entfernen === */
+    /* === Zitat sauber normalisieren: umschließende Anführungszeichen EINMAL entfernen === */
     $quote = trim((string) $member->quote);
     $quote = preg_replace('/^[\s"“”„»«\'‘’]+|[\s"“”„»«\'‘’]+$/u', '', $quote);
 
@@ -15,8 +15,8 @@
 
 @once
     <style>
-        /* === Inspira – Community Card (gleiches Design wie Room/Course Card) === */
-        .community-card {
+        /* === Inspira – Community Card kompakt (community-full Grid) === */
+        .community-card--compact {
             background: #fff;
             border-radius: 10px;
             box-shadow: 0 3px 10px rgba(0, 0, 0, .06);
@@ -27,105 +27,66 @@
             cursor: pointer;
             transition: transform .25s ease, box-shadow .25s ease;
         }
-        .community-card:hover {
+        .community-card--compact:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(0, 0, 0, .08);
         }
-        .community-card__thumb {
-            padding: 12px;
+        .community-card--compact .community-card__thumb {
+            padding: 8px;
         }
-        .community-card__thumb img {
+        .community-card--compact .community-card__thumb img {
             width: 100%;
-            border-radius: 14px;
+            border-radius: 10px;
             display: block;
             object-fit: cover;
-            aspect-ratio: 16 / 9;
+            aspect-ratio: 1 / 1;
             background: #f2f2f2;
         }
-        .community-card__body {
-            padding: 4px 16px 16px;
+        .community-card--compact .community-card__body {
+            padding: 4px 12px 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             flex: 1 1 auto;
         }
-        .community-card__name {
-            font-size: 16px;
-            line-height: 20px;
+        .community-card--compact .community-card__name {
+            font-size: 14px;
+            line-height: 18px;
             font-weight: 600;
             color: #414141;
             margin: 0;
         }
-        .community-card__role {
-            font-size: 12px;
-            line-height: 18px;
+        .community-card--compact .community-card__role {
+            font-size: 11.5px;
+            line-height: 16px;
             color: #6C6C6C;
             margin: 0;
             display: -webkit-box;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 1;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        /* Grüne Zitat-Box, weiße Schrift – Rooms-Farbton #578E88 */
-        .community-card__quote {
+        .community-card--compact .community-card__quote {
             background: #578E88;
             color: #fff;
-            border-radius: 8px;
-            padding: 12px 14px;
+            border-radius: 6px;
+            padding: 8px 10px;
             margin: 2px 0 0;
             font-style: italic;
-            font-size: 12.5px;
-            line-height: 18px;
+            font-size: 11.5px;
+            line-height: 16px;
             overflow-wrap: anywhere;
             display: -webkit-box;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-        }
-        .community-card__footer {
-            margin-top: auto;
-            padding: 0 16px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .community-card__cta {
-            background: #578E88;
-            color: #fff;
-            padding: 10px 0;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            width: 100%;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background .2s ease;
-        }
-        .community-card__cta:hover {
-            background: #4B7C75;
-            color: #fff;
-        }
-        .community-card__more {
-            font-size: 12px;
-            font-weight: 500;
-            color: #578E88;
-            text-decoration: underline;
-            text-underline-offset: 2px;
-            text-align: center;
-            display: block;
-        }
-        .community-card__more:hover {
-            color: #4B7C75;
-            text-underline-offset: 3px;
         }
     </style>
 @endonce
 
 <div
-    class="community-card"
+    class="community-card--compact"
     onclick="if (event.target.closest('a, button')) return; window.location='{{ $memberUrl }}'"
 >
     <div class="community-card__thumb">
@@ -142,12 +103,5 @@
         @if ($quote)
             <blockquote class="community-card__quote">{{ $quote }}</blockquote>
         @endif
-    </div>
-
-    <div class="community-card__footer">
-        <a href="{{ $memberUrl }}" class="community-card__cta">
-            <i class="fal fa-user"></i> {{ __('Profil ansehen') }}
-        </a>
-        <a href="{{ $memberUrl }}" class="community-card__more">{{ __('Mehr Infos') }}</a>
     </div>
 </div>

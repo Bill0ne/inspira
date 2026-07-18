@@ -25,6 +25,7 @@ return [
     'public' => [
         'title' => 'Unsere Community',
         'subtitle' => 'Die Menschen hinter Inspira',
+        'contact_cta' => 'Kontakt aufnehmen',
     ],
     'shortcode' => [
         'name' => 'Community-Slider',
