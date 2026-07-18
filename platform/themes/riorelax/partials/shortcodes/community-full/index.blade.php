@@ -18,8 +18,8 @@
 
         <div class="row g-4">
             @foreach ($members as $member)
-                <div class="col-xl-3 col-lg-3 col-md-6 col-12">
-                    {!! Theme::partial('community.card', ['member' => $member]) !!}
+                <div class="col-xl-3 col-lg-4 col-md-6 col-12">
+                    {!! Theme::partial('community.card-compact', ['member' => $member]) !!}
                 </div>
             @endforeach
         </div>

@@ -694,15 +694,23 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
                 ->add('limit', NumberField::class, NumberFieldOption::make()->label(__('Limit'))->toArray());
         });
 
+        /*
+         * DEPRECATED / BACKWARD-COMPAT ALIAS:
+         * "community-all" wurde durch "community-full" ersetzt. Der Shortcode bleibt nur
+         * registriert, damit bereits im Seiten-Content (DB) eingebundene [community-all]
+         * nicht ins Leere laufen. Er rendert jetzt identisch zum neuen community-full
+         * (kompaktes Grid, alt -> neu). Bitte in Seiten auf "community-full" umstellen;
+         * danach kann dieser Alias entfernt werden.
+         */
         Shortcode::register(
             'community-all',
-            __('Community All'),
-            __('Grid of all community members (4 per row, no slider)'),
+            __('Community – Alle Mitglieder (veraltet, bitte „community-full“ verwenden)'),
+            __('Veralteter Alias von community-full – nur für Abwärtskompatibilität bestehender Seiten.'),
             function (ShortcodeCompiler $shortcode): ?string {
                 $query = \Botble\Community\Models\CommunityMember::query()
                     ->where('status', 'published')
                     ->with(['customer:id,first_name,last_name,avatar'])
-                    ->orderBy('name');
+                    ->orderBy('created_at');
 
                 if ($memberIds = Shortcode::fields()->getIds('member_ids', $shortcode)) {
                     $query->whereIn('id', $memberIds);
@@ -718,7 +726,7 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
                     return null;
                 }
 
-                return Theme::partial('shortcodes.community-all.index', compact('shortcode', 'members'));
+                return Theme::partial('shortcodes.community-full.index', compact('shortcode', 'members'));
             }
         );
 
@@ -727,22 +735,47 @@ Shortcode::register('all-rooms', __('All Rooms'), __('All Rooms'), function (): 
                 ->add('title', TextField::class, TextFieldOption::make()->label(__('Title'))->toArray())
                 ->add('subtitle', TextField::class, TextFieldOption::make()->label(__('Subtitle'))->toArray())
                 ->add(
-                    'member_ids',
-                    SelectField::class,
-                    SelectFieldOption::make()
-                        ->label(__('Choose members (leave empty for all published)'))
-                        ->choices(
-                            \Botble\Community\Models\CommunityMember::query()
-                                ->where('status', 'published')
-                                ->pluck('name', 'id')
-                                ->all()
-                        )
-                        ->selected(ShortcodeField::parseIds(Arr::get($attributes, 'member_ids')))
-                        ->multiple()
-                        ->searchable()
+                    'limit',
+                    NumberField::class,
+                    NumberFieldOption::make()->label(__('Limit (leer = alle Mitglieder)'))->toArray()
+                );
+        });
+
+        Shortcode::register(
+            'community-full',
+            __('Community – Alle Mitglieder'),
+            __('Statisches Grid ALLER veröffentlichten Community-Mitglieder (4 pro Zeile, kompakt, alt → neu, ohne Slider)'),
+            function (ShortcodeCompiler $shortcode): ?string {
+                $query = \Botble\Community\Models\CommunityMember::query()
+                    ->where('status', 'published')
+                    ->with(['customer:id,first_name,last_name,avatar'])
+                    ->orderBy('created_at');
+
+                if ($limit = (int) $shortcode->limit) {
+                    $query->limit($limit);
+                }
+
+                $members = $query->get();
+
+                if ($members->isEmpty()) {
+                    return null;
+                }
+
+                return Theme::partial('shortcodes.community-full.index', compact('shortcode', 'members'));
+            }
+        );
+
+        Shortcode::setAdminConfig('community-full', function (array $attributes) {
+            return ShortcodeForm::createFromArray($attributes)
+                ->add('title', TextField::class, TextFieldOption::make()->label(__('Title'))->toArray())
+                ->add('subtitle', TextField::class, TextFieldOption::make()->label(__('Subtitle'))->toArray())
+                ->add(
+                    'limit',
+                    NumberField::class,
+                    NumberFieldOption::make()
+                        ->label(__('Limit (leer = alle Mitglieder)'))
                         ->toArray()
-                )
-                ->add('limit', NumberField::class, NumberFieldOption::make()->label(__('Limit'))->toArray());
+                );
         });
     }
 
