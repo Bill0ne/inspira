@@ -180,7 +180,10 @@ class PublicController extends BaseController
                         'contact_custom_fields' => $data['custom_fields'] ?? [],
                     ]);
 
-                $emailHandler->sendUsingTemplate('notice', $receiverEmails ?: null, $args);
+                // 'notice' geht bewusst an den Betreiber: sind keine receiver_emails
+                // konfiguriert, wird explizit die Admin-Adresse aufgelöst (der zentrale
+                // EmailHandler-Guard bricht targeted Sends mit leerem Empfänger sonst ab).
+                $emailHandler->sendUsingTemplate('notice', $receiverEmails ?: get_admin_email()->all(), $args);
 
                 $args = ['replyTo' => is_array($receiverEmails) ? Arr::first($receiverEmails) : $receiverEmails];
 

@@ -34,6 +34,18 @@ return [
             'subject' => 'Your Course Booking Has Been Updated!',
             'can_off' => true,
         ],
+        'customer-password-reset' => [
+            'title' => 'Passwort zurücksetzen (Kunde)',
+            'description' => 'E-Mail an den Kunden mit dem Link zum Zurücksetzen des Passworts',
+            'subject' => 'Passwort zurücksetzen',
+            'can_off' => false,
+        ],
+        'confirm-email' => [
+            'title' => 'E-Mail-Bestätigung (Kunde)',
+            'description' => 'E-Mail an den Kunden zur Bestätigung der E-Mail-Adresse nach der Registrierung',
+            'subject' => 'Bitte bestätigen Sie Ihre E-Mail-Adresse',
+            'can_off' => false,
+        ],
     ],
     'variables' => [
         'booking_type' => 'Booking Type',
@@ -47,5 +59,7 @@ return [
         'booking_status' => 'plugins/hotel::hotel.booking_status',
         'course_name' => 'Course Name',
         'session_name' => 'Session Name',
+        'reset_link' => 'Passwort-Reset-Link',
+        'verify_link' => 'E-Mail-Bestätigungslink',
     ],
 ];

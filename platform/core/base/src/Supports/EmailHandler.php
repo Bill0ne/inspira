@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\ErrorHandler\ErrorRenderer\HtmlErrorRenderer;
 use Symfony\Component\ErrorHandler\Exception\FlattenException;
@@ -400,6 +401,11 @@ class EmailHandler
         string $type = 'plugins',
         $subject = null
     ): bool {
+        // Passing a recipient argument at all (even null/empty) marks this as a targeted
+        // send (e.g. to a customer). Only calls that omit the recipient entirely are
+        // intentional admin broadcasts that may fall back to the admin address.
+        $recipientProvided = func_num_args() >= 2;
+
         if (! $this->templateEnabled($template)) {
             return false;
         }
@@ -411,7 +417,7 @@ class EmailHandler
             $subject = $this->getSubject();
         }
 
-        $this->send($this->getContent(), $subject, $email, $args, $debug);
+        $this->send($this->getContent(), $subject, $email, $args, $debug, ! $recipientProvided);
 
         return true;
     }
@@ -426,10 +432,23 @@ class EmailHandler
         string $title,
         string|array|null $to = null,
         array $args = [],
-        bool $debug = false
+        bool $debug = false,
+        bool $allowAdminFallback = true
     ): void {
         try {
             if (empty($to)) {
+                if (! $allowAdminFallback) {
+                    // Targeted mail (e.g. customer confirmation) with an empty/invalid
+                    // recipient: abort instead of silently leaking it to the admin inbox.
+                    Log::warning('[EmailHandler] Aborted email: empty recipient for a targeted template; not falling back to admin.', [
+                        'type' => $this->type,
+                        'module' => $this->module,
+                        'template' => $this->template,
+                    ]);
+
+                    return;
+                }
+
                 $to = get_admin_email()->toArray();
                 if (empty($to)) {
                     $to = setting('email_from_address', config('mail.from.address'));
