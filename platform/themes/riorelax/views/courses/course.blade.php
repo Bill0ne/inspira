@@ -53,14 +53,15 @@
         : null;
 
     // --- Seat Chip ---
+    // Auslastung erst ab 60% zeigen: darunter bleibt die Teilnehmerzahl versteckt,
+    // ab 60% orange, ab 80% rot.
     $showSeatChip  = false;
     $seatChipClass = '';
 
     if (!is_null($percent)) {
-        if ($percent >= 30) {
+        if ($percent >= 60) {
             $showSeatChip  = true;
-            $seatChipClass = 'seat-gray';
-            if ($percent >= 60)  $seatChipClass = 'seat-orange';
+            $seatChipClass = 'seat-orange';
             if ($percent >= 80)  $seatChipClass = 'seat-red';
         }
     }
