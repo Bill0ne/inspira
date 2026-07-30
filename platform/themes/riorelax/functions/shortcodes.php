@@ -235,6 +235,15 @@ app()->booted(function (): void {
                         $rooms[] = $room;
                     }
                 }
+                unset($room);
+
+                // Reihenfolge der im Shortcode ausgewählten Räume beibehalten:
+                // SQL "WHERE id IN (...)" behält die Auswahlreihenfolge NICHT bei, daher
+                // sortieren wir die Räume nach ihrer Position in room_ids (Auswahlreihenfolge).
+                $roomOrder = array_flip(array_map('intval', $roomIds));
+                usort($rooms, function ($a, $b) use ($roomOrder) {
+                    return ($roomOrder[$a->getKey()] ?? PHP_INT_MAX) <=> ($roomOrder[$b->getKey()] ?? PHP_INT_MAX);
+                });
 
                 return Theme::partial(
                     'shortcodes.featured-rooms.index',
